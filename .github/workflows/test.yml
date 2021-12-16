@@ -54,12 +54,12 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: fmt
-        args: --package=light-curve-python -- --check
+        args: --check
     - name: Run Rust code analysis
       uses: actions-rs/cargo@v1
       with:
         command: clippy
-        args: --package=light-curve-python --all-targets -- -D warnings
+        args: --all-targets -- -D warnings
     - name: Check Python formatting
       run: black --check .
     - name: Run Python tests
