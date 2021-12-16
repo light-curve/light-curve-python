@@ -108,4 +108,4 @@ jobs:
       run: |
         python3 setup.py sdist
         twine check --strict dist/*
-        twine upload dist/* -u __token__ -p ${{ secrets.PYPI_TOKEN }} --verbose
+        twine upload dist/* -u __token__ -p ${{ secrets.PYPI_TOKEN_LIGHT_CURVE_PYTHON }} --verbose
