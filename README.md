@@ -128,3 +128,27 @@ actual = dmdt.points(t, m)
 
 assert_array_equal(actual, desired)
 ```
+
+### Citation
+
+If you found this project useful for your research please cite [Malanchev et al., 2021](https://ui.adsabs.harvard.edu/abs/2021MNRAS.502.5147M/abstract)
+
+```bibtex
+@ARTICLE{2021MNRAS.502.5147M,
+       author = {{Malanchev}, K.~L. and {Pruzhinskaya}, M.~V. and {Korolev}, V.~S. and {Aleo}, P.~D. and {Kornilov}, M.~V. and {Ishida}, E.~E.~O. and {Krushinsky}, V.~V. and {Mondon}, F. and {Sreejith}, S. and {Volnova}, A.~A. and {Belinski}, A.~A. and {Dodin}, A.~V. and {Tatarnikov}, A.~M. and {Zheltoukhov}, S.~G. and {(The SNAD Team)}},
+        title = "{Anomaly detection in the Zwicky Transient Facility DR3}",
+      journal = {\mnras},
+     keywords = {methods: data analysis, astronomical data bases: miscellaneous, stars: variables: general, Astrophysics - Instrumentation and Methods for Astrophysics, Astrophysics - Solar and Stellar Astrophysics},
+         year = 2021,
+        month = apr,
+       volume = {502},
+       number = {4},
+        pages = {5147-5175},
+          doi = {10.1093/mnras/stab316},
+archivePrefix = {arXiv},
+       eprint = {2012.01419},
+ primaryClass = {astro-ph.IM},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2021MNRAS.502.5147M},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+```
