@@ -2,6 +2,8 @@
 
 The Python wrapper for Rust [`light-curve-feature`](https://github.com/light-curve/light-curve) and [`light-curve-dmdt`](https://github.com/light-curve/light-curve) packages which gives a collection of high-performant time-series feature extractors.
 
+[![PyPI version](https://badge.fury.io/py/light-curve.svg)](https://pypi.org/project/light-curve/)
+
 ## Installation
 
 ```sh
