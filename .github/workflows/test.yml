@@ -3,75 +3,12 @@ name: Test
 on: [push, pull_request]
 
 jobs:
-  rust:
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: true
-    - name: Install FFTW and GSL
-      run: |
-        sudo apt-get update
-        sudo apt-get install libfftw3-dev libgsl-dev
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-    - name: Build
-      uses: actions-rs/cargo@v1
-      with:
-        command: build
-        args: --workspace --all-targets --exclude light-curve-python
-    - name: Build light-curve-feature gsl+fftw-source
-      uses: actions-rs/cargo@v1
-      with:
-        command: build
-        args: --manifest-path=light-curve-feature/Cargo.toml --all-targets --no-default-features --features gsl,fftw-source
-    - name: Build light-curve-feature gsl+fftw-system
-      uses: actions-rs/cargo@v1
-      with:
-        command: build
-        args: --manifest-path=light-curve-feature/Cargo.toml --all-targets --no-default-features --features gsl,fftw-system
-    - name: Build light-curve-feature gsl+fftw-mkl
-      uses: actions-rs/cargo@v1
-      with:
-        command: build
-        args: --manifest-path=light-curve-feature/Cargo.toml --all-targets --no-default-features --features gsl,fftw-mkl
-    - name: Check light-curve-dmdt/{README.md,example.png}
-      working-directory: light-curve-dmdt
-      run: |
-        ./.ci/compose-readme.py
-        git diff --word-diff --exit-code
-    - name: Run tests
-      uses: actions-rs/cargo@v1
-      with:
-        command: test
-        args: --workspace --exclude light-curve-python
-    - name: Run examples
-      uses: actions-rs/cargo@v1
-      with:
-        command: run
-        args: --example plot_snia_curve_fits -- -n=1
-    - name: Check formatting
-      uses: actions-rs/cargo@v1
-      with:
-        command: fmt
-        args: -- --check
-    - name: Run code analysis
-      uses: actions-rs/cargo@v1
-      with:
-        command: clippy
-        args: --workspace --exclude light-curve-python --all-targets -- -D warnings
-
-
-  python:
-
+ test:
     runs-on: ubuntu-latest
 
     defaults:
       run:
-        working-directory: python/light-curve
+        working-directory: light-curve
 
     steps:
     - uses: actions/checkout@v2
@@ -130,7 +67,6 @@ jobs:
     - name: Check Python formatting
       run: black --check --diff .
 
-
   arm:
 
     runs-on: [self-hosted, linux, ARM64]
@@ -139,8 +75,6 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: true
-    - name: build all but python
-      run: cargo build --workspace --all-targets --exclude light-curve-python
     - name: build python
       run: maturin build
-      working-directory: python/light-curve
+      working-directory: light-curve

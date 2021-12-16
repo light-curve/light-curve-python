@@ -22,16 +22,19 @@ repos:
     hooks:
     -   id: black
         name: black
-        args: [--config=python/light-curve/pyproject.toml, ./python/light-curve]
+        args: [--config=./light-curve/pyproject.toml, ./light-curve]
 -   repo: https://github.com/doublify/pre-commit-rust
     rev: v1.0
     hooks:
     -   id: fmt
         name: cargo fmt
+        args: ['--manifest-path=light-curve/Cargo.toml', '--']
     -   id: cargo-check
         name: cargo check
+        args: ['--manifest-path=light-curve/Cargo.toml', '--']
     -   id: clippy
         name: cargo clippy
+        args: ['--manifest-path=light-curve/Cargo.toml', '--']
 
 # pre-commit.ci settings
 # Skip rust things due to
