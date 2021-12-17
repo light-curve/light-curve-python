@@ -552,7 +552,7 @@ const SUPPORTED_ALGORITHMS_CURVE_FIT: [&str; N_ALGO_CURVE_FIT] = [
 ];
 
 macro_rules! fit_evaluator {
-    ($name: ident, $eval: ty, $ib: ty, $nparam: literal, $ln_prior_by_str: expr, $ln_prior_doc: literal $(,)?) => {
+    ($name: ident, $eval: ty, $ib: ty, $nparam: literal, $ln_prior_by_str: tt, $ln_prior_doc: literal $(,)?) => {
         #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
         #[pyo3(text_signature = "(algorithm, mcmc_niter=None, lmsder_niter=None, init=None, bounds=None, ln_prior=None)")]
         pub struct $name {}
@@ -634,7 +634,7 @@ macro_rules! fit_evaluator {
                 };
 
                 let ln_prior = match ln_prior {
-                    Some(s) => $ln_prior_by_str(s)?,
+                    Some(s) => match s $ln_prior_by_str,
                     None => lcf::LnPrior::none().into(),
                 };
 
@@ -825,13 +825,13 @@ fit_evaluator!(
     lcf::BazinFit,
     lcf::BazinInitsBounds,
     5,
-    (|s| match s {
-        "no" => Ok(lcf::BazinLnPrior::fixed(lcf::LnPrior::none())),
-        _ => Err(Exception::ValueError(format!(
+    {
+        "no" => lcf::BazinLnPrior::fixed(lcf::LnPrior::none()),
+        s => return Err(Exception::ValueError(format!(
             "unsupported ln_prior name '{}'",
             s
-        ))),
-    }),
+        )).into()),
+    },
     "'no': no prior",
 );
 
@@ -1319,14 +1319,14 @@ fit_evaluator!(
     lcf::VillarFit,
     lcf::VillarInitsBounds,
     7,
-    (|s| match s {
-        "no" => Ok(lcf::VillarLnPrior::fixed(lcf::LnPrior::none())),
-        "hosseinzadeh2020" => Ok(lcf::VillarLnPrior::hosseinzadeh2020(1.0, 0.0)),
-        _ => Err(Exception::ValueError(format!(
+    {
+        "no" => lcf::VillarLnPrior::fixed(lcf::LnPrior::none()),
+        "hosseinzadeh2020" => lcf::VillarLnPrior::hosseinzadeh2020(1.0, 0.0),
+        s => return Err(Exception::ValueError(format!(
             "unsupported ln_prior name '{}'",
             s
-        ))),
-    }),
+        )).into()),
+    },
     r#"- 'no': no prior,\
     - 'hosseinzadeh2020': prior addopted from Hosseinzadeh et al. 2020, it
       assumes that `t` is in days"#,
