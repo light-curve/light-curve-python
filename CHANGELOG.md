@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-—
+- `ln_prior: Optional[str]` is added to `BazinFit` (not really useful) and `VillarFit` ('no' and 'hosseinzadeh2020' values are available)
 
 ### Changed
 

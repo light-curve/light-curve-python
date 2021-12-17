@@ -552,9 +552,9 @@ const SUPPORTED_ALGORITHMS_CURVE_FIT: [&str; N_ALGO_CURVE_FIT] = [
 ];
 
 macro_rules! fit_evaluator {
-    ($name: ident, $eval: ty, $ib: ty, $nparam: literal $(,)?) => {
+    ($name: ident, $eval: ty, $ib: ty, $nparam: literal, $ln_prior_by_str: expr, $ln_prior_doc: literal $(,)?) => {
         #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-        #[pyo3(text_signature = "(algorithm, mcmc_niter=None, lmsder_niter=None, init=None, bounds=None)")]
+        #[pyo3(text_signature = "(algorithm, mcmc_niter=None, lmsder_niter=None, init=None, bounds=None, ln_prior=None)")]
         pub struct $name {}
 
         impl $name {
@@ -581,7 +581,8 @@ macro_rules! fit_evaluator {
                 mcmc_niter = "None",
                 lmsder_niter = "None",
                 init = "None",
-                bounds = "None"
+                bounds = "None",
+                ln_prior = "None",
             )]
             fn __new__(
                 algorithm: &str,
@@ -589,6 +590,7 @@ macro_rules! fit_evaluator {
                 lmsder_niter: Option<u16>,
                 init: Option<Vec<Option<f64>>>,
                 bounds: Option<Vec<(Option<f64>, Option<f64>)>>,
+                ln_prior: Option<&str>,
             ) -> PyResult<(Self, PyFeatureEvaluator)> {
                 let mcmc_niter = mcmc_niter.unwrap_or_else(lcf::McmcCurveFit::default_niterations);
 
@@ -631,6 +633,11 @@ macro_rules! fit_evaluator {
                     None => <$ib>::default(),
                 };
 
+                let ln_prior = match ln_prior {
+                    Some(s) => $ln_prior_by_str(s)?,
+                    None => lcf::LnPrior::none().into(),
+                };
+
                 let curve_fit_algorithm: lcf::CurveFitAlgorithm = match algorithm {
                     "mcmc" => lcf::McmcCurveFit::new(mcmc_niter, None).into(),
                     #[cfg(feature = "gsl")]
@@ -651,13 +658,13 @@ macro_rules! fit_evaluator {
                     PyFeatureEvaluator {
                         feature_evaluator_f32: <$eval>::new(
                             curve_fit_algorithm.clone(),
-                            <$eval>::default_ln_prior(),
+                            ln_prior.clone(),
                             init_bounds.clone(),
                         )
                         .into(),
                         feature_evaluator_f64: <$eval>::new(
                             curve_fit_algorithm,
-                            <$eval>::default_ln_prior(),
+                            ln_prior,
                             init_bounds,
                         )
                         .into(),
@@ -720,6 +727,9 @@ bounds : list of tuples or None, optional
     `None`s. The length of the list must be {nparam}, boundary conditions must
     include initial conditions, `None` values will be replaced with some broad
     defaults. It is supported by MCMC only
+ln_prior : str or None, optional
+    Prior for MCMC, None means no prior. Available values are:
+    {ln_prior}
 
 {attr}
 supported_algorithms : list of str
@@ -765,6 +775,7 @@ Examples
                     methods = METHODS_DOC,
                     feature = stringify!($name),
                     nparam = $nparam,
+                    ln_prior = $ln_prior_doc,
                 )
             }
         }
@@ -809,7 +820,20 @@ nstd : positive float
     }
 }
 
-fit_evaluator!(BazinFit, lcf::BazinFit, lcf::BazinInitsBounds, 5);
+fit_evaluator!(
+    BazinFit,
+    lcf::BazinFit,
+    lcf::BazinInitsBounds,
+    5,
+    (|s| match s {
+        "no" => Ok(lcf::BazinLnPrior::fixed(lcf::LnPrior::none())),
+        _ => Err(Exception::ValueError(format!(
+            "unsupported ln_prior name '{}'",
+            s
+        ))),
+    }),
+    "'no': no prior",
+);
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 #[pyo3(text_signature = "(features, window, offset)")]
@@ -1290,7 +1314,23 @@ evaluator!(StandardDeviation, lcf::StandardDeviation);
 
 evaluator!(StetsonK, lcf::StetsonK);
 
-fit_evaluator!(VillarFit, lcf::VillarFit, lcf::VillarInitsBounds, 7);
+fit_evaluator!(
+    VillarFit,
+    lcf::VillarFit,
+    lcf::VillarInitsBounds,
+    7,
+    (|s| match s {
+        "no" => Ok(lcf::VillarLnPrior::fixed(lcf::LnPrior::none())),
+        "hosseinzadeh2020" => Ok(lcf::VillarLnPrior::hosseinzadeh2020(1.0, 0.0)),
+        _ => Err(Exception::ValueError(format!(
+            "unsupported ln_prior name '{}'",
+            s
+        ))),
+    }),
+    r#"- 'no': no prior,\
+    - 'hosseinzadeh2020': prior addopted from Hosseinzadeh et al. 2020, it
+      assumes that `t` is in days"#,
+);
 
 evaluator!(WeightedMean, lcf::WeightedMean);
 
