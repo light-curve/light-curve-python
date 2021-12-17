@@ -10,6 +10,9 @@ mod errors;
 mod features;
 use features as f;
 
+mod ln_prior;
+use ln_prior::*;
+
 mod np_array;
 
 mod check;
@@ -22,7 +25,7 @@ mod check;
 /// dm-lg(dt) maps generator is represented by `DmDt` class, while all other classes are
 /// feature extractors
 #[pymodule]
-fn light_curve(_py: Python, m: &PyModule) -> PyResult<()> {
+fn light_curve(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
 
     m.add("_built_with_gsl", {
@@ -91,6 +94,8 @@ fn light_curve(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<f::TimeStandardDeviation>()?;
     m.add_class::<f::VillarFit>()?;
     m.add_class::<f::WeightedMean>()?;
+
+    register_ln_prior_submodule(py, m)?;
 
     Ok(())
 }

@@ -1,6 +1,7 @@
 use crate::check::{check_finite, check_no_nans, is_sorted};
 use crate::cont_array::ContCowArray;
 use crate::errors::{Exception, Res};
+use crate::ln_prior::LnPrior1D;
 use crate::np_array::{Arr, GenericFloatArray1};
 
 use const_format::formatcp;
@@ -551,6 +552,14 @@ const SUPPORTED_ALGORITHMS_CURVE_FIT: [&str; N_ALGO_CURVE_FIT] = [
     "mcmc-lmsder",
 ];
 
+#[derive(FromPyObject)]
+pub(crate) enum FitLnPrior<'a> {
+    #[pyo3(transparent, annotation = "str")]
+    Name(&'a str),
+    #[pyo3(transparent, annotation = "list[LnPrior]")]
+    ListLnPrior1D(Vec<LnPrior1D>),
+}
+
 macro_rules! fit_evaluator {
     ($name: ident, $eval: ty, $ib: ty, $nparam: literal, $ln_prior_by_str: tt, $ln_prior_doc: literal $(,)?) => {
         #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
@@ -590,7 +599,7 @@ macro_rules! fit_evaluator {
                 lmsder_niter: Option<u16>,
                 init: Option<Vec<Option<f64>>>,
                 bounds: Option<Vec<(Option<f64>, Option<f64>)>>,
-                ln_prior: Option<&str>,
+                ln_prior: Option<FitLnPrior<'_>>,
             ) -> PyResult<(Self, PyFeatureEvaluator)> {
                 let mcmc_niter = mcmc_niter.unwrap_or_else(lcf::McmcCurveFit::default_niterations);
 
@@ -634,7 +643,21 @@ macro_rules! fit_evaluator {
                 };
 
                 let ln_prior = match ln_prior {
-                    Some(s) => match s $ln_prior_by_str,
+                    Some(ln_prior) => match ln_prior {
+                        FitLnPrior::Name(s) => match s $ln_prior_by_str,
+                        FitLnPrior::ListLnPrior1D(v) => {
+                            let v: Vec<_> = v.into_iter().map(|py_ln_prior1d| py_ln_prior1d.0).collect();
+                            lcf::LnPrior::ind_components(
+                                v.try_into().map_err(|v: Vec<_>| Exception::ValueError(
+                                    format!(
+                                        "ln_prior must have length of {}, not {}",
+                                        $nparam,
+                                        v.len())
+                                    )
+                                )?
+                            ).into()
+                        }
+                    },
                     None => lcf::LnPrior::none().into(),
                 };
 
