@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - The project repository was split from Rust crates and moved into <https://gituhb.com/light-curve/light-curve-python>
+- `light-curve-dmdt` version 0.5.0
 
 ### Deprecated
 
