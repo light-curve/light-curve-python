@@ -60,6 +60,35 @@ jobs:
         command: clippy
         args: --manifest-path=light-curve/Cargo.toml --all-targets -- -D warnings
 
+  sdist:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: light-curve
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python_minor: [ '6', '7', '8', '9', '10' ]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Set up Python 3.${{ matrix.python_minor }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.${{ matrix.python_minor }}"
+      - name: Install maturin
+        run: pip install maturin
+      - name: Create sdist
+        run: maturin build -i
+      - name: Install from sdist
+        run: pip install target/wheels/*.tar.gz
+
   build:
     runs-on: ubuntu-latest
 
@@ -68,16 +97,16 @@ jobs:
       matrix:
         include:
         - name: 'default features'
-          cargo_extra_args: ''
+          cargo_extra_args: '--frozen'
           install_fftw: false
         - name: 'dynamically linked FFTW'
-          cargo_extra_args: '--no-default-features --features fftw-dynamic'
+          cargo_extra_args: '--frozen --no-default-features --features fftw-dynamic'
           install_fftw: true
         - name: 'dynamically linked FFTW + GSL'
-          cargo_extra_args: '--no-default-features --features fftw-dynamic,gsl'
+          cargo_extra_args: '--frozen --no-default-features --features fftw-dynamic,gsl'
           install_fftw: true
         - name: 'MKL + GSL'
-          cargo_extra_args: '--no-default-features --features mkl,gsl'
+          cargo_extra_args: '--frozen --no-default-features --features mkl,gsl'
           install_fftw: false
 
     defaults:
