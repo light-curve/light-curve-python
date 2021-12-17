@@ -12,8 +12,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-      with:
-        submodules: true
     - name: Install FFTW
       run: |
         sudo apt-get update
@@ -73,8 +71,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-      with:
-        submodules: true
     - name: build python
       run: maturin build
       working-directory: light-curve
