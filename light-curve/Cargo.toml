@@ -13,6 +13,10 @@ rust-version = "1.56"
 name = "light_curve"
 crate-type = ["cdylib"]
 
+[profile.release]
+lto = true
+codegen-units = 1
+
 [features]
 default = ["fftw-static", "gsl"]
 fftw-static = ["light-curve-feature/fftw-source"]
