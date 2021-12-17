@@ -9,12 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `ln_prior: Optional[str]` is added to `BazinFit` (not really useful) and `VillarFit` ('no' and 'hosseinzadeh2020' values are available)
+—
 
 ### Changed
 
-- The project repository was split from Rust crates and moved into <https://gituhb.com/light-curve/light-curve-python>
-- `light-curve-dmdt` version 0.5.0
+—
 
 ### Deprecated
 
@@ -31,6 +30,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 —
+
+## [0.5.4]
+
+### Added
+
+- `ln_prior: Optional[str]` is added to `BazinFit` (not really useful) and `VillarFit` ('no' and 'hosseinzadeh2020' values are available)
+
+### Changed
+
+- The project repository was split from Rust crates and moved into <https://gituhb.com/light-curve/light-curve-python>
+- `light-curve-dmdt` version 0.5.0
 
 ## [0.5.3]
 
