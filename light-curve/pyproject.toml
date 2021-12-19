@@ -1,5 +1,5 @@
 [build-system]
-requires = ["maturin>=0.12,<0.13"]
+requires = ["maturin>=0.12.5b2,<0.13"]
 build-backend = "maturin"
 
 [project]
@@ -10,7 +10,6 @@ classifier = ["Intended Audience :: Science/Research", "License :: OSI Approved 
 [tool.maturin]
 # It asks to use Cargo.lock to make the build reproducible
 cargo-extra-args = "--frozen"
-sdist-include = ["Cargo.lock"]
 
 [tool.black]
 line-length = 120

@@ -9,11 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `ln_prior` submodule with `LnPrior1D` class and stand-alone functions to construct its instances
+—
 
 ### Changed
 
-- `ln_prior` argument of `BazinFit` and `VaillarFit` accepts `list[lc_prior.LnPrior1D]`
+- Require maturin '>=0.12.15,<0.13'
 
 ### Deprecated
 
