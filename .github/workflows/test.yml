@@ -68,16 +68,16 @@ jobs:
       matrix:
         include:
         - name: 'default features'
-          cargo_extra_args: '--frozen'
+          cargo_extra_args: '--locked'
           install_fftw: false
         - name: 'dynamically linked FFTW'
-          cargo_extra_args: '--frozen --no-default-features --features fftw-dynamic'
+          cargo_extra_args: '--locked --no-default-features --features fftw-dynamic'
           install_fftw: true
         - name: 'dynamically linked FFTW + GSL'
-          cargo_extra_args: '--frozen --no-default-features --features fftw-dynamic,gsl'
+          cargo_extra_args: '--locked --no-default-features --features fftw-dynamic,gsl'
           install_fftw: true
         - name: 'MKL + GSL'
-          cargo_extra_args: '--frozen --no-default-features --features mkl,gsl'
+          cargo_extra_args: '--locked --no-default-features --features mkl,gsl'
           install_fftw: false
 
     defaults:
