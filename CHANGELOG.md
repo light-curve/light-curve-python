@@ -9,11 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `Cargo.lock` is used to build the release packages and added to sdist, this makes installation from source package more reproducible
+—
 
 ### Changed
 
-- Require maturin '>=0.12.15,<0.13'
+—
 
 ### Deprecated
 
@@ -36,10 +36,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `ln_prior: Optional[str]` is added to `BazinFit` (not really useful) and `VillarFit` ('no' and 'hosseinzadeh2020' values are available)
+- `Cargo.lock` is used to build the release packages and added to sdist, this makes installation from source package more reproducible
 
 ### Changed
 
 - The project repository was split from Rust crates and moved into <https://gituhb.com/light-curve/light-curve-python>
+- Require maturin '>=0.12.15,<0.13'
 - `light-curve-dmdt` version 0.5.0
 
 ## [0.5.3]
