@@ -11,14 +11,15 @@ def warn_experimental(msg):
 
 
 def mark_experimental(msg=None):
-    if msg is None:
-        full_name = "{}.{}".format(f.__module__, f.__name__)
-        msg = "Function {} is experimental and may cause any kind of troubles".format(full_name)
-
     def inner(f):
+        message = msg
+        if message is None:
+            full_name = f"{f.__module__}.{f.__name__}"
+            message = f"Function {full_name} is experimental and may cause any kind of troubles"
+
         @functools.wraps(f)
         def wrapped(*args, **kwargs):
-            warn_experimental(msg)
+            warn_experimental(message)
             return f(*args, **kwargs)
 
         return wrapped
