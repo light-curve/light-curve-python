@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-—
+- `Cargo.lock` is used to build the release packages and added to sdist, this makes installation from source package more reproducible
 
 ### Changed
 
