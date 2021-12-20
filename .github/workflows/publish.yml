@@ -85,7 +85,7 @@ jobs:
     - name: Run Python tests
       run: tox -p -q
     - name: Publish macOS light-curve packages
-      run: maturin publish --cargo-extra-args="--locked --no-default-features --features fftw-static,gsl" -i python3.6 python3.7 python3.8 python3.9 python3.10 -u __token__ -p ${{ secrets.PYPI_TOKEN_LIGHT_CURVE }}
+      run: maturin publish -i python3.6 python3.7 python3.8 python3.9 python3.10 -u __token__ -p ${{ secrets.PYPI_TOKEN_LIGHT_CURVE }}
 
   publish-light-curve-python:
     runs-on: ubuntu-latest
