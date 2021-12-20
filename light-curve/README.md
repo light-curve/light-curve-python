@@ -48,7 +48,7 @@ extractor = lc.Extractor(amplitude, beyond_std, linear_fit)
 # Array with all 5 extracted features
 result = extractor(t, m, err, sorted=True, check=False)
 
-print('\n'.join("{} = {:.2f}".format(name, value) for name, value in zip(extractor.names, result)))
+print('\n'.join(f"{name} = {value:.2f}" for name, value in zip(extractor.names, result)))
 
 # Run in parallel for multiple light curves:
 results = amplitude.many(
