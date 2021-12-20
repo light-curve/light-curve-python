@@ -35,13 +35,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `ln_prior: Optional[str]` is added to `BazinFit` (not really useful) and `VillarFit` ('no' and 'hosseinzadeh2020' values are available)
-- `Cargo.lock` is used to build the release packages and added to sdist, this makes installation from source package more reproducible
+- `ln_prior` submodule with `LnPrior1D` class and stand-alone functions to construct its instances
+- `ln_prior` argument for `BazinFit` and `VillarFit` constructors which can be one of: `None`, `str` literals (currently the only useful value is 'hosseinzadeh2020' for `VillarFit`) or `list[LnPrior1D]`
+- `Cargo.lock` is used to build the release packages and it is added to sdist, all these should make builds more responsible
 
 ### Changed
 
 - The project repository was split from Rust crates and moved into <https://gituhb.com/light-curve/light-curve-python>
-- Require maturin '>=0.12.15,<0.13'
+- Maturin '>=0.12.15,<0.13' is required
 - `light-curve-dmdt` version 0.5.0
 
 ## [0.5.3]
