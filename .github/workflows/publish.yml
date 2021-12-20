@@ -29,7 +29,7 @@ jobs:
     - name: Build docker image
       run: docker buildx build --platform=${{ matrix.platform }} --build-arg='ARCH=${{ matrix.arch }}' --no-cache --tag maturin -f .ci/Dockerfile.maturin .ci
     - name: Build wheels
-      run: docker run --platform=${{ matrix.platform }} --rm -v $(realpath light-curve):/io maturin build --release -i python3.6 python3.7 python3.8 python3.9 python3.10 --cargo-extra-args="--no-default-features --features ${{ matrix.fftw_feature }},gsl"
+      run: docker run --platform=${{ matrix.platform }} --rm -v $(realpath light-curve):/io maturin build --release -i python3.6 python3.7 python3.8 python3.9 python3.10 --cargo-extra-args="--locked --no-default-features --features ${{ matrix.fftw_feature }},gsl"
     - name: Run Python tests for x86_64 only
       if: ${{ matrix.arch == 'x86_64' }}
       run: docker run --platform=${{ matrix.platform }} --rm -v $(realpath light-curve):/io --entrypoint=/bin/bash maturin -c 'python3.6 -m pip install target/wheels/*cp36*.whl && python3.7 -m pip install target/wheels/*cp37*.whl && python3.8 -m pip install target/wheels/*cp38*.whl && python3.9 -m pip install target/wheels/*cp39*.whl && python3.10 -m pip install target/wheels/*cp310*.whl && tox -p --skip-pkg-install --sitepackages'
@@ -85,7 +85,7 @@ jobs:
     - name: Run Python tests
       run: tox -p -q
     - name: Publish macOS light-curve packages
-      run: maturin publish --cargo-extra-args="--no-default-features --features fftw-static,gsl" -i python3.6 python3.7 python3.8 python3.9 python3.10 -u __token__ -p ${{ secrets.PYPI_TOKEN_LIGHT_CURVE }}
+      run: maturin publish --cargo-extra-args="--locked --no-default-features --features fftw-static,gsl" -i python3.6 python3.7 python3.8 python3.9 python3.10 -u __token__ -p ${{ secrets.PYPI_TOKEN_LIGHT_CURVE }}
 
   publish-light-curve-python:
     runs-on: ubuntu-latest
