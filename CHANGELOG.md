@@ -37,7 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `ln_prior` submodule with `LnPrior1D` class and stand-alone functions to construct its instances
 - `ln_prior` argument for `BazinFit` and `VillarFit` constructors which can be one of: `None`, `str` literals (currently the only useful value is 'hosseinzadeh2020' for `VillarFit`) or `list[LnPrior1D]`
-- `Cargo.lock` is used to build the release packages and it is added to sdist, all these should make builds more responsible
+- `Cargo.lock` is used to build the release packages and it is added to sdist, all these should make builds more reproducible
 
 ### Changed
 
