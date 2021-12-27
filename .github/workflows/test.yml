@@ -61,22 +61,38 @@ jobs:
         args: --manifest-path=light-curve/Cargo.toml --all-targets -- -D warnings
 
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     strategy:
       fail-fast: false
       matrix:
         include:
-        - name: 'default features'
+        - name: 'Linux default features'
+          os: 'ubuntu-latest'
           cargo_extra_args: '--locked'
           install_fftw: false
-        - name: 'dynamically linked FFTW'
+        - name: 'macOS default features'
+          os: 'macos-10.15'
+          cargo_extra_args: '--locked'
+          install_fftw: false
+        - name: 'Linux dynamically linked FFTW'
+          os: 'ubuntu-latest'
           cargo_extra_args: '--locked --no-default-features --features fftw-dynamic'
           install_fftw: true
-        - name: 'dynamically linked FFTW + GSL'
+        - name: 'macOS dynamically linked FFTW'
+          os: 'macos-10.15'
+          cargo_extra_args: '--locked --no-default-features --features fftw-dynamic'
+          install_fftw: true
+        - name: 'Linux dynamically linked FFTW + GSL'
+          os: 'ubuntu-latest'
           cargo_extra_args: '--locked --no-default-features --features fftw-dynamic,gsl'
           install_fftw: true
-        - name: 'MKL + GSL'
+        - name: 'macOS dynamically linked FFTW + GSL'
+          os: 'macos-10.15'
+          cargo_extra_args: '--locked --no-default-features --features fftw-dynamic,gsl'
+          install_fftw: true
+        - name: 'Linux MKL + GSL'
+          os: 'ubuntu-latest'
           cargo_extra_args: '--locked --no-default-features --features mkl,gsl'
           install_fftw: false
 
@@ -86,11 +102,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Install FFTW
-      if: ${{ matrix.install_fftw }}
+    - name: Install FFTW, Linux
+      if: ${{ matrix.install_fftw && startsWith( matrix.os, 'ubuntu' ) }}
       run: |
         sudo apt-get update
         sudo apt-get install libfftw3-dev
+    - name: Install FFTW, macOS
+      if: ${{ matrix.install_fftw && startsWith( matrix.os, 'macos' ) }}
+      run: brew install fftw
     - name: Set up Rust
       uses: actions-rs/toolchain@v1
       with:
