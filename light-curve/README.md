@@ -1,6 +1,6 @@
 # `light-curve` processing toolbox for Python
 
-The Python wrapper for Rust [`light-curve-feature`](https://github.com/light-curve/light-curve) and [`light-curve-dmdt`](https://github.com/light-curve/light-curve) packages which gives a collection of high-performant time-series feature extractors.
+The Python wrapper for Rust [`light-curve-feature`](https://github.com/light-curve/light-curve-feature) and [`light-curve-dmdt`](https://github.com/light-curve/light-curve-dmdt) packages which gives a collection of high-performant time-series feature extractors.
 
 [![PyPI version](https://badge.fury.io/py/light-curve.svg)](https://pypi.org/project/light-curve/)
 ![testing](https://github.com/light-curve/light-curve-python/actions/workflows/test.yml/badge.svg)
