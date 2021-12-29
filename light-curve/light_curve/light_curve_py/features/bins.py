@@ -1,6 +1,7 @@
+from dataclasses import dataclass
+
 import numpy as np
 from scipy import ndimage
-from dataclasses import dataclass
 
 from ._base_meta import BaseMetaFeature
 

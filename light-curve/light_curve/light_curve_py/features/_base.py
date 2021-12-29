@@ -1,9 +1,9 @@
-import numpy as np
-
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from light_curve.light_curve_py.warnings import warn_experimental, mark_experimental
+import numpy as np
+
+from light_curve.light_curve_py.warnings import mark_experimental, warn_experimental
 
 
 @dataclass

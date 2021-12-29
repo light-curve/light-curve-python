@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from ._base import BaseFeature
 
 from scipy.stats.mstats import mquantiles
+
+from ._base import BaseFeature
 
 
 @dataclass()

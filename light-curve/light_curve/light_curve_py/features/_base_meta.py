@@ -2,9 +2,11 @@ from abc import abstractmethod
 from dataclasses import dataclass, field
 from typing import Collection, Union
 
+from light_curve.light_curve_ext import Extractor as _RustExtractor
+from light_curve.light_curve_ext import _FeatureEvaluator as _RustBaseFeature
+
 from ._base import BaseFeature
 from .extractor import Extractor, _PyExtractor
-from light_curve.light_curve_ext import Extractor as _RustExtractor, _FeatureEvaluator as _RustBaseFeature
 
 
 @dataclass

@@ -22,7 +22,12 @@ repos:
     hooks:
     -   id: black
         name: black
-        args: [--config=./light-curve/pyproject.toml, ./light-curve]
+        args: ['--config=./light-curve/pyproject.toml', './light-curve']
+-   repo: https://github.com/pycqa/isort
+    rev: 5.6.4
+    hooks:
+    -   id: isort
+        args: ['--profile=black', '--filter-files']
 -   repo: https://github.com/doublify/pre-commit-rust
     rev: v1.0
     hooks:
