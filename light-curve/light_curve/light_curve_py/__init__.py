@@ -23,11 +23,6 @@ from .features.etae import *
 from .features.lintrend import *
 from .features.linfit import *
 from .features.stetsonk import *
-from .features.weightmean import *
-from .features.adnormal import *
-from .features.redchi2 import *
-from .features.medabsdev import *
-from .features.percampl import *
 from .features.extractor import *
 from .features.bins import *
 from .features.otsusplit import *
