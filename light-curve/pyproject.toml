@@ -16,6 +16,9 @@ line-length = 120
 target-version = ["py36", "py37", "py38", "py39", "py310"]
 include = '\.py$'
 
+[tool.isort]
+profile = 'black'
+
 [tool.pytest.ini_options]
 minversion = "6.0"
 # requires pytest-benchmark

@@ -1,8 +1,7 @@
 import numpy as np
 from numpy.testing import assert_allclose
 
-from light_curve.light_curve_py import EtaE
-from light_curve.light_curve_py import Eta
+from light_curve.light_curve_py import Eta, EtaE
 
 
 def test_etae_1():

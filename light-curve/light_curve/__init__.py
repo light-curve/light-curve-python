@@ -1,3 +1,7 @@
+# Prevent isort to sort imports in this file
+# isort: skip_file
+
+# Import all Python features
 from .light_curve_py import *
 
 # Hide Python features with Rust equivalents

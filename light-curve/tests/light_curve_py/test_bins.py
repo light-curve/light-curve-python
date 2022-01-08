@@ -1,6 +1,6 @@
 import numpy as np
 
-from light_curve.light_curve_py import Bins, Mean, Amplitude, Median
+from light_curve.light_curve_py import Amplitude, Bins, Mean, Median
 
 
 def test_bins_1():

@@ -1,8 +1,9 @@
-import numpy as np
-
 from dataclasses import dataclass
-from ._base import BaseFeature
+
+import numpy as np
 from scipy.stats.mstats import mquantiles
+
+from ._base import BaseFeature
 
 
 @dataclass()
