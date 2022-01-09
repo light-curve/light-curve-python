@@ -3,135 +3,154 @@ name: Test
 on: [push, pull_request]
 
 jobs:
-  rust:
-
+  test:
     runs-on: ubuntu-latest
 
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: true
-    - name: Install FFTW and GSL
-      run: |
-        sudo apt-get update
-        sudo apt-get install libfftw3-dev libgsl-dev
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-    - name: Build
-      uses: actions-rs/cargo@v1
-      with:
-        command: build
-        args: --workspace --all-targets --exclude light-curve-python
-    - name: Build light-curve-feature gsl+fftw-source
-      uses: actions-rs/cargo@v1
-      with:
-        command: build
-        args: --manifest-path=light-curve-feature/Cargo.toml --all-targets --no-default-features --features gsl,fftw-source
-    - name: Build light-curve-feature gsl+fftw-system
-      uses: actions-rs/cargo@v1
-      with:
-        command: build
-        args: --manifest-path=light-curve-feature/Cargo.toml --all-targets --no-default-features --features gsl,fftw-system
-    - name: Build light-curve-feature gsl+fftw-mkl
-      uses: actions-rs/cargo@v1
-      with:
-        command: build
-        args: --manifest-path=light-curve-feature/Cargo.toml --all-targets --no-default-features --features gsl,fftw-mkl
-    - name: Run tests
-      uses: actions-rs/cargo@v1
-      with:
-        command: test
-        args: --workspace --exclude light-curve-python
-    - name: Run examples
-      uses: actions-rs/cargo@v1
-      with:
-        command: run
-        args: --example plot_snia_curve_fits -- -n=1
-    - name: Check formatting
-      uses: actions-rs/cargo@v1
-      with:
-        command: fmt
-        args: -- --check
-    - name: Run code analysis
-      uses: actions-rs/cargo@v1
-      with:
-        command: clippy
-        args: --workspace --exclude light-curve-python --all-targets -- -D warnings
-
-
-  python:
-
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python_minor: ['6', '7', '8', '9', '10']
 
     defaults:
       run:
-        working-directory: python/light-curve
+        working-directory: light-curve
 
     steps:
     - uses: actions/checkout@v2
-      with:
-        submodules: true
-    - name: Install FFTW
-      run: |
-        sudo apt-get update
-        sudo apt-get install libfftw3-dev
-    - name: Set up Python 3.6
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.6
-    - name: Set up Python 3.7
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.7
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.9
     - name: Set up Rust
       uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
-    - name: Install maturin, tox and black
-      run: pip install maturin tox black
-    - name: Build package with static FFTW
-      run: maturin build
-    - name: Build package with dynamic FFTW and GSL
-      run: maturin build --manylinux=off --cargo-extra-args="--no-default-features --features fftw-dynamic,gsl"
-    - name: Build package with dynamic MKL and GSL
-      run: maturin build --manylinux=off --cargo-extra-args="--no-default-features --features mkl,gsl"
+    - name: Set up Python 3.${{ matrix.python_minor }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: "3.${{ matrix.python_minor }}"
+    - name: Install tox
+      run: pip install tox
+    - name: Run Python tests
+      run: tox -p -q -e py3${{ matrix.python_minor }}
+
+  cargo-fmt:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
     - name: Check Rust formatting
       uses: actions-rs/cargo@v1
       with:
         command: fmt
-        args: --package=light-curve-python -- --check
+        args: --manifest-path=light-curve/Cargo.toml -- --check
+
+  cargo-clippy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
     - name: Run Rust code analysis
       uses: actions-rs/cargo@v1
       with:
         command: clippy
-        args: --package=light-curve-python --all-targets -- -D warnings
-    - name: Check Python formatting
-      run: black --check .
-    - name: Run Python tests
-      run: tox -p -q
-    - name: Check Python formatting
-      run: black --check --diff .
+        args: --manifest-path=light-curve/Cargo.toml --all-targets -- -D warnings
 
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - name: 'Linux, default features'
+          os: 'ubuntu-latest'
+          cargo_extra_args: '--locked'
+          install_fftw: false
+        - name: 'macOS, default features'
+          os: 'macos-10.15'
+          cargo_extra_args: '--locked'
+          install_fftw: false
+        - name: 'Linux, dynamically linked FFTW'
+          os: 'ubuntu-latest'
+          cargo_extra_args: '--locked --no-default-features --features fftw-dynamic'
+          install_fftw: true
+        - name: 'macOS, dynamically linked FFTW'
+          os: 'macos-10.15'
+          cargo_extra_args: '--locked --no-default-features --features fftw-dynamic'
+          install_fftw: true
+        - name: 'Linux, dynamically linked FFTW + GSL'
+          os: 'ubuntu-latest'
+          cargo_extra_args: '--locked --no-default-features --features fftw-dynamic,gsl'
+          install_fftw: true
+        - name: 'macOS, dynamically linked FFTW + GSL'
+          os: 'macos-10.15'
+          cargo_extra_args: '--locked --no-default-features --features fftw-dynamic,gsl'
+          install_fftw: true
+        - name: 'Linux, MKL + GSL'
+          os: 'ubuntu-latest'
+          cargo_extra_args: '--locked --no-default-features --features mkl,gsl'
+          install_fftw: false
+
+    defaults:
+      run:
+        working-directory: light-curve
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install GSL, macOS
+      if: ${{ startsWith( matrix.os, 'macos' ) }}
+      run: brew install gsl
+    - name: Install FFTW, Linux
+      if: ${{ matrix.install_fftw && startsWith( matrix.os, 'ubuntu' ) }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install libfftw3-dev
+    - name: Install FFTW, macOS
+      if: ${{ matrix.install_fftw && startsWith( matrix.os, 'macos' ) }}
+      run: brew install fftw
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.6'
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.7'
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.10'
+    - name: Install maturin
+      run: pip install maturin
+    - name: Build for ${{ matrix.name }}
+      run: maturin build --manylinux=off --cargo-extra-args='${{ matrix.cargo_extra_args }}'
 
   arm:
 
     runs-on: [self-hosted, linux, ARM64]
 
+    defaults:
+      run:
+        working-directory: light-curve
+
     steps:
     - uses: actions/checkout@v2
-      with:
-        submodules: true
-    - name: build all but python
-      run: cargo build --workspace --all-targets --exclude light-curve-python
-    - name: build python
+    - name: Build
       run: maturin build
-      working-directory: python/light-curve

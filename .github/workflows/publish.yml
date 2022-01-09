@@ -1,0 +1,111 @@
+name: Publish Python packages
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  publish-linux:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - fftw_feature: mkl
+            arch: x86_64
+            platform: linux/amd64
+          - fftw_feature: fftw-static
+            arch: aarch64
+            platform: linux/arm64
+          - fftw_feature: fftw-static
+            arch: ppc64le
+            platform: linux/ppc64le
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up QEMU for Docker Buildx
+      uses: docker/setup-qemu-action@v1
+    - name: Build docker image
+      run: docker buildx build --platform=${{ matrix.platform }} --build-arg='ARCH=${{ matrix.arch }}' --no-cache --tag maturin -f .ci/Dockerfile.maturin .ci
+    - name: Build wheels
+      run: docker run --platform=${{ matrix.platform }} --rm -v $(realpath light-curve):/io maturin build --release -i python3.6 python3.7 python3.8 python3.9 python3.10 --cargo-extra-args="--locked --no-default-features --features ${{ matrix.fftw_feature }},gsl"
+    - name: Run Python tests for x86_64 only
+      if: ${{ matrix.arch == 'x86_64' }}
+      run: docker run --platform=${{ matrix.platform }} --rm -v $(realpath light-curve):/io --entrypoint=/bin/bash maturin -c 'python3.6 -m pip install target/wheels/*cp36*.whl && python3.7 -m pip install target/wheels/*cp37*.whl && python3.8 -m pip install target/wheels/*cp38*.whl && python3.9 -m pip install target/wheels/*cp39*.whl && python3.10 -m pip install target/wheels/*cp310*.whl && tox -p --skip-pkg-install --sitepackages'
+    - name: Set up Python
+      uses: actions/setup-python@v2
+    - name: Install twine
+      run: python3 -mpip install twine
+    - name: Publish light-curve wheels
+      run: |
+        twine check --strict *.whl
+        twine upload *.whl -u __token__ -p ${{ secrets.PYPI_TOKEN_LIGHT_CURVE }} --verbose
+      working-directory: light-curve/target/wheels
+
+  publish-macos:
+    runs-on: macos-10.15
+
+    defaults:
+      run:
+        working-directory: light-curve
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.6'
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.7'
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.10'
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+    - name: Install GSL and keep static libs only
+      run: |
+        brew install gsl
+        brew list -v gsl | grep '.dylib' | xargs rm -vf
+    - name: Install tox and maturin
+      run: pip install tox maturin
+    - name: Run Python tests
+      run: tox -p -q
+    - name: Publish macOS light-curve packages
+      run: maturin publish -i python3.6 python3.7 python3.8 python3.9 python3.10 -u __token__ -p ${{ secrets.PYPI_TOKEN_LIGHT_CURVE }}
+
+  publish-light-curve-python:
+    runs-on: ubuntu-latest
+
+    needs: [publish-linux, publish-macos]
+
+    defaults:
+      run:
+        working-directory: light-curve-python
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+    - name: Install deps
+      run: |
+        python3 -mpip install -U pip setuptools
+        python3 -mpip install toml twine
+    - name: Publish light-curve-python package
+      run: |
+        python3 setup.py sdist
+        twine check --strict dist/*
+        twine upload dist/* -u __token__ -p ${{ secrets.PYPI_TOKEN_LIGHT_CURVE_PYTHON }} --verbose
