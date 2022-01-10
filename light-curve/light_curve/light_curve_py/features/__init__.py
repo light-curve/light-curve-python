@@ -7,10 +7,12 @@ from .eta import *
 from .etae import *
 from .excvar import *
 from .extractor import *
+from .flux_n_not_det_before_fd import *
 from .intpercrange import *
 from .kurtosis import *
 from .linfit import *
 from .lintrend import *
+from .magnitude_n_not_det_before_fd import *
 from .magnpratio import *
 from .maxslope import *
 from .mean import *
