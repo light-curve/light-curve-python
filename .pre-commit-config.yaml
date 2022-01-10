@@ -2,22 +2,47 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.3.0
+    rev: v4.1.0
     hooks:
-    -   id: trailing-whitespace
-    -   id: end-of-file-fixer
+    -   id: trailing-whitespace # trims trailing whitespace
+    -   id: end-of-file-fixer # ensures that a file is either empty, or ends with one newline
     -   id: check-yaml
+    -   id: check-toml
     -   id: check-added-large-files
+    -   id: mixed-line-ending # replaces or checks mixed line ending
+    -   id: check-symlinks # checks for symlinks which do not point to anything
+    -   id: check-case-conflict # checks for files that would conflict in case-insensitive filesystems
+    # Git
+    -   id: check-merge-conflict # checks for files that contain merge conflict strings
+    # Python
+    -   id: check-docstring-first # checks a common error of defining a docstring after code
+    -   id: debug-statements # checks for debugger imports and py37+ `breakpoint()` calls in python source
 -   repo: https://github.com/psf/black
-    rev: 20.8b1
+    rev: 21.12b0
     hooks:
     -   id: black
         name: black
-        args: [--config=python/light-curve/pyproject.toml, ./python/light-curve]
+        args: ['--config=./light-curve/pyproject.toml', './light-curve']
+-   repo: https://github.com/pycqa/isort
+    rev: 5.6.4
+    hooks:
+    -   id: isort
+        args: ['--profile=black', '--filter-files']
 -   repo: https://github.com/doublify/pre-commit-rust
     rev: v1.0
     hooks:
     -   id: fmt
         name: cargo fmt
+        args: ['--manifest-path=light-curve/Cargo.toml', '--']
+    -   id: cargo-check
+        name: cargo check
+        args: ['--manifest-path=light-curve/Cargo.toml', '--']
     -   id: clippy
         name: cargo clippy
+        args: ['--manifest-path=light-curve/Cargo.toml', '--']
+
+# pre-commit.ci settings
+# Skip rust things due to
+# https://github.com/pre-commit-ci/issues/issues/89
+ci:
+    skip: [clippy, cargo-check, fmt]

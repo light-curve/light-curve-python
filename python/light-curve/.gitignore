@@ -1,9 +1,0 @@
-__pycache__/
-*.so
-build/
-dist/
-*.egg-info/
-.benchmarks/
-.pytest_cache/
-.tox/
-*.pyc
