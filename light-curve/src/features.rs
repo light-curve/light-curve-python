@@ -21,10 +21,14 @@ names : list of str
 descriptions : list of str
     Feature descriptions"#;
 
-const METHOD_CALL_DOC: &str = r#"Methods
--------
-__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)
-    Extract features and return them as a numpy array
+const METHOD_CALL_SIGNATURE: &str =
+    r#"__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)"#;
+
+const METHOD_CALL_SHORT_DOC: &str = r#"Extract features and return them as a numpy array"#;
+
+const METHOD_CALL_DOC: &str = formatcp!(
+    r#"{signature}
+    {short}
 
     Parameters
     ----------
@@ -50,11 +54,19 @@ __call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)
     Returns
     -------
     ndarray of np.float32 or np.float64
-        Extracted feature array"#;
+        Extracted feature array"#,
+    signature = METHOD_CALL_SIGNATURE,
+    short = METHOD_CALL_SHORT_DOC,
+);
 
-const METHOD_MANY_DOC: &str = r#"
-many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)
-    Parallel light curve feature extraction
+const METHOD_MANY_SIGNATURE: &str =
+    r#"many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)"#;
+
+const METHOD_MANY_SHORT_DOC: &str = r#"Parallel version of __call__"#;
+
+const METHOD_MANY_DOC: &str = formatcp!(
+    r#"{signature}
+    {short}
 
     It is a parallel executed equivalent of
     >>> def many(lcs, sorted=None, fill_value=None):
@@ -77,7 +89,10 @@ many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)
     n_jobs : int
         Number of tasks to run in paralell. Default is -1 which means run as
         many jobs as CPU count. See rayon rust crate documentation for
-        details"#;
+        details"#,
+    signature = METHOD_MANY_SIGNATURE,
+    short = METHOD_MANY_SHORT_DOC
+);
 
 const METHODS_DOC: &str = formatcp!(
     r#"Methods
@@ -88,10 +103,94 @@ const METHODS_DOC: &str = formatcp!(
     METHOD_MANY_DOC,
 );
 
-const COMMON_FEATURE_DOC: &str = formatcp!("\n{}\n\n{}\n", ATTRIBUTES_DOC, METHODS_DOC);
+const METHODS_SHORT_PDOC: &str = formatcp!(
+    r#"Methods
+-------
+**`{call_signature}`**
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{call_short}
+**`{many_signature}`**
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{many_short}
+"#,
+    call_signature = METHOD_CALL_SIGNATURE,
+    call_short = METHOD_CALL_SHORT_DOC,
+    many_signature = METHOD_MANY_SIGNATURE,
+    many_short = METHOD_MANY_SHORT_DOC
+);
+
+const METHODS_SHORT_DOC: &str = formatcp!(
+    r#"Methods
+-------
+{call_signature}
+    {call_short}
+{many_signature}
+    {many_short}
+"#,
+    call_signature = METHOD_CALL_SIGNATURE,
+    call_short = METHOD_CALL_SHORT_DOC,
+    many_signature = METHOD_MANY_SIGNATURE,
+    many_short = METHOD_MANY_SHORT_DOC
+);
+
+const COMMON_FEATURE_DOC: &str = formatcp!(
+    r#"
+{}
+
+{}
+"#,
+    ATTRIBUTES_DOC,
+    METHODS_SHORT_DOC
+);
+
+const COMMON_FEATURE_PDOC: &str = formatcp!(
+    r#"
+{}
+
+{}
+"#,
+    ATTRIBUTES_DOC,
+    METHODS_SHORT_PDOC
+);
 
 type PyLightCurve<'a, T> = (Arr<'a, T>, Arr<'a, T>, Option<Arr<'a, T>>);
 
+/// Base class for all feature evaluators having low-level Rust implementation
+///
+/// Follow child classes for constructor and specific methods documentation.
+///
+/// Here we present `__call__` method description which is implemented in
+/// this base class and common for all children:
+///
+/// Parameters
+/// ----------
+/// t : numpy.ndarray of np.float32 or np.float64 dtype
+///     Time moments
+/// m : numpy.ndarray of the same dtype as t
+///     Signal in magnitude or fluxes. Refer to the feature description to
+///     decide which would work better in your case
+/// sigma : numpy.ndarray of the same dtype as t, optional
+///     Observation error, if None it is assumed to be unity
+/// sorted : bool or None, optional
+///     Specifies if input array are sorted by time moments.
+///     True is for certainly sorted, False is for unsorted.
+///     If None is specified than sorting is checked and an exception is
+///     raised for unsorted `t`
+/// check : bool, optional
+///     Check all input arrays for NaNs, `t` and `m` for infinite values
+/// fill_value : float or None, optional
+///     Value to fill invalid feature values, for example if count of
+///     observations is not enough to find a proper value.
+///     None causes exception for invalid features
+///
+/// Returns
+/// -------
+/// ndarray of np.float32 or np.float64
+///     Extracted feature array
+///
+/// Notes
+/// -----
+/// This class couldn't be used to create new user-defined features, because
+/// it doesn't have a constructor. Consider to use `BaseFeature` class from
+/// high-level Python implementation instead.
 #[pyclass(
     subclass,
     name = "_FeatureEvaluator",
@@ -407,6 +506,35 @@ impl PyFeatureEvaluator {
         }
     }
 
+    /// Extract features from many light curves in parallel
+    ///
+    /// It is an optimized and parallel executed analogue of
+    /// >>> def many(self, lcs, sorted=None, fill_value=None):
+    /// ...     return np.stack([self(*lc, sorted=sorted, fill_value=fill_value)
+    /// ...                      for lc in lcs])
+    ///
+    /// Parameters
+    /// ----------
+    /// lcs : list ot (t, m, sigma)
+    ///     A collection of light curves packed into three-tuples, all light curves
+    ///     must be represented by numpy.ndarray of the same dtype. See class-level
+    ///     documentation for more details
+    /// sorted : bool or None, optional
+    ///     Specifies if input array are sorted by time moments, see class-level
+    ///     documentation for more details
+    /// check : bool, optional
+    ///     Check all input arrays for NaNs, `t` and `m` for infinite values
+    /// fill_value : float or None, optional
+    ///     Fill invalid values by this or raise an exception if None
+    /// n_jobs : int
+    ///     Number of tasks to run in paralell. Default is -1 which means run as
+    ///     many jobs as CPU count. See rayon rust crate documentation for
+    ///     details
+    ///
+    /// Returns
+    /// -------
+    /// features : np.ndarray
+    ///     Output feature array, shape is `(len(lcs), n_features)`
     #[args(lcs, sorted = "None", check = "true", fill_value = "None", n_jobs = -1)]
     fn many(
         &self,
@@ -490,6 +618,22 @@ impl Extractor {
     }
 
     #[classattr]
+    fn __pdoc__() -> String {
+        format!(
+            r#"{}
+
+Parameters
+----------
+*features : iterable
+    Feature objects
+{}
+"#,
+            lcf::FeatureExtractor::<f64, lcf::Feature<f64>>::doc().trim_start(),
+            COMMON_FEATURE_PDOC,
+        )
+    }
+
+    #[classattr]
     fn __doc__() -> String {
         format!(
             r#"{}
@@ -523,6 +667,11 @@ macro_rules! evaluator {
                         feature_evaluator_f64: <$eval>::new().into(),
                     },
                 )
+            }
+
+            #[classattr]
+            fn __pdoc__() -> String {
+                format!("{}{}", <$eval>::doc().trim_start(), COMMON_FEATURE_PDOC)
             }
 
             #[classattr]
@@ -560,6 +709,9 @@ pub(crate) enum FitLnPrior<'a> {
     ListLnPrior1D(Vec<LnPrior1D>),
 }
 
+const FIT_MODEL_SIGNATURE: &str = r#"model(t, params)"#;
+const FIT_MODEL_SHORT_DOC: &str = r#"Underlying parametric model function"#;
+
 macro_rules! fit_evaluator {
     ($name: ident, $eval: ty, $ib: ty, $nparam: literal, $ln_prior_by_str: tt, $ln_prior_doc: literal $(,)?) => {
         #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
@@ -569,6 +721,76 @@ macro_rules! fit_evaluator {
         impl $name {
             fn supported_algorithms_str() -> String {
                 return SUPPORTED_ALGORITHMS_CURVE_FIT.join(", ");
+            }
+
+            fn doc(common_methods: &str, model_method: &str) -> String {
+                #[cfg(feature = "gsl")]
+                let lmsder_niter = format!(
+                    r#"lmsder_niter : int, optional
+    Number of LMSDER iterations, default is {}
+"#,
+                    lcf::LmsderCurveFit::default_niterations()
+                );
+                #[cfg(not(feature = "gsl"))]
+                let lmsder_niter = "";
+
+                format!(
+                    r#"{intro}
+Parameters
+----------
+algorithm : str
+    Non-linear least-square algorithm, supported values are:
+    {supported_algo}.
+mcmc_niter : int, optional
+    Number of MCMC iterations, default is {mcmc_niter}
+{lmsder_niter}init : list or None, optional
+    Initial conditions, must be `None` or a `list` of `float`s or `None`s.
+    The length of the list must be {nparam}, `None` values will be replaced
+    with some defauls values. It is supported by MCMC only
+bounds : list of tuples or None, optional
+    Boundary conditions, must be `None` or a `list` of `tuple`s of `float`s or
+    `None`s. The length of the list must be {nparam}, boundary conditions must
+    include initial conditions, `None` values will be replaced with some broad
+    defaults. It is supported by MCMC only
+ln_prior : list of light_curve.light_curve_ext.ln_prior.LnPrior1D, or str, or None, optional
+    Prior for MCMC, None means no prior. A list of {nparam}
+    `LnPrior1D` specifies logatithms of priors for each fit
+    parameter. Alternatively, a `str` literal can be used:
+
+    {ln_prior}
+
+{attr}
+supported_algorithms : list of str
+    Available argument values for the constructor
+
+{common_methods}
+{model_method}
+
+Examples
+--------
+>>> import numpy as np
+>>> from light_curve import {feature}
+>>>
+>>> fit = {feature}('mcmc')
+>>> t = np.linspace(0, 10, 101)
+>>> flux = 1 + (t - 3) ** 2
+>>> fluxerr = np.sqrt(flux)
+>>> result = fit(t, flux, fluxerr, sorted=True, check=False)
+>>> # Result is built from a model parameters and reduced chi^2
+>>> # So we can use as an input for the model static method
+>>> model = {feature}.model(t, result)
+"#,
+                    intro = <$eval>::doc().trim_start(),
+                    supported_algo = Self::supported_algorithms_str(),
+                    mcmc_niter = lcf::McmcCurveFit::default_niterations(),
+                    lmsder_niter = lmsder_niter,
+                    attr = ATTRIBUTES_DOC,
+                    common_methods = common_methods,
+                    model_method = model_method,
+                    feature = stringify!($name),
+                    nparam = $nparam,
+                    ln_prior = $ln_prior_doc,
+                )
             }
         }
 
@@ -695,6 +917,20 @@ macro_rules! fit_evaluator {
                 ))
             }
 
+            /// Parametric model function
+            ///
+            /// Parameters
+            /// ----------
+            /// t : np.ndarray of np.float32 or np.float64
+            ///     Time moments, can be unsorted
+            /// params : np.ndarray of np.float32 or np.float64
+            ///     Parameters of the model, this array can be longer than actual parameter
+            ///     list, the beginning part of the array will be used in this case
+            ///
+            /// Returns
+            /// -------
+            /// np.ndarray of np.float32 or np.float64
+            ///     Array of model values corresponded to the given time moments
             #[staticmethod]
             #[args(t, params)]
             fn model(
@@ -721,84 +957,26 @@ macro_rules! fit_evaluator {
             }
 
             #[classattr]
+            fn __pdoc__() -> String {
+                Self::doc(
+                    METHODS_SHORT_PDOC,
+                    formatcp!(
+                        r#"**`{}`**
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{}"#,
+                        FIT_MODEL_SIGNATURE,
+                        FIT_MODEL_SHORT_DOC),
+                )
+            }
+
+            #[classattr]
             fn __doc__() -> String {
-                #[cfg(feature = "gsl")]
-                let lmsder_niter = format!(
-                    r#"lmsder_niter : int, optional
-    Number of LMSDER iterations, default is {}
-"#,
-                    lcf::LmsderCurveFit::default_niterations()
-                );
-                #[cfg(not(feature = "gsl"))]
-                let lmsder_niter = "";
-
-                format!(
-                    r#"{intro}
-Parameters
-----------
-algorithm : str
-    Non-linear least-square algorithm, supported values are:
-    {supported_algo}.
-mcmc_niter : int, optional
-    Number of MCMC iterations, default is {mcmc_niter}
-{lmsder_niter}init : list or None, optional
-    Initial conditions, must be `None` or a `list` of `float`s or `None`s.
-    The length of the list must be {nparam}, `None` values will be replaced
-    with some defauls values. It is supported by MCMC only
-bounds : list of tuples or None, optional
-    Boundary conditions, must be `None` or a `list` of `tuple`s of `float`s or
-    `None`s. The length of the list must be {nparam}, boundary conditions must
-    include initial conditions, `None` values will be replaced with some broad
-    defaults. It is supported by MCMC only
-ln_prior : str or None, optional
-    Prior for MCMC, None means no prior. Available values are:
-    {ln_prior}
-
-{attr}
-supported_algorithms : list of str
-    Available argument values for the constructor
-
-{methods}
-
-model(t, params)
-    Underlying parametric model function
-
-    Parameters
-    ----------
-    t : np.ndarray of np.float32 or np.float64
-        Time moments, can be unsorted
-    params : np.ndaarray of np.float32 or np.float64
-        Parameters of the model, this array can be longer than actual parameter
-        list, the beginning part of the array will be used in this case
-
-    Returns
-    -------
-    np.ndarray of np.float32 or np.float64
-        Array of model values corresponded to the given time moments
-
-Examples
---------
->>> import numpy as np
->>> from light_curve import {feature}
->>>
->>> fit = {feature}('mcmc')
->>> t = np.linspace(0, 10, 101)
->>> flux = 1 + (t - 3) ** 2
->>> fluxerr = np.sqrt(flux)
->>> result = fit(t, flux, fluxerr, sorted=True)
->>> # Result is built from a model parameters and reduced chi^2
->>> # So we can use as a `params` array
->>> model = {feature}.model(t, result)
-"#,
-                    intro = <$eval>::doc().trim_start(),
-                    supported_algo = Self::supported_algorithms_str(),
-                    mcmc_niter = lcf::McmcCurveFit::default_niterations(),
-                    lmsder_niter = lmsder_niter,
-                    attr = ATTRIBUTES_DOC,
-                    methods = METHODS_DOC,
-                    feature = stringify!($name),
-                    nparam = $nparam,
-                    ln_prior = $ln_prior_doc,
+                Self::doc(
+                    METHODS_SHORT_DOC,
+                    formatcp!(
+                        r#"{}
+    {}"#,
+                        FIT_MODEL_SIGNATURE,
+                        FIT_MODEL_SHORT_DOC),
                 )
             }
         }
@@ -812,6 +990,22 @@ evaluator!(AndersonDarlingNormal, lcf::AndersonDarlingNormal);
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 #[pyo3(text_signature = "(nstd, /)")]
 pub struct BeyondNStd {}
+
+impl BeyondNStd {
+    fn doc(methods: &str) -> String {
+        format!(
+            r#"{}
+
+Parameters
+----------
+nstd : positive float
+    N
+{}"#,
+            lcf::BeyondNStd::<f64>::doc().trim_start(),
+            methods,
+        )
+    }
+}
 
 #[pymethods]
 impl BeyondNStd {
@@ -828,18 +1022,13 @@ impl BeyondNStd {
     }
 
     #[classattr]
-    fn __doc__() -> String {
-        format!(
-            r#"{}
+    fn __pdoc__() -> String {
+        Self::doc(COMMON_FEATURE_PDOC)
+    }
 
-Parameters
-----------
-nstd : positive float
-    N
-{}"#,
-            lcf::BeyondNStd::<f64>::doc().trim_start(),
-            COMMON_FEATURE_DOC,
-        )
+    #[classattr]
+    fn __doc__() -> String {
+        Self::doc(COMMON_FEATURE_DOC)
     }
 }
 
@@ -851,16 +1040,36 @@ fit_evaluator!(
     {
         "no" => lcf::BazinLnPrior::fixed(lcf::LnPrior::none()),
         s => return Err(Exception::ValueError(format!(
-            "unsupported ln_prior name '{}'",
+            r#"unsupported ln_prior name "{}""#,
             s
         )).into()),
     },
-    "'no': no prior",
+    r#"- "no": no prior"#,
 );
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 #[pyo3(text_signature = "(features, window, offset)")]
 pub struct Bins {}
+
+impl Bins {
+    fn doc(methods: &str) -> String {
+        format!(
+            r#"{}
+
+Parameters
+----------
+features : iterable
+    Features to extract from binned time-series
+window : positive float
+    Width of binning interval in units of time
+offset : float
+    Zero time moment
+{}"#,
+            lcf::Bins::<f64, lcf::Feature<f64>>::doc().trim_start(),
+            methods
+        )
+    }
+}
 
 #[pymethods]
 impl Bins {
@@ -896,21 +1105,13 @@ impl Bins {
     }
 
     #[classattr]
-    fn __doc__() -> String {
-        format!(
-            r#"{}
+    fn __pdoc__() -> String {
+        Self::doc(COMMON_FEATURE_PDOC)
+    }
 
-Parameters
-----------
-features : iterable
-    Features to extract from binned time-series
-window : positive float
-    Width of binning interval in units of time
-offset : float
-    Zero time moment
-"#,
-            lcf::Bins::<f64, lcf::Feature<f64>>::doc().trim_start()
-        )
+    #[classattr]
+    fn __doc__() -> String {
+        Self::doc(COMMON_FEATURE_DOC)
     }
 }
 
@@ -925,6 +1126,22 @@ evaluator!(ExcessVariance, lcf::ExcessVariance);
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 #[pyo3(text_signature = "(quantile)")]
 pub struct InterPercentileRange {}
+
+impl InterPercentileRange {
+    fn doc(methods: &str) -> String {
+        format!(
+            r#"{}
+
+Parameters
+----------
+quantile : positive float
+    Range is (100% * quantile, 100% * (1 - quantile))
+{}"#,
+            lcf::InterPercentileRange::doc().trim_start(),
+            methods
+        )
+    }
+}
 
 #[pymethods]
 impl InterPercentileRange {
@@ -941,18 +1158,13 @@ impl InterPercentileRange {
     }
 
     #[classattr]
-    fn __doc__() -> String {
-        format!(
-            r#"{}
+    fn __pdoc__() -> String {
+        Self::doc(COMMON_FEATURE_PDOC)
+    }
 
-Parameters
-----------
-quantile : positive float
-    Range is (100% * quantile, 100% * (1 - quantile))
-{}"#,
-            lcf::InterPercentileRange::doc().trim_start(),
-            COMMON_FEATURE_DOC
-        )
+    #[classattr]
+    fn __doc__() -> String {
+        Self::doc(COMMON_FEATURE_DOC)
     }
 }
 
@@ -965,6 +1177,24 @@ evaluator!(LinearTrend, lcf::LinearTrend);
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 #[pyo3(text_signature = "(quantile_numerator, quantile_denominator)")]
 pub struct MagnitudePercentageRatio {}
+
+impl MagnitudePercentageRatio {
+    fn doc(methods: &str) -> String {
+        format!(
+            r#"{}
+
+Parameters
+----------
+quantile_numerator: positive float
+    Numerator is inter-percentile range (100% * q, 100% (1 - q))
+quantile_denominator: positive float
+    Denominator is inter-percentile range (100% * q, 100% (1 - q))
+{}"#,
+            lcf::MagnitudePercentageRatio::doc().trim_start(),
+            methods
+        )
+    }
+}
 
 #[pymethods]
 impl MagnitudePercentageRatio {
@@ -1002,20 +1232,13 @@ impl MagnitudePercentageRatio {
     }
 
     #[classattr]
-    fn __doc__() -> String {
-        format!(
-            r#"{}
+    fn __pdoc__() -> String {
+        Self::doc(COMMON_FEATURE_PDOC)
+    }
 
-Parameters
-----------
-quantile_numerator: positive float
-    Numerator is inter-percentile range (100% * q, 100% (1 - q))
-quantile_denominator: positive float
-    Denominator is inter-percentile range (100% * q, 100% (1 - q))
-{}"#,
-            lcf::MagnitudePercentageRatio::doc().trim_start(),
-            COMMON_FEATURE_DOC
-        )
+    #[classattr]
+    fn __doc__() -> String {
+        Self::doc(COMMON_FEATURE_DOC)
     }
 }
 
@@ -1033,6 +1256,22 @@ evaluator!(MedianAbsoluteDeviation, lcf::MedianAbsoluteDeviation,);
 #[pyo3(text_signature = "(quantile)")]
 pub struct MedianBufferRangePercentage {}
 
+impl MedianBufferRangePercentage {
+    fn doc(methods: &str) -> String {
+        format!(
+            r#"{}
+
+Parameters
+----------
+quantile : positive float
+    Relative range size
+{}"#,
+            lcf::MedianBufferRangePercentage::<f64>::doc(),
+            methods
+        )
+    }
+}
+
 #[pymethods]
 impl MedianBufferRangePercentage {
     #[new]
@@ -1049,18 +1288,13 @@ impl MedianBufferRangePercentage {
     }
 
     #[classattr]
-    fn __doc__() -> String {
-        format!(
-            r#"{}
+    fn __pdoc__() -> String {
+        Self::doc(COMMON_FEATURE_PDOC)
+    }
 
-Parameters
-----------
-quantile : positive float
-    Relative range size
-{}"#,
-            lcf::MedianBufferRangePercentage::<f64>::doc(),
-            COMMON_FEATURE_DOC
-        )
+    #[classattr]
+    fn __doc__() -> String {
+        Self::doc(COMMON_FEATURE_DOC)
     }
 }
 
@@ -1069,6 +1303,22 @@ evaluator!(PercentAmplitude, lcf::PercentAmplitude);
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 #[pyo3(text_signature = "(quantile)")]
 pub struct PercentDifferenceMagnitudePercentile {}
+
+impl PercentDifferenceMagnitudePercentile {
+    fn doc(methods: &str) -> String {
+        format!(
+            r#"{}
+
+Parameters
+----------
+quantile : positive float
+    Relative range size
+{}"#,
+            lcf::PercentDifferenceMagnitudePercentile::doc(),
+            methods
+        )
+    }
+}
 
 #[pymethods]
 impl PercentDifferenceMagnitudePercentile {
@@ -1087,18 +1337,13 @@ impl PercentDifferenceMagnitudePercentile {
     }
 
     #[classattr]
-    fn __doc__() -> String {
-        format!(
-            r#"{}
+    fn __pdoc__() -> String {
+        Self::doc(COMMON_FEATURE_PDOC)
+    }
 
-Parameters
-----------
-quantile : positive float
-    Relative range size
-{}"#,
-            lcf::PercentDifferenceMagnitudePercentile::doc(),
-            COMMON_FEATURE_DOC
-        )
+    #[classattr]
+    fn __doc__() -> String {
+        Self::doc(COMMON_FEATURE_DOC)
     }
 }
 
@@ -1193,6 +1438,73 @@ impl Periodogram {
         let (freq, power) = eval.freq_power(&mut ts);
         (freq.into(), power.into())
     }
+
+    fn doc(methods: &str) -> String {
+        format!(
+            r#"{intro}
+Parameters
+----------
+peaks : int or None, optional
+    Number of peaks to find
+
+resolution : float or None, optional
+    Resolution of frequency grid
+
+max_freq_factor : float or None, optional
+    Mulitplier for Nyquist frequency
+
+nyquist : str or float or None, optional
+    Type of Nyquist frequency. Could be one of:
+     - 'average': "Average" Nyquist frequency
+     - 'median': Nyquist frequency is defined by median time interval
+        between observations
+     - float: Nyquist frequency is defined by given quantile of time
+        intervals between observations
+
+fast : bool or None, optional
+    Use "Fast" (approximate and FFT-based) or direct periodogram algorithm
+
+features : iterable or None, optional
+    Features to extract from periodogram considering it as a time-series
+
+{attr}
+supported_algorithms : list of str
+    Available argument values for the constructor
+
+{methods}
+freq_power(t, m)
+    Get periodogram
+
+    Parameters
+    ----------
+    t : np.ndarray of np.float32 or np.float64
+        Time array
+    m : np.ndarray of np.float32 or np.float64
+        Magnitude (flux) array
+
+    Returns
+    -------
+    freq : np.ndarray of np.float32 or np.float64
+        Frequency grid
+    power : np.ndarray of np.float32 or np.float64
+        Periodogram power
+
+Examples
+--------
+>>> import numpy as np
+>>> from light_curve import Periodogram
+>>> periodogram = Periodogram(peaks=2, resolution=20.0, max_freq_factor=2.0,
+...                           nyquist='average', fast=True)
+>>> t = np.linspace(0, 10, 101)
+>>> m = np.sin(2*np.pi * t / 0.7) + 0.5 * np.cos(2*np.pi * t / 3.3)
+>>> peaks = periodogram(t, m, sorted=True)[::2]
+>>> frequency, power = periodogram.freq_power(t, m)
+"#,
+            intro = lcf::Periodogram::<f64, lcf::Feature<f64>>::doc(),
+            attr = ATTRIBUTES_DOC,
+            methods = methods
+        )
+    }
 }
 
 #[pymethods]
@@ -1266,66 +1578,13 @@ impl Periodogram {
     }
 
     #[classattr]
+    fn __pdoc__() -> String {
+        Self::doc(METHODS_SHORT_PDOC)
+    }
+
+    #[classattr]
     fn __doc__() -> String {
-        format!(
-            r#"{intro}
-Parameters
-----------
-peaks : int or None, optional
-    Number of peaks to find
-
-resolution : float or None, optional
-    Resolution of frequency grid
-
-max_freq_factor : float or None, optional
-    Mulitplier for Nyquist frequency
-
-nyquist : str or float or None, optional
-    Type of Nyquist frequency. Could be one of:
-     - 'average': "Average" Nyquist frequency
-     - 'median': Nyquist frequency is defined by median time interval
-        between observations
-     - float: Nyquist frequency is defined by given quantile of time
-        intervals between observations
-
-fast : bool or None, optional
-    Use "Fast" (approximate and FFT-based) or direct periodogram algorithm
-
-features : iterable or None, optional
-    Features to extract from periodogram considering it as a time-series
-
-{common}
-freq_power(t, m)
-    Get periodogram
-
-    Parameters
-    ----------
-    t : np.ndarray of np.float32 or np.float64
-        Time array
-    m : np.ndarray of np.float32 or np.float64
-        Magnitude (flux) array
-
-    Returns
-    -------
-    freq : np.ndarray of np.float32 or np.float64
-        Frequency grid
-    power : np.ndarray of np.float32 or np.float64
-        Periodogram power
-
-Examples
---------
->>> import numpy as np
->>> from light_curve import Periodogram
->>> periodogram = Periodogram(peaks=2, resolution=20.0, max_freq_factor=2.0,
-...                           nyquist='average', fast=True)
->>> t = np.linspace(0, 10, 101)
->>> m = np.sin(2*np.pi * t / 0.7) + 0.5 * np.cos(2*np.pi * t / 3.3)
->>> peaks = periodogram(t, m, sorted=True)[::2]
->>> frequency, power = periodogram.freq_power(t, m)
-"#,
-            intro = lcf::Periodogram::<f64, lcf::Feature<f64>>::doc(),
-            common = ATTRIBUTES_DOC,
-        )
+        Self::doc(METHODS_SHORT_DOC)
     }
 }
 
@@ -1346,12 +1605,12 @@ fit_evaluator!(
         "no" => lcf::VillarLnPrior::fixed(lcf::LnPrior::none()),
         "hosseinzadeh2020" => lcf::VillarLnPrior::hosseinzadeh2020(1.0, 0.0),
         s => return Err(Exception::ValueError(format!(
-            "unsupported ln_prior name '{}'",
+            r#"unsupported ln_prior name "{}""#,
             s
         )).into()),
     },
-    r#"- 'no': no prior,\
-    - 'hosseinzadeh2020': prior addopted from Hosseinzadeh et al. 2020, it
+    r#"- "no": no prior,
+    - "hosseinzadeh2020": prior addopted from Hosseinzadeh et al. 2020, it
       assumes that `t` is in days"#,
 );
 

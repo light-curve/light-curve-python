@@ -1,0 +1,2783 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>light_curve API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Package <code>light_curve</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python"># Prevent isort to sort imports in this file
+# isort: skip_file
+
+# Import all Python features
+from .light_curve_py import *
+
+# Hide Python features with Rust equivalents
+from .light_curve_ext import *
+
+# Hide Rust Extractor with universal Python Extractor
+from .light_curve_py import Extractor
+
+from .light_curve_ext import __version__
+from .light_curve_py.features._base import BaseFeature
+
+
+__all__ = {&#39;_FeatureEvaluator&#39;, &#39;BaseFeature&#39;, &#39;DmDt&#39;, &#39;Extractor&#39;}
+__all__.update(c.__name__ for c in _FeatureEvaluator.__subclasses__() if c.__name__ in globals())
+__all__.update(c.__name__ for c in BaseFeature.__subclasses__() if c.__name__ in globals())
+__all__ = sorted(__all__)
+
+
+__pdoc__ = {c.__name__: c.__pdoc__ for c in _FeatureEvaluator.__subclasses__()}
+__pdoc__[&#39;_FeatureEvaluator&#39;] = True
+__pdoc__[&#39;light_curve_py&#39;] = False
+__pdoc__[&#39;light_curve_ext&#39;] = False
+__pdoc__[&#39;light_curve&#39;] = False</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="light_curve.Amplitude"><code class="flex name class">
+<span>class <span class="ident">Amplitude</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Half amplitude of magnitude</p>
+<p>$$
+\mathrm{amplitude} \equiv \frac{\left( \max{(m)} - \min{(m)} \right)}{2}
+$$</p>
+<ul>
+<li>Depends on: <strong>magnitude</strong></li>
+<li>Minimum number of observations: <strong>1</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.AndersonDarlingNormal"><code class="flex name class">
+<span>class <span class="ident">AndersonDarlingNormal</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Unbiased Anderson–Darling normality test statistic</p>
+<p>$$
+A^2 \equiv \left(1 + \frac4{N} - \frac{25}{N^2}\right) \left(-N - \frac1{N} \sum_{i=0}^{N-1} {(2i + 1)\ln\Phi_i + (2(N - i) - 1)\ln(1 - \Phi_i)}\right),
+$$
+where $\Phi_i \equiv \Phi((m_i - \langle m \rangle) / \sigma_m)$ is the standard cumulative distribution,
+$N$ is the number of observations,
+$\langle m \rangle$ is the mean magnitude
+and $\sigma_m = \sqrt{\sum_i (m_i - \langle m \rangle)^2 / (N-1)}$ is the magnitude standard deviation.</p>
+<ul>
+<li>Depends on: <strong>magnitude</strong></li>
+<li>Minimum number of observations: <strong>4</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<p><a href="https://en.wikipedia.org/wiki/Anderson–Darling_test">Wikipedia</a></p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.BaseFeature"><code class="flex name class">
+<span>class <span class="ident">BaseFeature</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>BaseFeature()</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class BaseFeature(ABC):
+    @staticmethod
+    def _normalize_input(*, t, m, sigma, sorted, check):
+        t = np.asarray(t)
+        m = np.asarray(m)
+        if sigma is not None:
+            sigma = np.asarray(sigma)
+        if check:
+            if np.any(~np.isfinite(t)):
+                raise ValueError(&#34;t values must be finite&#34;)
+            if np.any(~np.isfinite(m)):
+                raise ValueError(&#34;m values must be finite&#34;)
+            if sigma is not None and np.any(np.isnan(sigma)):
+                raise ValueError(&#34;sigma must have no NaNs&#34;)
+        if sorted is None:
+            diff = np.diff(t)
+            if np.any(diff == 0):
+                raise ValueError(&#34;t must be unique&#34;)
+            if np.any(diff &lt; 0):
+                raise ValueError(&#34;t must be sorted&#34;)
+        elif not sorted:
+            idx = np.argsort(t)
+            t = t[idx]
+            m = m[idx]
+            if sigma is not None:
+                sigma = sigma[idx]
+
+        return t, m, sigma
+
+    def _eval_and_fill(self, t, m, sigma, fill_value):
+        try:
+            a = self._eval(t, m, sigma)
+            if np.any(~np.isfinite(a)):
+                raise ValueError
+            return a
+        except (ValueError, ZeroDivisionError) as e:
+            if fill_value is not None:
+                return np.full(self.size, fill_value)
+            raise e
+
+    def __call__(self, t, m, sigma=None, sorted=None, check=True, fill_value=None):
+        t, m, sigma = self._normalize_input(t=t, m=m, sigma=sigma, sorted=sorted, check=check)
+        return self._eval_and_fill(t, m, sigma, fill_value)
+
+    @mark_experimental()
+    def __post_init__(self):
+        pass
+
+    def many(self, lcs, sorted=None, check=True, fill_value=None, n_jobs=-1):
+        &#34;&#34;&#34;Extract features in bulk
+
+        This exists for computability only and doesn&#39;t support parallel
+        execution, that&#39;s why `n_jobs=1` must be used
+        &#34;&#34;&#34;
+        if n_jobs != 1:
+            raise NotImplementedError(&#34;Parallel execution is not supported by this feature, use n_jobs=1&#34;)
+        return np.stack([self(*lc, sorted=sorted, check=check, fill_value=fill_value) for lc in lcs])
+
+    @property
+    @abstractmethod
+    def size(self):
+        pass
+
+    @abstractmethod
+    def _eval(self, t, m, sigma=None):
+        pass</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>abc.ABC</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_py.features._base_meta.BaseMetaFeature</li>
+<li>light_curve.light_curve_py.features.adnormal.AndersonDarlingNormal</li>
+<li>light_curve.light_curve_py.features.amplitude.Amplitude</li>
+<li>light_curve.light_curve_py.features.beyondnstd.BeyondNStd</li>
+<li>light_curve.light_curve_py.features.cusum.Cusum</li>
+<li>light_curve.light_curve_py.features.eta.Eta</li>
+<li>light_curve.light_curve_py.features.etae.EtaE</li>
+<li>light_curve.light_curve_py.features.excvar.ExcessVariance</li>
+<li>light_curve.light_curve_py.features.extractor._PyExtractor</li>
+<li>light_curve.light_curve_py.features.flux_n_not_det_before_fd.FluxNNotDetBeforeFd</li>
+<li>light_curve.light_curve_py.features.intpercrange.InterPercentileRange</li>
+<li>light_curve.light_curve_py.features.kurtosis.Kurtosis</li>
+<li>light_curve.light_curve_py.features.linfit.LinearFit</li>
+<li>light_curve.light_curve_py.features.lintrend.LinearTrend</li>
+<li>light_curve.light_curve_py.features.magnitude_n_not_det_before_fd.MagnitudeNNotDetBeforeFd</li>
+<li>light_curve.light_curve_py.features.magnpratio.MagnitudePercentageRatio</li>
+<li>light_curve.light_curve_py.features.maxslope.MaximumSlope</li>
+<li>light_curve.light_curve_py.features.mean.Mean</li>
+<li>light_curve.light_curve_py.features.meanvar.MeanVariance</li>
+<li>light_curve.light_curve_py.features.medabsdev.MedianAbsoluteDeviation</li>
+<li>light_curve.light_curve_py.features.medbufrperc.MedianBufferRangePercentage</li>
+<li>light_curve.light_curve_py.features.median.Median</li>
+<li>light_curve.light_curve_py.features.otsusplit.OtsuSplit</li>
+<li>light_curve.light_curve_py.features.pdiffmperc.PercentDifferenceMagnitudePercentile</li>
+<li>light_curve.light_curve_py.features.percampl.PercentAmplitude</li>
+<li>light_curve.light_curve_py.features.redchi2.ReducedChi2</li>
+<li>light_curve.light_curve_py.features.skew.Skew</li>
+<li>light_curve.light_curve_py.features.stdev.StandardDeviation</li>
+<li>light_curve.light_curve_py.features.stetsonk.StetsonK</li>
+<li>light_curve.light_curve_py.features.weightmean.WeightedMean</li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="light_curve.BaseFeature.size"><code class="name">var <span class="ident">size</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+@abstractmethod
+def size(self):
+    pass</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="light_curve.BaseFeature.many"><code class="name flex">
+<span>def <span class="ident">many</span></span>(<span>self, lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Extract features in bulk</p>
+<p>This exists for computability only and doesn't support parallel
+execution, that's why <code>n_jobs=1</code> must be used</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def many(self, lcs, sorted=None, check=True, fill_value=None, n_jobs=-1):
+    &#34;&#34;&#34;Extract features in bulk
+
+    This exists for computability only and doesn&#39;t support parallel
+    execution, that&#39;s why `n_jobs=1` must be used
+    &#34;&#34;&#34;
+    if n_jobs != 1:
+        raise NotImplementedError(&#34;Parallel execution is not supported by this feature, use n_jobs=1&#34;)
+    return np.stack([self(*lc, sorted=sorted, check=check, fill_value=fill_value) for lc in lcs])</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="light_curve.BazinFit"><code class="flex name class">
+<span>class <span class="ident">BazinFit</span></span>
+<span>(</span><span>algorithm, mcmc_niter=None, lmsder_niter=None, init=None, bounds=None, ln_prior=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Bazin function fit</p>
+<p>Five fit parameters and goodness of fit (reduced $\chi^2$) of the Bazin function developed for
+core-collapsed supernovae:</p>
+<p>$$
+f(t) = A \frac{ \mathrm{e}^{ -(t-t_0)/\tau_\mathrm{fall} } }{ 1 + \mathrm{e}^{ -(t - t_0) / \tau_\mathrm{rise} } } + B.
+$$</p>
+<p>Note, that the Bazin function is developed to be used with fluxes, not magnitudes. Also note a typo
+in the Eq. (1) of the original paper, the minus sign is missed in the "rise" exponent.</p>
+<ul>
+<li>Depends on: <strong>time</strong>, <strong>magnitude</strong>, <strong>magnitude error</strong></li>
+<li>Minimum number of observations: <strong>6</strong></li>
+<li>Number of features: <strong>6</strong></li>
+</ul>
+<p>Bazin et al. 2009 <a href="https://doi.org/10.1051/0004-6361/200911847">DOI:10.1051/0004-6361/200911847</a></p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>algorithm</code></strong> :&ensp;<code>str</code></dt>
+<dd>Non-linear least-square algorithm, supported values are:
+mcmc, lmsder, mcmc-lmsder.</dd>
+<dt><strong><code>mcmc_niter</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>Number of MCMC iterations, default is 128</dd>
+<dt><strong><code>lmsder_niter</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>Number of LMSDER iterations, default is 10</dd>
+<dt><strong><code>init</code></strong> :&ensp;<code>list</code> or <code>None</code>, optional</dt>
+<dd>Initial conditions, must be <code>None</code> or a <code>list</code> of <code>float</code>s or <code>None</code>s.
+The length of the list must be 5, <code>None</code> values will be replaced
+with some defauls values. It is supported by MCMC only</dd>
+<dt><strong><code>bounds</code></strong> :&ensp;<code>list</code> of <code>tuples</code> or <code>None</code>, optional</dt>
+<dd>Boundary conditions, must be <code>None</code> or a <code>list</code> of <code>tuple</code>s of <code>float</code>s or
+<code>None</code>s. The length of the list must be 5, boundary conditions must
+include initial conditions, <code>None</code> values will be replaced with some broad
+defaults. It is supported by MCMC only</dd>
+<dt><strong><code>ln_prior</code></strong> :&ensp;<code>list</code> of <code>light_curve.light_curve_ext.ln_prior.LnPrior1D,</code> or <code>str,</code> or <code>None</code>, optional</dt>
+<dd>
+<p>Prior for MCMC, None means no prior. A list of 5
+<code>LnPrior1D</code> specifies logatithms of priors for each fit
+parameter. Alternatively, a <code>str</code> literal can be used:</p>
+<ul>
+<li>"no": no prior</li>
+</ul>
+</dd>
+</dl>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+<dt><strong><code>supported_algorithms</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Available argument values for the constructor</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p>
+<p><strong><code>model(t, params)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Underlying parametric model function</p>
+<h2 id="examples">Examples</h2>
+<pre><code class="language-python-repl">&gt;&gt;&gt; import numpy as np
+&gt;&gt;&gt; from light_curve import BazinFit
+&gt;&gt;&gt;
+&gt;&gt;&gt; fit = BazinFit('mcmc')
+&gt;&gt;&gt; t = np.linspace(0, 10, 101)
+&gt;&gt;&gt; flux = 1 + (t - 3) ** 2
+&gt;&gt;&gt; fluxerr = np.sqrt(flux)
+&gt;&gt;&gt; result = fit(t, flux, fluxerr, sorted=True, check=False)
+&gt;&gt;&gt; # Result is built from a model parameters and reduced chi^2
+&gt;&gt;&gt; # So we can use as an input for the model static method
+&gt;&gt;&gt; model = BazinFit.model(t, result)
+</code></pre></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="light_curve.BazinFit.supported_algorithms"><code class="name">var <span class="ident">supported_algorithms</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Static methods</h3>
+<dl>
+<dt id="light_curve.BazinFit.model"><code class="name flex">
+<span>def <span class="ident">model</span></span>(<span>...)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Parametric model function</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>t</code></strong> :&ensp;<code>np.ndarray</code> of <code>np.float32</code> or <code>np.float64</code></dt>
+<dd>Time moments, can be unsorted</dd>
+<dt><strong><code>params</code></strong> :&ensp;<code>np.ndarray</code> of <code>np.float32</code> or <code>np.float64</code></dt>
+<dd>Parameters of the model, this array can be longer than actual parameter
+list, the beginning part of the array will be used in this case</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>np.ndarray</code> of <code>np.float32</code> or <code>np.float64</code></dt>
+<dd>Array of model values corresponded to the given time moments</dd>
+</dl></div>
+</dd>
+</dl>
+</dd>
+<dt id="light_curve.BeyondNStd"><code class="flex name class">
+<span>class <span class="ident">BeyondNStd</span></span>
+<span>(</span><span>nstd, /)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Fraction of observations beyond $n\,\sigma_m$ from the mean magnitude $\langle m \rangle$</p>
+<p>$$
+\mathrm{beyond}~n\,\sigma_m \equiv \frac{\sum_i I_{|m - \langle m \rangle| &gt; n\,\sigma_m}(m_i)}{N},
+$$
+where $I$ is the <a href="https://en.wikipedia.org/wiki/Indicator_function">indicator function</a>,
+$N$ is the number of observations,
+$\langle m \rangle$ is the mean magnitude
+and $\sigma_m = \sqrt{\sum_i (m_i - \langle m \rangle)^2 / (N-1)}$ is the magnitude standard deviation.</p>
+<ul>
+<li>Depends on: <strong>magnitude</strong></li>
+<li>Minimum number of observations: <strong>2</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<p>D’Isanto et al. 2016 <a href="https://doi.org/10.1093/mnras/stw157">DOI:10.1093/mnras/stw157</a></p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>nstd</code></strong> :&ensp;<code>positive float</code></dt>
+<dd>N</dd>
+</dl>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.Bins"><code class="flex name class">
+<span>class <span class="ident">Bins</span></span>
+<span>(</span><span>features, window, offset)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Sampled time series meta-feature</p>
+<p>Binning time series to bins with width $\mathrm{window}$ with respect to some $\mathrm{offset}$.
+$j-th$ bin interval is
+$[j \cdot \mathrm{window} + \mathrm{offset}; (j + 1) \cdot \mathrm{window} + \mathrm{offset})$.
+Binned time series is defined by
+$$
+t_j^<em> = (j + \frac12) \cdot \mathrm{window} + \mathrm{offset},
+$$
+$$
+m_j^</em> = \frac{\sum{m_i / \delta_i^2}}{\sum{\delta_i^{-2}}},
+$$
+$$
+\delta_j^* = \frac{N_j}{\sum{\delta_i^{-2}}},
+$$
+where $N_j$ is a number of sampling observations and all sums are over observations inside
+considering bin. Bins takes any other feature evaluators to extract features from sample time series</p>
+<ul>
+<li>Depends on: <strong>time</strong>, <strong>magnitude</strong>, <strong>magnitude error</strong></li>
+<li>Minimum number of observations: as required by sub-features, but at least <strong>1</strong></li>
+<li>Number of features: as provided by sub-features</li>
+</ul>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>features</code></strong> :&ensp;<code>iterable</code></dt>
+<dd>Features to extract from binned time-series</dd>
+<dt><strong><code>window</code></strong> :&ensp;<code>positive float</code></dt>
+<dd>Width of binning interval in units of time</dd>
+<dt><strong><code>offset</code></strong> :&ensp;<code>float</code></dt>
+<dd>Zero time moment</dd>
+</dl>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.Cusum"><code class="flex name class">
+<span>class <span class="ident">Cusum</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Cusum — a range of cumulative sums</p>
+<p>$$
+\mathrm{cusum} \equiv \max(S) - \min(S),
+$$
+where
+$$
+S_j \equiv \frac1{N\sigma_m} \sum_{i=0}^j{\left(m_i - \langle m \rangle\right)},
+$$
+$N$ is the number of observations,
+$\langle m \rangle$ is the mean magnitude
+and $\sigma_m = \sqrt{\sum_i (m_i - \langle m \rangle)^2 / (N-1)}$ is the magnitude standard deviation.</p>
+<ul>
+<li>Depends on: <strong>magnitude</strong></li>
+<li>Minimum number of observations: <strong>2</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<p>Kim et al. 2014, <a href="https://doi.org/10.1051/0004-6361/201323252">DOI:10.1051/0004-6361/201323252</a></p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.DmDt"><code class="flex name class">
+<span>class <span class="ident">DmDt</span></span>
+<span>(</span><span>...)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>dm-dt map producer</p>
+<p>Each pair of observations is mapped to dm-dt plane bringing unity value. dmdt-map is a rectangle
+on this plane consisted of <code>dt_size</code> x <code>dm_size</code> cells, and limited by <code>[min_dt; max_dt)</code> and
+<code>[min_dm; max_dm)</code> intervals. <code>.points*()</code> methods assigns unity value of each observation to a
+single cell, while <code>.gausses*()</code> methods smears this unity value over all cells with given dt
+value using normal distribution <code>N(m2 - m1, sigma1^2 + sigma2^2)</code>, where <code>(t1, m1, sigma1)</code> and
+<code>(t2, m2, sigma2)</code> are a pair of observations including uncertainties. Optionally, after the map
+is built, normalisation is performed ("norm" parameter): "dt" means divide each dt = const
+column by the total number of all observations corresponded to given dt (in this case
+<code>gausses()</code> output can be interpreted as conditional probability p(dm|dt)); "max" means divide
+all values by the maximum value; both options can be combined, then "max" is performed after
+"dt".</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>dt</code></strong> :&ensp;<code>np.array</code> of <code>float64</code></dt>
+<dd>Ascending array of dt grid edges</dd>
+<dt><strong><code>dm</code></strong> :&ensp;<code>np.array</code> of <code>float64</code></dt>
+<dd>Ascending array of dm grid edges</dd>
+<dt><strong><code>dt_type</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>Type of <code>dt</code> grid, one of:
+- 'auto' (default) means check if grid is linear or logarithmic one,
+which allows some speed-up
+- 'linear' says to build a linear grid from the first and last values
+of <code>dt</code>, using the same number of edges
+- 'log' is the same as 'linear' but for building logarithmic grid
+- 'asis' means using the given array as a grid</dd>
+<dt><strong><code>dm_type</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>Type of <code>dm</code> grid, see <code>dt_type</code> for details</dd>
+<dt><strong><code>norm</code></strong> :&ensp;<code>list</code> of <code>str</code>, optional</dt>
+<dd>Types of normalisation, cab be any combination of "dt" and "max",
+default is an empty list <code>[]</code> which means no normalisation</dd>
+<dt><strong><code>n_jobs</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>Number of parallel threads to run bulk methods such as <code>points_many()</code>
+or <code>gausses_batches()</code> default is <code>-1</code> which means to use as many
+threads as CPU cores</dd>
+<dt><strong><code>approx_erf</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Use approximation normal CDF in <code>gausses*</code> methods, reduces accuracy,
+but has better performance, default is <code>False</code></dd>
+</dl>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>n_jobs</code></strong> :&ensp;<code>int</code></dt>
+<dd>&nbsp;</dd>
+<dt><strong><code>shape</code></strong> :&ensp;<code>(int, int)</code></dt>
+<dd>Shape of a single dmdt map, <code>(dt_size, dm_size)</code></dd>
+<dt><strong><code>dt_grid</code></strong> :&ensp;<code>np.array</code> of <code>float64</code></dt>
+<dd>&nbsp;</dd>
+<dt><strong><code>min_dt</code></strong> :&ensp;<code>float</code></dt>
+<dd>&nbsp;</dd>
+<dt><strong><code>max_dt</code></strong> :&ensp;<code>float</code></dt>
+<dd>&nbsp;</dd>
+<dt><strong><code>dm_grid</code></strong> :&ensp;<code>np.array</code> of <code>float64</code></dt>
+<dd>&nbsp;</dd>
+<dt><strong><code>min_dm</code></strong> :&ensp;<code>float</code></dt>
+<dd>&nbsp;</dd>
+<dt><strong><code>max_dm</code></strong> :&ensp;<code>float</code></dt>
+<dd>&nbsp;</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p>from_borders(min_lgdt, max_lgdt, max_abs_dm, lgdt_size, dm_size, **kwargs)
+Construct <code><a title="light_curve.DmDt" href="#light_curve.DmDt">DmDt</a></code> with logarithmic dt grid [10^min_lgdt, 10^max_lgdt)
+and linear dm grid [-max_abs_dm, max_abs_dm), <code>kwargs</code> are passed to
+<code>__new__()</code>
+points(t, m, sorted=None)
+Produces dmdt-maps from light curve
+gausses(t, m, sigma, sorted=None)
+Produces smeared dmdt-map from noisy light curve
+count_dt(t, sorted=None)
+Total number of observations per each dt interval
+points_many(lcs, sorted=None)
+Produces dmdt-maps from a list of light curves
+gausses_many(lcs, sorted=None)
+Produces smeared dmdt-maps from a list of light curves
+count_dt_many(t_, sorted=None)
+Number of observations in each dt for a list of arrays
+points_batches(lcs, sorted=None, batch_size=1, yield_index=False, shuffle=False, drop_nobs=0, random_seed=None)
+Gives a reusable iterable which yields dmdt-maps
+gausses_batches(lcs, sorted=None, batch_size=1, yield_index=False, shuffle=False, drop_nobs=0, random_seed=None)
+Gives a reusable iterable which yields smeared dmdt-maps</p></div>
+<h3>Static methods</h3>
+<dl>
+<dt id="light_curve.DmDt.from_borders"><code class="name flex">
+<span>def <span class="ident">from_borders</span></span>(<span>...)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="light_curve.DmDt.dm_grid"><code class="name">var <span class="ident">dm_grid</span></code></dt>
+<dd>
+<div class="desc"><p>Return an attribute of instance, which is of type owner.</p></div>
+</dd>
+<dt id="light_curve.DmDt.dt_grid"><code class="name">var <span class="ident">dt_grid</span></code></dt>
+<dd>
+<div class="desc"><p>Return an attribute of instance, which is of type owner.</p></div>
+</dd>
+<dt id="light_curve.DmDt.max_dm"><code class="name">var <span class="ident">max_dm</span></code></dt>
+<dd>
+<div class="desc"><p>Return an attribute of instance, which is of type owner.</p></div>
+</dd>
+<dt id="light_curve.DmDt.max_dt"><code class="name">var <span class="ident">max_dt</span></code></dt>
+<dd>
+<div class="desc"><p>Return an attribute of instance, which is of type owner.</p></div>
+</dd>
+<dt id="light_curve.DmDt.min_dm"><code class="name">var <span class="ident">min_dm</span></code></dt>
+<dd>
+<div class="desc"><p>Return an attribute of instance, which is of type owner.</p></div>
+</dd>
+<dt id="light_curve.DmDt.min_dt"><code class="name">var <span class="ident">min_dt</span></code></dt>
+<dd>
+<div class="desc"><p>Return an attribute of instance, which is of type owner.</p></div>
+</dd>
+<dt id="light_curve.DmDt.n_jobs"><code class="name">var <span class="ident">n_jobs</span></code></dt>
+<dd>
+<div class="desc"><p>Return an attribute of instance, which is of type owner.</p></div>
+</dd>
+<dt id="light_curve.DmDt.shape"><code class="name">var <span class="ident">shape</span></code></dt>
+<dd>
+<div class="desc"><p>Return an attribute of instance, which is of type owner.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="light_curve.DmDt.count_dt"><code class="name flex">
+<span>def <span class="ident">count_dt</span></span>(<span>...)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Total number of observations per each dt interval</p>
+<p>Output takes into account all observation pairs within
+[min_dt; max_dt), even if they are not in [min_dm; max_dm)</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>t</code></strong> :&ensp;<code>1d-ndarray</code> of <code>float</code></dt>
+<dd>Time moments, must be sorted</dd>
+<dt><strong><code>sorted</code></strong> :&ensp;<code>bool</code> or <code>None</code>, optional</dt>
+<dd><code>True</code> guarantees that <code>t</code> is sorted</dd>
+<dt><strong><code>Returns</code></strong></dt>
+<dd>&nbsp;</dd>
+</dl>
+<p>1d-array of float</p></div>
+</dd>
+<dt id="light_curve.DmDt.count_dt_many"><code class="name flex">
+<span>def <span class="ident">count_dt_many</span></span>(<span>...)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Total number of observations per each dt interval</p>
+<p>Output takes into account all observation pairs within
+[min_dt; max_dt), even if they are not in [min_dm; max_dm)</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>t_</code></strong> :&ensp;<code>list</code> of <code>1d-ndarray</code> of <code>float</code></dt>
+<dd>List of arrays, each represents time moments, must be sorted</dd>
+<dt><strong><code>sorted</code></strong> :&ensp;<code>bool</code> or <code>None</code>, optional</dt>
+<dd><code>True</code> guarantees that <code>t</code> is sorted</dd>
+<dt><strong><code>Returns</code></strong></dt>
+<dd>&nbsp;</dd>
+</dl>
+<p>1d-array of float</p></div>
+</dd>
+<dt id="light_curve.DmDt.gausses"><code class="name flex">
+<span>def <span class="ident">gausses</span></span>(<span>...)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Produces smeared dmdt-map from light curve</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>t</code></strong> :&ensp;<code>1d-ndarray</code> of <code>float</code></dt>
+<dd>Time moments, must be sorted</dd>
+<dt><strong><code>m</code></strong> :&ensp;<code>1d-ndarray</code> of <code>float</code></dt>
+<dd>Magnitudes</dd>
+<dt><strong><code>sigma</code></strong> :&ensp;<code>1d-ndarray</code> of <code>float</code></dt>
+<dd>Uncertainties</dd>
+<dt><strong><code>sorted</code></strong> :&ensp;<code>bool</code> or <code>None</code>, optional</dt>
+<dd><code>True</code> guarantees that the light curve is sorted</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>2d-array</code> of <code>float</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+</dd>
+<dt id="light_curve.DmDt.gausses_batches"><code class="name flex">
+<span>def <span class="ident">gausses_batches</span></span>(<span>...)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Reusable iterable yielding dmdt-maps</p>
+<p>The dmdt-maps are produced in parallel using <code>n_jobs</code> threads, batches
+are being generated in background, so the next batch is started to
+generate just after the previous one is yielded. Note that light curves
+data are copied, so from the performance point of view it is better to
+use <code>gausses_many</code> if you don't need observation dropping</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>lcs</code></strong> :&ensp;<code>list</code> of <code>(ndarray, ndarray, ndarray)</code></dt>
+<dd>List or tuple of tuple pairs (t, m, sigma) represented individual
+light curves. All arrays must have the same dtype</dd>
+<dt><strong><code>sorted</code></strong> :&ensp;<code>bool</code> or <code>None</code>, optional</dt>
+<dd><code>True</code> guarantees that all light curves is sorted, default is
+<code>None</code></dd>
+<dt><strong><code>batch_size</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>The number of dmdt-maps to yield. The last batch can be smaller.
+Default is 1</dd>
+<dt><strong><code>yield_index</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Yield a tuple of (indexes, maps) instead of just maps. Could be
+useful when shuffle is <code>True</code>. Default is <code>False</code></dd>
+<dt><strong><code>shuffle</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>If <code>True</code>, shuffle light curves (not individual observations) on
+each creating of new iterator. Default is <code>False</code></dd>
+<dt><strong><code>drop_nobs</code></strong> :&ensp;<code>int</code> or <code>float</code>, optional</dt>
+<dd>Drop observations from every light curve. If it is a positive
+integer, it is a number of observations to drop. If it is a
+floating point between 0 and 1, it is a part of observation to
+drop. Default is <code>0</code>, which means usage of the original data</dd>
+<dt><strong><code>random_seed</code></strong> :&ensp;<code>int</code> or <code>None</code>, optional</dt>
+<dd>Random seed for shuffling and dropping. Default is <code>None</code> which
+means random seed</dd>
+</dl></div>
+</dd>
+<dt id="light_curve.DmDt.gausses_many"><code class="name flex">
+<span>def <span class="ident">gausses_many</span></span>(<span>...)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Produces smeared dmdt-map from a collection of light curves</p>
+<p>The method is performed in parallel using <code>n_jobs</code> threads</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>lcs</code></strong> :&ensp;<code>list</code> of <code>(ndarray, ndarray, ndarray)</code></dt>
+<dd>List or tuple of tuple pairs (t, m, sigma) represented individual
+light curves. All arrays must have the same dtype</dd>
+<dt><strong><code>sorted</code></strong> :&ensp;<code>bool</code> or <code>None</code>, optional</dt>
+<dd><code>True</code> guarantees that all light curves are sorted</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>3d-ndarray</code> of <code>float</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+</dd>
+<dt id="light_curve.DmDt.points"><code class="name flex">
+<span>def <span class="ident">points</span></span>(<span>...)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Produces dmdt-map from light curve</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>t</code></strong> :&ensp;<code>1d-ndarray</code> of <code>float</code></dt>
+<dd>Time moments, must be sorted</dd>
+<dt><strong><code>m</code></strong> :&ensp;<code>1d-ndarray</code> of <code>float</code></dt>
+<dd>Magnitudes</dd>
+<dt><strong><code>sorted</code></strong> :&ensp;<code>bool</code> or <code>None</code>, optional</dt>
+<dd><code>True</code> guarantees that the light curve is sorted</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>2d-ndarray</code> of <code>float</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+</dd>
+<dt id="light_curve.DmDt.points_batches"><code class="name flex">
+<span>def <span class="ident">points_batches</span></span>(<span>...)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Reusable iterable yielding dmdt-maps</p>
+<p>The dmdt-maps are produced in parallel using <code>n_jobs</code> threads, batches
+are being generated in background, so the next batch is started to
+generate just after the previous one is yielded. Note that light curves
+data are copied, so from the performance point of view it is better to
+use <code>points_many</code> if you don't need observation dropping</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>lcs</code></strong> :&ensp;<code>list</code> of <code>(ndarray, ndarray)</code></dt>
+<dd>List or tuple of tuple pairs (t, m) represented individual light
+curves. All arrays must have the same dtype</dd>
+<dt><strong><code>sorted</code></strong> :&ensp;<code>bool</code> or <code>None</code>, optional</dt>
+<dd><code>True</code> guarantees that all light curves is sorted, default is
+<code>None</code></dd>
+<dt><strong><code>batch_size</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>The number of dmdt-maps to yield. The last batch can be smaller.
+Default is 1</dd>
+<dt><strong><code>yield_index</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Yield a tuple of (indexes, maps) instead of just maps. Could be
+useful when shuffle is <code>True</code>. Default is <code>False</code></dd>
+<dt><strong><code>shuffle</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>If <code>True</code>, shuffle light curves (not individual observations) on
+each creating of new iterator. Default is <code>False</code></dd>
+<dt><strong><code>drop_nobs</code></strong> :&ensp;<code>int</code> or <code>float</code>, optional</dt>
+<dd>Drop observations from every light curve. If it is a positive
+integer, it is a number of observations to drop. If it is a
+floating point between 0 and 1, it is a part of observation to
+drop. Default is <code>0</code>, which means usage of the original data</dd>
+<dt><strong><code>random_seed</code></strong> :&ensp;<code>int</code> or <code>None</code>, optional</dt>
+<dd>Random seed for shuffling and dropping. Default is <code>None</code> which
+means random seed</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Iterable</code> of <code>3d-ndarray</code> or <code>(1d-ndarray, 3d-ndarray)</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+</dd>
+<dt id="light_curve.DmDt.points_many"><code class="name flex">
+<span>def <span class="ident">points_many</span></span>(<span>...)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Produces dmdt-map from a collection of light curves</p>
+<p>The method is performed in parallel using <code>n_jobs</code> threads</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>lcs</code></strong> :&ensp;<code>list</code> of <code>(ndarray, ndarray)</code></dt>
+<dd>List or tuple of tuple pairs (t, m) represented individual light
+curves. All arrays must have the same dtype</dd>
+<dt><strong><code>sorted</code></strong> :&ensp;<code>bool</code> or <code>None</code>, optional</dt>
+<dd><code>True</code> guarantees that all light curves is sorted</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>3d-ndarray</code> of <code>float</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+</dd>
+</dl>
+</dd>
+<dt id="light_curve.Duration"><code class="flex name class">
+<span>class <span class="ident">Duration</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Time-series duration</p>
+<p>$$
+t_{N-1} - t_0.
+$$</p>
+<p>Note: cadence-dependent feature.</p>
+<ul>
+<li>Depends on: <strong>time</strong></li>
+<li>Minimum number of observations: <strong>1</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.Eta"><code class="flex name class">
+<span>class <span class="ident">Eta</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Von Neummann $\eta$</p>
+<p>$$
+\eta \equiv \frac1{(N - 1)\,\sigma_m^2} \sum_{i=0}^{N-2}(m_{i+1} - m_i)^2,
+$$
+where $N$ is the number of observations,
+$\sigma_m = \sqrt{\sum_i (m_i - \langle m \rangle)^2 / (N-1)}$ is the magnitude standard deviation.</p>
+<ul>
+<li>Depends on: <strong>magnitude</strong></li>
+<li>Minimum number of observations: <strong>2</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<p>Kim et al. 2014, <a href="https://doi.org/10.1051/0004-6361/201323252">DOI:10.1051/0004-6361/201323252</a></p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.EtaE"><code class="flex name class">
+<span>class <span class="ident">EtaE</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>$\eta^e$ — modification of <a href="crate::Eta">Eta</a> for unevenly time series</p>
+<p>$$
+\eta^e \equiv \frac{(t_{N-1} - t_0)^2}{(N - 1)^3} \frac{\sum_{i=0}^{N-2} \left(\frac{m_{i+1} - m_i}{t_{i+1} - t_i}\right)^2}{\sigma_m^2}
+$$
+where $N$ is the number of observations,
+$\sigma_m = \sqrt{\sum_i (m_i - \langle m \rangle)^2 / (N-1)}$ is the magnitude standard deviation.
+Note that this definition is a bit different from both Kim et al. 2014 and
+<a href="https://feets.readthedocs.io/en/latest/">feets</a></p>
+<p>Note that this feature can have very high values and be highly cadence-dependent in the case of large range of time
+lags. In this case consider to use this feature with <a href="crate::Bins">Bins</a>.</p>
+<ul>
+<li>Depends on: <strong>time</strong>, <strong>magnitude</strong></li>
+<li>Minimum number of observations: <strong>2</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<p>Kim et al. 2014, <a href="https://doi.org/10.1051/0004-6361/201323252">DOI:10.1051/0004-6361/201323252</a></p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.ExcessVariance"><code class="flex name class">
+<span>class <span class="ident">ExcessVariance</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Measure of the variability amplitude</p>
+<p>$$
+\frac{\sigma_m^2 - \langle \delta^2 \rangle}{\langle m \rangle^2},
+$$
+where $\langle \delta^2 \rangle$ is the mean of squared error, $\sigma_m$ is the magnitude
+standard deviation. Note that this definition differs from
+<a href="https://doi.org/10.3847/1538-4357/aa9188">Sánchez et al. 2017</a></p>
+<ul>
+<li>Depends on: <strong>magnitude</strong>, <strong>error</strong></li>
+<li>Minimum number of observations: <strong>2</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<p>Sánchez et al. 2017 <a href="https://doi.org/10.3847/1538-4357/aa9188">DOI:10.3847/1538-4357/aa9188</a></p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.Extractor"><code class="flex name class">
+<span>class <span class="ident">Extractor</span></span>
+<span>(</span><span>*args: Collection[Union[light_curve.light_curve_py.features._base.BaseFeature, light_curve.light_curve_ext._FeatureEvaluator]])</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Bulk feature extractor</p>
+<ul>
+<li>Depends on: as reuired by feature evaluators</li>
+<li>Minimum number of observations: as required by feature evaluators</li>
+<li>Number of features: total for all feature evaluators</li>
+</ul>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>*features</code></strong> :&ensp;<code>iterable</code></dt>
+<dd>Feature objects</dd>
+</dl>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Extractor:
+    def __new__(cls, *args: Collection[Union[BaseFeature, _RustBaseFeature]]):
+        if len(args) &gt; 0 and all(isinstance(feature, _RustBaseFeature) for feature in args):
+            return _RustExtractor(*args)
+        else:
+            return _PyExtractor(args)</code></pre>
+</details>
+</dd>
+<dt id="light_curve.FluxNNotDetBeforeFd"><code class="flex name class">
+<span>class <span class="ident">FluxNNotDetBeforeFd</span></span>
+<span>(</span><span>signal_to_noise: float, strictly_fainter: bool = False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Number of non-detections before the first detection for measurements of the flux.</p>
+<p>Feature use a user-defined signal to noise ratio to define non-detections and count their number before
+the first detection. strictly_fainter flag allows counting non-detections with a strictly smaller upper limit
+than the first detection flux (there is no such feature in the original article).</p>
+<ul>
+<li>Depends on: <strong>flux</strong></li>
+<li>Minimum number of observations: <strong>2</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>signal_to_noise</code></strong> :&ensp;<code>float</code></dt>
+<dd>Signal to noise ratio.</dd>
+<dt><strong><code>strictly_fainter</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Flag to determine if to find non-detections with strictly smaller upper limit than the first detection flux.</dd>
+</dl>
+<p>P. Sánchez-Sáez et al 2021, <a href="https://doi.org/10.3847/1538-3881/abd5c1">DOI:10.3847/1538-3881/abd5c1</a></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass()
+class FluxNNotDetBeforeFd(BaseFeature):
+    &#34;&#34;&#34;Number of non-detections before the first detection for measurements of the flux.
+
+    Feature use a user-defined signal to noise ratio to define non-detections and count their number before
+    the first detection. strictly_fainter flag allows counting non-detections with a strictly smaller upper limit
+    than the first detection flux (there is no such feature in the original article).
+
+    - Depends on: **flux**
+    - Minimum number of observations: **2**
+    - Number of features: **1**
+
+    Attributes
+    ----------
+    signal_to_noise : float
+        Signal to noise ratio.
+    strictly_fainter : bool
+        Flag to determine if to find non-detections with strictly smaller upper limit than the first detection flux.
+
+    P. Sánchez-Sáez et al 2021, [DOI:10.3847/1538-3881/abd5c1](https://doi.org/10.3847/1538-3881/abd5c1)
+    &#34;&#34;&#34;
+
+    signal_to_noise: float
+    strictly_fainter: bool = False
+
+    def _eval(self, t, m, sigma=None, sorted=None, fill_value=None):
+        detections = np.argwhere(m &gt; self.signal_to_noise * sigma).flatten()
+
+        if len(detections) == len(m):
+            raise ValueError(&#34;There is no any non-detections&#34;)
+
+        first_detection_idx = detections[0]
+
+        if self.strictly_fainter:
+            detection_m = m[first_detection_idx]
+            upper_limits = sigma[:first_detection_idx] * self.signal_to_noise
+            non_detection_less = np.count_nonzero(upper_limits &lt; detection_m)
+            return non_detection_less
+
+        return first_detection_idx
+
+    @property
+    def names(self):
+        return &#34;flux_n_non_detections_before_fd&#34;
+
+    @property
+    def descriptions(self):
+        return &#34;number of non detections before the first detection for fluxes&#34;
+
+    @property
+    def size(self):
+        return 1</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_py.features._base.BaseFeature</li>
+<li>abc.ABC</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="light_curve.FluxNNotDetBeforeFd.signal_to_noise"><code class="name">var <span class="ident">signal_to_noise</span> : float</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="light_curve.FluxNNotDetBeforeFd.strictly_fainter"><code class="name">var <span class="ident">strictly_fainter</span> : bool</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="light_curve.FluxNNotDetBeforeFd.descriptions"><code class="name">var <span class="ident">descriptions</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def descriptions(self):
+    return &#34;number of non detections before the first detection for fluxes&#34;</code></pre>
+</details>
+</dd>
+<dt id="light_curve.FluxNNotDetBeforeFd.names"><code class="name">var <span class="ident">names</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def names(self):
+    return &#34;flux_n_non_detections_before_fd&#34;</code></pre>
+</details>
+</dd>
+<dt id="light_curve.FluxNNotDetBeforeFd.size"><code class="name">var <span class="ident">size</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def size(self):
+    return 1</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="light_curve.InterPercentileRange"><code class="flex name class">
+<span>class <span class="ident">InterPercentileRange</span></span>
+<span>(</span><span>quantile)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Inter-percentile range</p>
+<p>$$
+Q(1 - p) - Q(p),
+$$
+where $Q(p)$ is the $p$th quantile of the magnitude distribution.</p>
+<p>Special cases are <a href="https://en.wikipedia.org/wiki/Interquartile_range">the interquartile range</a>
+which is inter-percentile range for $p = 0.25$ and
+<a href="https://en.wikipedia.org/wiki/Interdecile_range">the interdecile range</a> which is
+inter-percentile range for $p = 0.1$.</p>
+<ul>
+<li>Depends on: <strong>magnitude</strong></li>
+<li>Minimum number of observations: <strong>1</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>quantile</code></strong> :&ensp;<code>positive float</code></dt>
+<dd>Range is (100% * quantile, 100% * (1 - quantile))</dd>
+</dl>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.Kurtosis"><code class="flex name class">
+<span>class <span class="ident">Kurtosis</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Excess kurtosis of magnitude</p>
+<p>$$
+G_2 \equiv \frac{N\,(N + 1)}{(N - 1)(N - 2)(N - 3)} \frac{\sum_i(m_i - \langle m \rangle)^4}{\sigma_m^4}
+- 3\frac{(N - 1)^2}{(N - 2)(N - 3)},
+$$
+where $N$ is the number of observations,
+$\langle m \rangle$ is the mean magnitude,
+$\sigma_m = \sqrt{\sum_i (m_i - \langle m \rangle)^2 / (N-1)}$ is the magnitude standard deviation.</p>
+<ul>
+<li>Depends on: <strong>magnitude</strong></li>
+<li>Minimum number of observations: <strong>4</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<p><a href="https://en.wikipedia.org/wiki/Kurtosis#Estimators_of_population_kurtosis">Wikipedia</a></p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.LinearFit"><code class="flex name class">
+<span>class <span class="ident">LinearFit</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Slope, its error and reduced $\chi^2$ of the light curve in the linear fit</p>
+<p>Least squares fit of the linear stochastic model with Gaussian noise described by observation
+errors ${\delta_i}$:
+$$
+m_i = c + \mathrm{slope} t_i + \delta_i \varepsilon_i
+$$
+where $c$ is a constant,
+${\varepsilon_i}$ are standard distributed random variables.</p>
+<p>Feature values are $\mathrm{slope}$, $\sigma_\mathrm{slope}$ and
+$\frac{\sum{((m_i - c - \mathrm{slope} t_i) / \delta_i)^2}}{N - 2}$.</p>
+<ul>
+<li>Depends on: <strong>time</strong>, <strong>magnitude</strong>, <strong>magnitude error</strong></li>
+<li>Minimum number of observations: <strong>3</strong></li>
+<li>Number of features: <strong>3</strong></li>
+</ul>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.LinearTrend"><code class="flex name class">
+<span>class <span class="ident">LinearTrend</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>The slope, its error and noise level of the light curve in the linear fit</p>
+<p>Least squares fit of the linear stochastic model with constant Gaussian noise $\Sigma$ assuming
+observation errors to be zero:
+$$
+m_i = c + \mathrm{slope} t_i + \Sigma \varepsilon_i,
+$$
+where $c$ is a constant,
+${\varepsilon_i}$ are standard distributed random variables. $\mathrm{slope}$,
+$\sigma_\mathrm{slope}$ and $\Sigma$ are returned.</p>
+<ul>
+<li>Depends on: <strong>time</strong>, <strong>magnitude</strong></li>
+<li>Minimum number of observations: <strong>3</strong></li>
+<li>Number of features: <strong>3</strong></li>
+</ul>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.MagnitudeNNotDetBeforeFd"><code class="flex name class">
+<span>class <span class="ident">MagnitudeNNotDetBeforeFd</span></span>
+<span>(</span><span>sigma_non_detection: float = inf, strictly_fainter: bool = False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Number of non detections before the first detection for measurements of the magnitude.</p>
+<p>Feature use a user-defined value to mark non-detections: measurements with sigma equal to this value
+considered as non detections. strictly_fainter flag allows counting non-detections with a strictly larger
+upper limit than the first detection magnitude (there is no such feature in the original article).</p>
+<ul>
+<li>Depends on: <strong>magnitude</strong></li>
+<li>Minimum number of observations: <strong>2</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>sigma_non_detection</code></strong> :&ensp;<code>float</code></dt>
+<dd>Sigma value to mark the non detections values, may not be NaN.</dd>
+<dt><strong><code>strictly_fainter</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Flag to determine if to find non-detections with strictly larger upper limit than the first detection magnitude.</dd>
+</dl>
+<p>P. Sánchez-Sáez et al 2021, <a href="https://doi.org/10.3847/1538-3881/abd5c1">DOI:10.3847/1538-3881/abd5c1</a></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass()
+class MagnitudeNNotDetBeforeFd(BaseFeature):
+    &#34;&#34;&#34;Number of non detections before the first detection for measurements of the magnitude.
+
+    Feature use a user-defined value to mark non-detections: measurements with sigma equal to this value
+    considered as non detections. strictly_fainter flag allows counting non-detections with a strictly larger
+    upper limit than the first detection magnitude (there is no such feature in the original article).
+
+    - Depends on: **magnitude**
+    - Minimum number of observations: **2**
+    - Number of features: **1**
+
+    Attributes
+    ----------
+    sigma_non_detection : float
+        Sigma value to mark the non detections values, may not be NaN.
+    strictly_fainter : bool
+        Flag to determine if to find non-detections with strictly larger upper limit than the first detection magnitude.
+
+    P. Sánchez-Sáez et al 2021, [DOI:10.3847/1538-3881/abd5c1](https://doi.org/10.3847/1538-3881/abd5c1)
+    &#34;&#34;&#34;
+
+    sigma_non_detection: float = np.Inf
+    strictly_fainter: bool = False
+
+    def _eval(self, t, m, sigma=None, sorted=None, fill_value=None):
+        detections = np.argwhere(sigma != self.sigma_non_detection).flatten()
+
+        if len(detections) == len(m):
+            raise ValueError(&#34;There is no any non-detections&#34;)
+
+        first_detection_idx = detections[0]
+
+        if self.strictly_fainter:
+            detection_m = m[first_detection_idx]
+            # magnitude upper limits should be larger than the first detection
+            non_detection_less = np.count_nonzero(m[:first_detection_idx] &gt; detection_m)
+            return non_detection_less
+
+        return first_detection_idx
+
+    @property
+    def names(self):
+        return &#34;magn_n_non_detections_before_fd&#34;
+
+    @property
+    def descriptions(self):
+        return &#34;number of non detections before the first detection for magnitudes&#34;
+
+    @property
+    def size(self):
+        return 1</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_py.features._base.BaseFeature</li>
+<li>abc.ABC</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="light_curve.MagnitudeNNotDetBeforeFd.sigma_non_detection"><code class="name">var <span class="ident">sigma_non_detection</span> : float</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="light_curve.MagnitudeNNotDetBeforeFd.strictly_fainter"><code class="name">var <span class="ident">strictly_fainter</span> : bool</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="light_curve.MagnitudeNNotDetBeforeFd.descriptions"><code class="name">var <span class="ident">descriptions</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def descriptions(self):
+    return &#34;number of non detections before the first detection for magnitudes&#34;</code></pre>
+</details>
+</dd>
+<dt id="light_curve.MagnitudeNNotDetBeforeFd.names"><code class="name">var <span class="ident">names</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def names(self):
+    return &#34;magn_n_non_detections_before_fd&#34;</code></pre>
+</details>
+</dd>
+<dt id="light_curve.MagnitudeNNotDetBeforeFd.size"><code class="name">var <span class="ident">size</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def size(self):
+    return 1</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="light_curve.MagnitudePercentageRatio"><code class="flex name class">
+<span>class <span class="ident">MagnitudePercentageRatio</span></span>
+<span>(</span><span>quantile_numerator, quantile_denominator)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Magnitude percentage ratio</p>
+<p>$$
+\mathrm{magnitude~}q\mathrm{~to~}n\mathrm{~ratio} \equiv \frac{Q(1-n) - Q(n)}{Q(1-d) - Q(d)},
+$$
+where $n$ and $d$ denotes user defined percentage, $Q$ is the quantile function of magnitude
+distribution.</p>
+<ul>
+<li>Depends on: <strong>magnitude</strong></li>
+<li>Minimum number of observations: <strong>1</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<p>D’Isanto et al. 2016 <a href="https://doi.org/10.1093/mnras/stw157">DOI:10.1093/mnras/stw157</a></p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>quantile_numerator</code></strong> :&ensp;<code>positive float</code></dt>
+<dd>Numerator is inter-percentile range (100% * q, 100% (1 - q))</dd>
+<dt><strong><code>quantile_denominator</code></strong> :&ensp;<code>positive float</code></dt>
+<dd>Denominator is inter-percentile range (100% * q, 100% (1 - q))</dd>
+</dl>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.MaximumSlope"><code class="flex name class">
+<span>class <span class="ident">MaximumSlope</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Maximum slope between two sub-sequential observations</p>
+<p>$$
+\mathrm{maximum~slope} \equiv \max_{i=0..N-2}\left|\frac{m_{i+1} - m_i}{t_{i+1} - t_i}\right|
+$$</p>
+<p>Note that this feature can have high values and be cadence-dependent in the case of large range of time lags.
+In this case consider to use this feature with <a href="crate::Bins">Bins</a>.</p>
+<ul>
+<li>Depends on: <strong>time</strong>, <strong>magnitude</strong></li>
+<li>Minimum number of observations: <strong>2</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<p>D’Isanto et al. 2016 <a href="https://doi.org/10.1093/mnras/stw157">DOI:10.1093/mnras/stw157</a></p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.MaximumTimeInterval"><code class="flex name class">
+<span>class <span class="ident">MaximumTimeInterval</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Maximum time interval between consequent observations</p>
+<p>$$
+\max{(t_{i+1} - t_i)}
+$$</p>
+<p>Note: highly cadence-dependent feature.</p>
+<ul>
+<li>Depends on: <strong>time</strong></li>
+<li>Minimum number of observations: <strong>2</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.Mean"><code class="flex name class">
+<span>class <span class="ident">Mean</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Mean magnitude</p>
+<p>$$
+\langle m \rangle \equiv \frac1{N} \sum_i m_i.
+$$
+This is non-weighted mean, see <a href="crate::WeightedMean">WeightedMean</a> for weighted mean.</p>
+<ul>
+<li>Depends on: <strong>magnitude</strong></li>
+<li>Minimum number of observations: <strong>1</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.MeanVariance"><code class="flex name class">
+<span>class <span class="ident">MeanVariance</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Standard deviation to mean ratio</p>
+<p>$$
+\frac{\sigma_m}{\langle m \rangle}
+$$</p>
+<ul>
+<li>Depends on: <strong>magnitude</strong></li>
+<li>Minimum number of observations: <strong>2</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.Median"><code class="flex name class">
+<span>class <span class="ident">Median</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Median magnitude</p>
+<p>$$
+\mathrm{Median}(m_i)
+$$</p>
+<ul>
+<li>Depends on: <strong>magnitude</strong></li>
+<li>Minimum number of observations: <strong>1</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.MedianAbsoluteDeviation"><code class="flex name class">
+<span>class <span class="ident">MedianAbsoluteDeviation</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Median of the absolute value of the difference between magnitude and its median</p>
+<p>$$
+\mathrm{median~absolute~deviation} \equiv \mathrm{Median}\left(|m_i - \mathrm{Median}(m)|\right).
+$$</p>
+<ul>
+<li>Depends on: <strong>magnitude</strong></li>
+<li>Minimum number of observations: <strong>1</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<p>D’Isanto et al. 2016 <a href="https://doi.org/10.1093/mnras/stw157">DOI:10.1093/mnras/stw157</a></p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.MedianBufferRangePercentage"><code class="flex name class">
+<span>class <span class="ident">MedianBufferRangePercentage</span></span>
+<span>(</span><span>quantile)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Fraction of observations inside $\mathrm{Median}(m) \pm q \times (\max(m) - \min(m)) / 2$ interval</p>
+<ul>
+<li>Depends on: <strong>magnitude</strong></li>
+<li>Minimum number of observations: <strong>1</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<p>D’Isanto et al. 2016 <a href="https://doi.org/10.1093/mnras/stw157">DOI:10.1093/mnras/stw157</a></p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>quantile</code></strong> :&ensp;<code>positive float</code></dt>
+<dd>Relative range size</dd>
+</dl>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.MinimumTimeInterval"><code class="flex name class">
+<span>class <span class="ident">MinimumTimeInterval</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Minimum time interval between consequent observations</p>
+<p>$$
+\min{(t_{i+1} - t_i)}
+$$</p>
+<p>Note: highly cadence-dependent feature.</p>
+<ul>
+<li>Depends on: <strong>time</strong></li>
+<li>Minimum number of observations: <strong>2</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.ObservationCount"><code class="flex name class">
+<span>class <span class="ident">ObservationCount</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Number of observations</p>
+<p>$$
+N
+$$</p>
+<p>Note: cadence-dependent feature.</p>
+<ul>
+<li>Depends on: nothing</li>
+<li>Minimum number of observations: <strong>0</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.OtsuSplit"><code class="flex name class">
+<span>class <span class="ident">OtsuSplit</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Otsu threshholding algorithm</p>
+<p>Difference of subset means, standard deviation of the lower subset, standard deviation
+of the upper subset and lower-to-all observation count ratio for two subsets of magnitudes
+obtained by Otsu's method split.</p>
+<p>Otsu's method is used to perform automatic thresholding. The algorithm returns a single
+threshold that separate values into two classes. This threshold is determined by minimizing
+intra-class intensity variance, or equivalently, by maximizing inter-class variance.</p>
+<ul>
+<li>Depends on: <strong>magnitude</strong></li>
+<li>Minimum number of observations: <strong>2</strong></li>
+<li>Number of features: <strong>4</strong></li>
+</ul>
+<p>Otsu, Nobuyuki 1979. <a href="https://doi.org/10.1109/tsmc.1979.4310076">DOI:10.1109/tsmc.1979.4310076</a></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass()
+class OtsuSplit(BaseFeature):
+    &#34;&#34;&#34;Otsu threshholding algorithm
+
+    Difference of subset means, standard deviation of the lower subset, standard deviation
+    of the upper subset and lower-to-all observation count ratio for two subsets of magnitudes
+    obtained by Otsu&#39;s method split.
+
+    Otsu&#39;s method is used to perform automatic thresholding. The algorithm returns a single
+    threshold that separate values into two classes. This threshold is determined by minimizing
+    intra-class intensity variance, or equivalently, by maximizing inter-class variance.
+
+    - Depends on: **magnitude**
+    - Minimum number of observations: **2**
+    - Number of features: **4**
+
+    Otsu, Nobuyuki 1979. [DOI:10.1109/tsmc.1979.4310076](https://doi.org/10.1109/tsmc.1979.4310076)
+    &#34;&#34;&#34;
+
+    def _eval(self, t, m, sigma=None):
+        n = len(m)
+        amounts = np.arange(1, n)
+        m = np.sort(m)
+
+        w0 = amounts / n
+        w1 = 1 - w0
+
+        cumsum0 = np.cumsum(m)[:-1]
+        cumsum1 = np.cumsum(m[::-1])[:-1][::-1]
+        mean0 = cumsum0 / amounts
+        mean1 = cumsum1 / amounts[::-1]
+
+        inter_class_variance = w0 * w1 * (mean0 - mean1) ** 2
+        arg = np.argmax(inter_class_variance)
+
+        std_lower = np.std(m[: arg + 1], ddof=1)
+        std_upper = np.std(m[arg + 1 :], ddof=1)
+
+        if len(m[: arg + 1]) == 1:
+            std_lower = 0
+        if len(m[arg + 1 :]) == 1:
+            std_upper = 0
+
+        lower_to_all_ratio = (arg + 1) / n
+
+        return mean1[arg] - mean0[arg], std_lower, std_upper, lower_to_all_ratio
+
+    @property
+    def names(self):
+        return &#34;otsu_mean_diff&#34;, &#34;otsu_std_lower&#34;, &#34;otsu_std_upper&#34;, &#34;otsu_lower_to_all_ratio&#34;
+
+    @property
+    def descriptions(self):
+        return (
+            &#34;difference between mean values of Otsu split subsets&#34;,
+            &#34;standard deviation for observations below the threshold given by Otsu method&#34;,
+            &#34;standard deviation for observations above the threshold given by Otsu method&#34;,
+            &#34;ratio of quantity of observations bellow the threshold given by Otsu method to quantity of all observations&#34;,
+        )
+
+    @property
+    def size(self):
+        return 4</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_py.features._base.BaseFeature</li>
+<li>abc.ABC</li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="light_curve.OtsuSplit.descriptions"><code class="name">var <span class="ident">descriptions</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def descriptions(self):
+    return (
+        &#34;difference between mean values of Otsu split subsets&#34;,
+        &#34;standard deviation for observations below the threshold given by Otsu method&#34;,
+        &#34;standard deviation for observations above the threshold given by Otsu method&#34;,
+        &#34;ratio of quantity of observations bellow the threshold given by Otsu method to quantity of all observations&#34;,
+    )</code></pre>
+</details>
+</dd>
+<dt id="light_curve.OtsuSplit.names"><code class="name">var <span class="ident">names</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def names(self):
+    return &#34;otsu_mean_diff&#34;, &#34;otsu_std_lower&#34;, &#34;otsu_std_upper&#34;, &#34;otsu_lower_to_all_ratio&#34;</code></pre>
+</details>
+</dd>
+<dt id="light_curve.OtsuSplit.size"><code class="name">var <span class="ident">size</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def size(self):
+    return 4</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="light_curve.PercentAmplitude"><code class="flex name class">
+<span>class <span class="ident">PercentAmplitude</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Maximum deviation of magnitude from its median</p>
+<p>$$
+\mathrm{percent~amplitude} \equiv \max_i\left|m_i - \mathrm{Median}(m)\right|
+= \max(\max(m) - \mathrm{Median}(m), \mathrm{Median}(m) - \min(m)).
+$$</p>
+<ul>
+<li>Depends on: <strong>magnitude</strong></li>
+<li>Minimum number of observations: <strong>1</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<p>D’Isanto et al. 2016 <a href="https://doi.org/10.1093/mnras/stw157">DOI:10.1093/mnras/stw157</a></p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.PercentDifferenceMagnitudePercentile"><code class="flex name class">
+<span>class <span class="ident">PercentDifferenceMagnitudePercentile</span></span>
+<span>(</span><span>quantile)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Ratio of $p$th inter-percentile range to the median</p>
+<p>$$
+p\mathrm{~percent~difference~magnitude~percentile} \equiv \frac{Q(1-p) - Q(p)}{\mathrm{Median}(m)}.
+$$</p>
+<ul>
+<li>Depends on: <strong>magnitude</strong></li>
+<li>Minimum number of observations: <strong>1</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<p>D’Isanto et al. 2016 <a href="https://doi.org/10.1093/mnras/stw157">DOI:10.1093/mnras/stw157</a></p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>quantile</code></strong> :&ensp;<code>positive float</code></dt>
+<dd>Relative range size</dd>
+</dl>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.Periodogram"><code class="flex name class">
+<span>class <span class="ident">Periodogram</span></span>
+<span>(</span><span>peaks=None, resolution=None, max_freq_factor=None, nyquist=None, fast=None, features=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Peaks of Lomb–Scargle periodogram and periodogram as a meta-feature</p>
+<p>Periodogram $P(\omega)$ is an estimate of spectral density of unevenly time series. <code>peaks</code> argument
+corresponds to a number of the most significant spectral density peaks to return. For each peak its
+period and "signal to noise" ratio is returned:</p>
+<p>$$
+\mathrm{signal~to~noise~of~peak} \equiv \frac{P(\omega_\mathrm{peak}) - \langle P(\omega) \rangle}{\sigma_{P(\omega)}}.
+$$</p>
+<p>[Periodogram] can accept other features for feature extraction from periodogram as it was time
+series without observation errors (unity weights are used if required). You can even pass one
+[Periodogram] to another one if you are crazy enough</p>
+<ul>
+<li>Depends on: <strong>time</strong>, <strong>magnitude</strong></li>
+<li>Minimum number of observations: as required by sub-features, but at least two</li>
+<li>Number of features: <strong>$2 \times \mathrm{peaks}$</strong> plus sub-features</li>
+</ul>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>peaks</code></strong> :&ensp;<code>int</code> or <code>None</code>, optional</dt>
+<dd>Number of peaks to find</dd>
+<dt><strong><code>resolution</code></strong> :&ensp;<code>float</code> or <code>None</code>, optional</dt>
+<dd>Resolution of frequency grid</dd>
+<dt><strong><code>max_freq_factor</code></strong> :&ensp;<code>float</code> or <code>None</code>, optional</dt>
+<dd>Mulitplier for Nyquist frequency</dd>
+<dt><strong><code>nyquist</code></strong> :&ensp;<code>str</code> or <code>float</code> or <code>None</code>, optional</dt>
+<dd>Type of Nyquist frequency. Could be one of:
+- 'average': "Average" Nyquist frequency
+- 'median': Nyquist frequency is defined by median time interval
+between observations
+- float: Nyquist frequency is defined by given quantile of time
+intervals between observations</dd>
+<dt><strong><code>fast</code></strong> :&ensp;<code>bool</code> or <code>None</code>, optional</dt>
+<dd>Use "Fast" (approximate and FFT-based) or direct periodogram algorithm</dd>
+<dt><strong><code>features</code></strong> :&ensp;<code>iterable</code> or <code>None</code>, optional</dt>
+<dd>Features to extract from periodogram considering it as a time-series</dd>
+</dl>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+<dt><strong><code>supported_algorithms</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Available argument values for the constructor</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p>
+<p>freq_power(t, m)
+Get periodogram</p>
+<pre><code>Parameters
+----------
+t : np.ndarray of np.float32 or np.float64
+    Time array
+m : np.ndarray of np.float32 or np.float64
+    Magnitude (flux) array
+
+Returns
+-------
+freq : np.ndarray of np.float32 or np.float64
+    Frequency grid
+power : np.ndarray of np.float32 or np.float64
+    Periodogram power
+</code></pre>
+<h2 id="examples">Examples</h2>
+<pre><code class="language-python-repl">&gt;&gt;&gt; import numpy as np
+&gt;&gt;&gt; from light_curve import Periodogram
+&gt;&gt;&gt; periodogram = Periodogram(peaks=2, resolution=20.0, max_freq_factor=2.0,
+...                           nyquist='average', fast=True)
+&gt;&gt;&gt; t = np.linspace(0, 10, 101)
+&gt;&gt;&gt; m = np.sin(2*np.pi * t / 0.7) + 0.5 * np.cos(2*np.pi * t / 3.3)
+&gt;&gt;&gt; peaks = periodogram(t, m, sorted=True)[::2]
+&gt;&gt;&gt; frequency, power = periodogram.freq_power(t, m)
+</code></pre></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="light_curve.Periodogram.freq_power"><code class="name flex">
+<span>def <span class="ident">freq_power</span></span>(<span>t, m)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Angular frequencies and periodogram values</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="light_curve.ReducedChi2"><code class="flex name class">
+<span>class <span class="ident">ReducedChi2</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Reduced $\chi^2$ of magnitude measurements</p>
+<p>$$
+\mathrm{reduced~}\chi^2 \equiv \frac1{N-1} \sum_i\left(\frac{m_i - \bar{m}}{\delta_i}\right)^2,
+$$
+where $N$ is the number of observations,
+and $\bar{m}$ is the weighted mean magnitude.</p>
+<ul>
+<li>Depends on: <strong>magnitude</strong>, <strong>magnitude error</strong></li>
+<li>Minimum number of observations: <strong>2</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<p>This is a good measure of variability which takes into account observations uncertainties.</p>
+<p><a href="https://en.wikipedia.org/wiki/Reduced_chi-squared_statistic">Wikipedia</a></p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.Skew"><code class="flex name class">
+<span>class <span class="ident">Skew</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Skewness of magnitude $G_1$</p>
+<p>$$
+G_1 \equiv \frac{N}{(N - 1)(N - 2)} \frac{\sum_i(m_i - \langle m \rangle)^3}{\sigma_m^3},
+$$
+where $N$ is the number of observations,
+$\langle m \rangle$ is the mean magnitude,
+$\sigma_m = \sqrt{\sum_i (m_i - \langle m \rangle)^2 / (N-1)}$ is the magnitude standard deviation.</p>
+<ul>
+<li>Depends on: <strong>magnitude</strong></li>
+<li>Minimum number of observations: <strong>3</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<p><a href="https://en.wikipedia.org/wiki/Skewness#Sample_skewness">Wikipedia</a></p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.StandardDeviation"><code class="flex name class">
+<span>class <span class="ident">StandardDeviation</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Standard deviation of magnitude $\sigma_m$</p>
+<p>$$
+\sigma_m \equiv \sqrt{\sum_i (m_i - \langle m \rangle)^2 / (N-1)},
+$$</p>
+<p>$N$ is the number of observations
+and $\langle m \rangle$ is the mean magnitude.</p>
+<ul>
+<li>Depends on: <strong>magnitude</strong></li>
+<li>Minimum number of observations: <strong>2</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<p><a href="https://en.wikipedia.org/wiki/Standard_deviation">Wikipedia</a></p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.StetsonK"><code class="flex name class">
+<span>class <span class="ident">StetsonK</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Stetson $K$ coefficient described light curve shape</p>
+<p>$$
+\mathrm{Stetson}~K \equiv \frac{\sum_i\left|\frac{m_i - \bar{m}}{\delta_i}\right|}{\sqrt{N\,\chi^2}},
+$$
+where N is the number of observations,
+$\bar{m}$ is the weighted mean magnitude
+and $\chi^2 = \sum_i\left(\frac{m_i - \langle m \rangle}{\delta_i}\right)^2$.</p>
+<ul>
+<li>Depends on: <strong>magnitude</strong>, <strong>magnitude error</strong></li>
+<li>Minimum number of observations: <strong>2</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<p>P. B. Stetson, 1996. <a href="https://doi.org/10.1086/133808">DOI:10.1086/133808</a></p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.TimeMean"><code class="flex name class">
+<span>class <span class="ident">TimeMean</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Mean time</p>
+<p>$$
+\langle t \rangle \equiv \frac1{N} \sum_i {t_i}.
+$$</p>
+<p>Note: highly cadence-dependent feature.</p>
+<ul>
+<li>Depends on: <strong>time</strong></li>
+<li>Minimum number of observations: <strong>1</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.TimeStandardDeviation"><code class="flex name class">
+<span>class <span class="ident">TimeStandardDeviation</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Standard deviation of time moments</p>
+<p>$$
+\sigma_t \equiv \frac{\sum_i {(t_i - \langle t \rangle)^2}}{N - 1}.
+$$</p>
+<p>Note: highly cadence-dependent feature.</p>
+<ul>
+<li>Depends on: <strong>time</strong></li>
+<li>Minimum number of observations: <strong>2</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve.VillarFit"><code class="flex name class">
+<span>class <span class="ident">VillarFit</span></span>
+<span>(</span><span>algorithm, mcmc_niter=None, lmsder_niter=None, init=None, bounds=None, ln_prior=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Villar function fit</p>
+<p>Seven fit parameters and goodness of fit (reduced $\chi^2$) of the Villar function developed for
+supernovae classification:</p>
+<p><span>
+$$
+f(t) = c + \frac{A}{ 1 + \exp{\frac{-(t - t_0)}{\tau_\mathrm{rise}}}}
+\left{ \begin{array}{ll} 1 - \frac{\nu (t - t_0)}{\gamma}, &amp;t &lt; t_0 + \gamma \ (1 - \nu) \exp{\frac{-(t-t_0-\gamma)}{\tau_\mathrm{fall}}}, &amp;t \geq t_0 + \gamma \end{array} \right.
+$$
+</span>
+where $A, \gamma, \tau_\mathrm{rise}, \tau_\mathrm{fall} &gt; 0$, $\nu \in [0; 1)$.</p>
+<p>Here we introduce a new dimensionless parameter $\nu$ instead of the plateau slope $\beta$ from the
+orioginal paper: $\nu \equiv -\beta \gamma / A$.</p>
+<p>Note, that the Villar function is developed to be used with fluxes, not magnitudes.</p>
+<ul>
+<li>Depends on: <strong>time</strong>, <strong>magnitude</strong>, <strong>magnitude error</strong></li>
+<li>Minimum number of observations: <strong>8</strong></li>
+<li>Number of features: <strong>8</strong></li>
+</ul>
+<p>Villar et al. 2019 <a href="https://doi.org/10.3847/1538-4357/ab418c">DOI:10.3847/1538-4357/ab418c</a></p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>algorithm</code></strong> :&ensp;<code>str</code></dt>
+<dd>Non-linear least-square algorithm, supported values are:
+mcmc, lmsder, mcmc-lmsder.</dd>
+<dt><strong><code>mcmc_niter</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>Number of MCMC iterations, default is 128</dd>
+<dt><strong><code>lmsder_niter</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>Number of LMSDER iterations, default is 10</dd>
+<dt><strong><code>init</code></strong> :&ensp;<code>list</code> or <code>None</code>, optional</dt>
+<dd>Initial conditions, must be <code>None</code> or a <code>list</code> of <code>float</code>s or <code>None</code>s.
+The length of the list must be 7, <code>None</code> values will be replaced
+with some defauls values. It is supported by MCMC only</dd>
+<dt><strong><code>bounds</code></strong> :&ensp;<code>list</code> of <code>tuples</code> or <code>None</code>, optional</dt>
+<dd>Boundary conditions, must be <code>None</code> or a <code>list</code> of <code>tuple</code>s of <code>float</code>s or
+<code>None</code>s. The length of the list must be 7, boundary conditions must
+include initial conditions, <code>None</code> values will be replaced with some broad
+defaults. It is supported by MCMC only</dd>
+<dt><strong><code>ln_prior</code></strong> :&ensp;<code>list</code> of <code>light_curve.light_curve_ext.ln_prior.LnPrior1D,</code> or <code>str,</code> or <code>None</code>, optional</dt>
+<dd>
+<p>Prior for MCMC, None means no prior. A list of 7
+<code>LnPrior1D</code> specifies logatithms of priors for each fit
+parameter. Alternatively, a <code>str</code> literal can be used:</p>
+<ul>
+<li>"no": no prior,</li>
+<li>"hosseinzadeh2020": prior addopted from Hosseinzadeh et al. 2020, it
+assumes that <code>t</code> is in days</li>
+</ul>
+</dd>
+</dl>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+<dt><strong><code>supported_algorithms</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Available argument values for the constructor</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p>
+<p><strong><code>model(t, params)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Underlying parametric model function</p>
+<h2 id="examples">Examples</h2>
+<pre><code class="language-python-repl">&gt;&gt;&gt; import numpy as np
+&gt;&gt;&gt; from light_curve import VillarFit
+&gt;&gt;&gt;
+&gt;&gt;&gt; fit = VillarFit('mcmc')
+&gt;&gt;&gt; t = np.linspace(0, 10, 101)
+&gt;&gt;&gt; flux = 1 + (t - 3) ** 2
+&gt;&gt;&gt; fluxerr = np.sqrt(flux)
+&gt;&gt;&gt; result = fit(t, flux, fluxerr, sorted=True, check=False)
+&gt;&gt;&gt; # Result is built from a model parameters and reduced chi^2
+&gt;&gt;&gt; # So we can use as an input for the model static method
+&gt;&gt;&gt; model = VillarFit.model(t, result)
+</code></pre></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="light_curve.VillarFit.supported_algorithms"><code class="name">var <span class="ident">supported_algorithms</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Static methods</h3>
+<dl>
+<dt id="light_curve.VillarFit.model"><code class="name flex">
+<span>def <span class="ident">model</span></span>(<span>...)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Parametric model function</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>t</code></strong> :&ensp;<code>np.ndarray</code> of <code>np.float32</code> or <code>np.float64</code></dt>
+<dd>Time moments, can be unsorted</dd>
+<dt><strong><code>params</code></strong> :&ensp;<code>np.ndarray</code> of <code>np.float32</code> or <code>np.float64</code></dt>
+<dd>Parameters of the model, this array can be longer than actual parameter
+list, the beginning part of the array will be used in this case</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>np.ndarray</code> of <code>np.float32</code> or <code>np.float64</code></dt>
+<dd>Array of model values corresponded to the given time moments</dd>
+</dl></div>
+</dd>
+</dl>
+</dd>
+<dt id="light_curve.WeightedMean"><code class="flex name class">
+<span>class <span class="ident">WeightedMean</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Weighted mean magnitude</p>
+<p>$$
+\bar{m} \equiv \frac{\sum_i m_i / \delta_i^2}{\sum_i 1 / \delta_i^2}.
+$$
+See <a href="crate::Mean">Mean</a> for non-weighted mean.</p>
+<ul>
+<li>Depends on: <strong>magnitude</strong>, <strong>magnitude error</strong></li>
+<li>Minimum number of observations: <strong>1</strong></li>
+<li>Number of features: <strong>1</strong></li>
+</ul>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>names</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature names</dd>
+<dt><strong><code>descriptions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>Feature descriptions</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong><code>__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)</code></strong> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extract features and return them as a numpy array<br>
+<strong><code>many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)</code></strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parallel version of <strong>call</strong>
+</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext._FeatureEvaluator</li>
+</ul>
+</dd>
+<dt id="light_curve._FeatureEvaluator"><code class="flex name class">
+<span>class <span class="ident">_FeatureEvaluator</span></span>
+<span>(</span><span>...)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Base class for all feature evaluators having low-level Rust implementation</p>
+<p>Follow child classes for constructor and specific methods documentation.</p>
+<p>Here we present <code>__call__</code> method description which is implemented in
+this base class and common for all children:</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>t</code></strong> :&ensp;<code>numpy.ndarray</code> of <code>np.float32</code> or <code>np.float64 dtype</code></dt>
+<dd>Time moments</dd>
+<dt><strong><code>m</code></strong> :&ensp;<code>numpy.ndarray</code> of <code>the same dtype as t</code></dt>
+<dd>Signal in magnitude or fluxes. Refer to the feature description to
+decide which would work better in your case</dd>
+<dt><strong><code>sigma</code></strong> :&ensp;<code>numpy.ndarray</code> of <code>the same dtype as t</code>, optional</dt>
+<dd>Observation error, if None it is assumed to be unity</dd>
+<dt><strong><code>sorted</code></strong> :&ensp;<code>bool</code> or <code>None</code>, optional</dt>
+<dd>Specifies if input array are sorted by time moments.
+True is for certainly sorted, False is for unsorted.
+If None is specified than sorting is checked and an exception is
+raised for unsorted <code>t</code></dd>
+<dt><strong><code>check</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Check all input arrays for NaNs, <code>t</code> and <code>m</code> for infinite values</dd>
+<dt><strong><code>fill_value</code></strong> :&ensp;<code>float</code> or <code>None</code>, optional</dt>
+<dd>Value to fill invalid feature values, for example if count of
+observations is not enough to find a proper value.
+None causes exception for invalid features</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>ndarray</code> of <code>np.float32</code> or <code>np.float64</code></dt>
+<dd>Extracted feature array</dd>
+</dl>
+<h2 id="notes">Notes</h2>
+<p>This class couldn't be used to create new user-defined features, because
+it doesn't have a constructor. Consider to use <code><a title="light_curve.BaseFeature" href="#light_curve.BaseFeature">BaseFeature</a></code> class from
+high-level Python implementation instead.</p></div>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li>light_curve.light_curve_ext.Amplitude</li>
+<li>light_curve.light_curve_ext.AndersonDarlingNormal</li>
+<li>light_curve.light_curve_ext.BazinFit</li>
+<li>light_curve.light_curve_ext.BeyondNStd</li>
+<li>light_curve.light_curve_ext.Bins</li>
+<li>light_curve.light_curve_ext.Cusum</li>
+<li>light_curve.light_curve_ext.Duration</li>
+<li>light_curve.light_curve_ext.Eta</li>
+<li>light_curve.light_curve_ext.EtaE</li>
+<li>light_curve.light_curve_ext.ExcessVariance</li>
+<li>light_curve.light_curve_ext.Extractor</li>
+<li>light_curve.light_curve_ext.InterPercentileRange</li>
+<li>light_curve.light_curve_ext.Kurtosis</li>
+<li>light_curve.light_curve_ext.LinearFit</li>
+<li>light_curve.light_curve_ext.LinearTrend</li>
+<li>light_curve.light_curve_ext.MagnitudePercentageRatio</li>
+<li>light_curve.light_curve_ext.MaximumSlope</li>
+<li>light_curve.light_curve_ext.MaximumTimeInterval</li>
+<li>light_curve.light_curve_ext.Mean</li>
+<li>light_curve.light_curve_ext.MeanVariance</li>
+<li>light_curve.light_curve_ext.Median</li>
+<li>light_curve.light_curve_ext.MedianAbsoluteDeviation</li>
+<li>light_curve.light_curve_ext.MedianBufferRangePercentage</li>
+<li>light_curve.light_curve_ext.MinimumTimeInterval</li>
+<li>light_curve.light_curve_ext.ObservationCount</li>
+<li>light_curve.light_curve_ext.PercentAmplitude</li>
+<li>light_curve.light_curve_ext.PercentDifferenceMagnitudePercentile</li>
+<li>light_curve.light_curve_ext.Periodogram</li>
+<li>light_curve.light_curve_ext.ReducedChi2</li>
+<li>light_curve.light_curve_ext.Skew</li>
+<li>light_curve.light_curve_ext.StandardDeviation</li>
+<li>light_curve.light_curve_ext.StetsonK</li>
+<li>light_curve.light_curve_ext.TimeMean</li>
+<li>light_curve.light_curve_ext.TimeStandardDeviation</li>
+<li>light_curve.light_curve_ext.VillarFit</li>
+<li>light_curve.light_curve_ext.WeightedMean</li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="light_curve._FeatureEvaluator.descriptions"><code class="name">var <span class="ident">descriptions</span></code></dt>
+<dd>
+<div class="desc"><p>Feature descriptions</p></div>
+</dd>
+<dt id="light_curve._FeatureEvaluator.names"><code class="name">var <span class="ident">names</span></code></dt>
+<dd>
+<div class="desc"><p>Feature names</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="light_curve._FeatureEvaluator.many"><code class="name flex">
+<span>def <span class="ident">many</span></span>(<span>...)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Extract features from many light curves in parallel</p>
+<p>It is an optimized and parallel executed analogue of</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; def many(self, lcs, sorted=None, fill_value=None):
+...     return np.stack([self(*lc, sorted=sorted, fill_value=fill_value)
+...                      for lc in lcs])
+</code></pre>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>lcs</code></strong> :&ensp;<code>list ot (t, m, sigma)</code></dt>
+<dd>A collection of light curves packed into three-tuples, all light curves
+must be represented by numpy.ndarray of the same dtype. See class-level
+documentation for more details</dd>
+<dt><strong><code>sorted</code></strong> :&ensp;<code>bool</code> or <code>None</code>, optional</dt>
+<dd>Specifies if input array are sorted by time moments, see class-level
+documentation for more details</dd>
+<dt><strong><code>check</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Check all input arrays for NaNs, <code>t</code> and <code>m</code> for infinite values</dd>
+<dt><strong><code>fill_value</code></strong> :&ensp;<code>float</code> or <code>None</code>, optional</dt>
+<dd>Fill invalid values by this or raise an exception if None</dd>
+<dt><strong><code>n_jobs</code></strong> :&ensp;<code>int</code></dt>
+<dd>Number of tasks to run in paralell. Default is -1 which means run as
+many jobs as CPU count. See rayon rust crate documentation for
+details</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>features</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>Output feature array, shape is <code>(len(lcs), n_features)</code></dd>
+</dl></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="light_curve.Amplitude" href="#light_curve.Amplitude">Amplitude</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.AndersonDarlingNormal" href="#light_curve.AndersonDarlingNormal">AndersonDarlingNormal</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.BaseFeature" href="#light_curve.BaseFeature">BaseFeature</a></code></h4>
+<ul class="">
+<li><code><a title="light_curve.BaseFeature.many" href="#light_curve.BaseFeature.many">many</a></code></li>
+<li><code><a title="light_curve.BaseFeature.size" href="#light_curve.BaseFeature.size">size</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="light_curve.BazinFit" href="#light_curve.BazinFit">BazinFit</a></code></h4>
+<ul class="">
+<li><code><a title="light_curve.BazinFit.model" href="#light_curve.BazinFit.model">model</a></code></li>
+<li><code><a title="light_curve.BazinFit.supported_algorithms" href="#light_curve.BazinFit.supported_algorithms">supported_algorithms</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="light_curve.BeyondNStd" href="#light_curve.BeyondNStd">BeyondNStd</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.Bins" href="#light_curve.Bins">Bins</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.Cusum" href="#light_curve.Cusum">Cusum</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.DmDt" href="#light_curve.DmDt">DmDt</a></code></h4>
+<ul class="two-column">
+<li><code><a title="light_curve.DmDt.count_dt" href="#light_curve.DmDt.count_dt">count_dt</a></code></li>
+<li><code><a title="light_curve.DmDt.count_dt_many" href="#light_curve.DmDt.count_dt_many">count_dt_many</a></code></li>
+<li><code><a title="light_curve.DmDt.dm_grid" href="#light_curve.DmDt.dm_grid">dm_grid</a></code></li>
+<li><code><a title="light_curve.DmDt.dt_grid" href="#light_curve.DmDt.dt_grid">dt_grid</a></code></li>
+<li><code><a title="light_curve.DmDt.from_borders" href="#light_curve.DmDt.from_borders">from_borders</a></code></li>
+<li><code><a title="light_curve.DmDt.gausses" href="#light_curve.DmDt.gausses">gausses</a></code></li>
+<li><code><a title="light_curve.DmDt.gausses_batches" href="#light_curve.DmDt.gausses_batches">gausses_batches</a></code></li>
+<li><code><a title="light_curve.DmDt.gausses_many" href="#light_curve.DmDt.gausses_many">gausses_many</a></code></li>
+<li><code><a title="light_curve.DmDt.max_dm" href="#light_curve.DmDt.max_dm">max_dm</a></code></li>
+<li><code><a title="light_curve.DmDt.max_dt" href="#light_curve.DmDt.max_dt">max_dt</a></code></li>
+<li><code><a title="light_curve.DmDt.min_dm" href="#light_curve.DmDt.min_dm">min_dm</a></code></li>
+<li><code><a title="light_curve.DmDt.min_dt" href="#light_curve.DmDt.min_dt">min_dt</a></code></li>
+<li><code><a title="light_curve.DmDt.n_jobs" href="#light_curve.DmDt.n_jobs">n_jobs</a></code></li>
+<li><code><a title="light_curve.DmDt.points" href="#light_curve.DmDt.points">points</a></code></li>
+<li><code><a title="light_curve.DmDt.points_batches" href="#light_curve.DmDt.points_batches">points_batches</a></code></li>
+<li><code><a title="light_curve.DmDt.points_many" href="#light_curve.DmDt.points_many">points_many</a></code></li>
+<li><code><a title="light_curve.DmDt.shape" href="#light_curve.DmDt.shape">shape</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="light_curve.Duration" href="#light_curve.Duration">Duration</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.Eta" href="#light_curve.Eta">Eta</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.EtaE" href="#light_curve.EtaE">EtaE</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.ExcessVariance" href="#light_curve.ExcessVariance">ExcessVariance</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.Extractor" href="#light_curve.Extractor">Extractor</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.FluxNNotDetBeforeFd" href="#light_curve.FluxNNotDetBeforeFd">FluxNNotDetBeforeFd</a></code></h4>
+<ul class="">
+<li><code><a title="light_curve.FluxNNotDetBeforeFd.descriptions" href="#light_curve.FluxNNotDetBeforeFd.descriptions">descriptions</a></code></li>
+<li><code><a title="light_curve.FluxNNotDetBeforeFd.names" href="#light_curve.FluxNNotDetBeforeFd.names">names</a></code></li>
+<li><code><a title="light_curve.FluxNNotDetBeforeFd.signal_to_noise" href="#light_curve.FluxNNotDetBeforeFd.signal_to_noise">signal_to_noise</a></code></li>
+<li><code><a title="light_curve.FluxNNotDetBeforeFd.size" href="#light_curve.FluxNNotDetBeforeFd.size">size</a></code></li>
+<li><code><a title="light_curve.FluxNNotDetBeforeFd.strictly_fainter" href="#light_curve.FluxNNotDetBeforeFd.strictly_fainter">strictly_fainter</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="light_curve.InterPercentileRange" href="#light_curve.InterPercentileRange">InterPercentileRange</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.Kurtosis" href="#light_curve.Kurtosis">Kurtosis</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.LinearFit" href="#light_curve.LinearFit">LinearFit</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.LinearTrend" href="#light_curve.LinearTrend">LinearTrend</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.MagnitudeNNotDetBeforeFd" href="#light_curve.MagnitudeNNotDetBeforeFd">MagnitudeNNotDetBeforeFd</a></code></h4>
+<ul class="">
+<li><code><a title="light_curve.MagnitudeNNotDetBeforeFd.descriptions" href="#light_curve.MagnitudeNNotDetBeforeFd.descriptions">descriptions</a></code></li>
+<li><code><a title="light_curve.MagnitudeNNotDetBeforeFd.names" href="#light_curve.MagnitudeNNotDetBeforeFd.names">names</a></code></li>
+<li><code><a title="light_curve.MagnitudeNNotDetBeforeFd.sigma_non_detection" href="#light_curve.MagnitudeNNotDetBeforeFd.sigma_non_detection">sigma_non_detection</a></code></li>
+<li><code><a title="light_curve.MagnitudeNNotDetBeforeFd.size" href="#light_curve.MagnitudeNNotDetBeforeFd.size">size</a></code></li>
+<li><code><a title="light_curve.MagnitudeNNotDetBeforeFd.strictly_fainter" href="#light_curve.MagnitudeNNotDetBeforeFd.strictly_fainter">strictly_fainter</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="light_curve.MagnitudePercentageRatio" href="#light_curve.MagnitudePercentageRatio">MagnitudePercentageRatio</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.MaximumSlope" href="#light_curve.MaximumSlope">MaximumSlope</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.MaximumTimeInterval" href="#light_curve.MaximumTimeInterval">MaximumTimeInterval</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.Mean" href="#light_curve.Mean">Mean</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.MeanVariance" href="#light_curve.MeanVariance">MeanVariance</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.Median" href="#light_curve.Median">Median</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.MedianAbsoluteDeviation" href="#light_curve.MedianAbsoluteDeviation">MedianAbsoluteDeviation</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.MedianBufferRangePercentage" href="#light_curve.MedianBufferRangePercentage">MedianBufferRangePercentage</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.MinimumTimeInterval" href="#light_curve.MinimumTimeInterval">MinimumTimeInterval</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.ObservationCount" href="#light_curve.ObservationCount">ObservationCount</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.OtsuSplit" href="#light_curve.OtsuSplit">OtsuSplit</a></code></h4>
+<ul class="">
+<li><code><a title="light_curve.OtsuSplit.descriptions" href="#light_curve.OtsuSplit.descriptions">descriptions</a></code></li>
+<li><code><a title="light_curve.OtsuSplit.names" href="#light_curve.OtsuSplit.names">names</a></code></li>
+<li><code><a title="light_curve.OtsuSplit.size" href="#light_curve.OtsuSplit.size">size</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="light_curve.PercentAmplitude" href="#light_curve.PercentAmplitude">PercentAmplitude</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.PercentDifferenceMagnitudePercentile" href="#light_curve.PercentDifferenceMagnitudePercentile">PercentDifferenceMagnitudePercentile</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.Periodogram" href="#light_curve.Periodogram">Periodogram</a></code></h4>
+<ul class="">
+<li><code><a title="light_curve.Periodogram.freq_power" href="#light_curve.Periodogram.freq_power">freq_power</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="light_curve.ReducedChi2" href="#light_curve.ReducedChi2">ReducedChi2</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.Skew" href="#light_curve.Skew">Skew</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.StandardDeviation" href="#light_curve.StandardDeviation">StandardDeviation</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.StetsonK" href="#light_curve.StetsonK">StetsonK</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.TimeMean" href="#light_curve.TimeMean">TimeMean</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.TimeStandardDeviation" href="#light_curve.TimeStandardDeviation">TimeStandardDeviation</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve.VillarFit" href="#light_curve.VillarFit">VillarFit</a></code></h4>
+<ul class="">
+<li><code><a title="light_curve.VillarFit.model" href="#light_curve.VillarFit.model">model</a></code></li>
+<li><code><a title="light_curve.VillarFit.supported_algorithms" href="#light_curve.VillarFit.supported_algorithms">supported_algorithms</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="light_curve.WeightedMean" href="#light_curve.WeightedMean">WeightedMean</a></code></h4>
+</li>
+<li>
+<h4><code><a title="light_curve._FeatureEvaluator" href="#light_curve._FeatureEvaluator">_FeatureEvaluator</a></code></h4>
+<ul class="">
+<li><code><a title="light_curve._FeatureEvaluator.descriptions" href="#light_curve._FeatureEvaluator.descriptions">descriptions</a></code></li>
+<li><code><a title="light_curve._FeatureEvaluator.many" href="#light_curve._FeatureEvaluator.many">many</a></code></li>
+<li><code><a title="light_curve._FeatureEvaluator.names" href="#light_curve._FeatureEvaluator.names">names</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>
