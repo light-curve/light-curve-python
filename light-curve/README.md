@@ -18,7 +18,7 @@ The package is tested on Linux (x86-64, aarch64, ppc64) and macOS (x86-64).
 Pre-built wheels for these platforms are available on [pypi.org](https://pypi.org/project/light-curve/#files), other systems are required to have [GNU scientific library (GSL)](https://www.gnu.org/software/gsl/) v2.1+ and the [Rust](https://rust-lang.org) toolchain v1.56+ to build and install the package.
 You can use [`rustup` script](https://rustup.rs) to get the most recent Rust toolchain.
 
-Also could find `light-curve-python` package which is just an "alias" to the main `light-curve` package.
+We also provide `light-curve-python` package which is just an "alias" to the main `light-curve` package.
 
 ## Feature evaluators
 
