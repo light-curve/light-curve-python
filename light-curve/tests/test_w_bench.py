@@ -136,7 +136,7 @@ class TestAndersonDarlingNormal(_Test):
     feets_skip_test = "feets uses biased statistics"
 
     def naive(self, t, m, sigma):
-        return stats.anderson(m).statistic * (1.0 + 4.0 / m.size - 25.0 / m.size ** 2)
+        return stats.anderson(m).statistic * (1.0 + 4.0 / m.size - 25.0 / m.size**2)
 
 
 if lc_ext._built_with_gsl:
@@ -236,7 +236,7 @@ class TestExcessVariance(_Test):
     name = "ExcessVariance"
 
     def naive(self, t, m, sigma):
-        return (np.var(m, ddof=1) - np.mean(sigma ** 2)) / np.mean(m) ** 2
+        return (np.var(m, ddof=1) - np.mean(sigma**2)) / np.mean(m) ** 2
 
 
 class TestInterPercentileRange(_Test):
@@ -395,7 +395,7 @@ class TestStetsonK(_Test):
     feets_feature = "StetsonK"
 
     def naive(self, t, m, sigma):
-        x = (m - np.average(m, weights=1.0 / sigma ** 2)) / sigma
+        x = (m - np.average(m, weights=1.0 / sigma**2)) / sigma
         return np.sum(np.abs(x)) / np.sqrt(np.sum(np.square(x)) * m.size)
 
 
@@ -403,7 +403,7 @@ class TestWeightedMean(_Test):
     name = "WeightedMean"
 
     def naive(self, t, m, sigma):
-        return np.average(m, weights=1.0 / sigma ** 2)
+        return np.average(m, weights=1.0 / sigma**2)
 
 
 class TestAllPy(_Test):
