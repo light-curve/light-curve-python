@@ -71,8 +71,8 @@ def test_log_linear_grids():
     max_abs_dm = 2
     dm_size = 32
 
-    min_dt = 10 ** min_lgdt
-    max_dt = 10 ** max_lgdt
+    min_dt = 10**min_lgdt
+    max_dt = 10**max_lgdt
 
     dt_grid = np.logspace(min_lgdt, max_lgdt, lgdt_size + 1)
     dm_grid = np.linspace(-max_abs_dm, max_abs_dm, dm_size + 1)
