@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Tuple
 
 import numpy as np
 
@@ -47,12 +48,12 @@ class MagnitudeNNotDetBeforeFd(BaseFeature):
         return first_detection_idx
 
     @property
-    def names(self):
-        return "magn_n_non_detections_before_fd"
+    def names(self) -> Tuple[str]:
+        return ("magn_n_non_detections_before_fd",)
 
     @property
-    def descriptions(self):
-        return "number of non detections before the first detection for magnitudes"
+    def descriptions(self) -> Tuple[str]:
+        return ("number of non detections before the first detection for magnitudes",)
 
     @property
     def size(self):
