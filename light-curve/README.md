@@ -19,14 +19,15 @@ Minimum supported Python version is 3.6.
 
 ### Support matrix
 
-| Arch \ OS   | Linux | macOS | Windows    |
-| ----------- | ----- | ----- | ---------- |
-| **x86-64**  | wheel (MKL) | wheel | not tested https://github.com/light-curve/light-curve-python/issues/12 |
-| **aarch64** | wheel | src https://github.com/light-curve/light-curve-python/issues/5 | not tested |
-| **ppc64le** | wheel | — | — |
+| Arch \ OS   | Linux glibc | Linux musl | macOS | Windows    |
+| ----------- | ----------- | ---------- | ----- | ---------- |
+| **x86-64**  | wheel (MKL) | wheel (MKL) | wheel | not tested https://github.com/light-curve/light-curve-python/issues/12 |
+| **i686**    | wheel       | not tested | — | not tested |
+| **aarch64** | wheel       | src | src https://github.com/light-curve/light-curve-python/issues/5 | not tested |
+| **ppc64le** | wheel       | not tested | — | — |
 
-- "wheel": binary wheel is available on pypi.org, local building is not required for the platform, the only pre-requirement is a recent `pip` version. For Linux x86-64 pypi.org provides binary wheels built with Intel MKL, which is not a default build option.
-- "src": the package is confirmed to be built and pass unit tests. It is required to have GNU scientific library (GSL)](https://www.gnu.org/software/gsl/) v2.1+ and the [Rust](https://rust-lang.org) toolchain v1.56+ to install it via `pip install`.
+- "wheel": binary wheel is available on pypi.org, local building is not required for the platform, the only pre-requirement is a recent `pip` version. For Linux x86-64 we provide binary wheels built with Intel MKL, which is not a default build option.
+- "src": the package is confirmed to be built and pass unit tests locally, but automatically testing and package build is not supported yet. It is required to have GNU scientific library (GSL)](https://www.gnu.org/software/gsl/) v2.1+ and the [Rust](https://rust-lang.org) toolchain v1.56+ to install it via `pip install`.
 - "not tested": building from the source code is not tested, please report us building status via issue/PR/email.
 
 ## Feature evaluators
