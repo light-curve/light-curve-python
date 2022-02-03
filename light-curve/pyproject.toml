@@ -1,5 +1,5 @@
 [build-system]
-requires = ["maturin>=0.12.5,<0.13"]
+requires = ["maturin>=0.12.7,<0.13"]
 build-backend = "maturin"
 
 [project]
@@ -44,3 +44,67 @@ deps =
     feets
 commands = pytest README.md tests/ light_curve/
 """
+
+
+# Test
+# We skip benchmark tests, because it requires feets and its transitive
+# dependencies, which are tricky and slow to compile on marginal platforms.
+# We use platforms where scipy binary wheels are available
+[[tool.cibuildwheel.overrides]]
+select = "cp*-manylinux_x86_64 cp*-manylinux_aarch64 cp*-macosx*"
+test-command = "pytest {package}/README.md {package}/light_curve/ {package}/tests/ --ignore {package}/tests/test_w_bench.py"
+test-requires = [
+    "pytest",
+    "pytest-benchmark",
+    "pytest-markdown",
+    "numpy",
+    "scipy",
+]
+
+[tool.cibuildwheel.environment]
+PATH = "$PATH:$HOME/.cargo/bin"
+GSL_VERSION = "2.7"  # used in manylinux only
+
+[tool.cibuildwheel.macos]
+before-all = [
+    # Install Rust
+    "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y",
+    # Install GSL
+    "brew install gsl",
+]
+
+# glibc Linux aka manylinux, CentOS
+[[tool.cibuildwheel.overrides]]
+select = "*-manylinux*"
+before-all = [
+    # Install Rust
+    "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y",
+    # Rust build deps require openssl
+    "yum install -y openssl-devel",
+    # manylinux2014 image has GSL v.1 -> compile GSL static libraries ourselves
+    "curl -O https://mirror.ibcp.fr/pub/gnu/gsl/gsl-${GSL_VERSION}.tar.gz",
+    "tar -xzvf gsl-${GSL_VERSION}.tar.gz",
+    "cd gsl-${GSL_VERSION}",
+    "./configure --with-pic --enable-shared=no",
+    "make -j$(nproc)",
+    "make install",
+    "cd -",
+    "rm -rf gsl-${GSL_VERSION} gsl-${GSL_VERSION}.tar.gz",
+]
+
+# MUSL Linux, Alpine
+[[tool.cibuildwheel.overrides]]
+select = "*-musllinux*"
+before-all = [
+    # Install Rust
+    "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y",
+    # Rust build deps require openssl
+    "apk add openssl-dev",
+    # Install GSL
+    "apk add gsl-dev",
+]
+
+# Build with Intel MKL on Linux x86_64
+[[tool.cibuildwheel.overrides]]
+select = "*linux_x86_64"
+environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "GSL_VERSION" = "2.7", "MATURIN_PEP517_ARGS" = "--cargo-extra-args='--locked --no-default-features --features mkl,gsl'" }
