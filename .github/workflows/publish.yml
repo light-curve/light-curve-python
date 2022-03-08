@@ -34,7 +34,7 @@ jobs:
       if: ${{ matrix.arch == 'x86_64' }}
       run: docker run --platform=${{ matrix.platform }} --rm -v $(realpath light-curve):/io --entrypoint=/bin/bash maturin -c 'python3.6 -m pip install target/wheels/*cp36*.whl && python3.7 -m pip install target/wheels/*cp37*.whl && python3.8 -m pip install target/wheels/*cp38*.whl && python3.9 -m pip install target/wheels/*cp39*.whl && python3.10 -m pip install target/wheels/*cp310*.whl && tox -p --skip-pkg-install --sitepackages'
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
     - name: Install twine
       run: python3 -mpip install twine
     - name: Publish light-curve wheels
@@ -53,23 +53,23 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python 3.6
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: '3.6'
     - name: Set up Python 3.7
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: '3.7'
     - name: Set up Python 3.8
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: '3.8'
     - name: Set up Python 3.9
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: '3.9'
     - name: Set up Python 3.10
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: '3.10'
     - name: Set up Rust
@@ -99,7 +99,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
     - name: Install deps
       run: |
         python3 -mpip install -U pip setuptools
