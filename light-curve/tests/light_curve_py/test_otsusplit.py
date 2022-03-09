@@ -20,3 +20,11 @@ def test_otsu_2():
     actual = feature(t, m, None)
     desired = [0.06, 0.0, np.std([0.5, 0.52], ddof=1), 0.33333]
     assert_allclose(actual, desired, rtol=1e-04)
+
+
+def test_otsu_thr():
+    feature = OtsuSplit()
+    m = np.array([0.45, 0.5, 0.52])
+    actual = feature.threshold(m)
+    desired = 0.45
+    assert_allclose(actual, desired, rtol=1e-04)
