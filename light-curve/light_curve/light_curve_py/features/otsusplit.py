@@ -26,7 +26,6 @@ class OtsuSplit(BaseFeature):
 
     def _eval(self, t, m, sigma=None):
         n = len(m)
-        m = np.sort(m)
         arg, mean0, mean1 = self._threshold_arg(m)
 
         std_lower = np.std(m[: arg + 1], ddof=1)
@@ -45,6 +44,7 @@ class OtsuSplit(BaseFeature):
     def _threshold_arg(m):
         n = len(m)
         amounts = np.arange(1, n)
+        m = np.sort(m)
 
         w0 = amounts / n
         w1 = 1 - w0
@@ -60,7 +60,6 @@ class OtsuSplit(BaseFeature):
 
     def threshold(self, m):
         """The Otsu threshold method."""
-        m = np.sort(m)
         arg, _, _ = self._threshold_arg(m)
         return m[arg]
 
