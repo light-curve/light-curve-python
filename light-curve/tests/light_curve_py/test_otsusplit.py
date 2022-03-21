@@ -33,8 +33,8 @@ def test_otsu_thr():
 def test_otsu_thr_sort():
     m = np.array([0.45, 0.5, 0.52])
     m_shuffled = np.array([0.52, 0.45, 0.5])
-    actual = OtsuSplit().threshold(m)
-    desired = OtsuSplit().threshold(m_shuffled)
+    actual = OtsuSplit.threshold(m)
+    desired = OtsuSplit.threshold(m_shuffled)
     assert_allclose(actual, desired, rtol=1e-04)
 
 

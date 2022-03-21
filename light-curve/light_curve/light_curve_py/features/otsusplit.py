@@ -58,10 +58,11 @@ class OtsuSplit(BaseFeature):
         arg = np.argmax(inter_class_variance)
         return arg, mean0, mean1
 
-    def threshold(self, m):
+    @staticmethod
+    def threshold(m):
         """The Otsu threshold method."""
         m = np.sort(m)
-        arg, _, _ = self._threshold_arg(m)
+        arg, _, _ = OtsuSplit._threshold_arg(m)
         return m[arg]
 
     @property
