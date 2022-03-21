@@ -26,23 +26,6 @@ class OtsuSplit(BaseFeature):
 
     def _eval(self, t, m, sigma=None):
         n = len(m)
-        arg, mean0, mean1 = self._threshold_arg(m)
-
-        std_lower = np.std(m[: arg + 1], ddof=1)
-        std_upper = np.std(m[arg + 1 :], ddof=1)
-
-        if len(m[: arg + 1]) == 1:
-            std_lower = 0
-        if len(m[arg + 1 :]) == 1:
-            std_upper = 0
-
-        lower_to_all_ratio = (arg + 1) / n
-
-        return mean1[arg] - mean0[arg], std_lower, std_upper, lower_to_all_ratio
-
-    @staticmethod
-    def _threshold_arg(m):
-        n = len(m)
         amounts = np.arange(1, n)
         m = np.sort(m)
 
@@ -56,12 +39,18 @@ class OtsuSplit(BaseFeature):
 
         inter_class_variance = w0 * w1 * (mean0 - mean1) ** 2
         arg = np.argmax(inter_class_variance)
-        return arg, mean0, mean1
 
-    def threshold(self, m):
-        """The Otsu threshold method."""
-        arg, _, _ = self._threshold_arg(m)
-        return m[arg]
+        std_lower = np.std(m[: arg + 1], ddof=1)
+        std_upper = np.std(m[arg + 1 :], ddof=1)
+
+        if len(m[: arg + 1]) == 1:
+            std_lower = 0
+        if len(m[arg + 1 :]) == 1:
+            std_upper = 0
+
+        lower_to_all_ratio = (arg + 1) / n
+
+        return mean1[arg] - mean0[arg], std_lower, std_upper, lower_to_all_ratio
 
     @property
     def names(self):
