@@ -28,3 +28,21 @@ def test_otsu_thr():
     actual = feature.threshold(m)
     desired = 0.45
     assert_allclose(actual, desired, rtol=1e-04)
+
+
+def test_otsu_thr_sort():
+    m = np.array([0.45, 0.5, 0.52])
+    m_shuffled = np.array([0.52, 0.45, 0.5])
+    actual = OtsuSplit().threshold(m)
+    desired = OtsuSplit().threshold(m_shuffled)
+    assert_allclose(actual, desired, rtol=1e-04)
+
+
+def test_otsu_sort():
+    feature = OtsuSplit()
+    m = np.array([0.45, 0.5, 0.52])
+    m_shuffled = np.array([0.52, 0.45, 0.5])
+    t = np.linspace(0, 1.7, 3)
+    actual = feature(t, m, None)
+    desired = feature(t, m_shuffled, None)
+    assert_allclose(actual, desired, rtol=1e-04)
