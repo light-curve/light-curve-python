@@ -26,19 +26,8 @@ class OtsuSplit(BaseFeature):
 
     def _eval(self, t, m, sigma=None):
         n = len(m)
-        amounts = np.arange(1, n)
         m = np.sort(m)
-
-        w0 = amounts / n
-        w1 = 1 - w0
-
-        cumsum0 = np.cumsum(m)[:-1]
-        cumsum1 = np.cumsum(m[::-1])[:-1][::-1]
-        mean0 = cumsum0 / amounts
-        mean1 = cumsum1 / amounts[::-1]
-
-        inter_class_variance = w0 * w1 * (mean0 - mean1) ** 2
-        arg = np.argmax(inter_class_variance)
+        arg, mean0, mean1 = self._threshold_arg(m)
 
         std_lower = np.std(m[: arg + 1], ddof=1)
         std_upper = np.std(m[arg + 1 :], ddof=1)
@@ -51,6 +40,30 @@ class OtsuSplit(BaseFeature):
         lower_to_all_ratio = (arg + 1) / n
 
         return mean1[arg] - mean0[arg], std_lower, std_upper, lower_to_all_ratio
+
+    @staticmethod
+    def _threshold_arg(sorted_m):
+        n = len(sorted_m)
+        amounts = np.arange(1, n)
+
+        w0 = amounts / n
+        w1 = 1 - w0
+
+        cumsum0 = np.cumsum(sorted_m)[:-1]
+        cumsum1 = np.cumsum(sorted_m[::-1])[:-1][::-1]
+        mean0 = cumsum0 / amounts
+        mean1 = cumsum1 / amounts[::-1]
+
+        inter_class_variance = w0 * w1 * (mean0 - mean1) ** 2
+        arg = np.argmax(inter_class_variance)
+        return arg, mean0, mean1
+
+    @staticmethod
+    def threshold(m):
+        """The Otsu threshold method."""
+        m = np.sort(m)
+        arg, _, _ = OtsuSplit._threshold_arg(m)
+        return m[arg]
 
     @property
     def names(self):
