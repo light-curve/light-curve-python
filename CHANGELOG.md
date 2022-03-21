@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 — Pure-Python implemented features `FluxNNotDetBeforeFd` and `MagnitudeNNotDetBeforeFd`
+- Pure-Python implemented `OtsuSplit.threshold` method
 
 ### Changed
 
