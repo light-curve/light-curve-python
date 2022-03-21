@@ -42,15 +42,15 @@ class OtsuSplit(BaseFeature):
         return mean1[arg] - mean0[arg], std_lower, std_upper, lower_to_all_ratio
 
     @staticmethod
-    def _threshold_arg(m):
-        n = len(m)
+    def _threshold_arg(sorted_m):
+        n = len(sorted_m)
         amounts = np.arange(1, n)
 
         w0 = amounts / n
         w1 = 1 - w0
 
-        cumsum0 = np.cumsum(m)[:-1]
-        cumsum1 = np.cumsum(m[::-1])[:-1][::-1]
+        cumsum0 = np.cumsum(sorted_m)[:-1]
+        cumsum1 = np.cumsum(sorted_m[::-1])[:-1][::-1]
         mean0 = cumsum0 / amounts
         mean1 = cumsum1 / amounts[::-1]
 
