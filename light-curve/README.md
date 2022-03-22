@@ -13,12 +13,21 @@ The Python wrapper for Rust [`light-curve-feature`](https://github.com/light-cur
 python3 -mpip install light-curve
 ```
 
-Minimum supported Python version is 3.6.
-The package is tested on Linux (x86-64, aarch64, ppc64) and macOS (x86-64).
-Pre-built wheels for these platforms are available on [pypi.org](https://pypi.org/project/light-curve/#files), other systems are required to have [GNU scientific library (GSL)](https://www.gnu.org/software/gsl/) v2.1+ and the [Rust](https://rust-lang.org) toolchain v1.56+ to build and install the package.
-You can use [`rustup` script](https://rustup.rs) to get the most recent Rust toolchain.
-
 We also provide `light-curve-python` package which is just an "alias" to the main `light-curve` package.
+
+Minimum supported Python version is 3.6.
+
+### Support matrix
+
+| Arch \ OS   | Linux | macOS | Windows    |
+| ----------- | ----- | ----- | ---------- |
+| **x86-64**  | wheel (MKL) | wheel | not tested https://github.com/light-curve/light-curve-python/issues/12 |
+| **aarch64** | wheel | src https://github.com/light-curve/light-curve-python/issues/5 | not tested |
+| **ppc64le** | wheel | — | — |
+
+- "wheel": binary wheel is available on pypi.org, local building is not required for the platform, the only pre-requirement is a recent `pip` version. For Linux x86-64 pypi.org provides binary wheels built with Intel MKL, which is not a default build option.
+- "src": the package is confirmed to be built and pass unit tests. It is required to have GNU scientific library (GSL)](https://www.gnu.org/software/gsl/) v2.1+ and the [Rust](https://rust-lang.org) toolchain v1.56+ to install it via `pip install`.
+- "not tested": building from the source code is not tested, please report us building status via issue/PR/email.
 
 ## Feature evaluators
 
