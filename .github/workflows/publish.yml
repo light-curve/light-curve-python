@@ -23,7 +23,7 @@ jobs:
             platform: linux/ppc64le
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Set up QEMU for Docker Buildx
       uses: docker/setup-qemu-action@v1
     - name: Build docker image
@@ -51,7 +51,7 @@ jobs:
         working-directory: light-curve
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Set up Python 3.6
       uses: actions/setup-python@v3
       with:
@@ -97,7 +97,7 @@ jobs:
         working-directory: light-curve-python
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Set up Python
       uses: actions/setup-python@v3
     - name: Install deps
