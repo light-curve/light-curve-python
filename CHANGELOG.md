@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 —
 
-## [0.5.4]
+## [0.5.4] 2021-12-20
 
 ### Added
 
@@ -48,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Maturin '>=0.12.15,<0.13' is required
 - `light-curve-dmdt` version 0.5.0
 
-## [0.5.3]
+## [0.5.3] 2021-12-16
 
 ### Added
 
@@ -58,20 +58,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Update `pyo3` to 0.15.1 and `rust-numpy` to 0.15.0
 
-## [0.5.2]
+## [0.5.2] 2021-12-16
 
 ### Fixed
 
 - Fix implementation of `OtsuSplit`, see [issue #150](https://github.com/light-curve/light-curve/issues/150)
 
 
-## [0.5.1]
+## [0.5.1] 2021-12-15
 
 ### Added
 
 - `init` and `bounds` arguments of `BazinFit` and `VillarFit` constructors
 
-## [0.5.0]
+## [0.5.0] 2021-12-14
 
 ### Added
 
@@ -86,13 +86,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `antifeatures` submodule of the Rust implementation
 
-## [0.4.1]
+## [0.4.1] 2021-12-15
 
 ### Fixed
 
 - Fix implementation of `OtsuSplit`, see [issue #150](https://github.com/light-curve/light-curve/issues/150)
 
-## [0.4.0]
+## [0.4.0] 2021-11-26
 
 ### Added
 
@@ -114,7 +114,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The Rust implemented classes `.__module__` was `buitins`, now it is `light_curve.light_curve_ext`
 
-## [0.3.5]
+## [0.3.5] 2021-10-27
 
 ### Changed
 
@@ -122,20 +122,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Minimum supported Rust version is 1.56
 - Maturin version 0.11
 
-## [0.3.4]
+## [0.3.4] 2021-10-18
 
 ### Fixed
 
 - An exception shouldn't be raised for the case of small time-series length and non-`None` `fill_value`
 
-## [0.3.3]
+## [0.3.3] 2021-10-14
 
 ### Added
 
 - Support `dtype=np.float32` for feature extractors
 - `_FeatureEvaluator.many(lcs)` method for parallel execution
 
-## [0.3.2]
+## [0.3.2] 2021-08-30
 
 ### Changed
 
@@ -146,7 +146,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `light-curve-feature` 0.3.3 fixes wrong `VillarFit` equation
 
-## [0.3.1]
+## [0.3.1] 2021-08-16
 
 ### Added
 
@@ -165,7 +165,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `*Fit` `algorithm` parameter was marked as optional in the docstrings
 
-## [0.3.0]
+## [0.3.0] 2021-08-10
 
 ### Added
 
@@ -182,10 +182,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rename `nonlinear-fit` Cargo feature to `gsl`
 - Docstrings improvements
 
-## [0.2.x]
+## [0.2.x] pre 2021-05-31
 
 —
 
-## [0.1.x]
+## [0.1.x] pre 2020-09-09
 
 —
