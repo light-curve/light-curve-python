@@ -9,14 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-— Pure-Python implemented features `FluxNNotDetBeforeFd` and `MagnitudeNNotDetBeforeFd`
-- Pure-Python implemented `OtsuSplit.threshold` method
+—
 
 ### Changed
 
-- `rust-numpy` 0.15.0 -> 0.15.1
-- `rand` 0.8.4 -> 0.8.5
-- `enumflag2` 0.7.3 -> 0.7.4
+—
 
 ### Deprecated
 
@@ -33,6 +30,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 —
+
+## [0.5.5] 2022-04-05
+
+### Added
+
+— Pure-Python implemented features `FluxNNotDetBeforeFd` and `MagnitudeNNotDetBeforeFd`
+- Pure-Python implemented `OtsuSplit.threshold` method
+
+### Changed
+
+- `rust-numpy` 0.15.0 -> 0.15.1
+- `rand` 0.8.4 -> 0.8.5
+- `enumflag2` 0.7.3 -> 0.7.4
 
 ## [0.5.4] 2021-12-20
 
