@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `rust-numpy` 0.15.0 -> 0.15.1
 - `rand` 0.8.4 -> 0.8.5
 - `enumflag2` 0.7.3 -> 0.7.4
+- `rust-numpy` 0.15.1 -> 0.16.2
+- `py03` 0.15.1 -> 0.16.3
 
 ### Deprecated
 
