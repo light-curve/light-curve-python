@@ -18,7 +18,7 @@ repos:
     -   id: check-docstring-first # checks a common error of defining a docstring after code
     -   id: debug-statements # checks for debugger imports and py37+ `breakpoint()` calls in python source
 -   repo: https://github.com/psf/black
-    rev: 22.1.0
+    rev: 22.3.0
     hooks:
     -   id: black
         name: black
