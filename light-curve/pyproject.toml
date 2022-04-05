@@ -4,8 +4,8 @@ build-backend = "maturin"
 
 [project]
 name = "light-curve"
-dependencies = ["numpy", "scipy", "dataclasses; python_version < '3.7'"]
-classifier = ["Intended Audience :: Science/Research", "License :: OSI Approved :: MIT License", "Programming Language :: Python", "Programming Language :: Python :: 3 :: Only", "Programming Language :: Python :: 3.6", "Programming Language :: Python :: 3.7", "Programming Language :: Python :: 3.8", "Programming Language :: Python :: 3.9", "Programming Language :: Rust", "Topic :: Scientific/Engineering :: Astronomy"]
+dependencies = ["numpy", "scipy"]
+classifier = ["Intended Audience :: Science/Research", "License :: OSI Approved :: MIT License", "Programming Language :: Python", "Programming Language :: Python :: 3 :: Only", "Programming Language :: Python :: 3.7", "Programming Language :: Python :: 3.8", "Programming Language :: Python :: 3.9", "Programming Language :: Python :: 3.10", "Programming Language :: Rust", "Topic :: Scientific/Engineering :: Astronomy"]
 
 [tool.maturin]
 # It asks to use Cargo.lock to make the build reproducible
@@ -13,7 +13,7 @@ cargo-extra-args = "--locked"
 
 [tool.black]
 line-length = 120
-target-version = ["py36", "py37", "py38", "py39", "py310"]
+target-version = ["py37", "py38", "py39", "py310"]
 include = '\.py$'
 
 [tool.isort]
