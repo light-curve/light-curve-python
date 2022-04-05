@@ -35,7 +35,7 @@ itertools = "~0.10.1"
 light-curve-dmdt = "0.5.0"
 macro_const = "0.1.0"
 ndarray = { version = "~0.15.3", features = ["rayon"] }
-numpy = "~0.15.1"
+numpy = "~0.16.2"
 num_cpus = "~1.13.0"
 num-traits = "~0.2"
 rand = "~0.8.5"
@@ -49,5 +49,5 @@ version = "0.4.6"
 default_features = false
 
 [dependencies.pyo3]
-version = "~0.15.2"
+version = "~0.16.3"
 features = ["extension-module"]

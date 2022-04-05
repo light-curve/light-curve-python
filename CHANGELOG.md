@@ -13,7 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-—
+- **Braking:** drop Python 3.6 support
+- `rust-numpy` 0.15.1 -> 0.16.2
+- `py03` 0.15.1 -> 0.16.3
 
 ### Deprecated
 
