@@ -15,7 +15,7 @@ python3 -mpip install light-curve
 
 We also provide `light-curve-python` package which is just an "alias" to the main `light-curve` package.
 
-Minimum supported Python version is 3.6.
+Minimum supported Python version is 3.7.
 
 ### Support matrix
 
