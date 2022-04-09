@@ -275,17 +275,19 @@ def generate_test_magnitude_percentile_ratio(quantile_numerator, quantile_denume
         f"TestMagnitudePercentageRatio{int(quantile_numerator * 100):d}",
         (_Test,),
         dict(
+            args=(quantile_numerator, quantile_denumerator),
             quantile_numerator=quantile_numerator,
             quantile_denumerator=quantile_denumerator,
             name="MagnitudePercentageRatio",
+            feets_feature=feets_feature,
             feets_skip_test="feets uses different quantile type",
         ),
     )
 
 
-generate_test_magnitude_percentile_ratio(0.40, 0.05, "FluxPercentileRatioMid20")
-generate_test_magnitude_percentile_ratio(0.25, 0.05, "FluxPercentileRatioMid50")
-generate_test_magnitude_percentile_ratio(0.10, 0.05, "FluxPercentileRatioMid80")
+FluxPercentileRatioMid20 = generate_test_magnitude_percentile_ratio(0.40, 0.05, "FluxPercentileRatioMid20")
+FluxPercentileRatioMid50 = generate_test_magnitude_percentile_ratio(0.25, 0.05, "FluxPercentileRatioMid50")
+FluxPercentileRatioMid80 = generate_test_magnitude_percentile_ratio(0.10, 0.05, "FluxPercentileRatioMid80")
 
 
 class TestMaximumSlope(_Test):
