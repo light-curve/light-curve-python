@@ -26,8 +26,8 @@ Minimum supported Python version is 3.6.
 | **aarch64** | wheel       | src | src https://github.com/light-curve/light-curve-python/issues/5 | not tested |
 | **ppc64le** | wheel       | not tested | — | — |
 
-- "wheel": binary wheel is available on pypi.org, local building is not required for the platform, the only pre-requirement is a recent `pip` version. For Linux x86-64 we provide binary wheels built with Intel MKL, which is not a default build option.
-- "src": the package is confirmed to be built and pass unit tests locally, but automatically testing and package build is not supported yet. It is required to have GNU scientific library (GSL)](https://www.gnu.org/software/gsl/) v2.1+ and the [Rust](https://rust-lang.org) toolchain v1.56+ to install it via `pip install`.
+- "wheel": binary wheel is available on pypi.org, local building is not required for the platform, the only pre-requirement is a recent `pip` version. For Linux x86-64 we provide binary wheels built with Intel MKL for better periodogram perfromance, which is not a default build option.
+- "src": the package is confirmed to be built and pass unit tests locally, but testing and package building is not supported by CI yet. It is required to have the [GNU scientific library (GSL)](https://www.gnu.org/software/gsl/) v2.1+ and the [Rust toolchain](https://rust-lang.org) v1.56+ to install it via `pip install`.
 - "not tested": building from the source code is not tested, please report us building status via issue/PR/email.
 
 ## Feature evaluators
