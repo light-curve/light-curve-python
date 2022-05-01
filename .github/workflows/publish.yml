@@ -52,7 +52,7 @@ jobs:
           CIBW_SKIP: "*-musllinux_i686 pp39-*" # rustup doesn't install i686-musl, pyO3<0.16 doesn't support pypy3.9
 
       - name: Upload wheels as artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           path: ./wheelhouse/*.whl
           if-no-files-found: error
@@ -78,7 +78,7 @@ jobs:
         run: maturin sdist
 
       - name: Upload sdist as an artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           path: ./light-curve/target/wheels/*.tar.gz
           if-no-files-found: error
