@@ -39,8 +39,8 @@ num_cpus = "~1.13.0"
 num-traits = "~0.2"
 rand = "~0.8.5"
 rand_xoshiro = "~0.6.0"
+thiserror = "~1.0.31"
 rayon = "~1.5.2"
-thiserror = "~1.0.24"
 unzip3 = "1.0.0"
 
 [dependencies.light-curve-feature]
