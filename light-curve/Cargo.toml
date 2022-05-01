@@ -39,8 +39,8 @@ num_cpus = "~1.13.0"
 num-traits = "~0.2"
 rand = "~0.8.5"
 rand_xoshiro = "~0.6.0"
-rayon = "~1.5.0"
 thiserror = "~1.0.31"
+rayon = "~1.5.2"
 unzip3 = "1.0.0"
 
 [dependencies.light-curve-feature]
@@ -48,5 +48,5 @@ version = "0.4.1"
 default_features = false
 
 [dependencies.pyo3]
-version = "~0.15.1"
+version = "~0.15.2"
 features = ["extension-module"]

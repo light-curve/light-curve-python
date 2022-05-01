@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Infrastructure: [cibuildweel](https://cibuildwheel.readthedocs.io/en/stable/) for package publishing
 - `thiserror` 1.0.24 -> 1.0.31
+- `rayon` 1.5.1 -> 1.5.2
+- `pyo3` 0.15.1 -> 0.15.2
 
 ### Deprecated
 
