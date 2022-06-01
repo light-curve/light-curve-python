@@ -703,16 +703,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "light-curve-common"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22316202ecf841d96b36e9bedd598ff2190ed42a9d5dae52e731277afe83ddb2"
-dependencies = [
- "conv",
- "num-traits",
-]
-
-[[package]]
 name = "light-curve-dmdt"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -732,21 +722,19 @@ dependencies = [
 
 [[package]]
 name = "light-curve-feature"
-version = "0.4.1"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "55b153edf517612a82a0cab00a08d4def22af020b77b380de722ab2269626f57"
+checksum = "f877fe014c80917bf711f4c06988f675f76072b2074548968f393b793276a47b"
 dependencies = [
  "GSL",
  "anyhow",
  "conv",
- "dyn-clonable",
  "emcee",
  "enum_dispatch",
  "fftw",
  "itertools 0.10.3",
  "lazy_static 1.4.0",
  "libm",
- "light-curve-common",
  "macro_const",
  "ndarray 0.15.4",
  "ndarray-stats",
