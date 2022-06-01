@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `enumflags2` 0.7.4 -> 0.7.5
 - `rayon` 1.5.1 -> 1.5.2
 - `pyo3` 0.15.1 -> 0.15.2
+- `const_format` 0.2.22 -> 0.2.24
 
 ### Deprecated
 
