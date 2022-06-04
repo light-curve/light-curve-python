@@ -51,6 +51,7 @@ jobs:
           package-dir: ./light-curve
         env:
           CIBW_SKIP: "*-musllinux_i686 pp39-*" # rustup doesn't install i686-musl, pyO3<0.16 doesn't support pypy3.9
+          CIBW_BUILD_VERBOSITY: 3
 
       - name: Upload wheels as artifacts
         uses: actions/upload-artifact@v3
