@@ -64,6 +64,7 @@ test-requires = [
 [tool.cibuildwheel.environment]
 PATH = "$PATH:$HOME/.cargo/bin"
 GSL_VERSION = "2.7"  # used in manylinux only
+CARGO_NET_GIT_FETCH_WITH_CLI = "true"  # Solves the issue with OOM in QEMU during crate.io index fetching
 
 [tool.cibuildwheel.macos]
 before-all = [
