@@ -95,6 +95,10 @@ jobs:
           os: 'ubuntu-latest'
           cargo_extra_args: '--locked --no-default-features --features mkl,gsl'
           install_fftw: false
+        - name: 'Windows, statically linked FFTW'
+          os: 'windows-latest'
+          cargo_extra_args: '--locked --no-default-features --features fftw-static'
+          install_fftw: false
 
     defaults:
       run:
