@@ -67,6 +67,9 @@ before-all = [
     "brew install gsl",
 ]
 
+[tool.cibuildwheel.windows]
+environment = { "MATURIN_PEP517_ARGS" = "--cargo-extra-args='--locked --no-default-features --features fftw-static'" }
+
 # glibc Linux aka manylinux, CentOS
 [[tool.cibuildwheel.overrides]]
 select = "*-manylinux*"
