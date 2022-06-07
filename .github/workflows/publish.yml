@@ -28,6 +28,9 @@ jobs:
           - os: ubuntu-20.04  # All i686 and x86_64 Linux targets
             arch: auto
             interpreter: "*"
+          - os: windows-2022  # ???
+            arch: auto
+            interpreter: "*"
 
     steps:
       - uses: actions/checkout@v3
