@@ -21,26 +21,26 @@ jobs:
         os: [ubuntu-20.04]
         interpreter: [cp36-manylinux, cp37-manylinux, cp38-manylinux, cp39-manylinux, cp310-manylinux]
         arch: [aarch64, ppc64le]
-        github_env: "$GITHUB_ENV"
+        github_env: "GITHUB_ENV"
         include:
           - os: macos-10.15   # All x86_64 macOS targets
             arch: auto
             interpreter: "*"
-            github_env: "$GITHUB_ENV"
+            github_env: "GITHUB_ENV"
           - os: ubuntu-20.04  # All i686 and x86_64 Linux targets
             arch: auto
             interpreter: "*"
-            github_env: "$GITHUB_ENV"
+            github_env: "GITHUB_ENV"
           - os: windows-2022  # All i686 Windows targets
             arch: x86
             interpreter: "*"
             before_all: "rustup default stable-i686-pc-windows-msvc"
-            github_env: "$env:GITHUB_ENV"
+            github_env: "env:GITHUB_ENV"
           - os: windows-2022  # All x86_64 Windows targets
             arch: AMD64
             interpreter: "*"
             before_all: "rustup default stable-x86_64-pc-windows-msvc"
-            github_env: "$env:GITHUB_ENV"
+            github_env: "env:GITHUB_ENV"
 
     steps:
       - uses: actions/checkout@v3
@@ -53,14 +53,14 @@ jobs:
 
       - name: Set CIBW_BUILD
         if: ${{ matrix.interpreter != 'auto' }}
-        run: echo "CIBW_BUILD=${{ matrix.interpreter }}_${{ matrix.arch }}" >> ${{ matrix.github_env }}
+        run: echo "CIBW_BUILD=${{ matrix.interpreter }}_${{ matrix.arch }}" >> $${{ matrix.github_env }}
 
       - name: Set CIBW_ARCHS
-        run: echo "CIBW_ARCHS=${{ matrix.arch }}" >> ${{ matrix.github_env }}
+        run: echo "CIBW_ARCHS=${{ matrix.arch }}" >> $${{ matrix.github_env }}
 
       - name: Set CIBW_BEFORE_ALL
         if: ${{ matrix.before_all }}
-        run: echo "CIBW_BEFORE_ALL=${{ matrix.before_all }}" >> ${{ matrix.github_env }}
+        run: echo "CIBW_BEFORE_ALL=${{ matrix.before_all }}" >> $${{ matrix.github_env }}
 
       - name: Build wheels
         uses: pypa/cibuildwheel@2.6.0
