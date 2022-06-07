@@ -21,26 +21,26 @@ jobs:
         os: [ubuntu-20.04]
         interpreter: [cp36-manylinux, cp37-manylinux, cp38-manylinux, cp39-manylinux, cp310-manylinux]
         arch: [aarch64, ppc64le]
-        env_prefix: [""]
+        env_prefix: ["$"]
         include:
           - os: macos-10.15   # All x86_64 macOS targets
             arch: auto
             interpreter: "*"
-            env_prefix: ""
+            env_prefix: "$"
           - os: ubuntu-20.04  # All i686 and x86_64 Linux targets
             arch: auto
             interpreter: "*"
-            env_prefix: ""
+            env_prefix: "$"
           - os: windows-2022  # All i686 Windows targets
             arch: x86
             interpreter: "*"
             before_all: "rustup default stable-i686-pc-windows-msvc"
-            env_prefix: "env:"
+            env_prefix: "$env:"
           - os: windows-2022  # All x86_64 Windows targets
             arch: AMD64
             interpreter: "*"
             before_all: "rustup default stable-x86_64-pc-windows-msvc"
-            env_prefix: "env:"
+            env_prefix: "$env:"
 
     steps:
       - uses: actions/checkout@v3
@@ -52,15 +52,15 @@ jobs:
           platforms: all
 
       - name: Set CIBW_BUILD
-        if: ${{ matrix.interpreter != 'auto' }}
-        run: echo "CIBW_BUILD=${{ matrix.interpreter }}_${{ matrix.arch }}" >> $${{ matrix.env_prefix }}GITHUB_ENV
+        if: ${{ matrix.interpreter != '*' }}
+        run: echo "CIBW_BUILD=${{ matrix.interpreter }}_${{ matrix.arch }}" >> ${{ matrix.env_prefix }}GITHUB_ENV
 
       - name: Set CIBW_ARCHS
-        run: echo "CIBW_ARCHS=${{ matrix.arch }}" >> $${{ matrix.env_prefix }}GITHUB_ENV
+        run: echo "CIBW_ARCHS=${{ matrix.arch }}" >> ${{ matrix.env_prefix }}GITHUB_ENV
 
       - name: Set CIBW_BEFORE_ALL
         if: ${{ matrix.before_all }}
-        run: echo "CIBW_BEFORE_ALL=${{ matrix.before_all }}" >> $${{ matrix.env_prefix }}GITHUB_ENV
+        run: echo "CIBW_BEFORE_ALL=${{ matrix.before_all }}" >> ${{ matrix.env_prefix }}GITHUB_ENV
 
       - name: Build wheels
         uses: pypa/cibuildwheel@2.6.0
