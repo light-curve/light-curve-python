@@ -31,9 +31,11 @@ jobs:
           - os: windows-2022  # All i686 Windows targets
             arch: x86
             interpreter: "*"
+            before_all: "rustup default stable-i686-pc-windows-msvc"
           - os: windows-2022  # All x86_64 Windows targets
             arch: AMD64
             interpreter: "*"
+            before_all: "rustup default stable-x86_64-pc-windows-msvc"
 
     steps:
       - uses: actions/checkout@v3
@@ -45,11 +47,14 @@ jobs:
           platforms: all
 
       - name: Set CIBW_BUILD
-        if: ${{ matrix.interpreter != '*' }}
         run: echo "CIBW_BUILD=${{ matrix.interpreter }}_${{ matrix.arch }}" >> $GITHUB_ENV
 
       - name: Set CIBW_ARCHS
-        run : echo "CIBW_ARCHS=${{ matrix.arch }}" >> $GITHUB_ENV
+        run: echo "CIBW_ARCHS=${{ matrix.arch }}" >> $GITHUB_ENV
+
+      - name: Set CIBW_BEFORE_ALL
+        if: ${{ matrix.before_all }}
+        run: echo "CIBW_BEFORE_ALL=${{ matrix.before_all }}" >> $GITHUB_ENV
 
       - name: Build wheels
         uses: pypa/cibuildwheel@2.6.0
