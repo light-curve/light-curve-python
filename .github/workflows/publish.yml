@@ -47,6 +47,7 @@ jobs:
           platforms: all
 
       - name: Set CIBW_BUILD
+        if: ${{ matrix.interpreter != 'auto' }}
         run: echo "CIBW_BUILD=${{ matrix.interpreter }}_${{ matrix.arch }}" >> $GITHUB_ENV
 
       - name: Set CIBW_ARCHS
