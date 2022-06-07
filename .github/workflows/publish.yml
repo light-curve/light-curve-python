@@ -28,8 +28,11 @@ jobs:
           - os: ubuntu-20.04  # All i686 and x86_64 Linux targets
             arch: auto
             interpreter: "*"
-          - os: windows-2022  # ???
-            arch: auto
+          - os: windows-2022  # All i686 Windows targets
+            arch: x86
+            interpreter: "*"
+          - os: windows-2022  # All x86_64 Windows targets
+            arch: AMD64
             interpreter: "*"
 
     steps:

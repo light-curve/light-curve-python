@@ -67,8 +67,21 @@ before-all = [
     "brew install gsl",
 ]
 
+# We don't know how to build rust-GSL on Windows
 [tool.cibuildwheel.windows]
 environment = { "MATURIN_PEP517_ARGS" = "--cargo-extra-args='--locked --no-default-features --features fftw-static'" }
+
+[[tool.cibuildwheel.overrides]]
+select = "*-win32"
+before-all = [
+    "rustup default stable-i686-pc-windows-msvc",
+]
+
+[[tool.cibuildwheel.overrides]]
+select = "*-win_amd64"
+before-all = [
+    "rustup default stable-x86_64-pc-windows-msvc",
+]
 
 # glibc Linux aka manylinux, CentOS
 [[tool.cibuildwheel.overrides]]
