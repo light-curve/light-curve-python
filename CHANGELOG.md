@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-—
+- `light-curve-feature` 0.4.4 -> 0.4.5
 
 ### Deprecated
 
@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-—
+- `light-curve-feature` update fixes `NaN value of lnprob` problem with MCMC fit in `{Bazin,Villar}Fit`
 
 ### Security
 
