@@ -7,7 +7,7 @@ readme = "README.md"
 repository = "https://github.com/light-curve/light-curve-python"
 license = "GPL-3.0-or-later"
 edition = "2021"
-rust-version = "1.56"
+rust-version = "1.57"
 
 [lib]
 name = "light_curve"
@@ -45,7 +45,7 @@ rayon = "~1.5.3"
 unzip3 = "1.0.0"
 
 [dependencies.light-curve-feature]
-version = "0.4.6"
+version = "0.5.0"
 default_features = false
 
 [dependencies.pyo3]
