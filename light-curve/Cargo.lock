@@ -748,7 +748,7 @@ dependencies = [
 
 [[package]]
 name = "light-curve-python"
-version = "0.5.7"
+version = "0.5.8"
 dependencies = [
  "anyhow",
  "const_format",

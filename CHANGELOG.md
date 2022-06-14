@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `light-curve-feature` 0.4.5 -> 0.4.6
+—
 
 ### Deprecated
 
@@ -25,11 +25,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Minimum supported Rust version 1.56 wasn't actually supported, `light-curve-feature` upgrade fixed it
+—
 
 ### Security
 
 —
+
+
+## [0.5.8] 2022-06-14
+
+### Changed
+
+- `light-curve-feature` 0.4.5 -> 0.4.6
+
+### Fixed
+
+- Minimum supported Rust version 1.56 wasn't actually supported, `light-curve-feature` upgrade fixed it
+
 
 ## [0.5.7] 2022-06-10
 
