@@ -44,7 +44,7 @@ rayon = "~1.5.3"
 unzip3 = "1.0.0"
 
 [dependencies.light-curve-feature]
-version = "0.4.5"
+version = "0.4.6"
 default_features = false
 
 [dependencies.pyo3]
