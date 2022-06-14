@@ -146,6 +146,48 @@ jobs:
     - name: Build for ${{ matrix.name }}
       run: maturin build --manylinux=off --cargo-extra-args='${{ matrix.cargo_extra_args }}'
 
+  msrv-build:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: light-curve
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.6'
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.7'
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.8'
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.9'
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+    - name: Get minimum supported Rust version
+      run: echo "::set-output name=msrv::$(grep '^rust-version = ' Cargo.toml | grep -o '[0-9.]\+')"
+      id: get_msrv
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: ${{ steps.get_msrv.outputs.msrv }}
+    - name: Install maturin
+      run: pip install maturin
+    - name: Build
+      run: |
+        rustup default ${{ steps.get_msrv.outputs.msrv }}
+        maturin build
+
   arm:
 
     runs-on: [self-hosted, linux, ARM64]
