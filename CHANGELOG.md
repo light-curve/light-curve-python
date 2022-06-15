@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `macro_const` 0.1.0 dependency
+—
 
 ### Changed
 
@@ -25,11 +25,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- docstring for `many` method is added to each Rust feature class
+—
 
 ### Security
 
 —
+
+
+## [0.5.9] 2022-06-15
+
+### Added
+
+- `macro_const` 0.1.0 dependency
+
+### Fixed
+
+- docstring for `many` method is added to each Rust feature class
 
 
 ## [0.5.8] 2022-06-14
