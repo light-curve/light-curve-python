@@ -6,6 +6,7 @@ use crate::np_array::{Arr, GenericFloatArray1};
 
 use const_format::formatcp;
 use light_curve_feature::{self as lcf, prelude::*, DataSample};
+use macro_const::macro_const;
 use ndarray::IntoNdProducer;
 use numpy::IntoPyArray;
 use pyo3::exceptions::PyValueError;
@@ -52,14 +53,24 @@ __call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)
     ndarray of np.float32 or np.float64
         Extracted feature array"#;
 
-const METHOD_MANY_DOC: &str = r#"
+macro_const! {
+    const METHOD_MANY_DOC: &str = r#"
 many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)
     Parallel light curve feature extraction
 
     It is a parallel executed equivalent of
-    >>> def many(lcs, sorted=None, fill_value=None):
-    ...     return np.stack([feature(*lc, sorted=sorted, fill_value=fill_value)
-    ...                      for lc in lcs])
+    >>> def many(self, lcs, sorted=None, check=True, fill_value=None):
+    ...     return np.stack(
+    ...         [
+    ...             self(
+    ...                 *lc,
+    ...                 sorted=sorted,
+    ...                 check=check,
+    ...                 fill_value=fill_value
+    ...             )
+    ...             for lc in lcs
+    ...         ]
+    ...     )
 
     Parameters
     ----------
@@ -78,6 +89,7 @@ many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)
         Number of tasks to run in paralell. Default is -1 which means run as
         many jobs as CPU count. See rayon rust crate documentation for
         details"#;
+}
 
 const METHODS_DOC: &str = formatcp!(
     r#"Methods
@@ -407,6 +419,7 @@ impl PyFeatureEvaluator {
         }
     }
 
+    #[doc = METHOD_MANY_DOC!()]
     #[args(lcs, sorted = "None", check = "true", fill_value = "None", n_jobs = -1)]
     fn many(
         &self,
