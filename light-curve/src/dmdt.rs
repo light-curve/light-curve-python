@@ -1,3 +1,5 @@
+#![allow(clippy::format_push_string)] // Revisit it after upgrade to more recent PyO3
+
 use crate::check::check_sorted;
 use crate::cont_array::{ContArray, ContCowArray};
 use crate::errors::{Exception, Res};

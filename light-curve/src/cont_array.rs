@@ -36,7 +36,7 @@ where
     }
 }
 
-impl<'a, T> From<Array1<T>> for ContArray<T>
+impl<T> From<Array1<T>> for ContArray<T>
 where
     T: Element + Copy,
 {

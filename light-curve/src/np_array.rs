@@ -1,3 +1,5 @@
+#![allow(clippy::format_push_string)] // Revisit it after upgrade to more recent PyO3
+
 use numpy::PyReadonlyArray1;
 use pyo3::prelude::*;
 use std::convert::TryFrom;
