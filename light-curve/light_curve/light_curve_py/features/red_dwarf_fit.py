@@ -18,9 +18,10 @@ class RedDwarfFit(BaseFeature):
     """
 
     def _eval(self, t, m, sigma=None):
-        amplitude, fwhm, tpeak = RedDwarfFit._flare_params(t, m)
+        amplitude, fwhm, tpeak, background = RedDwarfFit._flare_params(t, m)
+        m_clear = m - background
         model = self.fit(t, amplitude, fwhm, tpeak)
-        chi2 = np.sum((m - model) ** 2) / (len(m) - 1)
+        chi2 = np.sum((m_clear - model) ** 2) / (len(m) - 1)
 
         return np.array([amplitude, fwhm, tpeak, chi2])
 
@@ -45,7 +46,7 @@ class RedDwarfFit(BaseFeature):
 
         fwhm = right_t - left_t
 
-        return amplitude, fwhm, tpeak
+        return amplitude, fwhm, tpeak, background
 
     @staticmethod
     def fit(t, amplitude, fwhm, tpeak):
