@@ -15,7 +15,7 @@ python3 -mpip install light-curve
 
 We also provide `light-curve-python` package which is just an "alias" to the main `light-curve` package.
 
-Minimum supported Python version is 3.6.
+Minimum supported Python version is 3.7.
 
 ### Support matrix
 
@@ -27,7 +27,7 @@ Minimum supported Python version is 3.6.
 | **ppc64le** | wheel       | not tested | — | — |
 
 - "wheel": binary wheel is available on pypi.org, local building is not required for the platform, the only pre-requirement is a recent `pip` version. For Linux x86-64 we provide binary wheels built with Intel MKL for better periodogram perfromance, which is not a default build option.
-- "src": the package is confirmed to be built and pass unit tests locally, but testing and package building is not supported by CI yet. It is required to have the [GNU scientific library (GSL)](https://www.gnu.org/software/gsl/) v2.1+ and the [Rust toolchain](https://rust-lang.org) v1.56+ to install it via `pip install`.
+- "src": the package is confirmed to be built and pass unit tests locally, but testing and package building is not supported by CI yet. It is required to have the [GNU scientific library (GSL)](https://www.gnu.org/software/gsl/) v2.1+ and the [Rust toolchain](https://rust-lang.org) v1.57+ to install it via `pip install`.
 - "not tested": building from the source code is not tested, please report us building status via issue/PR/email.
 
 ## Feature evaluators

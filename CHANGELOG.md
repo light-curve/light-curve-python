@@ -31,6 +31,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 —
 
+## [0.6.0] 2022-07-04
+
+### Changed
+
+- **Breaking:** drop Python 3.6 support
+- **Breaking:** minimum supported Rust version (MSRV) 1.56 -> 1.57
+- `light-curve-feature` 0.4.6 -> 0.5.0, causes MSRV change
+- `rust-numpy` 0.15.1 -> 0.16.2
+- `py03` 0.15.1 -> 0.16.3
 
 ## [0.5.9] 2022-06-15
 

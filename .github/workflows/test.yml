@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_minor: ['6', '7', '8', '9', '10']
+        python_minor: ['7', '8', '9', '10']
 
     defaults:
       run:
@@ -121,10 +121,6 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
-    - name: Set up Python 3.6
-      uses: actions/setup-python@v3
-      with:
-        python-version: '3.6'
     - name: Set up Python 3.7
       uses: actions/setup-python@v3
       with:
@@ -155,10 +151,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python 3.6
-      uses: actions/setup-python@v3
-      with:
-        python-version: '3.6'
     - name: Set up Python 3.7
       uses: actions/setup-python@v3
       with:

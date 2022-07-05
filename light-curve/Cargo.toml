@@ -1,13 +1,13 @@
 [package]
 name = "light-curve-python"
-version = "0.5.9"
+version = "0.6.0"
 authors = ["Konstantin Malanchev <hombit@gmail.com>", "Anastasia Lavrukhina <lavrukhina.ad@gmail.com>"]
 description = "Feature extractor from noisy time series"
 readme = "README.md"
 repository = "https://github.com/light-curve/light-curve-python"
 license = "GPL-3.0-or-later"
 edition = "2021"
-rust-version = "1.56"
+rust-version = "1.57"
 
 [lib]
 name = "light_curve"
@@ -35,7 +35,7 @@ itertools = "~0.10.1"
 light-curve-dmdt = "0.5.0"
 macro_const = "0.1.0"
 ndarray = { version = "~0.15.3", features = ["rayon"] }
-numpy = "~0.15.1"
+numpy = "~0.16.2"
 num_cpus = "~1.13.0"
 num-traits = "~0.2"
 rand = "~0.8.5"
@@ -45,9 +45,9 @@ rayon = "~1.5.3"
 unzip3 = "1.0.0"
 
 [dependencies.light-curve-feature]
-version = "0.4.6"
+version = "0.5.0"
 default_features = false
 
 [dependencies.pyo3]
-version = "~0.15.2"
+version = "~0.16.3"
 features = ["extension-module"]
