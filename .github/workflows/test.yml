@@ -22,7 +22,7 @@ jobs:
       with:
         toolchain: stable
     - name: Set up Python 3.${{ matrix.python_minor }}
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: "3.${{ matrix.python_minor }}"
     - name: Install tox
@@ -122,19 +122,19 @@ jobs:
       with:
         toolchain: stable
     - name: Set up Python 3.7
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: '3.7'
     - name: Set up Python 3.8
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: '3.8'
     - name: Set up Python 3.9
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: '3.9'
     - name: Set up Python 3.10
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: '3.10'
     - name: Install maturin
@@ -152,19 +152,19 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python 3.7
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: '3.7'
     - name: Set up Python 3.8
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: '3.8'
     - name: Set up Python 3.9
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: '3.9'
     - name: Set up Python 3.10
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: '3.10'
     - name: Get minimum supported Rust version
