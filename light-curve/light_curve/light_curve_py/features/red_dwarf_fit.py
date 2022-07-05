@@ -142,9 +142,8 @@ class RedDwarfFit(BaseFeature):
     @staticmethod
     def model(t, params):
         amplitude, fwhm, tpeak, _, *popt = params
-        norm_t = (t - tpeak) / fwhm
         func = RedDwarfFit._func(amplitude)
-        predict = func(norm_t, *popt)
+        predict = func(t, *popt)
 
         return predict
 
