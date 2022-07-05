@@ -1,6 +1,7 @@
 import numpy as np
-from light_curve.light_curve_py import ExcessVariance
 from numpy.testing import assert_allclose
+
+from light_curve.light_curve_py import ExcessVariance
 
 
 def test_excvar():

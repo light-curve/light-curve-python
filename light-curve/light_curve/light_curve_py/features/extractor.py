@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Collection, Union
 
 import numpy as np
+
 from light_curve.light_curve_ext import Extractor as _RustExtractor
 from light_curve.light_curve_ext import _FeatureEvaluator as _RustBaseFeature
 

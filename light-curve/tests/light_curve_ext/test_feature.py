@@ -1,9 +1,10 @@
 import inspect
 
-import light_curve.light_curve_ext as lc
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose, assert_array_equal
+
+import light_curve.light_curve_ext as lc
 
 
 def _feature_classes(module, exclude_parametric=True):

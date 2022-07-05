@@ -1,6 +1,7 @@
 import numpy as np
-from light_curve.light_curve_py import Mean
 from numpy.testing import assert_allclose
+
+from light_curve.light_curve_py import Mean
 
 
 def test_mean_1():
