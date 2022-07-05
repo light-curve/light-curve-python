@@ -1,5 +1,3 @@
-#![allow(clippy::format_push_string)] // Revisit it after upgrade to more recent PyO3
-
 use crate::check::check_sorted;
 use crate::cont_array::{ContArray, ContCowArray};
 use crate::errors::{Exception, Res};
@@ -10,7 +8,6 @@ use enumflags2::{bitflags, BitFlags};
 use light_curve_dmdt as lcdmdt;
 use ndarray::IntoNdProducer;
 use numpy::{Element, IntoPyArray, PyArray1, ToPyArray};
-use pyo3::class::iter::PyIterProtocol;
 use pyo3::prelude::*;
 use pyo3::types::PyTuple;
 use rand::SeedableRng;
@@ -529,8 +526,8 @@ macro_rules! dmdt_batches {
             dmdt_batches: Arc<$generic>,
         }
 
-        #[pyproto]
-        impl PyIterProtocol for $name_batches {
+        #[pymethods]
+        impl $name_batches {
             fn __iter__(slf: PyRef<Self>) -> PyResult<Py<$name_iter>> {
                 let iter = $name_iter::new(slf.dmdt_batches.clone());
                 Py::new(slf.py(), iter)
@@ -613,8 +610,8 @@ macro_rules! dmdt_batches {
             }
         }
 
-        #[pyproto]
-        impl PyIterProtocol for $name_iter {
+        #[pymethods]
+        impl $name_iter {
             fn __iter__(slf: PyRef<Self>) -> PyRef<Self> {
                 slf
             }
