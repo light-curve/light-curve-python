@@ -12,9 +12,8 @@ except ImportError:
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose, assert_array_equal
-
 from light_curve.light_curve_ext import DmDt
+from numpy.testing import assert_allclose, assert_array_equal
 
 
 def random_lc(n, sigma=True, rng=None, dtype=np.float64):

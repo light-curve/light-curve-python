@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from light_curve.light_curve_py import MaximumSlope
 
 

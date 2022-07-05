@@ -1,12 +1,11 @@
 import feets
+import light_curve.light_curve_ext as lc_ext
+import light_curve.light_curve_py as lc_py
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 from scipy import stats
 from scipy.optimize import curve_fit
-
-import light_curve.light_curve_ext as lc_ext
-import light_curve.light_curve_py as lc_py
 
 
 class _Test:
