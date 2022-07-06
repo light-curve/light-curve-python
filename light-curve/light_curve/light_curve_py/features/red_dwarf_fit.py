@@ -63,7 +63,7 @@ class RedDwarfFit(BaseFeature):
 
         right_idx = (np.where(clean_flux[peak:] < 0.5 * clean_flux[peak]) + peak)[0][0]
 
-        if right_idx == len(clean_flux):
+        if right_idx == len(clean_flux) - 1:
             right_t = right_idx
         else:
             right_t = t[right_idx] + (t[right_idx + 1] - t[right_idx]) * (
