@@ -72,6 +72,8 @@ jobs:
 
       - name: Setup Python
         uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
 
       - name: Install maturin
         run: pip install maturin
@@ -96,6 +98,8 @@ jobs:
 
       - name: Setup Python
         uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
 
       - name: Install twine
         run: pip install twine
@@ -119,6 +123,8 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
 
       - name: Install deps
         run: python3 -mpip install toml twine
