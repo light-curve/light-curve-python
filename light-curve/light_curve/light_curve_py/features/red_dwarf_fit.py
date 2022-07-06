@@ -56,7 +56,12 @@ class RedDwarfFit(BaseFeature):
         amplitude = clean_flux[peak]
         tpeak = t[peak]
 
-        left_idx = np.where(clean_flux[:peak] < 0.5 * clean_flux[peak])[0][-1]
+        condition = np.where(clean_flux[:peak] < 0.5 * clean_flux[peak])[0]
+        if np.any(condition):
+            left_idx = condition[-1]
+        else:
+            left_idx = peak
+
         left_t = t[left_idx] + (t[left_idx + 1] - t[left_idx]) * (0.5 * clean_flux[peak] - clean_flux[left_idx]) / (
             clean_flux[left_idx + 1] - clean_flux[left_idx]
         )
