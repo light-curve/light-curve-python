@@ -31,7 +31,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - run: cargo test --manifest-path=light-curve/Cargo.toml -- --check
+    - run: cargo fmt --manifest-path=light-curve/Cargo.toml -- --check
 
   cargo-clippy:
     runs-on: ubuntu-latest
@@ -86,7 +86,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Install GSL, macOS
+    - name:  GSL, macOS
       if: ${{ startsWith( matrix.os, 'macos' ) }}
       run: brew install gsl
     - name: Install FFTW, Linux
