@@ -1,5 +1,5 @@
 [build-system]
-requires = ["maturin>=0.12.7,<0.13"]
+requires = ["maturin>=0.13.0,<0.14"]
 build-backend = "maturin"
 
 [project]
@@ -21,7 +21,7 @@ classifier = [
 
 [tool.maturin]
 # It asks to use Cargo.lock to make the build reproducible
-cargo-extra-args = "--locked"
+locked = true
 
 [tool.black]
 line-length = 120
@@ -120,4 +120,4 @@ before-all = [
 # Build with Intel MKL on Linux x86_64
 [[tool.cibuildwheel.overrides]]
 select = "*linux_x86_64"
-environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "GSL_VERSION" = "2.7", "MATURIN_PEP517_ARGS" = "--cargo-extra-args='--locked --no-default-features --features mkl,gsl'" }
+environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "GSL_VERSION" = "2.7", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features mkl,gsl" }

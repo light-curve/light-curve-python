@@ -49,35 +49,35 @@ jobs:
         include:
         - name: 'Linux, default features'
           os: 'ubuntu-latest'
-          cargo_extra_args: '--locked'
+          maturin_build_args: '--locked'
           install_fftw: false
         - name: 'macOS, default features'
           os: 'macos-10.15'
-          cargo_extra_args: '--locked'
+          maturin_build_args: '--locked'
           install_fftw: false
         - name: 'Linux, dynamically linked FFTW'
           os: 'ubuntu-latest'
-          cargo_extra_args: '--locked --no-default-features --features fftw-dynamic'
+          maturin_build_args: '--locked --no-default-features --features fftw-dynamic'
           install_fftw: true
         - name: 'macOS, dynamically linked FFTW'
           os: 'macos-10.15'
-          cargo_extra_args: '--locked --no-default-features --features fftw-dynamic'
+          maturin_build_args: '--locked --no-default-features --features fftw-dynamic'
           install_fftw: true
         - name: 'Linux, dynamically linked FFTW + GSL'
           os: 'ubuntu-latest'
-          cargo_extra_args: '--locked --no-default-features --features fftw-dynamic,gsl'
+          maturin_build_args: '--locked --no-default-features --features fftw-dynamic,gsl'
           install_fftw: true
         - name: 'macOS, dynamically linked FFTW + GSL'
           os: 'macos-10.15'
-          cargo_extra_args: '--locked --no-default-features --features fftw-dynamic,gsl'
+          maturin_build_args: '--locked --no-default-features --features fftw-dynamic,gsl'
           install_fftw: true
         - name: 'Linux, MKL + GSL'
           os: 'ubuntu-latest'
-          cargo_extra_args: '--locked --no-default-features --features mkl,gsl'
+          maturin_build_args: '--locked --no-default-features --features mkl,gsl'
           install_fftw: false
         - name: 'Windows, statically linked FFTW'
           os: 'windows-latest'
-          cargo_extra_args: '--locked --no-default-features --features fftw-static'
+          maturin_build_args: '--locked --no-default-features --features fftw-static'
           install_fftw: false
 
     defaults:
@@ -114,9 +114,9 @@ jobs:
       with:
         python-version: '3.10'
     - name: Install maturin
-      run: pip install 'maturin>=0.12,<0.13'
+      run: pip install 'maturin>=0.13,<0.14'
     - name: Build for ${{ matrix.name }}
-      run: maturin build --manylinux=off --cargo-extra-args='${{ matrix.cargo_extra_args }}'
+      run: maturin build --find-interpreter --manylinux=off ${{ matrix.maturin_build_args }}
 
   msrv-build:
     runs-on: ubuntu-latest
@@ -150,11 +150,11 @@ jobs:
       with:
         toolchain: ${{ steps.get_msrv.outputs.msrv }}
     - name: Install maturin
-      run: pip install 'maturin>=0.12,<0.13'
+      run: pip install 'maturin>=0.13,<0.14'
     - name: Build
       run: |
         rustup default ${{ steps.get_msrv.outputs.msrv }}
-        maturin build
+        maturin build --find-interpreter
 
   arm:
 
