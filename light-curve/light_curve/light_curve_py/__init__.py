@@ -23,6 +23,7 @@ from .features.median import *
 from .features.otsusplit import *
 from .features.pdiffmperc import *
 from .features.percampl import *
+from .features.red_dwarf_fit import *
 from .features.redchi2 import *
 from .features.skew import *
 from .features.stdev import *

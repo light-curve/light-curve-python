@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "light-curve"
-dependencies = ["numpy", "scipy"]
+dependencies = ["numpy", "scipy", "iminuit"]
 requires-python = ">=3.7"
 classifier = [
     "Intended Audience :: Science/Research",
@@ -53,6 +53,7 @@ deps =
     pytest-markdown
     numpy
     scipy
+    iminuit
     feets
 commands = pytest README.md tests/ light_curve/
 """
