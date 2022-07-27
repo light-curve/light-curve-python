@@ -3,10 +3,11 @@ requires = ["maturin>=0.13.0,<0.14"]
 build-backend = "maturin"
 
 [project]
+version = "0.6.0"
 name = "light-curve"
 dependencies = ["numpy", "scipy"]
 requires-python = ">=3.7"
-classifier = [
+classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
