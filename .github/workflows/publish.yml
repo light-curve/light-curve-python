@@ -22,7 +22,7 @@ jobs:
         interpreter: [cp37-manylinux, cp38-manylinux, cp39-manylinux, cp310-manylinux]
         arch: [aarch64, ppc64le]
         include:
-          - os: macos-10.15   # All x86_64 macOS targets
+          - os: macos-11   # All x86_64 macOS targets
             arch: auto
             interpreter: "*"
           - os: ubuntu-20.04  # All i686 and x86_64 Linux targets
