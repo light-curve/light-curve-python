@@ -68,6 +68,10 @@ commands = pytest README.md tests/ light_curve/
 """
 
 
+[tool.cibuildwheel]
+# We do not support 3.11 yet
+skip = "cp311-*"
+
 # Test
 # We skip benchmark tests, because it requires feets and its transitive
 # dependencies, which are tricky and slow to compile on marginal platforms.
