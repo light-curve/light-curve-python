@@ -1,3 +1,5 @@
+#![allow(clippy::borrow_deref_ref)] // https://github.com/rust-lang/rust-clippy/issues/8971
+
 use crate::check::check_sorted;
 use crate::cont_array::{ContArray, ContCowArray};
 use crate::errors::{Exception, Res};
