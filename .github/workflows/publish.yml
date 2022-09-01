@@ -50,7 +50,7 @@ jobs:
         with:
           package-dir: ./light-curve
         env:
-          CIBW_SKIP: "*-musllinux_i686"  # rustup doesn't install i686-musl
+          CIBW_SKIP: "*-musllinux_i686 cp311-*"  # rustup doesn't install i686-musl | we don't support 3.11 yet
           CIBW_BUILD_VERBOSITY: "3"
 
       - name: Upload wheels as artifacts
