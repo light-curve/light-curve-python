@@ -24,8 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 —
 
 ### Fixed
-
-—
+- https://github.com/light-curve/light-curve-python/issues/110 Experimental warning message specifies a class name https://github.com/light-curve/light-curve-python/pull/111
 
 ### Security
 
