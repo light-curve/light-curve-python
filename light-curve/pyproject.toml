@@ -1,12 +1,12 @@
 [build-system]
-requires = ["maturin>=0.12.7,<0.13"]
+requires = ["maturin>=0.13.0,<0.14"]
 build-backend = "maturin"
 
 [project]
 name = "light-curve"
 dependencies = ["numpy", "scipy"]
 requires-python = ">=3.7"
-classifier = [
+classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
@@ -19,9 +19,19 @@ classifier = [
     "Topic :: Scientific/Engineering :: Astronomy",
 ]
 
+[tool.setuptools]
+# We load these from Cargo.toml
+dynamic = [
+    "authors",
+    "description",
+    "license",
+    "readme",
+    "version",
+]
+
 [tool.maturin]
 # It asks to use Cargo.lock to make the build reproducible
-cargo-extra-args = "--locked"
+locked = true
 
 [tool.black]
 line-length = 120
@@ -57,6 +67,10 @@ deps =
 commands = pytest README.md tests/ light_curve/
 """
 
+
+[tool.cibuildwheel]
+# We do not support 3.11 yet
+skip = "cp311-*"
 
 # Test
 # We skip benchmark tests, because it requires feets and its transitive
@@ -120,4 +134,4 @@ before-all = [
 # Build with Intel MKL on Linux x86_64
 [[tool.cibuildwheel.overrides]]
 select = "*linux_x86_64"
-environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "GSL_VERSION" = "2.7", "MATURIN_PEP517_ARGS" = "--cargo-extra-args='--locked --no-default-features --features mkl,gsl'" }
+environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "GSL_VERSION" = "2.7", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features mkl,gsl" }

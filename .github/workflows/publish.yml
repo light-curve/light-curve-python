@@ -22,7 +22,7 @@ jobs:
         interpreter: [cp37-manylinux, cp38-manylinux, cp39-manylinux, cp310-manylinux]
         arch: [aarch64, ppc64le]
         include:
-          - os: macos-10.15   # All x86_64 macOS targets
+          - os: macos-11   # All x86_64 macOS targets
             arch: auto
             interpreter: "*"
           - os: ubuntu-20.04  # All i686 and x86_64 Linux targets
@@ -46,11 +46,11 @@ jobs:
         run : echo "CIBW_ARCHS=${{ matrix.arch }}" >> $GITHUB_ENV
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@2.6.0
+        uses: pypa/cibuildwheel@v2.9.0
         with:
           package-dir: ./light-curve
         env:
-          CIBW_SKIP: "*-musllinux_i686"  # rustup doesn't install i686-musl
+          CIBW_SKIP: "*-musllinux_i686 cp311-*"  # rustup doesn't install i686-musl | we don't support 3.11 yet
           CIBW_BUILD_VERBOSITY: "3"
 
       - name: Upload wheels as artifacts
@@ -72,9 +72,11 @@ jobs:
 
       - name: Setup Python
         uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
 
       - name: Install maturin
-        run: pip install maturin
+        run: pip install 'maturin>=0.13,<0.14'
 
       - name: Build sdist
         run: maturin sdist
@@ -96,6 +98,8 @@ jobs:
 
       - name: Setup Python
         uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
 
       - name: Install twine
         run: pip install twine
@@ -119,6 +123,8 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
 
       - name: Install deps
         run: python3 -mpip install toml twine

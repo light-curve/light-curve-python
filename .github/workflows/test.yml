@@ -17,10 +17,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
     - name: Set up Python 3.${{ matrix.python_minor }}
       uses: actions/setup-python@v4
       with:
@@ -35,30 +31,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-    - name: Check Rust formatting
-      uses: actions-rs/cargo@v1
-      with:
-        command: fmt
-        args: --manifest-path=light-curve/Cargo.toml -- --check
+    - run: cargo fmt --manifest-path=light-curve/Cargo.toml -- --check
 
   cargo-clippy:
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-    - name: Run Rust code analysis
-      uses: actions-rs/cargo@v1
-      with:
-        command: clippy
-        args: --manifest-path=light-curve/Cargo.toml --all-targets -- -D warnings
+    - run: cargo clippy --manifest-path=light-curve/Cargo.toml --all-targets -- -D warnings
 
   build:
     runs-on: ${{ matrix.os }}
@@ -69,35 +49,35 @@ jobs:
         include:
         - name: 'Linux, default features'
           os: 'ubuntu-latest'
-          cargo_extra_args: '--locked'
+          maturin_build_args: '--locked'
           install_fftw: false
         - name: 'macOS, default features'
-          os: 'macos-10.15'
-          cargo_extra_args: '--locked'
+          os: 'macos-11'
+          maturin_build_args: '--locked'
           install_fftw: false
         - name: 'Linux, dynamically linked FFTW'
           os: 'ubuntu-latest'
-          cargo_extra_args: '--locked --no-default-features --features fftw-dynamic'
+          maturin_build_args: '--locked --no-default-features --features fftw-dynamic'
           install_fftw: true
         - name: 'macOS, dynamically linked FFTW'
-          os: 'macos-10.15'
-          cargo_extra_args: '--locked --no-default-features --features fftw-dynamic'
+          os: 'macos-11'
+          maturin_build_args: '--locked --no-default-features --features fftw-dynamic'
           install_fftw: true
         - name: 'Linux, dynamically linked FFTW + GSL'
           os: 'ubuntu-latest'
-          cargo_extra_args: '--locked --no-default-features --features fftw-dynamic,gsl'
+          maturin_build_args: '--locked --no-default-features --features fftw-dynamic,gsl'
           install_fftw: true
         - name: 'macOS, dynamically linked FFTW + GSL'
-          os: 'macos-10.15'
-          cargo_extra_args: '--locked --no-default-features --features fftw-dynamic,gsl'
+          os: 'macos-11'
+          maturin_build_args: '--locked --no-default-features --features fftw-dynamic,gsl'
           install_fftw: true
         - name: 'Linux, MKL + GSL'
           os: 'ubuntu-latest'
-          cargo_extra_args: '--locked --no-default-features --features mkl,gsl'
+          maturin_build_args: '--locked --no-default-features --features mkl,gsl'
           install_fftw: false
         - name: 'Windows, statically linked FFTW'
           os: 'windows-latest'
-          cargo_extra_args: '--locked --no-default-features --features fftw-static'
+          maturin_build_args: '--locked --no-default-features --features fftw-static'
           install_fftw: false
 
     defaults:
@@ -106,7 +86,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Install GSL, macOS
+    - name:  GSL, macOS
       if: ${{ startsWith( matrix.os, 'macos' ) }}
       run: brew install gsl
     - name: Install FFTW, Linux
@@ -117,10 +97,6 @@ jobs:
     - name: Install FFTW, macOS
       if: ${{ matrix.install_fftw && startsWith( matrix.os, 'macos' ) }}
       run: brew install fftw
-    - name: Set up Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
     - name: Set up Python 3.7
       uses: actions/setup-python@v4
       with:
@@ -138,9 +114,9 @@ jobs:
       with:
         python-version: '3.10'
     - name: Install maturin
-      run: pip install maturin
+      run: pip install 'maturin>=0.13,<0.14'
     - name: Build for ${{ matrix.name }}
-      run: maturin build --manylinux=off --cargo-extra-args='${{ matrix.cargo_extra_args }}'
+      run: maturin build --find-interpreter --manylinux=off ${{ matrix.maturin_build_args }}
 
   msrv-build:
     runs-on: ubuntu-latest
@@ -170,15 +146,15 @@ jobs:
     - name: Get minimum supported Rust version
       run: echo "::set-output name=msrv::$(grep '^rust-version = ' Cargo.toml | grep -o '[0-9.]\+')"
       id: get_msrv
-    - uses: actions-rs/toolchain@v1
+    - uses: dtolnay/rust-toolchain@master
       with:
         toolchain: ${{ steps.get_msrv.outputs.msrv }}
     - name: Install maturin
-      run: pip install maturin
+      run: pip install 'maturin>=0.13,<0.14'
     - name: Build
       run: |
         rustup default ${{ steps.get_msrv.outputs.msrv }}
-        maturin build
+        maturin build --find-interpreter
 
   arm:
 
