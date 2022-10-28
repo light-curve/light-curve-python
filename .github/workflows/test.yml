@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_minor: ['7', '8', '9', '10']
+        python_minor: ['7', '8', '9', '10', '11']
 
     defaults:
       run:
@@ -113,6 +113,10 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
     - name: Install maturin
       run: pip install 'maturin>=0.13,<0.14'
     - name: Build for ${{ matrix.name }}
@@ -143,6 +147,10 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
     - name: Get minimum supported Rust version
       run: echo "::set-output name=msrv::$(grep '^rust-version = ' Cargo.toml | grep -o '[0-9.]\+')"
       id: get_msrv
