@@ -3,7 +3,6 @@ from dataclasses import dataclass
 import numpy as np
 from iminuit import Minuit
 from iminuit.cost import LeastSquares
-from scipy.optimize import curve_fit
 from scipy.special import erfc
 from scipy.stats import sigmaclip
 
@@ -25,21 +24,11 @@ class RedDwarfFit(BaseFeature):
     Guadalupe Tovar Mendoza et al. 2022 [DOI:10.3847/1538-3881/ac6fe6](https://doi.org/10.3847/1538-3881/ac6fe6)
     """
 
-    method: str = "scipy"
-
     def _eval(self, t, m, sigma=None):
         amplitude, fwhm, tpeak, background = RedDwarfFit._flare_params(t, m)
         norm_t = (t - tpeak) / fwhm
 
-        if sigma is None:
-            pass  # check if there is no sigma, do np.array(ones)
-
-        if self.method == "scipy":
-            popt = RedDwarfFit._scipy_optimize(t, m, amplitude, fwhm, tpeak, background)
-        elif self.method == "minuit":
-            popt = RedDwarfFit._minuit_optimize(t, m, sigma, amplitude, fwhm, tpeak, background)
-        else:
-            raise ValueError
+        popt = RedDwarfFit._minuit_optimize(t, m, sigma, amplitude, fwhm, tpeak, background)
 
         func = RedDwarfFit._func(amplitude)
         model = func(norm_t, *popt)
@@ -108,27 +97,6 @@ class RedDwarfFit(BaseFeature):
         )
 
         return eq
-
-    @staticmethod
-    def _scipy_optimize(t, m, amplitude, fwhm, tpeak, background):
-        initial = np.array(
-            [
-                0.9687734504375167,
-                -0.251299705922117,
-                0.22675974948468916,
-                0.15551880775110513,
-                1.2150539528490194,
-                0.12695865022878844,
-                background / amplitude,
-            ]
-        )
-
-        func = RedDwarfFit._func(amplitude)
-        norm_t = (t - tpeak) / fwhm
-
-        popt, _ = curve_fit(func, norm_t, m, p0=initial)
-
-        return np.array(popt)
 
     @staticmethod
     def _minuit_optimize(t, m, sigma, amplitude, fwhm, tpeak, background):
