@@ -15,6 +15,7 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Rust",
     "Topic :: Scientific/Engineering :: Astronomy",
 ]
@@ -53,29 +54,30 @@ testpaths = [
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py36,py37,py38,py39,py310
+envlist = py37,py38,py39,py310,py311
 isolated_build = True
 
 [testenv]
 deps =
+    black
+    feets
+    isort
+    numpy
     pytest
     pytest-benchmark
     pytest-markdown
-    numpy
     scipy
-    feets
-commands = pytest README.md tests/ light_curve/
+commands =
+    pytest README.md tests/ light_curve/
+    black --check .
+    isort --check .
 """
 
-
-[tool.cibuildwheel]
-# We do not support 3.11 yet
-skip = "cp311-*"
 
 # Test
 # We skip benchmark tests, because it requires feets and its transitive
 # dependencies, which are tricky and slow to compile on marginal platforms.
-# We use platforms where scipy binary wheels are available
+# For testing we use only platforms for which scipy binary wheels are available
 [[tool.cibuildwheel.overrides]]
 select = "cp*-manylinux_x86_64 cp*-manylinux_aarch64 cp*-macosx*"
 test-command = "pytest {package}/README.md {package}/light_curve/ {package}/tests/ --ignore {package}/tests/test_w_bench.py"
