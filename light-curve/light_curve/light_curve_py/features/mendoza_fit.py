@@ -10,10 +10,20 @@ from ._base import BaseFeature
 
 
 @dataclass()
-class RedDwarfFit(BaseFeature):
-    """Red dwarf flares fitting function.
+class MendozaFit(BaseFeature):
+    """White-light flares fitting function.
 
-    The function returns computed amplitude, fwhm, tpeak, chi2 and 7 parameters of the fit.
+    The function returns computed amplitude, fwhm, tpeak, chi2 and 7 parameters of the Mendoza function developed
+    for white-light flares:
+
+    $$
+    f(t) = \frac{\sqrt{\pi} A C}{2} \times (F_1 h(t, B, C, D_1) + F_2 h(t, B, C, D_2)),
+    $$
+
+    where $h(t, B, C, D) = e^{-D t + (\frac{B}{C} + \frac{D C}{2})^2} \times erfc \left(\frac{B - t}{C} +
+    \frac{D C}{2}\right)$, where $erfc$ is $1-erf(t)$, t -- relative time, A -- amplitude, B -- position of the peak of
+    the flare, C -- Gaussian heating timescale, $D_1$ -- rapid cooling phase timescale, $D_2$ -- slow cooling phase
+    timescale, $F_2 \equiv 1 - F_1$ and  describe the relative importance of the exponential cooling terms.
 
     - Depends on:  **time**, **magnitude**, **sigma**
     - Minimum number of observations: **7**
@@ -25,12 +35,12 @@ class RedDwarfFit(BaseFeature):
     """
 
     def _eval(self, t, m, sigma=None):
-        amplitude, fwhm, tpeak, background = RedDwarfFit._flare_params(t, m)
+        amplitude, fwhm, tpeak, background = MendozaFit._flare_params(t, m)
         norm_t = (t - tpeak) / fwhm
 
-        popt = RedDwarfFit._minuit_optimize(t, m, sigma, amplitude, fwhm, tpeak, background)
+        popt = MendozaFit._minuit_optimize(t, m, sigma, amplitude, fwhm, tpeak, background)
 
-        func = RedDwarfFit._func(amplitude)
+        func = MendozaFit._func(amplitude)
         model = func(norm_t, *popt)
         chi2 = np.sum((m - model) ** 2) / (len(m) - 7)
 
@@ -100,7 +110,7 @@ class RedDwarfFit(BaseFeature):
 
     @staticmethod
     def _minuit_optimize(t, m, sigma, amplitude, fwhm, tpeak, background):
-        func = RedDwarfFit._func(amplitude)
+        func = MendozaFit._func(amplitude)
         norm_t = (t - tpeak) / fwhm
 
         initial_dict = {
@@ -123,7 +133,7 @@ class RedDwarfFit(BaseFeature):
     @staticmethod
     def model(t, params):
         amplitude, fwhm, tpeak, _, *popt = params
-        func = RedDwarfFit._func(amplitude)
+        func = MendozaFit._func(amplitude)
         predict = func(t, *popt)
 
         return predict
@@ -133,4 +143,4 @@ class RedDwarfFit(BaseFeature):
         return 11
 
 
-__all__ = ("RedDwarfFit",)
+__all__ = ("MendozaFit",)
