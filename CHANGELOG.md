@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Python 3.11 binary wheels
+- CI: Python 3.11 binary wheels
 
 ### Changed
 
