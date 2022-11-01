@@ -677,9 +677,9 @@ dependencies = [
 
 [[package]]
 name = "light-curve-feature"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0dcbe531c8c72c23504a99ab846668adc570588db26e3429134059902e78d90"
+checksum = "d2d8e43461992ce52e8668942438a1c449e97fa020ce04efa04da2edad37eea9"
 dependencies = [
  "GSL",
  "anyhow",
@@ -705,7 +705,7 @@ dependencies = [
 
 [[package]]
 name = "light-curve-python"
-version = "0.6.1-beta.0"
+version = "0.6.1-beta.1"
 dependencies = [
  "anyhow",
  "const_format",
