@@ -30,10 +30,10 @@ Minimum supported Python version is 3.7.
 - "src": the package is confirmed to be built and pass unit tests locally, but testing and package building is not supported by CI yet. It is required to have the [GNU scientific library (GSL)](https://www.gnu.org/software/gsl/) v2.1+ and the [Rust toolchain](https://rust-lang.org) v1.57+ to install it via `pip install`.
 - "not tested": building from the source code is not tested, please report us building status via issue/PR/email.
 
-We build aarch64 macOS wheels locally running this command in `light-curve` directory:
+We build aarch64 macOS 12.0+ wheels locally running this command in `light-curve` directory:
 ```
 rm -rf ./wheelhouse
-CIBW_BUILD='cp3*-macosx_arm64' CIBW_ENVIRONMENT="MACOSX_DEPLOYMENT_TARGET=12.0 MATURIN_PEP517_ARGS='--cargo-extra-args=\"--locked --no-default-features --features fftw-dynamic,gsl\"'" CIBW_BEFORE_ALL='curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y; brew install gsl fftw' python3 -mcibuildwheel --platform macos
+CIBW_BUILD='cp3*-macosx_arm64' CIBW_ENVIRONMENT="MACOSX_DEPLOYMENT_TARGET=12.0 MATURIN_PEP517_ARGS='--locked --no-default-features --features fftw-static,gsl'" CIBW_BEFORE_ALL='curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y; brew install gsl' python3 -mcibuildwheel --platform macos
 twine upload wheelhouse/*.whl
 ```
 
