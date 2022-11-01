@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 —
 
-## [0.6.1-beta.0] 2022-11-01
+## [0.6.1] 2022-11-01
 
 ### Added
 
@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `thiserror` 1.0.31 -> 1.0.37
 - wheel build dependency: `maturin` 0.12.x -> 0.13.x
 - CI: `macos-10.15` GitHub actions runners are EOL, we switched to `macos-11`
+- CI: `cibuildwheel` 2.10.2 -> 2.11.2
 
 ### Deprecated
 
