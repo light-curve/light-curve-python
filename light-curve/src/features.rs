@@ -1378,6 +1378,8 @@ evaluator!(MinimumTimeInterval, lcf::MinimumTimeInterval);
 
 evaluator!(ObservationCount, lcf::ObservationCount);
 
+evaluator!(OtsuSplit, lcf::OtsuSplit);
+
 evaluator!(TimeMean, lcf::TimeMean);
 
 evaluator!(TimeStandardDeviation, lcf::TimeStandardDeviation);

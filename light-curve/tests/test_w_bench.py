@@ -366,6 +366,10 @@ class TestInterPercentileRange(_Test):
     feets_skip_test = "feets uses different quantile type"
 
 
+class TestOtsuSplit(_Test):
+    name = "OtsuSplit"
+
+
 class TestKurtosis(_Test):
     name = "Kurtosis"
 
