@@ -1,12 +1,12 @@
 [build-system]
-requires = ["maturin>=0.12.7,<0.13"]
+requires = ["maturin>=0.13.0,<0.14"]
 build-backend = "maturin"
 
 [project]
 name = "light-curve"
 dependencies = ["numpy", "scipy", "iminuit"]
 requires-python = ">=3.7"
-classifier = [
+classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
@@ -15,13 +15,24 @@ classifier = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Rust",
     "Topic :: Scientific/Engineering :: Astronomy",
 ]
 
+[tool.setuptools]
+# We load these from Cargo.toml
+dynamic = [
+    "authors",
+    "description",
+    "license",
+    "readme",
+    "version",
+]
+
 [tool.maturin]
 # It asks to use Cargo.lock to make the build reproducible
-cargo-extra-args = "--locked"
+locked = true
 
 [tool.black]
 line-length = 120
@@ -43,26 +54,32 @@ testpaths = [
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py36,py37,py38,py39,py310
+envlist = py37,py38,py39,py310,py311
 isolated_build = True
 
 [testenv]
 deps =
+    black
+    feets
+    isort
+    numpy
     pytest
     pytest-benchmark
     pytest-markdown
-    numpy
     scipy
     iminuit
     feets
-commands = pytest README.md tests/ light_curve/
+commands =
+    pytest README.md tests/ light_curve/
+    black --check .
+    isort --check .
 """
 
 
 # Test
 # We skip benchmark tests, because it requires feets and its transitive
 # dependencies, which are tricky and slow to compile on marginal platforms.
-# We use platforms where scipy binary wheels are available
+# For testing we use only platforms for which scipy binary wheels are available
 [[tool.cibuildwheel.overrides]]
 select = "cp*-manylinux_x86_64 cp*-manylinux_aarch64 cp*-macosx*"
 test-command = "pytest {package}/README.md {package}/light_curve/ {package}/tests/ --ignore {package}/tests/test_w_bench.py"
@@ -121,4 +138,4 @@ before-all = [
 # Build with Intel MKL on Linux x86_64
 [[tool.cibuildwheel.overrides]]
 select = "*linux_x86_64"
-environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "GSL_VERSION" = "2.7", "MATURIN_PEP517_ARGS" = "--cargo-extra-args='--locked --no-default-features --features mkl,gsl'" }
+environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "GSL_VERSION" = "2.7", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features mkl,gsl" }

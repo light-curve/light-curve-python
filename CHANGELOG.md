@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `const_format` 0.2.25 -> 0.2.26
+—
 
 ### Deprecated
 
@@ -26,6 +26,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 —
+
+### Security
+
+—
+
+## [0.6.1] 2022-11-01
+
+### Added
+
+- CI: Python 3.11 binary wheels
+
+### Changed
+
+- `const_format` 0.2.25 -> 0.2.30
+- `itertools` 0.10.3 -> 0.10.5
+- `pyo3` 0.16.5 -> 0.16.6
+- `thiserror` 1.0.31 -> 1.0.37
+- wheel build dependency: `maturin` 0.12.x -> 0.13.x
+- CI: `macos-10.15` GitHub actions runners are EOL, we switched to `macos-11`
+- CI: `cibuildwheel` 2.10.2 -> 2.11.2
+
+### Deprecated
+
+—
+
+### Removed
+
+—
+
+### Fixed
+
+- https://github.com/light-curve/light-curve-python/issues/110 Experimental warning message specifies a class name https://github.com/light-curve/light-curve-python/pull/111
+- Support of `setuptools` v61+
 
 ### Security
 

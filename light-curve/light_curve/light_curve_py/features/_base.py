@@ -51,7 +51,7 @@ class BaseFeature(ABC):
         t, m, sigma = self._normalize_input(t=t, m=m, sigma=sigma, sorted=sorted, check=check)
         return self._eval_and_fill(t, m, sigma, fill_value)
 
-    @mark_experimental()
+    @mark_experimental
     def __post_init__(self):
         pass
 
