@@ -9,11 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-—
+- `OtsuSplit` implementation in Rust https://github.com/light-curve/light-curve-python/issues/120 https://github.com/light-curve/light-curve-python/pull/123
 
 ### Changed
 
-—
+- `light-curve-feature` 0.5.0 -> 0.5.2
 
 ### Deprecated
 
