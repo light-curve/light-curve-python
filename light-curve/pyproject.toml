@@ -38,6 +38,21 @@ locked = true
 line-length = 120
 target-version = ["py37", "py38", "py39", "py310"]
 include = '\.py$'
+exclude = '''
+    /(
+        docs
+      | dist
+      | target
+      | tests/light-curve-test-data
+      | wheelhouse
+      | \.benchmarks
+      | \.idea
+      | \.mypy_cache
+      | \.pytest_cache
+      | \.tox
+      | _build
+    )/
+'''
 
 [tool.isort]
 profile = 'black'
@@ -66,6 +81,7 @@ deps =
     pytest
     pytest-benchmark
     pytest-markdown
+    pytest-subtests
     scipy
 commands =
     pytest README.md tests/ light_curve/
@@ -85,6 +101,7 @@ test-requires = [
     "pytest",
     "pytest-benchmark",
     "pytest-markdown",
+    "pytest-subtests",
     "numpy",
     "scipy",
 ]

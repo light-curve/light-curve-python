@@ -51,25 +51,30 @@ class _Test:
 
     add_to_all_features = True
 
-    def generate_data(self):
+    def random_data(self):
         t = np.sort(np.random.uniform(self.t_min, self.t_max, self.n_obs))
         m = np.random.uniform(self.m_min, self.m_max, self.n_obs)
         sigma = np.random.uniform(self.sigma_min, self.sigma_max, self.n_obs)
         return t, m, sigma
 
-    def test_feature_length(self):
-        t, m, sigma = self.generate_data()
-        result = self.rust(t, m, sigma, sorted=None)
-        assert len(result) == len(self.rust.names) == len(self.rust.descriptions)
+    def data_gen(self):
+        yield "random", *self.random_data()
 
-    def test_close_to_lc_py(self):
+    def test_feature_length(self, subtests):
+        for lc_name, t, m, sigma in self.data_gen():
+            result = self.rust(t, m, sigma, sorted=None)
+            with subtests.test(lc_name=lc_name):
+                assert len(result) == len(self.rust.names) == len(self.rust.descriptions)
+
+    def test_close_to_lc_py(self, subtests):
         if self.py_feature is None:
             pytest.skip("No matched light_curve_py class for the feature")
-        t, m, sigma = self.generate_data()
-        assert_allclose(self.rust(t, m, sigma), self.py_feature(t, m, sigma), rtol=self.rtol, atol=self.atol)
+        for lc_name, t, m, sigma in self.data_gen():
+            with subtests.test(lc_name=lc_name):
+                assert_allclose(self.rust(t, m, sigma), self.py_feature(t, m, sigma), rtol=self.rtol, atol=self.atol)
 
     def test_benchmark_rust(self, benchmark):
-        t, m, sigma = self.generate_data()
+        t, m, sigma = self.random_data()
 
         benchmark.group = str(type(self).__name__)
         benchmark(self.rust, t, m, sigma, sorted=True, check=False)
@@ -78,23 +83,24 @@ class _Test:
         if self.py_feature is None:
             pytest.skip("No matched light_curve_py class for the feature")
 
-        t, m, sigma = self.generate_data()
+        t, m, sigma = self.random_data()
 
         benchmark.group = str(type(self).__name__)
         benchmark(self.py_feature, t, m, sigma, sorted=True, check=False)
 
-    def test_close_to_naive(self):
+    def test_close_to_naive(self, subtests):
         if self.naive is None:
             pytest.skip("No naive implementation for the feature")
 
-        t, m, sigma = self.generate_data()
-        assert_allclose(self.rust(t, m, sigma), self.naive(t, m, sigma), rtol=self.rtol, atol=self.atol)
+        for lc_name, t, m, sigma in self.data_gen():
+            with subtests.test(lc_name=lc_name):
+                assert_allclose(self.rust(t, m, sigma), self.naive(t, m, sigma), rtol=self.rtol, atol=self.atol)
 
     def test_benchmark_naive(self, benchmark):
         if self.naive is None:
             pytest.skip("No naive implementation for the feature")
 
-        t, m, sigma = self.generate_data()
+        t, m, sigma = self.random_data()
 
         benchmark.group = type(self).__name__
         benchmark(self.naive, t, m, sigma)
@@ -103,20 +109,21 @@ class _Test:
         _, result = self.feets_extractor.extract(t, m, sigma)
         return result
 
-    def test_close_to_feets(self):
+    def test_close_to_feets(self, subtests):
         if self.feets_extractor is None:
             pytest.skip("No feets feature provided")
         if self.feets_skip_test:
             pytest.skip("feets is expected to be different from light_curve, reason: " + self.feets_skip_test)
 
-        t, m, sigma = self.generate_data()
-        assert_allclose(self.rust(t, m, sigma)[:1], self.feets(t, m, sigma)[:1], rtol=self.rtol, atol=self.atol)
+        for lc_name, t, m, sigma in self.data_gen():
+            with subtests.test(lc_name=lc_name):
+                assert_allclose(self.rust(t, m, sigma)[:1], self.feets(t, m, sigma)[:1], rtol=self.rtol, atol=self.atol)
 
     def test_benchmark_feets(self, benchmark):
         if self.feets_extractor is None:
             pytest.skip("No feets feature provided")
 
-        t, m, sigma = self.generate_data()
+        t, m, sigma = self.random_data()
 
         benchmark.group = type(self).__name__
         benchmark(self.feets, t, m, sigma)
@@ -164,7 +171,7 @@ if lc_ext._built_with_gsl:
         # Random data yields to random results because target function has a lot of local minima
         # BTW, this test shouldn't use fixed random seed because the curve has good enough S/N to be fitted for any give
         # noise sample
-        def generate_data(self):
+        def random_data(self):
             rng = np.random.default_rng(0)
             t = np.linspace(self.t_min, self.t_max, self.n_obs)
             model = self._model(t, *self._params())
