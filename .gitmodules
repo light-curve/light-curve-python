@@ -1,0 +1,3 @@
+[submodule "test-data"]
+	path = light-curve/tests/light-curve-test-data
+	url = https://github.com/light-curve/test-data.git
