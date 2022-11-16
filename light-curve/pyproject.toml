@@ -78,6 +78,7 @@ deps =
     feets
     isort
     numpy
+    pandas
     pytest
     pytest-benchmark
     pytest-markdown

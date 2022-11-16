@@ -1,5 +1,12 @@
+import dataclasses
+from functools import lru_cache
+from itertools import count
+from pathlib import Path
+from typing import Generator, Iterator, List, Optional, Union
+
 import feets
 import numpy as np
+import pandas as pd
 import pytest
 from numpy.testing import assert_allclose
 from scipy import stats
@@ -7,6 +14,86 @@ from scipy.optimize import curve_fit
 
 import light_curve.light_curve_ext as lc_ext
 import light_curve.light_curve_py as lc_py
+
+
+@dataclasses.dataclass
+class Data:
+    name: str
+    phot_type: str
+    t: np.ndarray = dataclasses.field(repr=False)
+    m: np.ndarray = dataclasses.field(repr=False)
+    sigma: np.ndarray = dataclasses.field(repr=False)
+
+    # Kinda static attribute
+    phot_type_choices: frozenset = dataclasses.field(
+        default=frozenset(["flux", "mag"]),
+        init=False,
+        repr=False,
+    )
+
+    # For '*' operator
+    def __iter__(self):
+        def gen():
+            yield self.t
+            yield self.m
+            yield self.sigma
+
+        return gen()
+
+    def __post_init__(self):
+        self.name = str(self.name)
+        assert self.phot_type in self.phot_type_choices
+        assert self.t.size == self.m.size == self.sigma.size
+        assert self.t.dtype == self.m.dtype == self.sigma.dtype
+
+
+def gen_data_from_test_data_path(
+    paths: Iterator[Union[Path, str]], *, n: Optional[int] = None, convert_to_flux: bool = False
+) -> Generator[Data, None, None]:
+    if n is None:
+        take_n = count()
+    else:
+        take_n = range(n)
+    for _, csv_file in zip(take_n, paths):
+        df = pd.read_csv(csv_file)
+
+        # Drop repeated values
+        idx = np.diff(df["time"], prepend=0) > 0
+        df = df[idx]
+
+        t = df["time"].to_numpy()
+        if "mag" in df.columns:
+            m = df["mag"].to_numpy()
+            sigma = df["magerr"].to_numpy()
+            if convert_to_flux:
+                m = 10 ** (-0.4 * m)
+                sigma = 0.4 * np.log(10.0) * sigma * m
+                phot_type = "flux"
+            else:
+                phot_type = "mag"
+        elif "flux" in df.columns:
+            m = df["flux"].to_numpy()
+            sigma = df["fluxerr"].to_numpy()
+            phot_type = "flux"
+        else:
+            raise ValueError(f"No mag neither flux column in {csv_file}")
+        yield Data(csv_file, phot_type, t, m, sigma)
+
+
+@lru_cache(maxsize=1)
+def get_test_data_from_issues() -> List[Data]:
+    data_root = Path(__file__).parent / "light-curve-test-data/from-issues"
+    return list(gen_data_from_test_data_path(data_root.glob("**/*.csv")))
+
+
+@lru_cache()
+def get_first_n_snia_data(*, n: Optional[int] = None, convert_to_flux: bool = False) -> List[Data]:
+    data_root = Path(__file__).parent / "light-curve-test-data/SNIa"
+    with open(data_root / "snIa_bandg_minobs10_beforepeak3_afterpeak4.csv") as fh:
+        file_names = frozenset(fh.read().split())
+    light_curve_dir = data_root / "light-curves"
+    paths = (path for path in light_curve_dir.glob("*.csv") if path.stem in file_names)
+    return list(gen_data_from_test_data_path(paths, n=n, convert_to_flux=convert_to_flux))
 
 
 class _Test:
@@ -26,6 +113,9 @@ class _Test:
     # Specify a `str` with a reason why skip this test
     feets_skip_test = False
 
+    # Which types of pre-generated light-curves to use
+    phot_types = Data.phot_type_choices
+
     def setup_method(self):
         self.rust = getattr(lc_ext, self.name)(*self.args)
         try:
@@ -37,7 +127,7 @@ class _Test:
             self.feets_extractor = feets.FeatureSpace(only=[self.feets_feature], data=["time", "magnitude", "error"])
 
     # Default values of `assert_allclose`
-    rtol = 1e-7
+    rtol = np.finfo(np.float32).resolution  # 1e-6
     atol = 0
 
     # Default values for random light curve generation
@@ -55,27 +145,40 @@ class _Test:
         t = np.sort(np.random.uniform(self.t_min, self.t_max, self.n_obs))
         m = np.random.uniform(self.m_min, self.m_max, self.n_obs)
         sigma = np.random.uniform(self.sigma_min, self.sigma_max, self.n_obs)
-        return t, m, sigma
+        return Data("random", "mag", t, m, sigma)
 
-    def data_gen(self):
-        yield "random", *self.random_data()
+    def from_issues_data(self):
+        for data in get_test_data_from_issues():
+            if data.phot_type not in self.phot_types:
+                continue
+            yield data
+
+    def snia_data(self, n: Optional[int] = None):
+        for data in get_first_n_snia_data(n=n):
+            if data.phot_type not in self.phot_types:
+                continue
+            yield data
+
+    def data_gen(self) -> Generator[Data, None, None]:
+        yield self.random_data()
+        yield from self.from_issues_data()
+        yield from self.snia_data(n=10)
 
     def test_feature_length(self, subtests):
-        for lc_name, t, m, sigma in self.data_gen():
-            result = self.rust(t, m, sigma, sorted=None)
-            with subtests.test(lc_name=lc_name):
+        for data in self.data_gen():
+            with subtests.test(lc_name=data):
+                result = self.rust(*data, sorted=None)
                 assert len(result) == len(self.rust.names) == len(self.rust.descriptions)
 
     def test_close_to_lc_py(self, subtests):
         if self.py_feature is None:
             pytest.skip("No matched light_curve_py class for the feature")
-        for lc_name, t, m, sigma in self.data_gen():
-            with subtests.test(lc_name=lc_name):
-                assert_allclose(self.rust(t, m, sigma), self.py_feature(t, m, sigma), rtol=self.rtol, atol=self.atol)
+        for data in self.data_gen():
+            with subtests.test(data=data):
+                assert_allclose(self.rust(*data), self.py_feature(*data), rtol=self.rtol, atol=self.atol)
 
     def test_benchmark_rust(self, benchmark):
         t, m, sigma = self.random_data()
-
         benchmark.group = str(type(self).__name__)
         benchmark(self.rust, t, m, sigma, sorted=True, check=False)
 
@@ -91,10 +194,9 @@ class _Test:
     def test_close_to_naive(self, subtests):
         if self.naive is None:
             pytest.skip("No naive implementation for the feature")
-
-        for lc_name, t, m, sigma in self.data_gen():
-            with subtests.test(lc_name=lc_name):
-                assert_allclose(self.rust(t, m, sigma), self.naive(t, m, sigma), rtol=self.rtol, atol=self.atol)
+        for data in self.data_gen():
+            with subtests.test(data=data):
+                assert_allclose(self.rust(*data), self.naive(*data), rtol=self.rtol, atol=self.atol)
 
     def test_benchmark_naive(self, benchmark):
         if self.naive is None:
@@ -115,9 +217,9 @@ class _Test:
         if self.feets_skip_test:
             pytest.skip("feets is expected to be different from light_curve, reason: " + self.feets_skip_test)
 
-        for lc_name, t, m, sigma in self.data_gen():
-            with subtests.test(lc_name=lc_name):
-                assert_allclose(self.rust(t, m, sigma)[:1], self.feets(t, m, sigma)[:1], rtol=self.rtol, atol=self.atol)
+        for data in self.data_gen():
+            with subtests.test(data=data):
+                assert_allclose(self.rust(*data)[:1], self.feets(*data)[:1], rtol=self.rtol, atol=self.atol)
 
     def test_benchmark_feets(self, benchmark):
         if self.feets_extractor is None:
@@ -155,6 +257,8 @@ if lc_ext._built_with_gsl:
 
         add_to_all_features = False  # in All* random data is used
 
+        phot_types = frozenset(["flux"])
+
         @staticmethod
         def _model(t, a, b, t0, rise, fall):
             dt = t - t0
@@ -177,7 +281,13 @@ if lc_ext._built_with_gsl:
             model = self._model(t, *self._params())
             sigma = np.sqrt(model)
             m = model + sigma * rng.normal(size=self.n_obs)
-            return t, m, sigma
+            return Data("Bazin+noise", "flux", t, m, sigma)
+
+        # Keep random data only
+        def data_gen(self) -> Generator[Data, None, None]:
+            yield self.random_data()
+            # All these fail =(
+            # yield from get_first_n_snia_data(n=10, convert_to_flux=True)
 
         def naive(self, t, m, sigma):
             params, _cov = curve_fit(
@@ -416,6 +526,9 @@ class TestWeightedMean(_Test):
 
 
 class TestAllPy(_Test):
+    # Most of the features are for mags
+    phot_types = frozenset(["mag"])
+
     def setup_method(self):
         features = []
         py_features = []
@@ -433,6 +546,9 @@ class TestAllPy(_Test):
 
 
 class TestAllNaive(_Test):
+    # Most of the features are for mags
+    phot_types = frozenset(["mag"])
+
     def setup_method(self):
         features = []
         self.naive_features = []
@@ -453,6 +569,9 @@ class TestAllNaive(_Test):
 
 class TestAllFeets(_Test):
     feets_skip_test = "skip for TestAllFeets"
+
+    # Most of the features are for mags
+    phot_types = frozenset(["mag"])
 
     def setup_method(self):
         features = []
