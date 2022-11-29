@@ -1378,7 +1378,56 @@ evaluator!(MinimumTimeInterval, lcf::MinimumTimeInterval);
 
 evaluator!(ObservationCount, lcf::ObservationCount);
 
-evaluator!(OtsuSplit, lcf::OtsuSplit);
+#[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
+#[pyo3(text_signature = "()")]
+pub struct OtsuSplit {}
+
+#[pymethods]
+impl OtsuSplit {
+    #[new]
+    fn __new__() -> (Self, PyFeatureEvaluator) {
+        (
+            Self {},
+            PyFeatureEvaluator {
+                feature_evaluator_f32: lcf::OtsuSplit::new().into(),
+                feature_evaluator_f64: lcf::OtsuSplit::new().into(),
+            },
+        )
+    }
+
+    #[staticmethod]
+    #[args(m)]
+    fn threshold(m: GenericFloatArray1) -> Res<f64> {
+        match m {
+            GenericFloatArray1::Float32(m) => Self::thr_impl(m).map(|x| x as f64),
+            GenericFloatArray1::Float64(m) => Self::thr_impl(m),
+        }
+    }
+
+    #[classattr]
+    fn __doc__() -> String {
+        format!(
+            "{}{}",
+            lcf::OtsuSplit::doc().trim_start(),
+            COMMON_FEATURE_DOC
+        )
+    }
+}
+
+impl OtsuSplit {
+    fn thr_impl<T>(m: Arr<T>) -> Res<T>
+    where
+        T: lcf::Float + numpy::Element,
+    {
+        let mut ds = m.as_array().into();
+        let (thr, _, _) = lcf::OtsuSplit::threshold(&mut ds).map_err(|_| {
+            Exception::ValueError(
+                "not enough points to find the threshold (minimum is 2)".to_string(),
+            )
+        })?;
+        Ok(thr)
+    }
+}
 
 evaluator!(TimeMean, lcf::TimeMean);
 
