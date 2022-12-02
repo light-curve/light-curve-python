@@ -370,7 +370,7 @@ class TestOtsuSplit(_Test):
     name = "OtsuSplit"
 
 
-def decorate_args(func, *args):
+def magnitude_function(func, *args, **kwargs):
     @wraps(func)
     def decorated(t, m, sigma=None, sorted=None, check=None):
         return func(m)
@@ -378,12 +378,13 @@ def decorate_args(func, *args):
     return decorated
 
 
-class TestThreshold(_Test):
+class TestOtsuSplitThreshold(_Test):
     def setup_method(self):
-        self.py_feature = decorate_args(getattr(getattr(lc_py, "OtsuSplit"), "threshold"))
-        self.rust = decorate_args(getattr(getattr(lc_ext, "OtsuSplit"), "threshold"))
+        self.py_feature = magnitude_function(lc_py.OtsuSplit.threshold)
+        self.rust = magnitude_function(lc_ext.OtsuSplit.threshold)
 
     def test_feature_length(self):
+        """Not a real feature extractor, no need to test length"""
         pass
 
 
