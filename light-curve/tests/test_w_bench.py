@@ -1,5 +1,5 @@
 import dataclasses
-from functools import lru_cache
+from functools import lru_cache, wraps
 from itertools import count
 from pathlib import Path
 from typing import Generator, Iterator, List, Optional, Union
@@ -364,6 +364,28 @@ class TestInterPercentileRange(_Test):
 
     feets_feature = "Q31"
     feets_skip_test = "feets uses different quantile type"
+
+
+class TestOtsuSplit(_Test):
+    name = "OtsuSplit"
+
+
+def magnitude_function(func, *args, **kwargs):
+    @wraps(func)
+    def decorated(t, m, sigma=None, sorted=None, check=None):
+        return func(m)
+
+    return decorated
+
+
+class TestOtsuSplitThreshold(_Test):
+    def setup_method(self):
+        self.py_feature = magnitude_function(lc_py.OtsuSplit.threshold)
+        self.rust = magnitude_function(lc_ext.OtsuSplit.threshold)
+
+    def test_feature_length(self):
+        """Not a real feature extractor, no need to test length"""
+        pass
 
 
 class TestKurtosis(_Test):

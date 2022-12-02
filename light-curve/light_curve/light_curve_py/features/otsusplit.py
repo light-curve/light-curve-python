@@ -63,7 +63,7 @@ class OtsuSplit(BaseFeature):
         """The Otsu threshold method."""
         m = np.sort(m)
         arg, _, _ = OtsuSplit._threshold_arg(m)
-        return m[arg]
+        return m[arg + 1]
 
     @property
     def names(self):

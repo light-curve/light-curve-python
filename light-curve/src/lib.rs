@@ -74,6 +74,7 @@ fn light_curve(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<f::LinearFit>()?;
     m.add_class::<f::LinearTrend>()?;
     m.add_class::<f::ObservationCount>()?;
+    m.add_class::<f::OtsuSplit>()?;
     m.add_class::<f::MagnitudePercentageRatio>()?;
     m.add_class::<f::MaximumSlope>()?;
     m.add_class::<f::MaximumTimeInterval>()?;
