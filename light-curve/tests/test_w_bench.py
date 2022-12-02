@@ -1,5 +1,5 @@
 import dataclasses
-from functools import lru_cache
+from functools import lru_cache, wraps
 from itertools import count
 from pathlib import Path
 from typing import Generator, Iterator, List, Optional, Union
@@ -368,6 +368,23 @@ class TestInterPercentileRange(_Test):
 
 class TestOtsuSplit(_Test):
     name = "OtsuSplit"
+
+
+def decorate_args(func, *args):
+    @wraps(func)
+    def decorated(t, m, sigma=None, sorted=None, check=None):
+        return func(m)
+
+    return decorated
+
+
+class TestThreshold(_Test):
+    def setup_method(self):
+        self.py_feature = decorate_args(getattr(getattr(lc_py, "OtsuSplit"), "threshold"))
+        self.rust = decorate_args(getattr(getattr(lc_ext, "OtsuSplit"), "threshold"))
+
+    def test_feature_length(self):
+        pass
 
 
 class TestKurtosis(_Test):
