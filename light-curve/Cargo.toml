@@ -41,7 +41,7 @@ num-traits = "~0.2"
 rand = "~0.8.5"
 rand_xoshiro = "~0.6.0"
 thiserror = "~1.0.37"
-rayon = "~1.5.3"
+rayon = "~1.6.0"
 unzip3 = "1.0.0"
 
 [dependencies.light-curve-feature]
