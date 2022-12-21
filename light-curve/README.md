@@ -124,6 +124,16 @@ assert_allclose(rust_fe(t, m), py_fe(t, m),
 
 This should print a warning about experimental status of the Python class
 
+### Benchmarks
+
+We benchmark the Rust implementation (`rust`) versus [`feets`](https://feets.readthedocs.io/en/latest/) package and our own Python implementation (`lc_py`) for a light curve having n=1000 observations.
+
+![Benchmarks, Rust is much faster](https://github.com/light-curve/light-curve-python/raw/readme-benchs/light-curve/.readme/benchplot.png)
+
+The plot shows that the Rust implementation of the package outperforms other ones by a factor of 1.5—50.
+This allows to extract a large set of "cheap" features in few ms for n=1000.
+The performance of parametric fits (`BazinFit` and `VillarFit`) and `Periodogram` depend on their parameters, but the typical timescale of feature extraction including these features is 20—50 ms for few hundred observations.
+
 ## dm-dt map
 
 Class `DmDt` provides dm–dt mapper (based on [Mahabal et al. 2011](https://ui.adsabs.harvard.edu/abs/2011BASI...39..387M/abstract), [Soraisam et al. 2020](https://ui.adsabs.harvard.edu/abs/2020ApJ...892..112S/abstract)). It is a Python wrapper for [`light-curve-dmdt` Rust crate](https://crates.io/crates/light-curve-dmdt).
