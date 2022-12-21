@@ -131,7 +131,7 @@ We benchmark the Rust implementation (`rust`) versus [`feets`](https://feets.rea
 ![Benchmarks, Rust is much faster](https://github.com/light-curve/light-curve-python/raw/readme-benchs/light-curve/.readme/benchplot.png)
 
 The plot shows that the Rust implementation of the package outperforms other ones by a factor of 1.5—50.
-This allows to extract a large set of "cheap" features in few ms for n=1000.
+This allows to extract a large set of "cheap" features well under one ms for n=1000.
 The performance of parametric fits (`BazinFit` and `VillarFit`) and `Periodogram` depend on their parameters, but the typical timescale of feature extraction including these features is 20—50 ms for few hundred observations.
 
 ## dm-dt map
