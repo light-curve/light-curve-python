@@ -120,7 +120,7 @@ jobs:
       with:
         python-version: '3.11'
     - name: Install maturin
-      run: pip install 'maturin>=0.13,<0.14'
+      run: pip install 'maturin>=0.14,<0.15'
     - name: Build for ${{ matrix.name }}
       run: maturin build --find-interpreter --manylinux=off ${{ matrix.maturin_build_args }}
 
@@ -160,7 +160,7 @@ jobs:
       with:
         toolchain: ${{ steps.get_msrv.outputs.msrv }}
     - name: Install maturin
-      run: pip install 'maturin>=0.13,<0.14'
+      run: pip install 'maturin>=0.14,<0.15'
     - name: Build
       run: |
         rustup default ${{ steps.get_msrv.outputs.msrv }}
@@ -176,5 +176,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: install maturin
+      run: pip install 'maturin[patchelf]>=0.14,<0.15'
     - name: Build
       run: maturin build
