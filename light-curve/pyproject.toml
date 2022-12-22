@@ -111,18 +111,24 @@ test-requires = [
 # We use our own images which include Rust, GSL and platform-optimised FFTW
 # Manylinux CPython
 manylinux-aarch64-image = "ghcr.io/light-curve/base-docker-images/manylinux2014_aarch64"
+# not supported
 #manylinux-i686-image = "ghcr.io/light-curve/base-docker-images/manylinux2014_i686"
 manylinux-ppc64le-image = "ghcr.io/light-curve/base-docker-images/manylinux2014_ppc64le"
+# not supported
 # manylinux-s390x-image = "ghcr.io/light-curve/base-docker-images/manylinux2014_s390x"
 manylinux-x86_64-image = "ghcr.io/light-curve/base-docker-images/manylinux2014_x86_64"
 # Manylinux PyPy
 manylinux-pypy_aarch64-image = "ghcr.io/light-curve/base-docker-images/manylinux2014_aarch64"
+# not supported
 #manylinux-pypy_i686-image = "ghcr.io/light-curve/base-docker-images/manylinux2014_i686"
 manylinux-pypy_x86_64-image = "ghcr.io/light-curve/base-docker-images/manylinux2014_x86_64"
 # Musllinux
 musllinux-aarch64-image = "ghcr.io/light-curve/base-docker-images/musllinux_1_1_aarch64"
+# not supported
 #musllinux-i686-image = "ghcr.io/light-curve/base-docker-images/musllinux_1_1_i686"
-musllinux-ppc64le-image = "ghcr.io/light-curve/base-docker-images/musllinux_1_1_ppc64le"
+# no Rust toolchain, not supported
+# musllinux-ppc64le-image = "ghcr.io/light-curve/base-docker-images/musllinux_1_1_ppc64le"
+# not supported
 # musllinux-s390x-image = "ghcr.io/light-curve/base-docker-images/musllinux_1_1_s390x"
 musllinux-x86_64-image = "ghcr.io/light-curve/base-docker-images/musllinux_1_1_x86_64"
 

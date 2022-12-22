@@ -38,13 +38,16 @@ jobs:
             platform: musllinux
           - interpreter: pp39
             platform: musllinux
-          # PyPy doesn't support ppc64le
+          # PyPy doesn't support PPC64le
           - arch: ppc64le
             interpreter: pp37
           - arch: ppc64le
             interpreter: pp38
           - arch: ppc64le
             interpreter: pp39
+          # There is no Rust toolchain for PPC64le with MUSL
+          - arch: ppc64le
+            platform: musllinux
           # x86_64 is the only supported architecture for macOS
           - os: macos-11
             arch: aarch64
