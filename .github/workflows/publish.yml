@@ -8,7 +8,7 @@ on:
 
 jobs:
   cibuildwheel:
-    name: Build wheels on ${{ matrix.os }}  ${{ matrix.arch }} ${{ matrix.interpreter }}
+    name: Build ${{ matrix.platform }} ${{ matrix.arch }} ${{ matrix.interpreter }}
     runs-on: ${{ matrix.os }}
 
     defaults:
@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-20.04, macos-11]
-        arch: [aarch64, i686, ppc64le, x86_64]
+        arch: [aarch64, ppc64le, x86_64]
         interpreter: [cp37, cp38, cp39, cp310, cp311, pp37, pp38, pp39]
         platform: [manylinux, musllinux, macosx]
         exclude:
@@ -48,8 +48,6 @@ jobs:
           # x86_64 is the only supported architecture for macOS
           - os: macos-11
             arch: aarch64
-          - os: macos-11
-            arch: i686
           - os: macos-11
             arch: ppc64le
 
