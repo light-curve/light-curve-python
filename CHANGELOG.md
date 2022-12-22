@@ -13,12 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `light-curve-feature` 0.5.0 -> 0.5.2
-- wheel build dependency: `maturin` 0.13.x -> 0.14.x
+- `light-curve-feature` 0.5.0 -> 0.5.2 https://github.com/light-curve/light-curve-python/pull/123
+- wheel build dependency: `maturin` 0.13.x -> 0.14.x https://github.com/light-curve/light-curve-python/issues/130 https://github.com/light-curve/light-curve-python/pull/135
 
 ### Deprecated
 
-- cargo features "fftw-dynamic", "fftw-static" and "mkl" are renamed to "fftw-system", "fftw-source" and "fftw-mkl" correspondingly
+- cargo features "fftw-dynamic", "fftw-static" and "mkl" are renamed to "fftw-system", "fftw-source" and "fftw-mkl" correspondingly https://github.com/light-curve/light-curve-python/pull/137
 
 ### Removed
 
@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-— fix `threshold` method in Python according to Rust implementation
+— fix `threshold` method in Python according to Rust implementation https://github.com/light-curve/light-curve-python/pull/123
 
 ### Security
 
