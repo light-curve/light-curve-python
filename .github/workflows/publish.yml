@@ -76,7 +76,7 @@ jobs:
           python-version: '3.x'
 
       - name: Install maturin
-        run: pip install 'maturin>=0.13,<0.14'
+        run: pip install 'maturin>=0.14,<0.15'
 
       - name: Build sdist
         run: maturin sdist

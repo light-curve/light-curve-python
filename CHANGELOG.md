@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `light-curve-feature` 0.5.0 -> 0.5.2
+- wheel build dependency: `maturin` 0.13.x -> 0.14.x
 
 ### Deprecated
 
