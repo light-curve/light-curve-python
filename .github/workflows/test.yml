@@ -57,19 +57,19 @@ jobs:
           os: 'macos-11'
           maturin_build_args: '--locked'
           install_fftw: false
-        - name: 'Linux, dynamically linked FFTW'
+        - name: 'Linux, system FFTW'
           os: 'ubuntu-latest'
           maturin_build_args: '--locked --no-default-features --features fftw-dynamic'
           install_fftw: true
-        - name: 'macOS, dynamically linked FFTW'
+        - name: 'macOS, system FFTW'
           os: 'macos-11'
           maturin_build_args: '--locked --no-default-features --features fftw-dynamic'
           install_fftw: true
-        - name: 'Linux, dynamically linked FFTW + GSL'
+        - name: 'Linux, system FFTW + GSL'
           os: 'ubuntu-latest'
           maturin_build_args: '--locked --no-default-features --features fftw-dynamic,gsl'
           install_fftw: true
-        - name: 'macOS, dynamically linked FFTW + GSL'
+        - name: 'macOS, system FFTW + GSL'
           os: 'macos-11'
           maturin_build_args: '--locked --no-default-features --features fftw-dynamic,gsl'
           install_fftw: true
@@ -77,7 +77,7 @@ jobs:
           os: 'ubuntu-latest'
           maturin_build_args: '--locked --no-default-features --features mkl,gsl'
           install_fftw: false
-        - name: 'Windows, statically linked FFTW'
+        - name: 'Windows, statically linked FFTW for fftw-src'
           os: 'windows-latest'
           maturin_build_args: '--locked --no-default-features --features fftw-static'
           install_fftw: false
