@@ -18,9 +18,11 @@ lto = true
 codegen-units = 1
 
 [features]
-default = ["fftw-static", "gsl"]
-fftw-static = ["light-curve-feature/fftw-source"]
-fftw-dynamic = ["light-curve-feature/fftw-system"]
+default = ["fftw-source", "gsl"]
+fftw-source = ["light-curve-feature/fftw-source"]
+fftw-static = ["fftw-source"] # deprecated
+fftw-system = ["light-curve-feature/fftw-system"]
+fftw-dynamic = ["fftw-system"] # deprecated
 mkl = ["light-curve-feature/fftw-mkl"]
 gsl = ["light-curve-feature/gsl"]
 

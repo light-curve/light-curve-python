@@ -24,6 +24,14 @@ mod check;
 ///
 /// dm-lg(dt) maps generator is represented by `DmDt` class, while all other classes are
 /// feature extractors
+#[cfg_attr(
+    feature = "fftw-static",
+    deprecated(note = "fftw-static feature is deprecated")
+)]
+#[cfg_attr(
+    feature = "fftw-dynamic",
+    deprecated(note = "fftw-dynamic feature is deprecated")
+)]
 #[pymodule]
 fn light_curve(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
@@ -39,17 +47,17 @@ fn light_curve(py: Python, m: &PyModule) -> PyResult<()> {
         }
     })?;
     m.add("_fft_backend", {
-        #[cfg(feature = "fftw-static")]
+        #[cfg(feature = "fftw-source")]
         {
-            "statically linked FFTW"
+            "FFTW built from source by fftw-src crate and statically linked into the module"
         }
-        #[cfg(feature = "fftw-dynamic")]
+        #[cfg(feature = "fftw-system")]
         {
-            "dynamically linked FFTW"
+            "FFTW linked from system, may or may not be bundled into the package"
         }
         #[cfg(feature = "mkl")]
         {
-            "Intel MKL"
+            "Intel MKL linked statically"
         }
     })?;
 
