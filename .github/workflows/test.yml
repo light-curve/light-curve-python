@@ -177,6 +177,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: install maturin
-      run: pip install 'maturin>=0.14,<0.15'
+      run: pip install 'maturin[patchelf]>=0.14,<0.15'
     - name: Build
       run: maturin build
