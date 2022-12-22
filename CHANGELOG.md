@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 
-- cargo features "fftw-dynamic" and "fftw-static" are renamed to "fftw-system" and "fftw-source" correspondingly
+- cargo features "fftw-dynamic", "fftw-static" and "mkl" are renamed to "fftw-system", "fftw-source" and "fftw-mkl" correspondingly
 
 ### Removed
 

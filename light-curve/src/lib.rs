@@ -32,32 +32,32 @@ mod check;
     feature = "fftw-dynamic",
     deprecated(note = "fftw-dynamic feature is deprecated")
 )]
+#[cfg_attr(feature = "mkl", deprecated(note = "mkl feature is deprecated"))]
 #[pymodule]
 fn light_curve(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
 
-    m.add("_built_with_gsl", {
-        #[cfg(feature = "gsl")]
-        {
-            true
-        }
-        #[cfg(not(feature = "gsl"))]
-        {
-            false
-        }
-    })?;
+    m.add("_built_with_gsl", cfg!(feature = "gsl"))?;
     m.add("_fft_backend", {
-        #[cfg(feature = "fftw-source")]
+        #[cfg(feature = "fftw-mkl")]
         {
-            "FFTW built from source by fftw-src crate and statically linked into the module"
+            "Intel MKL linked statically for FFTW"
         }
-        #[cfg(feature = "fftw-system")]
+        #[cfg(all(not(feature = "fftw-mkl"), feature = "fftw-system"))]
         {
             "FFTW linked from system, may or may not be bundled into the package"
         }
-        #[cfg(feature = "mkl")]
+        #[cfg(all(
+            not(feature = "fftw-mkl"),
+            not(feature = "fftw-system"),
+            feature = "fftw-source"
+        ))]
         {
-            "Intel MKL linked statically"
+            "FFTW built from source by fftw-src crate and statically linked into the module"
+        }
+        #[cfg(not(any(feature = "fftw-mkl", feature = "fftw-system", feature = "fftw-source")))]
+        {
+            compile_error!("One of fftw-mkl, fftw-system or fftw-source features is required");
         }
     })?;
 

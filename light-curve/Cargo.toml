@@ -23,7 +23,8 @@ fftw-source = ["light-curve-feature/fftw-source"]
 fftw-static = ["fftw-source"] # deprecated
 fftw-system = ["light-curve-feature/fftw-system"]
 fftw-dynamic = ["fftw-system"] # deprecated
-mkl = ["light-curve-feature/fftw-mkl"]
+fftw-mkl = ["light-curve-feature/fftw-mkl"]
+mkl = ["fftw-mkl"] # deprecated
 gsl = ["light-curve-feature/gsl"]
 
 [dependencies]
