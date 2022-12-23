@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+--
+
+### Changed
+
+--
+
+### Deprecated
+
+--
+
+### Removed
+
+--
+
+### Fixed
+
+--
+
+### Security
+
+--
+
+## [0.6.2] 2022-12-23
+
 - `OtsuSplit` implementation in Rust https://github.com/light-curve/light-curve-python/issues/120 https://github.com/light-curve/light-curve-python/pull/123
 
 ### Changed
@@ -25,17 +49,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - cargo features "fftw-dynamic", "fftw-static" and "mkl" are renamed to "fftw-system", "fftw-source" and "fftw-mkl" correspondingly https://github.com/light-curve/light-curve-python/pull/137
 
-### Removed
-
-—
-
 ### Fixed
 
 — fix `threshold` method in Python according to Rust implementation https://github.com/light-curve/light-curve-python/pull/123
-
-### Security
-
-—
 
 ## [0.6.1] 2022-11-01
 
