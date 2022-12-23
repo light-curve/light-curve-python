@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `light-curve-feature` 0.5.0 -> 0.5.2 https://github.com/light-curve/light-curve-python/pull/123
+- `light-curve-dmdt` 0.5.0 -> 0.6.0
 - CI: binary wheels are now built using our custom [manylinux/musllinux images](https://github.com/light-curve/base-docker-images), which include FFTW library optimised to use platform-specific SIMD instructions. It should give up to 50% performance gain for `Periodogram` at all Linux platforms but `x86_64` where we use MKL https://github.com/light-curve/light-curve-python/pull/134
 - We don't provide binary wheels for Linux i686 anymore, please contact us if you need them https://github.com/light-curve/light-curve-python/pull/134
 - wheel build dependency: `maturin` 0.13.x -> 0.14.x https://github.com/light-curve/light-curve-python/issues/130 https://github.com/light-curve/light-curve-python/pull/135
