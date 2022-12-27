@@ -24,7 +24,7 @@ We provide binary wheels via [PyPi](https://pypi.org/project/light-curve/) for n
 | ----------- |-------------|--------------------------------|----------------------------------------------------------------|------------------------------------------------------------------------|
 | **x86-64**  | wheel (MKL) | wheel (MKL)                    | wheel                                                          | not tested https://github.com/light-curve/light-curve-python/issues/12 |
 | **i686**    | src         | src                            | —                                                              | not tested                                                             |
-| **aarch64** | wheel       | src                            | src https://github.com/light-curve/light-curve-python/issues/5 | not tested                                                             |
+| **aarch64** | wheel       | wheel                          | src https://github.com/light-curve/light-curve-python/issues/5 | not tested                                                             |
 | **ppc64le** | wheel       | not tested (no Rust toolchain) | —                                                              | —                                                                      |
 
 - "wheel": binary wheel is available on pypi.org, local building is not required for the platform, the only pre-requirement is a recent `pip` version. For Linux x86-64 we provide binary wheels built with Intel MKL for better periodogram perfromance, which is not a default build option.
