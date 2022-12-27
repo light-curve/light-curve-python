@@ -16,7 +16,7 @@ python3 -mpip install light-curve
 We also provide `light-curve-python` package which is just an "alias" to the main `light-curve` package.
 
 Minimum supported Python version is 3.7.
-We provide binary wheels via [PyPi](https://pypi.org/project/light-curve/) for number of platforms and architectures, both for CPython and PyPy.
+We provide binary wheels via [PyPi](https://pypi.org/project/light-curve/) for number of platforms and architectures, both for CPython and PyPy (supported platforms only).
 
 ### Support matrix
 
@@ -31,7 +31,7 @@ We provide binary wheels via [PyPi](https://pypi.org/project/light-curve/) for n
 - "src": the package is confirmed to be built and pass unit tests locally, but testing and package building is not supported by CI. It is required to have the [GNU scientific library (GSL)](https://www.gnu.org/software/gsl/) v2.1+ and the [Rust toolchain](https://rust-lang.org) v1.57+ to install it via `pip install`.
 - "not tested": building from the source code is not tested, please report us building status via issue/PR/email.
 
-We build aarch64 macOS 12.0+ wheels locally running this command in `light-curve` directory:
+We build aarch64 macOS 12.0+ Python 3.8+ wheels locally and submit them running this command in `light-curve` directory:
 ```
 rm -rf ./wheelhouse
 CIBW_BUILD='cp3*-macosx_arm64' CIBW_ENVIRONMENT="MACOSX_DEPLOYMENT_TARGET=12.0 MATURIN_PEP517_ARGS='--locked --no-default-features --features fftw-source,gsl'" CIBW_BEFORE_ALL='curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y; brew install gsl' python3 -mcibuildwheel --platform macos
