@@ -16,7 +16,7 @@ python3 -mpip install light-curve
 We also provide `light-curve-python` package which is just an "alias" to the main `light-curve` package.
 
 Minimum supported Python version is 3.7.
-We provide binary wheels via [PyPi](https://pypi.org/project/light-curve/) for number of platforms and architectures, both for CPython and PyPy (supported platforms only).
+We provide binary wheels via [PyPi](https://pypi.org/project/light-curve/) for number of platforms and architectures, both for CPython and PyPy.
 
 ### Support matrix
 
