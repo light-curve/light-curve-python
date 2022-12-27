@@ -31,7 +31,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 --
 
-## [0.6.2] 2022-12-23
+## [0.6.3] 2022-12-23
+
+No changes, it was accidentally released instead of `0.6.2`
+
+## [0.6.2] 2022-12-27
 
 - `OtsuSplit` implementation in Rust https://github.com/light-curve/light-curve-python/issues/120 https://github.com/light-curve/light-curve-python/pull/123
 
