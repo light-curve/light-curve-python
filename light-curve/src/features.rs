@@ -114,7 +114,7 @@ const COMMON_FEATURE_DOC: &str = formatcp!("\n{}\n\n{}\n", ATTRIBUTES_DOC, METHO
 
 type PyLightCurve<'a, T> = (Arr<'a, T>, Arr<'a, T>, Option<Arr<'a, T>>);
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 #[pyclass(
     subclass,
     name = "_FeatureEvaluator",
@@ -505,6 +505,18 @@ impl PyFeatureEvaluator {
             ))
         })?;
         Ok(PyBytes::new(py, &vec_bytes))
+    }
+
+    /// Used by copy.copy
+    #[args()]
+    fn __copy__(&self) -> Self {
+        self.clone()
+    }
+
+    /// Used by copy.deepcopy
+    #[args(memo)]
+    fn __deepcopy__(&self, _memo: &PyAny) -> Self {
+        self.clone()
     }
 }
 

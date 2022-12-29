@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Initial `pickle` support for feature extractors, minimum supported protocol version is 2. `DmDt` is not supported yet https://github.com/light-curve/light-curve-python/issues/103
+- Initial `copy` and `pickle` (minimum protocol version is 2) support for feature extractors. `DmDt` is not supported yet https://github.com/light-curve/light-curve-python/issues/103
 - `bincode` v1 and `serde` v1 Rust dependencies
 
 ### Changed

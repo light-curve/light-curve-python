@@ -1,3 +1,4 @@
+import copy
 import inspect
 import pickle
 
@@ -177,7 +178,24 @@ def test_pickling(feature, pickle_protocol):
     n_obs = 128
     data = gen_lc(n_obs)
     values = feature(*data)
+
     b = pickle.dumps(feature, protocol=pickle_protocol)
     new_feature = pickle.loads(b)
+
     new_values = new_feature(*data)
     assert_array_equal(values, new_values)
+
+
+@pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=5, rng=None))
+def test_copy_deepcopy(feature):
+    n_obs = 128
+    data = gen_lc(n_obs)
+    values = feature(*data)
+
+    copied = copy.copy(feature)
+    values_copied = copied(*data)
+    assert_array_equal(values, values_copied)
+
+    deepcopied = copy.deepcopy(feature)
+    values_deepcopied = deepcopied(*data)
+    assert_array_equal(values, values_deepcopied)
