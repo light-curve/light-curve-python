@@ -22,9 +22,7 @@ names : list of str
 descriptions : list of str
     Feature descriptions"#;
 
-const METHOD_CALL_DOC: &str = r#"Methods
--------
-__call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)
+const METHOD_CALL_DOC: &str = r#"__call__(self, t, m, sigma=None, sorted=None, check=True, fill_value=None)
     Extract features and return them as a numpy array
 
     Parameters
@@ -55,7 +53,7 @@ __call__(t, m, sigma=None, sorted=None, check=True, fill_value=None)
 
 macro_const! {
     const METHOD_MANY_DOC: &str = r#"
-many(lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)
+many(self, lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)
     Parallel light curve feature extraction
 
     It is a parallel executed equivalent of
@@ -565,6 +563,26 @@ const SUPPORTED_ALGORITHMS_CURVE_FIT: [&str; N_ALGO_CURVE_FIT] = [
     "mcmc-lmsder",
 ];
 
+macro_const! {
+    const FIT_METHOD_MODEL_DOC: &str = r#"model(t, params)
+    Underlying parametric model function
+
+    Parameters
+    ----------
+    t : np.ndarray of np.float32 or np.float64
+        Time moments, can be unsorted
+    params : np.ndaarray of np.float32 or np.float64
+        Parameters of the model, this array can be longer than actual parameter
+        list, the beginning part of the array will be used in this case, see
+        Examples section in the class documentation.
+
+    Returns
+    -------
+    np.ndarray of np.float32 or np.float64
+        Array of model values corresponded to the given time moments
+"#;
+}
+
 #[derive(FromPyObject)]
 pub(crate) enum FitLnPrior<'a> {
     #[pyo3(transparent, annotation = "str")]
@@ -708,6 +726,7 @@ macro_rules! fit_evaluator {
                 ))
             }
 
+            #[doc = FIT_METHOD_MODEL_DOC!()]
             #[staticmethod]
             #[args(t, params)]
             fn model(
@@ -763,8 +782,10 @@ bounds : list of tuples or None, optional
     `None`s. The length of the list must be {nparam}, boundary conditions must
     include initial conditions, `None` values will be replaced with some broad
     defaults. It is supported by MCMC only
-ln_prior : str or None, optional
-    Prior for MCMC, None means no prior. Available values are:
+ln_prior : str or list of ln_prior.LnPrior1D or None, optional
+    Prior for MCMC, None means no prior. It is specified by a string literal
+    or a list of {nparam} `ln_prior.LnPrior1D` objects, see `ln_prior`
+    submodule for corresponding functions. Available string literals are:
     {ln_prior}
 
 {attr}
@@ -773,22 +794,7 @@ supported_algorithms : list of str
 
 {methods}
 
-model(t, params)
-    Underlying parametric model function
-
-    Parameters
-    ----------
-    t : np.ndarray of np.float32 or np.float64
-        Time moments, can be unsorted
-    params : np.ndaarray of np.float32 or np.float64
-        Parameters of the model, this array can be longer than actual parameter
-        list, the beginning part of the array will be used in this case
-
-    Returns
-    -------
-    np.ndarray of np.float32 or np.float64
-        Array of model values corresponded to the given time moments
-
+{model}
 Examples
 --------
 >>> import numpy as np
@@ -800,7 +806,7 @@ Examples
 >>> fluxerr = np.sqrt(flux)
 >>> result = fit(t, flux, fluxerr, sorted=True)
 >>> # Result is built from a model parameters and reduced chi^2
->>> # So we can use as a `params` array
+>>> # So we can use as a `params` array of the static `.model()` method
 >>> model = {feature}.model(t, result)
 "#,
                     intro = <$eval>::doc().trim_start(),
@@ -809,6 +815,7 @@ Examples
                     lmsder_niter = lmsder_niter,
                     attr = ATTRIBUTES_DOC,
                     methods = METHODS_DOC,
+                    model = FIT_METHOD_MODEL_DOC,
                     feature = stringify!($name),
                     nparam = $nparam,
                     ln_prior = $ln_prior_doc,
