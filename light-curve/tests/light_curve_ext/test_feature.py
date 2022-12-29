@@ -1,4 +1,5 @@
 import inspect
+import pickle
 
 import numpy as np
 import pytest
@@ -30,6 +31,44 @@ non_param_feature_classes = frozenset(_feature_classes(lc, True))
 all_feature_classes = frozenset(_feature_classes(lc, False))
 
 
+def construct_example_objects(cls, *, parametric_variants=1, rng=None):
+    # Extractor is special
+    if cls is lc.Extractor:
+        return [cls(lc.BeyondNStd(1.5), lc.LinearFit())]
+
+    # No mandatory arguments
+    if not hasattr(cls, "__getnewargs__"):
+        return [cls()]
+
+    args = cls.__getnewargs__()  # default mandatory arguments
+    # Add Mean feature for metafeatures
+    args = [[lc.Mean()] if arg == () else arg for arg in args]
+
+    objects = [cls(*args)]
+    # Nothing to mutate
+    if not any(isinstance(arg, float) for arg in args):
+        return objects
+
+    # Mutate floats
+    rng = np.random.default_rng(rng)
+    for _ in range(1, parametric_variants):
+        mutated_args = [
+            arg * rng.uniform(0.9, 1.1) + rng.uniform(0.0, 1e-3) if isinstance(arg, float) else arg for arg in args
+        ]
+        objects.append(cls(*mutated_args))
+    return objects
+
+
+def gen_feature_evaluators(*, parametric_variants=0, rng=None):
+    if parametric_variants == 0:
+        for cls in non_param_feature_classes:
+            yield cls()
+        return
+    rng = np.random.default_rng(rng)
+    for cls in all_feature_classes:
+        yield from construct_example_objects(cls, parametric_variants=parametric_variants, rng=rng)
+
+
 def gen_lc(n, rng=None):
     rng = np.random.default_rng(rng)
 
@@ -40,40 +79,40 @@ def gen_lc(n, rng=None):
     return t, m, sigma
 
 
-@pytest.mark.parametrize("cls", non_param_feature_classes)
-def test_negative_strides(cls):
+@pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=2))
+def test_negative_strides(feature):
     t = np.linspace(1, 0, 20)[::-2]
     m = np.exp(t)[:]
     err = np.random.uniform(0.1, 0.2, t.shape)
-    obj = cls()
-    obj(t, m, err)
+    feature(t, m, err)
 
 
-@pytest.mark.parametrize("cls", non_param_feature_classes)
-def test_float32_vs_float64(cls):
+# We don't want *Fit features here: not precise
+@pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=0))
+def test_float32_vs_float64(feature):
     rng = np.random.default_rng(0)
     n = 128
 
     t, m, sigma = gen_lc(n, rng=rng)
-    obj = cls()
 
     results = [
-        obj(t.astype(dtype), m.astype(dtype), sigma.astype(dtype), sorted=True) for dtype in [np.float32, np.float64]
+        feature(t.astype(dtype), m.astype(dtype), sigma.astype(dtype), sorted=True)
+        for dtype in [np.float32, np.float64]
     ]
     assert_allclose(*results, rtol=1e-5, atol=1e-5)
 
 
-@pytest.mark.parametrize("cls", non_param_feature_classes)
-def test_many_vs_call(cls):
+# We don't want *Fit features here: too slow
+@pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=0))
+def test_many_vs_call(feature):
     rng = np.random.default_rng(0)
     n_obs = 128
     n_lc = 128
 
     lcs = [gen_lc(n_obs, rng=rng) for _ in range(n_lc)]
-    obj = cls()
 
-    call = np.stack([obj(*lc, sorted=True) for lc in lcs])
-    many = obj.many(lcs, sorted=True, n_jobs=2)
+    call = np.stack([feature(*lc, sorted=True) for lc in lcs])
+    many = feature.many(lcs, sorted=True, n_jobs=2)
     assert_array_equal(many, call)
 
 
@@ -94,12 +133,11 @@ def test_nonempty_docstring(cls):
     assert len(cls.__doc__) > 10
 
 
-@pytest.mark.parametrize("cls", non_param_feature_classes)
-def test_check_t(cls):
+@pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=2))
+def test_check_t(feature):
     n_obs = 128
     t, m, sigma = gen_lc(n_obs)
     t[0] = np.nan
-    feature = cls()
     with pytest.raises(ValueError):
         feature(t, m, sigma, check=True)
     t[0] = np.inf
@@ -107,12 +145,11 @@ def test_check_t(cls):
         feature(t, m, sigma, check=True)
 
 
-@pytest.mark.parametrize("cls", non_param_feature_classes)
-def test_check_m(cls):
+@pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=2))
+def test_check_m(feature):
     n_obs = 128
     t, m, sigma = gen_lc(n_obs)
     m[0] = np.nan
-    feature = cls()
     with pytest.raises(ValueError):
         feature(t, m, sigma, check=True)
     m[0] = np.inf
@@ -132,3 +169,15 @@ def test_check_sigma(cls):
     # infinite values are allowed for sigma
     sigma[0] = np.inf
     feature(t, m, sigma, check=True)
+
+
+@pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=5, rng=None))
+@pytest.mark.parametrize("pickle_protocol", tuple(range(2, pickle.HIGHEST_PROTOCOL + 1)))
+def test_pickling(feature, pickle_protocol):
+    n_obs = 128
+    data = gen_lc(n_obs)
+    values = feature(*data)
+    b = pickle.dumps(feature, protocol=pickle_protocol)
+    new_feature = pickle.loads(b)
+    new_values = new_feature(*data)
+    assert_array_equal(values, new_values)
