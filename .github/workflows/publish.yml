@@ -7,9 +7,25 @@ on:
   workflow_dispatch:
 
 jobs:
+  check-version:
+    name: Check the tag corresponds to the crate version
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check Cargo.toml version vs Git tag
+        if: ${{ github.event_name == 'push' }}
+        working-directory: ./light-curve
+        run: |
+          cargo read-manifest | jq -r '.version' > /tmp/.crate_version
+          echo '${{ github.ref_name }}' | sed 's/^v//' > /tmp/.tag
+          diff /tmp/.crate_version /tmp/.tag
+
   cibuildwheel:
     name: Build ${{ matrix.platform }} ${{ matrix.arch }} ${{ matrix.interpreter }}
     runs-on: ${{ matrix.os }}
+
+    needs: check-version
 
     defaults:
       run:
