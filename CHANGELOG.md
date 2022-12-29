@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- `BazinFit` and `VillarFit` docs are clarified for `.model()` and `ln_prior` usage
+- `BazinFit` and `VillarFit` docs are clarified for `.model()` and `ln_prior` usage https://github.com/light-curve/light-curve-python/issues/125 https://github.com/light-curve/light-curve-python/pull/146
 
 ### Security
 
