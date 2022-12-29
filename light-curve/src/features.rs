@@ -2,12 +2,12 @@ use crate::check::{check_finite, check_no_nans, is_sorted};
 use crate::cont_array::ContCowArray;
 use crate::errors::{Exception, Res};
 use crate::ln_prior::LnPrior1D;
-use crate::np_array::{Arr, GenericFloatArray1};
+use crate::np_array::{Arr, GenericFloatArray1, GenericFloatRwArray1, RwArr};
 
 use const_format::formatcp;
 use light_curve_feature::{self as lcf, prelude::*, DataSample};
 use macro_const::macro_const;
-use ndarray::IntoNdProducer;
+use ndarray::{IntoNdProducer, Zip};
 use numpy::IntoPyArray;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -112,7 +112,7 @@ const METHODS_DOC: &str = formatcp!(
 
 const COMMON_FEATURE_DOC: &str = formatcp!("\n{}\n\n{}\n", ATTRIBUTES_DOC, METHODS_DOC);
 
-type PyLightCurve<'a, T> = (Arr<'a, T>, Arr<'a, T>, Option<Arr<'a, T>>);
+type PyLightCurve<'py, T> = (Arr<'py, T>, Arr<'py, T>, Option<Arr<'py, T>>);
 
 #[derive(Serialize, Deserialize, Clone)]
 #[pyclass(
@@ -126,15 +126,15 @@ pub struct PyFeatureEvaluator {
 }
 
 impl PyFeatureEvaluator {
-    fn ts_from_numpy<'a, T>(
+    fn ts_from_numpy<'py, T>(
         feature_evaluator: &lcf::Feature<T>,
-        t: &'a Arr<'a, T>,
-        m: &'a Arr<'a, T>,
-        sigma: &'a Option<Arr<'a, T>>,
+        t: &'py Arr<'py, T>,
+        m: &'py Arr<'py, T>,
+        sigma: &'py Option<Arr<'py, T>>,
         sorted: Option<bool>,
         check: bool,
         is_t_required: bool,
-    ) -> Res<lcf::TimeSeries<'a, T>>
+    ) -> Res<lcf::TimeSeries<'py, T>>
     where
         T: lcf::Float + numpy::Element,
     {
@@ -221,7 +221,8 @@ impl PyFeatureEvaluator {
         check: bool,
         is_t_required: bool,
         fill_value: Option<T>,
-    ) -> Res<ndarray::Array1<T>>
+        out: &mut RwArr<T>,
+    ) -> Res<()>
     where
         T: lcf::Float + numpy::Element,
     {
@@ -241,18 +242,21 @@ impl PyFeatureEvaluator {
                 .eval(&mut ts)
                 .map_err(|e| Exception::ValueError(e.to_string()))?,
         };
-        Ok(result.into())
+        Zip::from(out.as_array_mut())
+            .and(&result)
+            .for_each(|x, &y| *x = y);
+        Ok(())
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn py_many<'a, T>(
+    fn py_many<'py, T>(
         &self,
         feature_evaluator: &lcf::Feature<T>,
-        py: Python,
+        py: Python<'py>,
         lcs: Vec<(
-            GenericFloatArray1<'a>,
-            GenericFloatArray1<'a>,
-            Option<GenericFloatArray1<'a>>,
+            GenericFloatArray1<'py>,
+            GenericFloatArray1<'py>,
+            Option<GenericFloatArray1<'py>>,
         )>,
         sorted: Option<bool>,
         check: bool,
@@ -261,7 +265,7 @@ impl PyFeatureEvaluator {
     ) -> Res<PyObject>
     where
         T: lcf::Float + numpy::Element,
-        Arr<'a, T>: TryFrom<GenericFloatArray1<'a>>,
+        Arr<'py, T>: TryFrom<GenericFloatArray1<'py>>,
     {
         let wrapped_lcs = lcs
             .into_iter()
@@ -322,7 +326,7 @@ impl PyFeatureEvaluator {
             .build()
             .unwrap()
             .install(|| {
-                ndarray::Zip::from(result.outer_iter_mut())
+                Zip::from(result.outer_iter_mut())
                     .and((&mut tss).into_producer())
                     .into_par_iter()
                     .try_for_each::<_, Res<_>>(|(mut map, ts)| {
@@ -367,18 +371,21 @@ impl PyFeatureEvaluator {
         sigma = "None",
         sorted = "None",
         check = "true",
-        fill_value = "None"
+        fill_value = "None",
+        out = "None"
     )]
-    fn __call__(
+    fn __call__<'py>(
         &self,
-        py: Python,
-        t: GenericFloatArray1,
-        m: GenericFloatArray1,
-        sigma: Option<GenericFloatArray1>,
+        py: Python<'py>,
+        t: GenericFloatArray1<'py>,
+        m: GenericFloatArray1<'py>,
+        sigma: Option<GenericFloatArray1<'py>>,
         sorted: Option<bool>,
         check: bool,
         fill_value: Option<f64>,
+        out: Option<GenericFloatRwArray1<'py>>,
     ) -> Res<PyObject> {
+        let output_size = self.feature_evaluator_f64.size_hint();
         match (t, m) {
             (GenericFloatArray1::Float32(t), GenericFloatArray1::Float32(m)) => {
                 let sigma = sigma
@@ -390,7 +397,26 @@ impl PyFeatureEvaluator {
                         })
                     })
                     .transpose()?;
-                Ok(Self::call_impl(
+                let mut out: RwArr<'py, _> = match out {
+                    Some(GenericFloatRwArray1::Float32(array)) => {
+                        if array.shape() != [output_size] {
+                            return Err(Exception::ValueError(format!(
+                                "shape of the out must be exact ({},)",
+                                output_size
+                            )));
+                        }
+                        array
+                    }
+                    Some(GenericFloatRwArray1::Float64(_)) => {
+                        return Err(Exception::ValueError(
+                            "out is float64, but t & m is float32".into(),
+                        ))
+                    }
+                    None => ndarray::Array1::zeros(output_size)
+                        .into_pyarray(py)
+                        .readwrite(),
+                };
+                Self::call_impl(
                     &self.feature_evaluator_f32,
                     t,
                     m,
@@ -399,9 +425,9 @@ impl PyFeatureEvaluator {
                     check,
                     self.is_t_required(sorted),
                     fill_value.map(|v| v as f32),
-                )?
-                .into_pyarray(py)
-                .into_py(py))
+                    &mut out,
+                )?;
+                Ok(out.to_object(py))
             }
             (GenericFloatArray1::Float64(t), GenericFloatArray1::Float64(m)) => {
                 let sigma = sigma
@@ -413,7 +439,26 @@ impl PyFeatureEvaluator {
                         })
                     })
                     .map_or(Ok(None), |result| result.map(Some))?;
-                Ok(Self::call_impl(
+                let mut out = match out {
+                    Some(GenericFloatRwArray1::Float64(array)) => {
+                        if array.shape() != [output_size] {
+                            return Err(Exception::ValueError(format!(
+                                "shape of the out must be exact ({},)",
+                                output_size
+                            )));
+                        }
+                        array
+                    }
+                    Some(GenericFloatRwArray1::Float32(_)) => {
+                        return Err(Exception::ValueError(
+                            "out is float32, but t & m is float64".into(),
+                        ))
+                    }
+                    None => ndarray::Array1::zeros(output_size)
+                        .into_pyarray(py)
+                        .readwrite(),
+                };
+                Self::call_impl(
                     &self.feature_evaluator_f64,
                     t,
                     m,
@@ -422,9 +467,9 @@ impl PyFeatureEvaluator {
                     check,
                     self.is_t_required(sorted),
                     fill_value,
-                )?
-                .into_pyarray(py)
-                .into_py(py))
+                    &mut out,
+                )?;
+                Ok(out.to_object(py))
             }
             _ => Err(Exception::ValueError("t and m have different dtype".into())),
         }

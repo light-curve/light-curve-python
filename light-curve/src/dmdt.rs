@@ -55,12 +55,12 @@ where
     n_jobs: usize,
 }
 
-impl<'a, T> GenericDmDt<T>
+impl<'py, T> GenericDmDt<T>
 where
     T: Element + ndarray::NdFloat + lcdmdt::ErfFloat,
-    Arr<'a, T>: TryFrom<GenericFloatArray1<'a>>,
+    Arr<'py, T>: TryFrom<GenericFloatArray1<'py>>,
 {
-    fn sigma_to_err2(sigma: Arr<'a, T>) -> ContArray<T> {
+    fn sigma_to_err2(sigma: Arr<'py, T>) -> ContArray<T> {
         let mut a: ContArray<_> = sigma.as_array().into();
         a.0.mapv_inplace(|x| x.powi(2));
         a
@@ -86,7 +86,7 @@ where
         }
     }
 
-    fn py_count_dt(&self, py: Python, t: Arr<'a, T>, sorted: Option<bool>) -> Res<PyObject> {
+    fn py_count_dt(&self, py: Python, t: Arr<'py, T>, sorted: Option<bool>) -> Res<PyObject> {
         self.count_dt(
             ContCowArray::from_view(t.as_array(), true).as_slice(),
             sorted,
@@ -102,7 +102,7 @@ where
     fn py_count_dt_many(
         &self,
         py: Python,
-        t_: Vec<GenericFloatArray1<'a>>,
+        t_: Vec<GenericFloatArray1<'py>>,
         sorted: Option<bool>,
     ) -> Res<PyObject> {
         let wrapped_t_ = t_
@@ -154,8 +154,8 @@ where
     fn py_points(
         &self,
         py: Python,
-        t: Arr<'a, T>,
-        m: Arr<'a, T>,
+        t: Arr<'py, T>,
+        m: Arr<'py, T>,
         sorted: Option<bool>,
     ) -> Res<PyObject> {
         Ok(self
@@ -179,15 +179,15 @@ where
     fn py_points_many(
         &self,
         py: Python,
-        lcs: Vec<(GenericFloatArray1<'a>, GenericFloatArray1<'a>)>,
+        lcs: Vec<(GenericFloatArray1<'py>, GenericFloatArray1<'py>)>,
         sorted: Option<bool>,
     ) -> Res<PyObject> {
         let wrapped_lcs = lcs
             .into_iter()
             .enumerate()
             .map(|(i, (t, m))| {
-                let t: Result<Arr<'a, T>, _> = t.try_into();
-                let m: Result<Arr<'a, T>, _> = m.try_into();
+                let t: Result<Arr<'py, T>, _> = t.try_into();
+                let m: Result<Arr<'py, T>, _> = m.try_into();
                 match (t, m) {
                     (Ok(t), Ok(m)) => Ok((t, m)),
                     _ => Err(Exception::TypeError(format!(
@@ -240,7 +240,7 @@ where
     #[allow(clippy::too_many_arguments)]
     fn generic_dmdt_points_batches(
         &self,
-        lcs: Vec<(GenericFloatArray1<'a>, GenericFloatArray1<'a>)>,
+        lcs: Vec<(GenericFloatArray1<'py>, GenericFloatArray1<'py>)>,
         sorted: Option<bool>,
         batch_size: usize,
         yield_index: bool,
@@ -252,8 +252,8 @@ where
             .into_iter()
             .enumerate()
             .map(|(i, (t, m))| {
-                let t: Result<Arr<'a, T>, _> = t.try_into();
-                let m: Result<Arr<'a, T>, _> = m.try_into();
+                let t: Result<Arr<'py, T>, _> = t.try_into();
+                let m: Result<Arr<'py, T>, _> = m.try_into();
                 match (t, m) {
                     (Ok(t), Ok(m)) => {
                         let t: ContArray<_> = t.as_array().into();
@@ -283,9 +283,9 @@ where
     fn py_gausses(
         &self,
         py: Python,
-        t: Arr<'a, T>,
-        m: Arr<'a, T>,
-        sigma: Arr<'a, T>,
+        t: Arr<'py, T>,
+        m: Arr<'py, T>,
+        sigma: Arr<'py, T>,
         sorted: Option<bool>,
     ) -> Res<PyObject> {
         let err2 = Self::sigma_to_err2(sigma);
@@ -321,9 +321,9 @@ where
         &self,
         py: Python,
         lcs: Vec<(
-            GenericFloatArray1<'a>,
-            GenericFloatArray1<'a>,
-            GenericFloatArray1<'a>,
+            GenericFloatArray1<'py>,
+            GenericFloatArray1<'py>,
+            GenericFloatArray1<'py>,
         )>,
         sorted: Option<bool>,
     ) -> Res<PyObject> {
@@ -393,9 +393,9 @@ where
     fn generic_dmdt_gausses_batches(
         &self,
         lcs: Vec<(
-            GenericFloatArray1<'a>,
-            GenericFloatArray1<'a>,
-            GenericFloatArray1<'a>,
+            GenericFloatArray1<'py>,
+            GenericFloatArray1<'py>,
+            GenericFloatArray1<'py>,
         )>,
         sorted: Option<bool>,
         batch_size: usize,
@@ -408,9 +408,9 @@ where
             .into_iter()
             .enumerate()
             .map(|(i, (t, m, sigma))| {
-                let t: Result<Arr<'a, T>, _> = t.try_into();
-                let m: Result<Arr<'a, T>, _> = m.try_into();
-                let sigma: Result<Arr<'a, T>, _> = sigma.try_into();
+                let t: Result<Arr<'py, T>, _> = t.try_into();
+                let m: Result<Arr<'py, T>, _> = m.try_into();
+                let sigma: Result<Arr<'py, T>, _> = sigma.try_into();
                 match (t, m, sigma) {
                     (Ok(t), Ok(m), Ok(sigma)) => {
                         let t: ContArray<_> = t.as_array().into();
@@ -964,9 +964,9 @@ impl DmDt {
         n_jobs = -1,
         approx_erf = "false"
     )]
-    fn __new__<'a>(
-        dt: Arr<'a, f64>,
-        dm: Arr<'a, f64>,
+    fn __new__<'py>(
+        dt: Arr<'py, f64>,
+        dm: Arr<'py, f64>,
         dm_type: &str,
         dt_type: &str,
         norm: Vec<&str>,
@@ -983,7 +983,7 @@ impl DmDt {
             "asis" => GridType::Generic,
             _ => {
                 return Err(Exception::ValueError(
-                    "dt_type must be 'auto', 'linear', 'log' or 'asis'".to_owned(),
+                    "dt_type must be 'pyuto', 'linear', 'log' or 'pysis'".to_owned(),
                 ))
             }
         };
@@ -994,7 +994,7 @@ impl DmDt {
             "asis" => GridType::Generic,
             _ => {
                 return Err(Exception::ValueError(
-                    "dm_type must be 'auto', 'linear', 'log' or 'asis'".to_owned(),
+                    "dm_type must be 'pyuto', 'linear', 'log' or 'pysis'".to_owned(),
                 ))
             }
         };
