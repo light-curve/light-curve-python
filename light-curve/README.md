@@ -4,7 +4,6 @@ The Python wrapper for Rust [`light-curve-feature`](https://github.com/light-cur
 
 [![PyPI version](https://badge.fury.io/py/light-curve.svg)](https://pypi.org/project/light-curve/)
 ![testing](https://github.com/light-curve/light-curve-python/actions/workflows/test.yml/badge.svg)
-![publishing](https://github.com/light-curve/light-curve-python/actions/workflows/publish.yml/badge.svg)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/light-curve/light-curve-python/master.svg)](https://results.pre-commit.ci/latest/github/light-curve/light-curve-python/master)
 
 ## Installation
