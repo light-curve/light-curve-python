@@ -11,9 +11,21 @@ use ndarray::IntoNdProducer;
 use numpy::IntoPyArray;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::PyTuple;
+use pyo3::types::{PyBytes, PyTuple};
 use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::convert::{TryFrom, TryInto};
+
+// Details of pickle support implementation
+// ----------------------------------------
+// [PyFeatureEvaluator] implements __getstate__ and __setstate__ required for pickle serialisation,
+// which gives the support of pickle protocols 2+. However it is not enough for child classes with
+// mandatory constructor arguments since __setstate__(self, state) is a method applied after
+// __new__ is called. Thus we implement __getnewargs__ for such classes. Despite the "standard" way
+// we return some default arguments from this method and de-facto re-create the underlying Rust
+// objects during __setstate__, which could reduce performance of deserialising. We also make this
+// method static to use it in tests, which is also a bit weird thing to do. We use a simple but
+// compact and performant binary (de)serialization format provided by [bincode] crate.
 
 const ATTRIBUTES_DOC: &str = r#"Attributes
 ----------
@@ -102,6 +114,7 @@ const COMMON_FEATURE_DOC: &str = formatcp!("\n{}\n\n{}\n", ATTRIBUTES_DOC, METHO
 
 type PyLightCurve<'a, T> = (Arr<'a, T>, Arr<'a, T>, Option<Arr<'a, T>>);
 
+#[derive(Serialize, Deserialize, Clone)]
 #[pyclass(
     subclass,
     name = "_FeatureEvaluator",
@@ -469,6 +482,42 @@ impl PyFeatureEvaluator {
     fn descriptions(&self) -> Vec<&str> {
         self.feature_evaluator_f64.get_descriptions()
     }
+
+    /// Used by pickle.load / pickle.loads
+    #[args(state)]
+    fn __setstate__(&mut self, state: &PyBytes) -> Res<()> {
+        *self = bincode::deserialize(state.as_bytes()).map_err(|err| {
+            Exception::UnpicklingError(format!(
+                r#"Error happened on the Rust side when deserializing _FeatureEvaluator: "{}""#,
+                err
+            ))
+        })?;
+        Ok(())
+    }
+
+    /// Used by pickle.dump / pickle.dumps
+    #[args()]
+    fn __getstate__<'py>(&self, py: Python<'py>) -> Res<&'py PyBytes> {
+        let vec_bytes = bincode::serialize(&self).map_err(|err| {
+            Exception::PicklingError(format!(
+                r#"Error happened on the Rust side when serializing _FeatureEvaluator: "{}""#,
+                err
+            ))
+        })?;
+        Ok(PyBytes::new(py, &vec_bytes))
+    }
+
+    /// Used by copy.copy
+    #[args()]
+    fn __copy__(&self) -> Self {
+        self.clone()
+    }
+
+    /// Used by copy.deepcopy
+    #[args(memo)]
+    fn __deepcopy__(&self, _memo: &PyAny) -> Self {
+        self.clone()
+    }
 }
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
@@ -726,6 +775,13 @@ macro_rules! fit_evaluator {
                 ))
             }
 
+            /// Required by pickle.dump / pickle.dumps
+            #[staticmethod]
+            #[args()]
+            fn __getnewargs__() -> (&'static str,) {
+                ("mcmc",)
+            }
+
             #[doc = FIT_METHOD_MODEL_DOC!()]
             #[staticmethod]
             #[args(t, params)]
@@ -847,6 +903,13 @@ impl BeyondNStd {
         )
     }
 
+    /// Required by pickle.load / pickle.loads
+    #[staticmethod]
+    #[args()]
+    fn __getnewargs__() -> (f64,) {
+        (lcf::BeyondNStd::default_nstd(),)
+    }
+
     #[classattr]
     fn __doc__() -> String {
         format!(
@@ -915,6 +978,17 @@ impl Bins {
         ))
     }
 
+    /// Required by pickle.load / pickle.loads
+    #[staticmethod]
+    #[args()]
+    fn __getnewargs__(py: Python) -> (&PyTuple, f64, f64) {
+        (
+            PyTuple::empty(py),
+            lcf::Bins::<_, Feature<_>>::default_window(),
+            lcf::Bins::<_, Feature<_>>::default_window(),
+        )
+    }
+
     #[classattr]
     fn __doc__() -> String {
         format!(
@@ -958,6 +1032,13 @@ impl InterPercentileRange {
                 feature_evaluator_f64: lcf::InterPercentileRange::new(quantile).into(),
             },
         )
+    }
+
+    /// Required by pickle.load / pickle.loads
+    #[staticmethod]
+    #[args()]
+    fn __getnewargs__() -> (f32,) {
+        (lcf::InterPercentileRange::default_quantile(),)
     }
 
     #[classattr]
@@ -1021,6 +1102,16 @@ impl MagnitudePercentageRatio {
         ))
     }
 
+    /// Required by pickle.load / pickle.loads
+    #[staticmethod]
+    #[args()]
+    fn __getnewargs__() -> (f32, f32) {
+        (
+            lcf::MagnitudePercentageRatio::default_quantile_numerator(),
+            lcf::MagnitudePercentageRatio::default_quantile_denominator(),
+        )
+    }
+
     #[classattr]
     fn __doc__() -> String {
         format!(
@@ -1068,6 +1159,13 @@ impl MedianBufferRangePercentage {
         )
     }
 
+    /// Required by pickle.load / pickle.loads
+    #[staticmethod]
+    #[args()]
+    fn __getnewargs__() -> (f64,) {
+        (lcf::MedianBufferRangePercentage::default_quantile(),)
+    }
+
     #[classattr]
     fn __doc__() -> String {
         format!(
@@ -1104,6 +1202,13 @@ impl PercentDifferenceMagnitudePercentile {
                     .into(),
             },
         )
+    }
+
+    /// Required by pickle.load / pickle.loads
+    #[staticmethod]
+    #[args()]
+    fn __getnewargs__() -> (f32,) {
+        (lcf::PercentDifferenceMagnitudePercentile::default_quantile(),)
     }
 
     #[classattr]
