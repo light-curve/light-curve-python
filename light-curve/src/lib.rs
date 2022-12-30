@@ -1,21 +1,15 @@
+use dmdt::DmDt;
+use features as f;
+use ln_prior::*;
 use pyo3::prelude::*;
 
-mod cont_array;
-
-mod dmdt;
-use dmdt::DmDt;
-
-mod errors;
-
-mod features;
-use features as f;
-
-mod ln_prior;
-use ln_prior::*;
-
-mod np_array;
-
 mod check;
+mod cont_array;
+mod dmdt;
+mod errors;
+mod features;
+mod ln_prior;
+mod np_array;
 
 /// High-performance time-series feature extractor
 ///
