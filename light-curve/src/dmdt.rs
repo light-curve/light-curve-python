@@ -8,13 +8,15 @@ use crate::np_array::{Arr, GenericFloatArray1};
 use conv::{ApproxFrom, ApproxInto, ConvAsUtil};
 use enumflags2::{bitflags, BitFlags};
 use light_curve_dmdt as lcdmdt;
+use light_curve_dmdt::{Grid, GridTrait};
 use ndarray::IntoNdProducer;
 use numpy::{Element, IntoPyArray, PyArray1, ToPyArray};
 use pyo3::prelude::*;
-use pyo3::types::PyTuple;
+use pyo3::types::{PyBytes, PyTuple};
 use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
 use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::convert::{TryFrom, TryInto};
 use std::ops::{DerefMut, Range};
@@ -32,19 +34,19 @@ enum DropNObsType {
 
 #[bitflags]
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize)]
 enum NormFlag {
     Dt,
     Max,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 enum ErrorFunction {
     Exact,
     Eps1Over1e3,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 struct GenericDmDt<T>
 where
     T: lcdmdt::Float,
@@ -828,23 +830,53 @@ py_dmdt_batches!(
 ///     Gives a reusable iterable which yields smeared dmdt-maps
 ///
 #[pyclass(module = "light_curve.light_curve_ext")]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct DmDt {
     dmdt_f64: GenericDmDt<f64>,
     dmdt_f32: GenericDmDt<f32>,
 }
 
-#[derive(Clone, Copy)]
-enum GridType {
-    Linear,
-    Log,
-    Generic,
-}
-
 impl DmDt {
+    fn array_to_linear_grid<T>(a: ndarray::ArrayView1<f64>) -> Grid<T>
+    where
+        T: lcdmdt::Float + ApproxFrom<f64>,
+    {
+        lcdmdt::LinearGrid::new(
+            (*a.get(0).unwrap()).approx().unwrap(),
+            (*a.get(a.len() - 1).unwrap()).approx().unwrap(),
+            a.len() - 1,
+        )
+        .into()
+    }
+
+    fn array_to_log_grid<T>(a: ndarray::ArrayView1<f64>) -> Grid<T>
+    where
+        T: lcdmdt::Float + ApproxFrom<f64>,
+    {
+        lcdmdt::LgGrid::from_start_end(
+            (*a.get(0).unwrap()).approx().unwrap(),
+            (*a.get(a.len() - 1).unwrap()).approx().unwrap(),
+            a.len() - 1,
+        )
+        .into()
+    }
+
+    fn array_to_generic_grid<T>(a: ndarray::ArrayView1<f64>) -> Res<Grid<T>>
+    where
+        T: lcdmdt::Float + ApproxFrom<f64>,
+    {
+        lcdmdt::ArrayGrid::new(a.mapv(|x| x.approx().unwrap()))
+            .map(Into::into)
+            .map_err(|err| Exception::ValueError(err.to_string()))
+    }
+
     // clippy has false-positive report for 1..-1 ranges inside s!
     // https://github.com/rust-lang/rust-clippy/issues/5808
     #[allow(clippy::reversed_empty_ranges)]
-    fn grid_type(a: &ndarray::ArrayView1<f64>) -> Res<GridType> {
+    fn array_to_auto_grid<T>(a: ndarray::ArrayView1<f64>) -> Res<Grid<T>>
+    where
+        T: lcdmdt::Float + ApproxFrom<f64>,
+    {
         const EPS: f64 = 1000.0 * f64::EPSILON;
 
         if !ndarray::Zip::from(a.slice(ndarray::s![..-1]))
@@ -867,7 +899,7 @@ impl DmDt {
                 .and(a.slice(ndarray::s![2..]))
                 .all(|&x, &y| f64::abs((step - y + x) / step) < EPS)
             {
-                return Ok(GridType::Linear);
+                return Ok(Self::array_to_linear_grid(a));
             }
         }
         {
@@ -876,35 +908,35 @@ impl DmDt {
                 .and(a.slice(ndarray::s![2..]))
                 .all(|&x, &y| f64::abs((ln_step - f64::ln(y / x)) / ln_step) < EPS)
             {
-                return Ok(GridType::Log);
+                return Ok(Self::array_to_log_grid(a));
             }
         }
-        Ok(GridType::Generic)
+        Self::array_to_generic_grid(a)
     }
 
-    fn array_to_grid<T>(
-        x: &ndarray::ArrayView1<f64>,
-        grid_type: GridType,
-    ) -> Res<Box<dyn lcdmdt::Grid<T>>>
-    where
-        T: lcdmdt::Float + ApproxFrom<f64>,
-    {
-        Ok(match grid_type {
-            GridType::Linear => Box::new(lcdmdt::LinearGrid::new(
-                (*x.get(0).unwrap()).approx().unwrap(),
-                (*x.get(x.len() - 1).unwrap()).approx().unwrap(),
-                x.len() - 1,
-            )),
-            GridType::Log => Box::new(lcdmdt::LgGrid::from_start_end(
-                (*x.get(0).unwrap()).approx().unwrap(),
-                (*x.get(x.len() - 1).unwrap()).approx().unwrap(),
-                x.len() - 1,
-            )),
-            GridType::Generic => Box::new(
-                lcdmdt::ArrayGrid::new(x.mapv(|x| x.approx().unwrap()))
-                    .map_err(|err| Exception::ValueError(err.to_string()))?,
-            ),
-        })
+    fn grids(dx: ndarray::ArrayView1<f64>, dx_type: &str) -> Res<(Grid<f32>, Grid<f64>)> {
+        let grid_f64: Grid<f64> = match dx_type {
+            "auto" => Self::array_to_auto_grid(dx)?,
+            "linear" => Self::array_to_linear_grid(dx),
+            "log" => Self::array_to_log_grid(dx),
+            "asis" => Self::array_to_generic_grid(dx)?,
+            _ => {
+                return Err(Exception::ValueError(
+                    "dt_type must be 'auto', 'linear', 'log' or 'asis'".to_owned(),
+                ))
+            }
+        };
+        let grid_f32: Grid<f32> = match grid_f64 {
+            Grid::Array(_) => Self::array_to_generic_grid(dx)?,
+            Grid::Linear(_) => Self::array_to_linear_grid(dx),
+            Grid::Lg(_) => Self::array_to_log_grid(dx),
+            _ => {
+                return Err(Exception::NotImplementedError(
+                    "this type of grid is not implemented".into(),
+                ))
+            }
+        };
+        Ok((grid_f32, grid_f64))
     }
 
     fn from_dmdts(
@@ -973,39 +1005,16 @@ impl DmDt {
         n_jobs: i64,
         approx_erf: bool,
     ) -> Res<Self> {
-        let dt = dt.as_array();
-        let dm = dm.as_array();
-
-        let grid_type_dt = match dt_type {
-            "auto" => Self::grid_type(&dt)?,
-            "linear" => GridType::Linear,
-            "log" => GridType::Log,
-            "asis" => GridType::Generic,
-            _ => {
-                return Err(Exception::ValueError(
-                    "dt_type must be 'auto', 'linear', 'log' or 'asis'".to_owned(),
-                ))
-            }
-        };
-        let grid_type_dm = match dm_type {
-            "auto" => Self::grid_type(&dm)?,
-            "linear" => GridType::Linear,
-            "log" => GridType::Log,
-            "asis" => GridType::Generic,
-            _ => {
-                return Err(Exception::ValueError(
-                    "dm_type must be 'auto', 'linear', 'log' or 'asis'".to_owned(),
-                ))
-            }
-        };
+        let (dt_grid_f32, dt_grid_f64) = Self::grids(dt.as_array(), dt_type)?;
+        let (dm_grid_f32, dm_grid_f64) = Self::grids(dm.as_array(), dm_type)?;
 
         let dmdt_f32: lcdmdt::DmDt<f32> = lcdmdt::DmDt {
-            dt_grid: Self::array_to_grid(&dt, grid_type_dt)?,
-            dm_grid: Self::array_to_grid(&dm, grid_type_dm)?,
+            dt_grid: dt_grid_f32,
+            dm_grid: dm_grid_f32,
         };
         let dmdt_f64: lcdmdt::DmDt<f64> = lcdmdt::DmDt {
-            dt_grid: Self::array_to_grid(&dt, grid_type_dt)?,
-            dm_grid: Self::array_to_grid(&dm, grid_type_dm)?,
+            dt_grid: dt_grid_f64,
+            dm_grid: dm_grid_f64,
         };
 
         Self::from_dmdts(dmdt_f32, dmdt_f64, norm, n_jobs, approx_erf)
@@ -1475,5 +1484,48 @@ impl DmDt {
                 .into_py(py)),
             }
         }
+    }
+
+    /// Used by pickle.load / pickle.loads
+    #[args(state)]
+    fn __setstate__(&mut self, state: &PyBytes) -> Res<()> {
+        *self = bincode::deserialize(state.as_bytes()).map_err(|err| {
+            Exception::UnpicklingError(format!(
+                r#"Error happened on the Rust side when deserializing DmDt: "{}""#,
+                err
+            ))
+        })?;
+        Ok(())
+    }
+
+    /// Used by pickle.dump / pickle.dumps
+    #[args()]
+    fn __getstate__<'py>(&self, py: Python<'py>) -> Res<&'py PyBytes> {
+        let vec_bytes = bincode::serialize(&self).map_err(|err| {
+            Exception::PicklingError(format!(
+                r#"Error happened on the Rust side when serializing DmDt: "{}""#,
+                err
+            ))
+        })?;
+        Ok(PyBytes::new(py, &vec_bytes))
+    }
+
+    /// Used by pickle.dump / pickle.dumps
+    #[args()]
+    fn __getnewargs__<'py>(&self, py: Python<'py>) -> (&'py PyArray1<f64>, &'py PyArray1<f64>) {
+        let a = ndarray::array![1.0, 2.0].to_pyarray(py);
+        (a, a)
+    }
+
+    /// Used by copy.copy
+    #[args()]
+    fn __copy__(&self) -> Self {
+        self.clone()
+    }
+
+    /// Used by copy.deepcopy
+    #[args(memo)]
+    fn __deepcopy__(&self, _memo: &PyAny) -> Self {
+        self.clone()
     }
 }
