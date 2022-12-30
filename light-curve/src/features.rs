@@ -2,13 +2,13 @@ use crate::check::{check_finite, check_no_nans, is_sorted};
 use crate::cont_array::ContCowArray;
 use crate::errors::{Exception, Res};
 use crate::ln_prior::LnPrior1D;
-use crate::np_array::{Arr, GenericFloatArray1, GenericFloatRwArray1, RwArr};
+use crate::np_array::{Arr, GenericFloatArray1, GenericFloatRwArray1, GenericFloatRwArray2};
 
 use const_format::formatcp;
 use light_curve_feature::{self as lcf, prelude::*, DataSample};
 use macro_const::macro_const;
 use ndarray::{IntoNdProducer, Zip};
-use numpy::IntoPyArray;
+use numpy::{IntoPyArray, PyReadwriteArray1, PyReadwriteArray2};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyTuple};
@@ -221,7 +221,7 @@ impl PyFeatureEvaluator {
         check: bool,
         is_t_required: bool,
         fill_value: Option<T>,
-        out: &mut RwArr<T>,
+        out: &mut PyReadwriteArray1<T>,
     ) -> Res<()>
     where
         T: lcf::Float + numpy::Element,
@@ -262,10 +262,12 @@ impl PyFeatureEvaluator {
         check: bool,
         fill_value: Option<T>,
         n_jobs: i64,
+        out: Option<GenericFloatRwArray2<'py>>,
     ) -> Res<PyObject>
     where
         T: lcf::Float + numpy::Element,
         Arr<'py, T>: TryFrom<GenericFloatArray1<'py>>,
+        PyReadwriteArray2<'py, T>: TryFrom<GenericFloatRwArray2<'py>>,
     {
         let wrapped_lcs = lcs
             .into_iter()
@@ -285,7 +287,26 @@ impl PyFeatureEvaluator {
                 }
             })
             .collect::<Res<Vec<_>>>()?;
-        Ok(Self::many_impl(
+        let shape = (wrapped_lcs.len(), feature_evaluator.size_hint());
+        let mut out = match out {
+            Some(out) => {
+                let out: PyReadwriteArray2<T> = out.try_into().map_err(|_| {
+                    Exception::TypeError(format!(
+                        "out has mismatched dtype with lc[0][0] which is {}",
+                        std::any::type_name::<T>()
+                    ))
+                })?;
+                if out.shape() != [shape.0, shape.1] {
+                    return Err(Exception::ValueError(format!(
+                        "shape of the out must be exact {:?}",
+                        shape
+                    )));
+                }
+                out
+            }
+            None => ndarray::Array2::zeros(shape).into_pyarray(py).readwrite(),
+        };
+        Self::many_impl(
             feature_evaluator,
             wrapped_lcs,
             sorted,
@@ -293,9 +314,9 @@ impl PyFeatureEvaluator {
             self.is_t_required(sorted),
             fill_value,
             n_jobs,
-        )?
-        .into_pyarray(py)
-        .into_py(py))
+            &mut out,
+        )?;
+        Ok(out.to_object(py))
     }
 
     fn many_impl<T>(
@@ -306,13 +327,12 @@ impl PyFeatureEvaluator {
         is_t_required: bool,
         fill_value: Option<T>,
         n_jobs: i64,
-    ) -> Res<ndarray::Array2<T>>
+        out: &mut PyReadwriteArray2<T>,
+    ) -> Res<()>
     where
         T: lcf::Float + numpy::Element,
     {
         let n_jobs = if n_jobs < 0 { 0 } else { n_jobs as usize };
-
-        let mut result = ndarray::Array2::zeros((lcs.len(), feature_evaluator.size_hint()));
 
         let mut tss = lcs
             .iter()
@@ -321,12 +341,14 @@ impl PyFeatureEvaluator {
             })
             .collect::<Result<Vec<_>, _>>()?;
 
+        let mut out = out.as_array_mut();
+
         rayon::ThreadPoolBuilder::new()
             .num_threads(n_jobs)
             .build()
             .unwrap()
             .install(|| {
-                Zip::from(result.outer_iter_mut())
+                Zip::from(out.outer_iter_mut())
                     .and((&mut tss).into_producer())
                     .into_par_iter()
                     .try_for_each::<_, Res<_>>(|(mut map, ts)| {
@@ -341,7 +363,7 @@ impl PyFeatureEvaluator {
                         Ok(())
                     })
             })?;
-        Ok(result)
+        Ok(())
     }
 
     fn is_t_required(&self, sorted: Option<bool>) -> bool {
@@ -397,7 +419,7 @@ impl PyFeatureEvaluator {
                         })
                     })
                     .transpose()?;
-                let mut out: RwArr<'py, _> = match out {
+                let mut out = match out {
                     Some(GenericFloatRwArray1::Float32(array)) => {
                         if array.shape() != [output_size] {
                             return Err(Exception::ValueError(format!(
@@ -489,6 +511,7 @@ impl PyFeatureEvaluator {
         check: bool,
         fill_value: Option<f64>,
         n_jobs: i64,
+        out: Option<GenericFloatRwArray2>,
     ) -> Res<PyObject> {
         if lcs.is_empty() {
             Err(Exception::ValueError("lcs is empty".to_string()))
@@ -502,6 +525,7 @@ impl PyFeatureEvaluator {
                     check,
                     fill_value.map(|v| v as f32),
                     n_jobs,
+                    out,
                 ),
                 GenericFloatArray1::Float64(_) => self.py_many(
                     &self.feature_evaluator_f64,
@@ -511,6 +535,7 @@ impl PyFeatureEvaluator {
                     check,
                     fill_value,
                     n_jobs,
+                    out,
                 ),
             }
         }
