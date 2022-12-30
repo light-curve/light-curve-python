@@ -12,10 +12,11 @@ use light_curve_dmdt::{Grid, GridTrait};
 use ndarray::IntoNdProducer;
 use numpy::{Element, IntoPyArray, PyArray1, ToPyArray};
 use pyo3::prelude::*;
-use pyo3::types::PyTuple;
+use pyo3::types::{PyBytes, PyTuple};
 use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
 use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::convert::{TryFrom, TryInto};
 use std::ops::{DerefMut, Range};
@@ -33,19 +34,19 @@ enum DropNObsType {
 
 #[bitflags]
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize)]
 enum NormFlag {
     Dt,
     Max,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 enum ErrorFunction {
     Exact,
     Eps1Over1e3,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 struct GenericDmDt<T>
 where
     T: lcdmdt::Float,
@@ -829,6 +830,7 @@ py_dmdt_batches!(
 ///     Gives a reusable iterable which yields smeared dmdt-maps
 ///
 #[pyclass(module = "light_curve.light_curve_ext")]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct DmDt {
     dmdt_f64: GenericDmDt<f64>,
     dmdt_f32: GenericDmDt<f32>,
@@ -1482,5 +1484,48 @@ impl DmDt {
                 .into_py(py)),
             }
         }
+    }
+
+    /// Used by pickle.load / pickle.loads
+    #[args(state)]
+    fn __setstate__(&mut self, state: &PyBytes) -> Res<()> {
+        *self = bincode::deserialize(state.as_bytes()).map_err(|err| {
+            Exception::UnpicklingError(format!(
+                r#"Error happened on the Rust side when deserializing DmDt: "{}""#,
+                err
+            ))
+        })?;
+        Ok(())
+    }
+
+    /// Used by pickle.dump / pickle.dumps
+    #[args()]
+    fn __getstate__<'py>(&self, py: Python<'py>) -> Res<&'py PyBytes> {
+        let vec_bytes = bincode::serialize(&self).map_err(|err| {
+            Exception::PicklingError(format!(
+                r#"Error happened on the Rust side when serializing DmDt: "{}""#,
+                err
+            ))
+        })?;
+        Ok(PyBytes::new(py, &vec_bytes))
+    }
+
+    /// Used by pickle.dump / pickle.dumps
+    #[args()]
+    fn __getnewargs__<'py>(&self, py: Python<'py>) -> (&'py PyArray1<f64>, &'py PyArray1<f64>) {
+        let a = ndarray::array![1.0, 2.0].to_pyarray(py);
+        (a, a)
+    }
+
+    /// Used by copy.copy
+    #[args()]
+    fn __copy__(&self) -> Self {
+        self.clone()
+    }
+
+    /// Used by copy.deepcopy
+    #[args(memo)]
+    fn __deepcopy__(&self, _memo: &PyAny) -> Self {
+        self.clone()
     }
 }

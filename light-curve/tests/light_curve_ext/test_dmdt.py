@@ -1,3 +1,5 @@
+import copy
+import pickle
 from itertools import product
 
 try:
@@ -15,6 +17,16 @@ import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 
 from light_curve.light_curve_ext import DmDt
+
+DM_DT = [
+    DmDt.from_borders(min_lgdt=0.0, max_lgdt=np.log10(3), max_abs_dm=1.0, lgdt_size=16, dm_size=32, norm=[]),
+    DmDt(dt=np.logspace(0.0, np.log10(3.0), 17), dm=np.linspace(-1.0, 1.0, 33), dt_type="auto", dm_type="auto"),
+    DmDt(dt=np.logspace(0.0, np.log10(3.0), 17), dm=np.linspace(-1.0, 1.0, 33), dt_type="asis", dm_type="asis"),
+    DmDt(dt=np.logspace(0.0, np.log10(3.0), 17), dm=np.linspace(-1.0, 1.0, 33), dt_type="log", dm_type="linear"),
+    DmDt.from_borders(min_lgdt=-1.0, max_lgdt=1.0, max_abs_dm=2.0, lgdt_size=32, dm_size=32, norm=["dt"]),
+    DmDt.from_borders(min_lgdt=-1.0, max_lgdt=1.0, max_abs_dm=2.0, lgdt_size=32, dm_size=32, norm=["max"]),
+    DmDt.from_borders(min_lgdt=-1.0, max_lgdt=1.0, max_abs_dm=2.0, lgdt_size=32, dm_size=32, norm=["dt", "max"]),
+]
 
 
 def random_lc(n, sigma=True, rng=None, dtype=np.float64):
@@ -328,3 +340,30 @@ def test_dmdt_gausses_many_dtype(t1_dtype, m1_dtype, sigma1_dtype, t2_dtype, m2_
     with context:
         dmdt.gausses_many(lcs)
         dmdt.gausses_batches(lcs)
+
+
+@pytest.mark.parametrize("dmdt", DM_DT)
+@pytest.mark.parametrize("pickle_protocol", tuple(range(2, pickle.HIGHEST_PROTOCOL + 1)))
+def test_pickle(dmdt, pickle_protocol):
+    data = random_lc(51)
+    values = dmdt.gausses(*data)
+
+    b = pickle.dumps(dmdt, protocol=pickle_protocol)
+    new_dmt = pickle.loads(b)
+    new_values = new_dmt.gausses(*data)
+
+    assert_array_equal(values, new_values)
+
+
+@pytest.mark.parametrize("dmdt", DM_DT)
+def test_copy_deepcopy(dmdt):
+    data = random_lc(51)
+    values = dmdt.gausses(*data)
+
+    dmdt_copy = copy.copy(dmdt)
+    copy_values = dmdt_copy.gausses(*data)
+    assert_array_equal(values, copy_values)
+
+    dmdt_deepcopy = copy.deepcopy(dmdt)
+    deepcopy_values = dmdt_deepcopy.gausses(*data)
+    assert_array_equal(values, deepcopy_values)
