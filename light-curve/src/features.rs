@@ -319,6 +319,7 @@ impl PyFeatureEvaluator {
         Ok(out.to_object(py))
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn many_impl<T>(
         feature_evaluator: &lcf::Feature<T>,
         lcs: Vec<PyLightCurve<T>>,
@@ -497,6 +498,7 @@ impl PyFeatureEvaluator {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     #[doc = METHOD_MANY_DOC!()]
     #[args(lcs, sorted = "None", check = "true", fill_value = "None", n_jobs = -1)]
     fn many(
