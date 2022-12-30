@@ -14,7 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
---
+- Build environment: minimum support Rust version (MSRV) is bumped 1.57 -> 1.60
+- Bump `light-curve-dmdt` 0.6.0 -> 0.7.1
 
 ### Deprecated
 
