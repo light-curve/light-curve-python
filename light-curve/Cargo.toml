@@ -31,7 +31,6 @@ gsl = ["light-curve-feature/gsl"]
 # it is a dependency of intel-mkl-tool, we pin it to temporary solve
 # https://github.com/rust-math/intel-mkl-src/issues/68
 anyhow = "<1.0.49"
-bincode = "1"
 const_format = "0.2.30"
 conv = "0.3.3"
 enumflags2 = { version = "0.7.5", features = ["serde"] }
@@ -46,6 +45,7 @@ rand = "0.8.5"
 rand_xoshiro = "0.6.0"
 thiserror = "1.0.37"
 serde = { version = "1", features = ["derive"] }
+serde-pickle = "1"
 rayon = "1.6.1"
 unzip3 = "1.0.0"
 

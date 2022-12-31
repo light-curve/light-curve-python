@@ -1489,24 +1489,26 @@ impl DmDt {
     /// Used by pickle.load / pickle.loads
     #[args(state)]
     fn __setstate__(&mut self, state: &PyBytes) -> Res<()> {
-        *self = bincode::deserialize(state.as_bytes()).map_err(|err| {
-            Exception::UnpicklingError(format!(
-                r#"Error happened on the Rust side when deserializing DmDt: "{}""#,
-                err
-            ))
-        })?;
+        *self = serde_pickle::from_slice(state.as_bytes(), serde_pickle::DeOptions::new())
+            .map_err(|err| {
+                Exception::UnpicklingError(format!(
+                    r#"Error happened on the Rust side when deserializing DmDt: "{}""#,
+                    err
+                ))
+            })?;
         Ok(())
     }
 
     /// Used by pickle.dump / pickle.dumps
     #[args()]
     fn __getstate__<'py>(&self, py: Python<'py>) -> Res<&'py PyBytes> {
-        let vec_bytes = bincode::serialize(&self).map_err(|err| {
-            Exception::PicklingError(format!(
-                r#"Error happened on the Rust side when serializing DmDt: "{}""#,
-                err
-            ))
-        })?;
+        let vec_bytes =
+            serde_pickle::to_vec(&self, serde_pickle::SerOptions::new()).map_err(|err| {
+                Exception::PicklingError(format!(
+                    r#"Error happened on the Rust side when serializing DmDt: "{}""#,
+                    err
+                ))
+            })?;
         Ok(PyBytes::new(py, &vec_bytes))
     }
 

@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial `copy` and `pickle` (minimum protocol version is 2) support for feature extractors and `DmDt` https://github.com/light-curve/light-curve-python/issues/103 https://github.com/light-curve/light-curve-python/pull/145 https://github.com/light-curve/light-curve-python/pull/150
-- `bincode` v1 and `serde` v1 Rust dependencies https://github.com/light-curve/light-curve-python/pull/145
+- `serde` v1 and `serde-pickle` v1 Rust dependencies. `serde-pickle` is an arbitrary choice of a (de)serialization binary format, but it could be useful in the future having a way to inspect Rust structures from Python https://github.com/light-curve/light-curve-python/pull/145
 
 ### Changed
 
