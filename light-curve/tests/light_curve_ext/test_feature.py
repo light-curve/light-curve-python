@@ -199,3 +199,40 @@ def test_copy_deepcopy(feature):
     deepcopied = copy.deepcopy(feature)
     values_deepcopied = deepcopied(*data)
     assert_array_equal(values, values_deepcopied)
+
+
+PICKLE_BENCHMARK_FEATURES = [
+    lc.Amplitude(),  # no parameters
+    lc.BeyondNStd(1.5),  # parametric
+    lc.Extractor(  # large
+        lc.Amplitude(),
+        lc.BeyondNStd(2.0),
+        lc.Bins(
+            [lc.Kurtosis(), lc.LinearTrend(), lc.WeightedMean()],
+            window=2.0,
+            offset=59500.5,
+        ),
+        lc.Periodogram(features=[lc.InterPercentileRange(0.01)], peaks=5, max_freq_factor=12.0),
+    ),
+]
+
+
+@pytest.mark.parametrize("feature", PICKLE_BENCHMARK_FEATURES)
+def test_benchmark_pickle_loads(feature, benchmark):
+    b = pickle.dumps(feature, protocol=pickle.HIGHEST_PROTOCOL)
+    benchmark(pickle.loads, b)
+
+
+@pytest.mark.parametrize("feature", PICKLE_BENCHMARK_FEATURES)
+def test_benchmark_pickle_dumps(feature, benchmark):
+    benchmark(pickle.dumps, feature, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+@pytest.mark.parametrize("feature", PICKLE_BENCHMARK_FEATURES)
+def test_benchmark_copy(feature, benchmark):
+    benchmark(copy.copy, feature)
+
+
+@pytest.mark.parametrize("feature", PICKLE_BENCHMARK_FEATURES)
+def test_benchmark_deepcopy(feature, benchmark):
+    benchmark(copy.deepcopy, feature)
