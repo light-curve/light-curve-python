@@ -126,6 +126,8 @@ This should print a warning about experimental status of the Python class
 
 ### Available features
 
+See the complite list of evailable feature evaluators and documentation in [`light-curve-feature` Rust crate docs](http://docs.rs/light-curve-feature).
+
 <table>
   <tr>
     <th>Feature name</th>
@@ -363,21 +365,26 @@ where $f(t) -$ flux observation, $A, \gamma , \tau _{rise} , \tau _{fall}  >0$, 
 
 </table>
 
-## Meta-features
-Meta-features can accept another ```FeatureExtractor``` as it was time series without observation errors.
+### Meta-features
+Meta-features can accept another feature extractors and apply them to pre-processed data.
 
-### Periodogram
+#### Periodogram
 
-A number of features based on Lomb–Scargle periodogram. Periodogram $P(\omega)$ is an estimate of spectral density of unevenly time series.
-`Periodogram::new`'s `peaks` argument corresponds to a number of the most significant spectral density peaks to return. For each peak its period and "signal to noise" ratio is returned.
+A number of features based on Lomb–Scargle periodogram as it was an evenly separeated uncertancy-less lime series.
+Periodogram $P(\omega)$ is an estimate of spectral density of unevenly time series.
+`Periodogram`'s `peaks` argument corresponds to a number of the most significant spectral density peaks to return.
+For each peak its period and "signal to noise" ratio is returned.
 
 $$
 \text{signal to noise of peak} \equiv \frac{P(\omega_\mathrm{peak}) - \langle P(\omega) \rangle}{\sigma\_{P(\omega)}}
 $$
 
-### Bins
+`features` argument accepts a list of additional feature evaluators.
 
-Binning time series to bins with width $\mathrm{window}$ with respect to some $\mathrm{offset}$. $j-th$ bin boundaries are $[j \cdot \mathrm{window} + \mathrm{offset}; (j + 1) \cdot \mathrm{window} + \mathrm{offset}]$.
+#### Bins
+
+Binning time series to bins with width $\mathrm{window}$ with respect to some $\mathrm{offset}$.
+$j-th$ bin boundaries are $[j \cdot \mathrm{window} + \mathrm{offset}; (j + 1) \cdot \mathrm{window} + \mathrm{offset}]$.
 
 Binned time series is defined by
 $$t_j^* = (j + \frac12) \cdot \mathrm{window} + \mathrm{offset},$$
@@ -386,7 +393,7 @@ $$\delta_j^* = \frac{N_j}{\sum{\delta_i^{-2}}},$$
 where $N_j$ is a number of sampling observations and all sums are over observations inside considering bin.
 
 
-## Benchmarks
+### Benchmarks
 
 We benchmark the Rust implementation (`rust`) versus [`feets`](https://feets.readthedocs.io/en/latest/) package and our own Python implementation (`lc_py`) for a light curve having n=1000 observations.
 
@@ -421,7 +428,7 @@ actual = dmdt.points(t, m)
 assert_array_equal(actual, desired)
 ```
 
-### Citation
+## Citation
 
 If you found this project useful for your research please cite [Malanchev et al., 2021](https://ui.adsabs.harvard.edu/abs/2021MNRAS.502.5147M/abstract)
 
