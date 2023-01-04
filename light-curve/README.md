@@ -281,15 +281,15 @@ This should print a warning about experimental status of the Python class
     <td align="center">1</td>
     <td align="center">1</td>
   </tr>
-  
+
   <tr>
     <td>OtsuSplit</td>
     <td>Difference of subset means, standard deviation of the lower subset, standard deviation of the upper
-subset and lower-to-all observation count ratio for two subsets of magnitudes obtained by Otsu's method split. 
+subset and lower-to-all observation count ratio for two subsets of magnitudes obtained by Otsu's method split.
 <br>
 <br>
 Otsu's method is used to perform automatic thresholding. The algorithm returns a single threshold that separate values into two classes. This threshold is determined by minimizing intra-class intensity variance $\sigma^2_{W}=w_0\sigma^2_0+w_1\sigma^2_1$, or equivalently, by maximizing inter-class variance $\sigma^2_{B}=w_0 w_1 (\mu_1-\mu_0)^2$. There can be more than one extremum. In this case, the algorithm returns the minimum threshold.
-   </td> 
+   </td>
     <td align="center">2</td>
     <td align="center">4</td>
   </tr>
