@@ -129,13 +129,13 @@ This should print a warning about experimental status of the Python class
 <table>
   <tr>
     <th>Feature name</th>
-    <th>Description</th> 
+    <th>Description</th>
     <th>Min data points</th>
     <th>Features number</th>
   </tr>
   <tr>
     <td>Amplitude</td>
-    <td>Half amplitude of magnitude: <p align="center">$\displaystyle \frac{\max (m)-\min (m)}{2}$</p></td> 
+    <td>Half amplitude of magnitude: <p align="center">$\displaystyle \frac{\max (m)-\min (m)}{2}$</p></td>
     <td align="center">1</td>
     <td align="center">1</td>
   </tr>
@@ -144,7 +144,7 @@ This should print a warning about experimental status of the Python class
     <td>AndersonDarlingNormal</td>
     <td>Unbiased Anderson–Darling normality test statistic:
 <p align="left">$\displaystyle \left( 1+\frac{4}{N} -\frac{25}{N^{2}}\right) \times$<p>
-<p align="right">$\times \left( -N-\frac{1}{N}\sum\limits_{i=0}^{N-1} (2i+1)\ln \Phi _{i} +(2(N-i)-1)\ln (1-\Phi _{i} )\right) ,$<p> where $\Phi _{i\ } \equiv \Phi (( m_{i} \ -\ \langle m\rangle ) /\sigma _{m})$ is the commutative distribution function of the standard normal distribution, $N-$ the number of observations, $\langle m\rangle -$ mean magnitude and $\sigma _{m} =\sqrt{\sum\limits_{i=0}^{N-1}( m_{i} -\langle m\rangle )^{2} /( N-1) \ }$ is the magnitude standard deviation</td> 
+<p align="right">$\times \left( -N-\frac{1}{N}\sum\limits_{i=0}^{N-1} (2i+1)\ln \Phi _{i} +(2(N-i)-1)\ln (1-\Phi _{i} )\right) ,$<p> where $\Phi _{i\ } \equiv \Phi (( m_{i} \ -\ \langle m\rangle ) /\sigma _{m})$ is the commutative distribution function of the standard normal distribution, $N-$ the number of observations, $\langle m\rangle -$ mean magnitude and $\sigma _{m} =\sqrt{\sum\limits_{i=0}^{N-1}( m_{i} -\langle m\rangle )^{2} /( N-1) \ }$ is the magnitude standard deviation</td>
     <td align="center">4</td>
     <td align="center">1</td>
   </tr>
@@ -152,7 +152,7 @@ This should print a warning about experimental status of the Python class
   <tr>
     <td>BazinFit</td>
     <td>Five fit parameters and goodness of fit (reduced $\chi ^{2}$ of the Bazin function developed for core-collapsed supernovae:
-<p align="center">$\displaystyle f(t)=A\frac{\mathrm{e}^{-(t-t_{0} )/\tau _{fall}}}{1+\mathrm{e}^{-(t-t_{0} )/\tau _{rise}}} +B,$</p> where $f(t)-$ flux observation</td> 
+<p align="center">$\displaystyle f(t)=A\frac{\mathrm{e}^{-(t-t_{0} )/\tau _{fall}}}{1+\mathrm{e}^{-(t-t_{0} )/\tau _{rise}}} +B,$</p> where $f(t)-$ flux observation</td>
     <td align="center">6</td>
     <td align="center">1</td>
   </tr>
@@ -160,7 +160,7 @@ This should print a warning about experimental status of the Python class
   <tr>
     <td>BeyondNStd</td>
     <td>Fraction of observations beyond $n\sigma _{m}$ from the mean magnitude $\langle m\rangle $:
-<p align="center">$\displaystyle \frac{\sum _{i} I_{|m-\langle m\rangle | >n\sigma _{m}} (m_{i} )}{N},$</p> where $I-$ an indicator function</td> 
+<p align="center">$\displaystyle \frac{\sum _{i} I_{|m-\langle m\rangle | >n\sigma _{m}} (m_{i} )}{N},$</p> where $I-$ an indicator function</td>
     <td align="center">2</td>
     <td align="center">1</td>
   </tr>
@@ -168,7 +168,7 @@ This should print a warning about experimental status of the Python class
    <tr>
     <td>Cusum</td>
     <td>A range of cumulative sums:
-<p align="center">$\displaystyle \max(S) -\min(S),$</p> where $S_{j} \equiv \frac{1}{N\sigma _{m}}\sum\limits _{i=0}^{j} (m_{i} -\langle m\rangle )$, $j\in \{1..N-1\}$</td> 
+<p align="center">$\displaystyle \max(S) -\min(S),$</p> where $S_{j} \equiv \frac{1}{N\sigma _{m}}\sum\limits _{i=0}^{j} (m_{i} -\langle m\rangle )$, $j\in \{1..N-1\}$</td>
     <td align="center">2</td>
     <td align="center">1</td>
   </tr>
@@ -176,7 +176,7 @@ This should print a warning about experimental status of the Python class
   <tr>
     <td>Eta</td>
     <td>Von Neummann $\eta $:
-<p align="center">$\displaystyle \eta \equiv \frac{1}{(N-1)\sigma _{m}^{2}}\sum\limits _{i=0}^{N-2} (m_{i+1} -m_{i} )^{2}$</p></td> 
+<p align="center">$\displaystyle \eta \equiv \frac{1}{(N-1)\sigma _{m}^{2}}\sum\limits _{i=0}^{N-2} (m_{i+1} -m_{i} )^{2}$</p></td>
     <td align="center">2</td>
     <td align="center">1</td>
   </tr>
@@ -184,7 +184,7 @@ This should print a warning about experimental status of the Python class
   <tr>
     <td>EtaE</td>
     <td>Modernisation of <b>Eta</b> for unevenly time series:
-<p align="center">$\displaystyle \eta ^{e} \equiv \frac{(t_{N-1} -t_{0} )^{2}}{(N-1)^{3}}\frac{\sum\limits_{i=0}^{N-2}\left(\frac{m_{i+1} -m_{i}}{t_{i+1} -t_{i}}\right)^{2}}{\sigma _{m}^{2}}$</p></td> 
+<p align="center">$\displaystyle \eta ^{e} \equiv \frac{(t_{N-1} -t_{0} )^{2}}{(N-1)^{3}}\frac{\sum\limits_{i=0}^{N-2}\left(\frac{m_{i+1} -m_{i}}{t_{i+1} -t_{i}}\right)^{2}}{\sigma _{m}^{2}}$</p></td>
     <td align="center">2</td>
     <td align="center">1</td>
   </tr>
@@ -192,14 +192,14 @@ This should print a warning about experimental status of the Python class
   <tr>
     <td>ExcessVariance</td>
     <td>Measure of the variability amplitude:
-<p align="center">$\displaystyle \frac{\sigma _{m}^{2} -\langle \delta ^{2} \rangle }{\langle m\rangle ^{2}},$</p> where $\langle \delta ^{2} \rangle -$ mean squared error</td> 
+<p align="center">$\displaystyle \frac{\sigma _{m}^{2} -\langle \delta ^{2} \rangle }{\langle m\rangle ^{2}},$</p> where $\langle \delta ^{2} \rangle -$ mean squared error</td>
     <td align="center">2</td>
     <td align="center">1</td>
   </tr>
 
   <tr>
     <td>InterPercentileRange</td>
-    <td><p align="center">$\displaystyle Q(1-p)-Q(p),$</p> where $Q(n)$ and $Q(d)-$ $n$-th and $d$-th quantile of magnitude sample</td> 
+    <td><p align="center">$\displaystyle Q(1-p)-Q(p),$</p> where $Q(n)$ and $Q(d)-$ $n$-th and $d$-th quantile of magnitude sample</td>
     <td align="center">1</td>
     <td align="center">1</td>
   </tr>
@@ -207,7 +207,7 @@ This should print a warning about experimental status of the Python class
   <tr>
     <td>Kurtosis</td>
     <td>Excess kurtosis of magnitude:
-<p align="center">$\displaystyle \frac{N(N+1)}{(N-1)(N-2)(N-3)}\frac{\sum _{i} (m_{i} -\langle m\rangle )^{4}}{\sigma _{m}^{2}} -3\frac{(N+1)^{2}}{(N-2)(N-3)}$</p></td> 
+<p align="center">$\displaystyle \frac{N(N+1)}{(N-1)(N-2)(N-3)}\frac{\sum _{i} (m_{i} -\langle m\rangle )^{4}}{\sigma _{m}^{2}} -3\frac{(N+1)^{2}}{(N-2)(N-3)}$</p></td>
     <td align="center">4</td>
     <td align="center">1</td>
   </tr>
@@ -215,7 +215,7 @@ This should print a warning about experimental status of the Python class
   <tr>
     <td>LinearFit</td>
     <td>The slope, its error and reduced $\chi ^{2}$ of the light curve in the linear fit of a magnitude light curve with respect to the observation error $\{\delta _{i}\}$:
-<p align="center">$\displaystyle m_{i} \ =\ c\ +\ \text{slope} \ t_{i} \ +\ \delta _{i} \varepsilon _{i} ,$</p> where $c$ is a constant, $\{\varepsilon _{i}\}$ are standard distributed random variables</td> 
+<p align="center">$\displaystyle m_{i} \ =\ c\ +\ \text{slope} \ t_{i} \ +\ \delta _{i} \varepsilon _{i} ,$</p> where $c$ is a constant, $\{\varepsilon _{i}\}$ are standard distributed random variables</td>
     <td align="center">3</td>
     <td align="center">3</td>
   </tr>
@@ -223,7 +223,7 @@ This should print a warning about experimental status of the Python class
   <tr>
     <td>LinearTrend</td>
     <td>The slope and its error of the light curve in the linear fit of a magnitude light curve without respect to the observation error $\{\delta _{i}\}$:
-<p align="center">$\displaystyle m_{i} \ =\ c\ +\ \text{slope} \ t_{i} \ +\ \Sigma \varepsilon _{i} ,$</p> where $c$ and $\Sigma$ are constants, $\{\varepsilon _{i}\}$  are standard distributed random variables.</td> 
+<p align="center">$\displaystyle m_{i} \ =\ c\ +\ \text{slope} \ t_{i} \ +\ \Sigma \varepsilon _{i} ,$</p> where $c$ and $\Sigma$ are constants, $\{\varepsilon _{i}\}$  are standard distributed random variables.</td>
     <td align="center">2</td>
     <td align="center">2</td>
   </tr>
@@ -231,7 +231,7 @@ This should print a warning about experimental status of the Python class
   <tr>
     <td>MagnitudePercentageRatio</td>
     <td>Magnitude percentage ratio:
-<p align="center">$\displaystyle \frac{Q(1-n)-Q(n)}{Q(1-d)-Q(d)}$</p></td> 
+<p align="center">$\displaystyle \frac{Q(1-n)-Q(n)}{Q(1-d)-Q(d)}$</p></td>
     <td align="center">1</td>
     <td align="center">1</td>
   </tr>
@@ -239,7 +239,7 @@ This should print a warning about experimental status of the Python class
   <tr>
     <td>MaximumSlope</td>
     <td>Maximum slope between two sub-sequential observations:
-<p align="center">$\displaystyle \max_{i=0\dotsc N-2}\left| \frac{m_{i+1} -m_{i}}{t_{i+1} -t_{i}}\right|$</p></td> 
+<p align="center">$\displaystyle \max_{i=0\dotsc N-2}\left| \frac{m_{i+1} -m_{i}}{t_{i+1} -t_{i}}\right|$</p></td>
     <td align="center">2</td>
     <td align="center">1</td>
   </tr>
@@ -247,7 +247,7 @@ This should print a warning about experimental status of the Python class
   <tr>
     <td>Mean</td>
     <td>Mean magnitude:
-<p align="center">$\displaystyle \langle m\rangle =\frac{1}{N}\sum\limits _{i} m_{i}$</p></td> 
+<p align="center">$\displaystyle \langle m\rangle =\frac{1}{N}\sum\limits _{i} m_{i}$</p></td>
     <td align="center">1</td>
     <td align="center">1</td>
   </tr>
@@ -255,7 +255,7 @@ This should print a warning about experimental status of the Python class
   <tr>
     <td>MeanVariance</td>
     <td>Standard deviation to mean ratio:
-<p align="center">$\displaystyle \frac{\sigma _{m}}{\langle m\rangle }$</p></td> 
+<p align="center">$\displaystyle \frac{\sigma _{m}}{\langle m\rangle }$</p></td>
     <td align="center">2</td>
     <td align="center">1</td>
   </tr>
@@ -270,14 +270,14 @@ This should print a warning about experimental status of the Python class
   <tr>
     <td>MedianAbsoluteDeviation</td>
     <td>Median of the absolute value of the difference between magnitude and its median:
-<p align="center">$\displaystyle \mathrm{Median} (|m_{i} -\mathrm{Median} (m)|)$</p></td> 
+<p align="center">$\displaystyle \mathrm{Median} (|m_{i} -\mathrm{Median} (m)|)$</p></td>
     <td align="center">1</td>
     <td align="center">1</td>
   </tr>
 
   <tr>
     <td>MedianBufferRangePercentage</td>
-    <td><p align="center">$\displaystyle \mathrm{Median} (m)\pm q\times (\max (m)-\min (m))/2$</p></td> 
+    <td><p align="center">$\displaystyle \mathrm{Median} (m)\pm q\times (\max (m)-\min (m))/2$</p></td>
     <td align="center">1</td>
     <td align="center">1</td>
   </tr>
@@ -285,7 +285,7 @@ This should print a warning about experimental status of the Python class
   <tr>
     <td>PercentAmplitude</td>
     <td>Maximum deviation of magnitude from its median:
-<p align="center">$\displaystyle \max_{i} |m_{i} \ -\ \text{Median}( m) |$</p></td> 
+<p align="center">$\displaystyle \max_{i} |m_{i} \ -\ \text{Median}( m) |$</p></td>
     <td align="center">1</td>
     <td align="center">1</td>
   </tr>
@@ -293,7 +293,7 @@ This should print a warning about experimental status of the Python class
   <tr>
     <td>PercentDifferenceMagnitudePercentile</td>
     <td>Ratio of $p$-th inter-percentile range to the median:
-<p align="center">$\displaystyle \frac{Q( 1-p) -Q( p)}{\text{Median}( m)}$</p></td> 
+<p align="center">$\displaystyle \frac{Q( 1-p) -Q( p)}{\text{Median}( m)}$</p></td>
     <td align="center">1</td>
     <td align="center">1</td>
   </tr>
@@ -301,7 +301,7 @@ This should print a warning about experimental status of the Python class
   <tr>
     <td>ReducedChi2</td>
     <td>Reduced $\chi ^{2}$ of magnitude measurements:
-<p align="center">$\displaystyle \frac{1}{N-1}\sum _{i}\left(\frac{m_{i} -\overline{m}}{\delta _{i}}\right)^{2} ,$</p> where $\overline{m} -$ weighted mean magnitude</td> 
+<p align="center">$\displaystyle \frac{1}{N-1}\sum _{i}\left(\frac{m_{i} -\overline{m}}{\delta _{i}}\right)^{2} ,$</p> where $\overline{m} -$ weighted mean magnitude</td>
     <td align="center">2</td>
     <td align="center">1</td>
   </tr>
@@ -309,7 +309,7 @@ This should print a warning about experimental status of the Python class
   <tr>
     <td>Skew</td>
     <td>Skewness of magnitude:
-<p align="center">$\displaystyle \frac{N}{(N-1)(N-2)}\frac{\sum _{i} (m_{i} -\langle m\rangle )^{3}}{\sigma _{m}^{3}}$</p></td> 
+<p align="center">$\displaystyle \frac{N}{(N-1)(N-2)}\frac{\sum _{i} (m_{i} -\langle m\rangle )^{3}}{\sigma _{m}^{3}}$</p></td>
     <td align="center">3</td>
     <td align="center">1</td>
   </tr>
@@ -317,7 +317,7 @@ This should print a warning about experimental status of the Python class
   <tr>
     <td>StandardDeviation</td>
     <td>Standard deviation of magnitude:
-<p align="center">$\displaystyle \sigma _{m} \equiv \sqrt{\sum _{i} (m_{i} -\langle m\rangle )^{2} /(N-1)}$</p></td> 
+<p align="center">$\displaystyle \sigma _{m} \equiv \sqrt{\sum _{i} (m_{i} -\langle m\rangle )^{2} /(N-1)}$</p></td>
     <td align="center">2</td>
     <td align="center">1</td>
   </tr>
@@ -325,7 +325,7 @@ This should print a warning about experimental status of the Python class
   <tr>
     <td>StetsonK</td>
     <td><b>Stetson K</b> coefficient described light curve shape:
-<p align="center">$\displaystyle \frac{\sum _{i}\left| \frac{m_{i} -\langle m\rangle }{\delta _{i}}\right| }{\sqrt{N\ \chi ^{2}}}$</p></td> 
+<p align="center">$\displaystyle \frac{\sum _{i}\left| \frac{m_{i} -\langle m\rangle }{\delta _{i}}\right| }{\sqrt{N\ \chi ^{2}}}$</p></td>
     <td align="center">2</td>
     <td align="center">1</td>
   </tr>
@@ -336,7 +336,7 @@ This should print a warning about experimental status of the Python class
 <p align="center">$f(t)=c+\frac{A}{1+\exp\frac{-(t-t_{0} )}{\tau _{rise}}} \times f_{fall}(t),$</p>
 <p align="center">$f_{fall}(t) = 1-\frac{\nu (t-t_{0} )}{\gamma }, ~~~ t< t_{0} +\gamma,$</p>
 <p align="center">$f_{fall}(t) = (1-\nu )\exp\frac{-(t-t_{0} -\gamma )}{\tau _{fall}}, ~~~ t \geq t_{0} + \gamma.$</p>
-where $f(t) -$ flux observation, $A, \gamma , \tau _{rise} , \tau _{fall}  >0$, $\nu \in [0;1)$</p>Here we introduce a new dimensionless parameter $\nu$ instead of the plateau slope $\beta$ from the original paper: $\nu \equiv -\beta \gamma /A$</td> 
+where $f(t) -$ flux observation, $A, \gamma , \tau _{rise} , \tau _{fall}  >0$, $\nu \in [0;1)$</p>Here we introduce a new dimensionless parameter $\nu$ instead of the plateau slope $\beta$ from the original paper: $\nu \equiv -\beta \gamma /A$</td>
     <td align="center">8</td>
     <td align="center">8</td>
   </tr>
@@ -344,7 +344,7 @@ where $f(t) -$ flux observation, $A, \gamma , \tau _{rise} , \tau _{fall}  >0$, 
   <tr>
     <td>WeightedMean</td>
     <td>Weighted mean magnitude:
-<p align="center">$\displaystyle \overline{m} \equiv \frac{\sum _{i} m_{i} /\delta _{i}^{2}}{\sum _{i} 1/\delta _{i}^{2}}$</p></td> 
+<p align="center">$\displaystyle \overline{m} \equiv \frac{\sum _{i} m_{i} /\delta _{i}^{2}}{\sum _{i} 1/\delta _{i}^{2}}$</p></td>
     <td align="center">1</td>
     <td align="center">1</td>
   </tr>
