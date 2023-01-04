@@ -283,6 +283,18 @@ This should print a warning about experimental status of the Python class
   </tr>
 
   <tr>
+    <td>OtsuSplit</td>
+    <td>Difference of subset means, standard deviation of the lower subset, standard deviation of the upper
+subset and lower-to-all observation count ratio for two subsets of magnitudes obtained by Otsu's method split.
+<br>
+<br>
+Otsu's method is used to perform automatic thresholding. The algorithm returns a single threshold that separate values into two classes. This threshold is determined by minimizing intra-class intensity variance $\sigma^2_{W}=w_0\sigma^2_0+w_1\sigma^2_1$, or equivalently, by maximizing inter-class variance $\sigma^2_{B}=w_0 w_1 (\mu_1-\mu_0)^2$. There can be more than one extremum. In this case, the algorithm returns the minimum threshold.
+   </td>
+    <td align="center">2</td>
+    <td align="center">4</td>
+  </tr>
+
+  <tr>
     <td>PercentAmplitude</td>
     <td>Maximum deviation of magnitude from its median:
 <p align="center">$\displaystyle \max_{i} |m_{i} \ -\ \text{Median}( m) |$</p></td>
@@ -351,7 +363,30 @@ where $f(t) -$ flux observation, $A, \gamma , \tau _{rise} , \tau _{fall}  >0$, 
 
 </table>
 
-### Benchmarks
+## Meta-features
+Meta-features can accept another ```FeatureExtractor``` as it was time series without observation errors.
+
+### Periodogram
+
+A number of features based on Lomb–Scargle periodogram. Periodogram $P(\omega)$ is an estimate of spectral density of unevenly time series.
+`Periodogram::new`'s `peaks` argument corresponds to a number of the most significant spectral density peaks to return. For each peak its period and "signal to noise" ratio is returned.
+
+$$
+\text{signal to noise of peak} \equiv \frac{P(\omega_\mathrm{peak}) - \langle P(\omega) \rangle}{\sigma\_{P(\omega)}}
+$$
+
+### Bins
+
+Binning time series to bins with width $\mathrm{window}$ with respect to some $\mathrm{offset}$. $j-th$ bin boundaries are $[j \cdot \mathrm{window} + \mathrm{offset}; (j + 1) \cdot \mathrm{window} + \mathrm{offset}]$.
+
+Binned time series is defined by
+$$t_j^* = (j + \frac12) \cdot \mathrm{window} + \mathrm{offset},$$
+$$m_j^* = \frac{\sum{m_i / \delta_i^2}}{\sum{\delta_i^{-2}}},$$
+$$\delta_j^* = \frac{N_j}{\sum{\delta_i^{-2}}},$$
+where $N_j$ is a number of sampling observations and all sums are over observations inside considering bin.
+
+
+## Benchmarks
 
 We benchmark the Rust implementation (`rust`) versus [`feets`](https://feets.readthedocs.io/en/latest/) package and our own Python implementation (`lc_py`) for a light curve having n=1000 observations.
 
