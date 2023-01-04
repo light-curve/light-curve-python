@@ -126,7 +126,7 @@ This should print a warning about experimental status of the Python class
 
 ### Available features
 
-See the complite list of evailable feature evaluators and documentation in [`light-curve-feature` Rust crate docs](http://docs.rs/light-curve-feature).
+See the complite list of evailable feature evaluators and documentation in [`light-curve-feature` Rust crate docs](https://docs.rs/light-curve-feature/latest/light_curve_feature/features/index.html).
 
 <table>
   <tr>
