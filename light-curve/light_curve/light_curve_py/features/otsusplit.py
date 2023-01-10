@@ -1,11 +1,8 @@
-from dataclasses import dataclass
-
 import numpy as np
 
 from ._base import BaseFeature
 
 
-@dataclass()
 class OtsuSplit(BaseFeature):
     """Otsu threshholding algorithm
 
