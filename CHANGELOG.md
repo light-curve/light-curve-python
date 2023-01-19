@@ -9,13 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Initial `copy` and `pickle` (minimum protocol version is 2) support for feature extractors and `DmDt` https://github.com/light-curve/light-curve-python/issues/103 https://github.com/light-curve/light-curve-python/pull/145 https://github.com/light-curve/light-curve-python/pull/150
-- `serde` v1 and `serde-pickle` v1 Rust dependencies. `serde-pickle` is an arbitrary choice of a (de)serialization binary format, but it could be useful in the future having a way to inspect Rust structures from Python https://github.com/light-curve/light-curve-python/pull/145
+--
 
 ### Changed
 
-- Build environment: minimum support Rust version (MSRV) is bumped 1.57 -> 1.60
-- Bump `light-curve-dmdt` 0.6.0 -> 0.7.1
+--
 
 ### Deprecated
 
@@ -27,11 +25,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- `BazinFit` and `VillarFit` docs are clarified for `.model()` and `ln_prior` usage https://github.com/light-curve/light-curve-python/issues/125 https://github.com/light-curve/light-curve-python/pull/146
+--
 
 ### Security
 
 --
+
+## [0.6.4] 2023-01-19
+
+### Added
+
+- Initial `copy` and `pickle` (minimum protocol version is 2) support for feature extractors and `DmDt` https://github.com/light-curve/light-curve-python/issues/103 https://github.com/light-curve/light-curve-python/pull/145 https://github.com/light-curve/light-curve-python/pull/150
+- `serde` v1 and `serde-pickle` v1 Rust dependencies. `serde-pickle` is an arbitrary choice of a (de)serialization binary format, but it could be useful in the future having a way to inspect Rust structures from Python https://github.com/light-curve/light-curve-python/pull/145
+
+### Changed
+
+- Build environment: minimum support Rust version (MSRV) is bumped 1.57 -> 1.60
+- Bump `light-curve-dmdt` 0.6.0 -> 0.7.1
+
+### Fixed
+
+- `BazinFit` and `VillarFit` docs are clarified for `.model()` and `ln_prior` usage https://github.com/light-curve/light-curve-python/issues/125 https://github.com/light-curve/light-curve-python/pull/146
 
 ## [0.6.3] 2022-12-23
 
