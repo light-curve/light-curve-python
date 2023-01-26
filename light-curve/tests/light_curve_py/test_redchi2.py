@@ -1,7 +1,6 @@
 import numpy as np
-from numpy.testing import assert_allclose
-
 from light_curve.light_curve_py import ReducedChi2
+from numpy.testing import assert_allclose
 
 
 def test_redchi2_equal_sigma():

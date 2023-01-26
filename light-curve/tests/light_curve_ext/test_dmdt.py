@@ -14,9 +14,8 @@ except ImportError:
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose, assert_array_equal
-
 from light_curve.light_curve_ext import DmDt
+from numpy.testing import assert_allclose, assert_array_equal
 
 DM_DT = [
     DmDt.from_borders(min_lgdt=0.0, max_lgdt=np.log10(3), max_abs_dm=1.0, lgdt_size=16, dm_size=32, norm=[]),

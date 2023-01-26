@@ -1,6 +1,5 @@
-from numpy.testing import assert_allclose
-
 from light_curve.light_curve_py import BeyondNStd
+from numpy.testing import assert_allclose
 
 
 def test_beyondnstd_1():

@@ -1,7 +1,6 @@
 import numpy as np
-from numpy.testing import assert_allclose
-
 from light_curve.light_curve_py import InterPercentileRange
+from numpy.testing import assert_allclose
 
 
 def test_intpercrange_1():

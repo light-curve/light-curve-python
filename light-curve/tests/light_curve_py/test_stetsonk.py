@@ -1,8 +1,7 @@
 import numpy as np
+from light_curve.light_curve_py import StetsonK
 from numpy.testing import assert_allclose
 from scipy import signal
-
-from light_curve.light_curve_py import StetsonK
 
 
 def test_stetsonk_1():
