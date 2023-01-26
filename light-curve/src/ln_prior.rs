@@ -28,8 +28,7 @@ impl LnPrior1D {
         *self = serde_pickle::from_slice(state.as_bytes(), serde_pickle::DeOptions::new())
             .map_err(|err| {
                 Exception::UnpicklingError(format!(
-                    r#"Error happened on the Rust side when deserializing LnPrior1D: "{}""#,
-                    err
+                    r#"Error happened on the Rust side when deserializing LnPrior1D: "{err}""#
                 ))
             })?;
         Ok(())
@@ -41,8 +40,7 @@ impl LnPrior1D {
         let vec_bytes =
             serde_pickle::to_vec(&self, serde_pickle::SerOptions::new()).map_err(|err| {
                 Exception::PicklingError(format!(
-                    r#"Error happened on the Rust side when serializing LnPrior1D: "{}""#,
-                    err
+                    r#"Error happened on the Rust side when serializing LnPrior1D: "{err}""#
                 ))
             })?;
         Ok(PyBytes::new(py, &vec_bytes))
