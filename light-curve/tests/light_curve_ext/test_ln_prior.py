@@ -2,7 +2,6 @@ import copy
 import pickle
 
 import pytest
-
 from light_curve.light_curve_ext import ln_prior
 
 LN_PRIORS = [

@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 import numpy as np
-
 from light_curve.light_curve_py.warnings import mark_experimental, warn_experimental
 
 
