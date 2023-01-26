@@ -28,21 +28,28 @@ repos:
     hooks:
     -   id: isort
         args: ['--resolve-all-configs', '--filter-files']
--   repo: https://github.com/doublify/pre-commit-rust
-    rev: v1.0
+-   repo: local
     hooks:
-    -   id: fmt
+    -   id: cargo-fmt
         name: cargo fmt
-        args: ['--manifest-path=light-curve/Cargo.toml', '--']
-    -   id: cargo-check
-        name: cargo check
-        args: ['--manifest-path=light-curve/Cargo.toml', '--']
-    -   id: clippy
-        name: cargo clippy
-        args: ['--manifest-path=light-curve/Cargo.toml', '--']
+        language: rust
+        entry: cargo fmt --manifest-path=light-curve/Cargo.toml
+        files: \.rs
+        pass_filenames: false
+    -   id: cargo-clippy-fix
+        name: cargo clippy fix
+        language: rust
+        entry: cargo clippy --manifest-path=light-curve/Cargo.toml --all-targets --fix --allow-dirty
+        files: \.rs
+        pass_filenames: false
+    -   id: cargo-clippy-check
+        name: cargo clippy check
+        language: rust
+        entry: cargo clippy --manifest-path=light-curve/Cargo.toml --all-targets -- -D warnings
+        files: \.rs
+        pass_filenames: false
 
 # pre-commit.ci settings
-# Skip rust things due to
-# https://github.com/pre-commit-ci/issues/issues/89
+# Skip clippy, because it doesn't change anything and we already have GH Action to fail
 ci:
-    skip: [clippy, cargo-check, fmt]
+    skip: [cargo-clippy-check]
