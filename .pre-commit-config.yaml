@@ -50,6 +50,6 @@ repos:
         pass_filenames: false
 
 # pre-commit.ci settings
-# Skip clippy, because it doesn't change anything and we already have GH Action to fail
+# Skip clippy, because it tries to download dependencies which doesn't work at CI
 ci:
-    skip: [cargo-clippy-check]
+    skip: [cargo-clippy-fix, cargo-clippy-check]
