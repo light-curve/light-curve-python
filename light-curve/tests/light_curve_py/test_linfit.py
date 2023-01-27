@@ -1,7 +1,8 @@
 import numpy as np
-from light_curve.light_curve_py import LinearFit
 from numpy.testing import assert_allclose
 from scipy.optimize import curve_fit
+
+from light_curve.light_curve_py import LinearFit
 
 
 def test_linfit():

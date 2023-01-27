@@ -1,6 +1,7 @@
 import numpy as np
-from light_curve.light_curve_py import Median
 from numpy.testing import assert_allclose
+
+from light_curve.light_curve_py import Median
 
 
 def test_median_1():

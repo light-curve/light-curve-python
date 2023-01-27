@@ -1,7 +1,8 @@
 import numpy as np
-from light_curve.light_curve_py import LinearTrend
 from numpy.testing import assert_allclose
 from scipy.optimize import curve_fit
+
+from light_curve.light_curve_py import LinearTrend
 
 
 def test_lintrend_1():

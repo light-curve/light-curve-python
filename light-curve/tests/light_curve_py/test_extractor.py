@@ -1,4 +1,5 @@
 import numpy as np
+
 from light_curve.light_curve_ext import Eta, Mean
 from light_curve.light_curve_ext import _FeatureEvaluator as _RustBaseFeature
 from light_curve.light_curve_py import Amplitude, Extractor, OtsuSplit
