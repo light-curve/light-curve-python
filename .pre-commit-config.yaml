@@ -28,25 +28,21 @@ repos:
     hooks:
     -   id: isort
         args: ['--profile=black', '--filter-files']
--   repo: local
+-   repo: https://github.com/doublify/pre-commit-rust
+    rev: v1.0
     hooks:
-    -   id: cargo-fmt
+    -   id: fmt
         name: cargo fmt
-        language: rust
-        entry: cargo --manifest-path=light-curve/Cargo.toml
-        files: \.rs
-    -   id: cargo-clippy-fix
-        name: cargo clippy fix
-        language: rust
-        entry: cargo --manifest-path=light-curve/Cargo.toml --all-targets --fix
-        files: \.rs
-    -   id: cargo-clippy-check
-        name: cargo clippy check
-        language: rust
-        entry: cargo --manifest-path=light-curve/Cargo.toml --all-targets -- -D warnings
-        files: \.rs
+        args: ['--manifest-path=light-curve/Cargo.toml', '--']
+    -   id: cargo-check
+        name: cargo check
+        args: ['--manifest-path=light-curve/Cargo.toml', '--']
+    -   id: clippy
+        name: cargo clippy
+        args: ['--manifest-path=light-curve/Cargo.toml', '--']
 
 # pre-commit.ci settings
-# Skip clippy, because it fails to download dependencies
+# Skip rust things due to
+# https://github.com/pre-commit-ci/issues/issues/89
 ci:
-    skip: [cargo-clippy-fix, cargo-clippy-check]
+    skip: [clippy, cargo-check, fmt]
