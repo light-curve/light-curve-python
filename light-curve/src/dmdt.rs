@@ -510,8 +510,7 @@ where
         };
         if drop_nobs >= length {
             return Err(Exception::ValueError(format!(
-                "cannot drop {} observations from light curve containing {} points",
-                drop_nobs, length
+                "cannot drop {drop_nobs} observations from light curve containing {length} points"
             )));
         }
         if drop_nobs == 0 {
@@ -952,8 +951,7 @@ impl DmDt {
                 "dt" => Ok(NormFlag::Dt),
                 "max" => Ok(NormFlag::Max),
                 _ => Err(Exception::ValueError(format!(
-                    "normalisation name {:?} is unknown, known names are: \"dt\", \"norm\"",
-                    s
+                    "normalisation name {s:?} is unknown, known names are: \"dt\", \"norm\""
                 ))),
             })
             .collect::<Res<BitFlags<NormFlag>>>()?;
@@ -1492,8 +1490,7 @@ impl DmDt {
         *self = serde_pickle::from_slice(state.as_bytes(), serde_pickle::DeOptions::new())
             .map_err(|err| {
                 Exception::UnpicklingError(format!(
-                    r#"Error happened on the Rust side when deserializing DmDt: "{}""#,
-                    err
+                    r#"Error happened on the Rust side when deserializing DmDt: "{err}""#
                 ))
             })?;
         Ok(())
@@ -1505,8 +1502,7 @@ impl DmDt {
         let vec_bytes =
             serde_pickle::to_vec(&self, serde_pickle::SerOptions::new()).map_err(|err| {
                 Exception::PicklingError(format!(
-                    r#"Error happened on the Rust side when serializing DmDt: "{}""#,
-                    err
+                    r#"Error happened on the Rust side when serializing DmDt: "{err}""#
                 ))
             })?;
         Ok(PyBytes::new(py, &vec_bytes))

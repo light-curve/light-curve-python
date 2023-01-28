@@ -489,8 +489,7 @@ impl PyFeatureEvaluator {
         *self = serde_pickle::from_slice(state.as_bytes(), serde_pickle::DeOptions::new())
             .map_err(|err| {
                 Exception::UnpicklingError(format!(
-                    r#"Error happened on the Rust side when deserializing _FeatureEvaluator: "{}""#,
-                    err
+                    r#"Error happened on the Rust side when deserializing _FeatureEvaluator: "{err}""#
                 ))
             })?;
         Ok(())
@@ -502,8 +501,7 @@ impl PyFeatureEvaluator {
         let vec_bytes =
             serde_pickle::to_vec(&self, serde_pickle::SerOptions::new()).map_err(|err| {
                 Exception::PicklingError(format!(
-                    r#"Error happened on the Rust side when serializing _FeatureEvaluator: "{}""#,
-                    err
+                    r#"Error happened on the Rust side when serializing _FeatureEvaluator: "{err}""#
                 ))
             })?;
         Ok(PyBytes::new(py, &vec_bytes))
@@ -936,8 +934,7 @@ fit_evaluator!(
     {
         "no" => lcf::BazinLnPrior::fixed(lcf::LnPrior::none()),
         s => return Err(Exception::ValueError(format!(
-            "unsupported ln_prior name '{}'",
-            s
+            "unsupported ln_prior name '{s}'"
         )).into()),
     },
     "'no': no prior",
@@ -1473,8 +1470,7 @@ fit_evaluator!(
         "no" => lcf::VillarLnPrior::fixed(lcf::LnPrior::none()),
         "hosseinzadeh2020" => lcf::VillarLnPrior::hosseinzadeh2020(1.0, 0.0),
         s => return Err(Exception::ValueError(format!(
-            "unsupported ln_prior name '{}'",
-            s
+            "unsupported ln_prior name '{s}'"
         )).into()),
     },
     r#"- 'no': no prior,\
