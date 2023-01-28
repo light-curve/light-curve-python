@@ -92,7 +92,9 @@ def get_first_n_snia_data(*, n: Optional[int] = None, convert_to_flux: bool = Fa
     with open(data_root / "snIa_bandg_minobs10_beforepeak3_afterpeak4.csv") as fh:
         file_names = frozenset(fh.read().split())
     light_curve_dir = data_root / "light-curves"
-    paths = (path for path in light_curve_dir.glob("*.csv") if path.stem in file_names)
+    # Sort to make sure the order is always the same
+    csv_paths = sorted(light_curve_dir.glob("*.csv"))
+    paths = (path for path in csv_paths if path.stem in file_names)
     return list(gen_data_from_test_data_path(paths, n=n, convert_to_flux=convert_to_flux))
 
 
