@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from light_curve.light_curve_py.warnings import mark_experimental, warn_experimental
+from light_curve.light_curve_py.warnings import mark_experimental
 
 
 @dataclass
