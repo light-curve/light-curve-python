@@ -184,6 +184,16 @@ class _Test:
         benchmark.group = str(type(self).__name__)
         benchmark(self.rust, t, m, sigma, sorted=True, check=False)
 
+    @pytest.mark.nobs
+    @pytest.mark.parametrize('n_obs', np.logspace(1, 6, 6))
+    def test_benchmark_rust_n(self, benchmark, n_obs):
+        self.n_obs = int(n_obs)
+        t, m, sigma = self.random_data()
+
+        benchmark.group = f'{n_obs}_observations'
+        benchmark.name = f'{str(type(self).__name__)}_rust'
+        benchmark(self.rust, t, m, sigma, sorted=True, check=False)
+
     def test_benchmark_lc_py(self, benchmark):
         if self.py_feature is None:
             pytest.skip("No matched light_curve_py class for the feature")
@@ -191,6 +201,19 @@ class _Test:
         t, m, sigma = self.random_data()
 
         benchmark.group = str(type(self).__name__)
+        benchmark(self.py_feature, t, m, sigma, sorted=True, check=False)
+
+    @pytest.mark.nobs
+    @pytest.mark.parametrize('n_obs', np.logspace(1, 6, 6))
+    def test_benchmark_lc_py_n(self, benchmark, n_obs):
+        if self.py_feature is None:
+            pytest.skip("No matched light_curve_py class for the feature")
+
+        self.n_obs = int(n_obs)
+        t, m, sigma = self.random_data()
+
+        benchmark.group = f'{n_obs}_observations'
+        benchmark.name = f'{str(type(self).__name__)}_py'
         benchmark(self.py_feature, t, m, sigma, sorted=True, check=False)
 
     def test_close_to_naive(self, subtests):
@@ -207,6 +230,19 @@ class _Test:
         t, m, sigma = self.random_data()
 
         benchmark.group = type(self).__name__
+        benchmark(self.naive, t, m, sigma)
+
+    @pytest.mark.nobs
+    @pytest.mark.parametrize('n_obs', np.logspace(1, 6, 6))
+    def test_benchmark_naive_n(self, benchmark, n_obs):
+        if self.naive is None:
+            pytest.skip("No naive implementation for the feature")
+
+        self.n_obs = int(n_obs)
+        t, m, sigma = self.random_data()
+
+        benchmark.group = f'{n_obs}_observations'
+        benchmark.name = f'{str(type(self).__name__)}_naive'
         benchmark(self.naive, t, m, sigma)
 
     def feets(self, t, m, sigma):
@@ -230,6 +266,19 @@ class _Test:
         t, m, sigma = self.random_data()
 
         benchmark.group = type(self).__name__
+        benchmark(self.feets, t, m, sigma)
+
+    @pytest.mark.nobs
+    @pytest.mark.parametrize('n_obs', np.logspace(1, 6, 6))
+    def test_benchmark_feets_n(self, benchmark, n_obs):
+        if self.feets_extractor is None:
+            pytest.skip("No feets feature provided")
+
+        self.n_obs = int(n_obs)
+        t, m, sigma = self.random_data()
+
+        benchmark.group = f'{n_obs}_observations'
+        benchmark.name = f'{str(type(self).__name__)}_feets'
         benchmark(self.feets, t, m, sigma)
 
 
