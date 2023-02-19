@@ -3,6 +3,7 @@ from functools import lru_cache, wraps
 from itertools import count
 from pathlib import Path
 from typing import Generator, Iterator, List, Optional, Union
+from joblib import Parallel, delayed
 
 import feets
 import numpy as np
@@ -48,7 +49,7 @@ class Data:
 
 
 def gen_data_from_test_data_path(
-    paths: Iterator[Union[Path, str]], *, n: Optional[int] = None, convert_to_flux: bool = False
+        paths: Iterator[Union[Path, str]], *, n: Optional[int] = None, convert_to_flux: bool = False
 ) -> Generator[Data, None, None]:
     if n is None:
         take_n = count()
@@ -296,11 +297,10 @@ class TestAndersonDarlingNormal(_Test):
     feets_skip_test = "feets uses biased statistics"
 
     def naive(self, t, m, sigma):
-        return stats.anderson(m).statistic * (1.0 + 4.0 / m.size - 25.0 / m.size**2)
+        return stats.anderson(m).statistic * (1.0 + 4.0 / m.size - 25.0 / m.size ** 2)
 
 
 if lc_ext._built_with_gsl:
-
     class TestBazinFit(_Test):
         name = "BazinFit"
         args = ("lmsder", None, 20)
@@ -394,9 +394,9 @@ class TestEtaE(_Test):
 
     def naive(self, t, m, sigma):
         return (
-            np.sum(np.square((m[1:] - m[:-1]) / (t[1:] - t[:-1])))
-            * (t[-1] - t[0]) ** 2
-            / (np.var(m, ddof=0) * m.size * (m.size - 1) ** 2)
+                np.sum(np.square((m[1:] - m[:-1]) / (t[1:] - t[:-1])))
+                * (t[-1] - t[0]) ** 2
+                / (np.var(m, ddof=0) * m.size * (m.size - 1) ** 2)
         )
 
 
@@ -404,7 +404,7 @@ class TestExcessVariance(_Test):
     name = "ExcessVariance"
 
     def naive(self, t, m, sigma):
-        return (np.var(m, ddof=1) - np.mean(sigma**2)) / np.mean(m) ** 2
+        return (np.var(m, ddof=1) - np.mean(sigma ** 2)) / np.mean(m) ** 2
 
 
 class TestInterPercentileRange(_Test):
@@ -587,7 +587,7 @@ class TestStetsonK(_Test):
     feets_feature = "StetsonK"
 
     def naive(self, t, m, sigma):
-        x = (m - np.average(m, weights=1.0 / sigma**2)) / sigma
+        x = (m - np.average(m, weights=1.0 / sigma ** 2)) / sigma
         return np.sum(np.abs(x)) / np.sqrt(np.sum(np.square(x)) * m.size)
 
 
@@ -595,7 +595,7 @@ class TestWeightedMean(_Test):
     name = "WeightedMean"
 
     def naive(self, t, m, sigma):
-        return np.average(m, weights=1.0 / sigma**2)
+        return np.average(m, weights=1.0 / sigma ** 2)
 
 
 class TestAllPy(_Test):
@@ -616,6 +616,87 @@ class TestAllPy(_Test):
             features.append(getattr(lc_ext, cls.name)(*cls.args))
         self.rust = lc_ext.Extractor(*features)
         self.py_feature = lc_py.Extractor(*py_features)
+
+
+class TestSubset(_Test):
+    phot_types = frozenset(["mag"])
+    features_subset = ['AndersonDarlingNormal', 'Beyond1Std', 'Cusum', 'EtaE', 'InterPercentileRange',
+                   'Kurtosis', 'LinearTrend', 'MaximumSlope', 'Mean', 'MeanVariance',
+                   'MedianAbsoluteDeviation', 'MedianBufferRangePercentage',
+                   'PercentAmplitude', 'PercentDifferenceMagnitudePercentile', 'Skew',
+                   'StandardDeviation', 'StetsonK']
+
+    def setup_method(self):
+        features = []
+        py_features = []
+        for cls in _Test.__subclasses__():
+            if cls.name is None and cls.name not in self.features_subset:
+                continue
+
+            try:
+                py_features.append(getattr(lc_py, cls.name)(*cls.args))
+            except AttributeError:
+                continue
+            features.append(getattr(lc_ext, cls.name)(*cls.args))
+        self.rust = lc_ext.Extractor(*features)
+        self.py_feature = lc_py.Extractor(*py_features)
+
+    def rust_many(self, n_jobs, light_curves):
+        return self.rust.many(
+            light_curves,
+            n_jobs=int(n_jobs),
+            sorted=True,
+            check=False,
+        )
+
+    def py_parallel(self, n_jobs, light_curves):
+        return Parallel(n_jobs=int(n_jobs))(delayed(self.py_feature)(*lc) for lc in light_curves)
+
+    def rust_parallel(self, n_jobs, light_curves):
+        return Parallel(n_jobs=int(n_jobs))(delayed(self.rust)(*lc) for lc in light_curves)
+
+    @pytest.mark.parametrize('n_core', np.linspace(1, 8, 8))
+    @pytest.mark.multi
+    def test_benchmark_many_rust(self, benchmark, n_core):
+        light_curves = []
+
+        for _ in range(1000):
+            t, m, sigma = self.random_data()
+            light_curves.append((t, m, sigma))
+
+        benchmark.group = f'{n_core}_cores'
+        benchmark.name = f'rust multiprocessing (many)'
+
+        benchmark(self.rust_many, n_core, light_curves)
+
+    @pytest.mark.parametrize('n_core', np.linspace(1, 8, 8))
+    @pytest.mark.multi
+    def test_benchmark_multi_python(self, benchmark, n_core):
+        light_curves = []
+
+        for _ in range(1000):
+            t, m, sigma = self.random_data()
+            light_curves.append((t, m, sigma))
+
+        benchmark.group = f'{n_core}_cores'
+        benchmark.name = f'python multiprocessing'
+
+        benchmark(self.py_parallel, n_core, light_curves)
+
+
+    @pytest.mark.parametrize('n_core', np.linspace(1, 8, 8))
+    @pytest.mark.multi
+    def test_benchmark_multi_rust(self, benchmark, n_core):
+        light_curves = []
+
+        for _ in range(1000):
+            t, m, sigma = self.random_data()
+            light_curves.append((t, m, sigma))
+
+        benchmark.group = f'{n_core}_cores'
+        benchmark.name = f'rust multiprocessing'
+
+        benchmark(self.rust_parallel, n_core, light_curves)
 
 
 class TestAllNaive(_Test):
