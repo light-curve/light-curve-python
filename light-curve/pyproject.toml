@@ -78,6 +78,7 @@ deps =
     black
     feets
     isort
+    joblib
     numpy
     pandas
     pytest
