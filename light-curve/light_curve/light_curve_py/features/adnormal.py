@@ -1,4 +1,3 @@
-import numpy as np
 from scipy.stats import anderson
 
 from ._base import BaseFeature

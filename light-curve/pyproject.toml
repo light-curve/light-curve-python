@@ -36,27 +36,46 @@ locked = true
 
 [tool.black]
 line-length = 120
-target-version = ["py37", "py38", "py39", "py310"]
+target-version = ["py37"]
 include = '\.py$'
 exclude = '''
-    /(
-        docs
-      | dist
-      | target
-      | tests/light-curve-test-data
-      | wheelhouse
-      | \.benchmarks
-      | \.idea
-      | \.mypy_cache
-      | \.pytest_cache
-      | \.tox
-      | _build
-    )/
-'''
+     /(
+         docs
+       | dist
+       | target
+       | tests/light-curve-test-data
+       | wheelhouse
+       | \.benchmarks
+       | \.idea
+       | \.mypy_cache
+       | \.pytest_cache
+       | \.tox
+       | _build
+     )/
+ '''
 
-[tool.isort]
-profile = 'black'
-known_first_party = ['light_curve']
+[tool.ruff]
+line-length = 120
+exclude = [
+    "docs",
+    "dist",
+    "target",
+    "tests/light-curve-test-data",
+    "wheelhouse",
+    ".benchmarks",
+    ".idea",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".tox",
+    "_build",
+]
+target-version = "py37"
+
+[tool.ruff.per-file-ignores]
+# Unused and star imports
+"light_curve/__init__.py" = ["F401", "F403"]
+"light_curve/light_curve_ext.py" = ["F403", "F405"]
+"light_curve/light_curve_py/__init__.py" = ["F403"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
@@ -75,9 +94,7 @@ isolated_build = True
 
 [testenv]
 deps =
-    black
     feets
-    isort
     joblib
     numpy
     pandas
@@ -85,11 +102,11 @@ deps =
     pytest-benchmark
     pytest-markdown
     pytest-subtests
+    ruff
     scipy
 commands =
     pytest README.md tests/ light_curve/
-    black --check .
-    isort --check .
+    ruff .
 """
 
 
