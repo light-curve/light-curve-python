@@ -606,7 +606,7 @@ class TestAllPy(_Test):
         self.py_feature = lc_py.Extractor(*py_features)
 
 
-class TestSubset(_Test):
+class TestBenchmarkParallel(_Test):
     phot_types = frozenset(["mag"])
     features_subset = [
         "AndersonDarlingNormal",
