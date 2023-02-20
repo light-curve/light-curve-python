@@ -23,11 +23,11 @@ repos:
     -   id: black
         name: black
         args: ['--config=./light-curve/pyproject.toml', './light-curve']
--   repo: https://github.com/pycqa/isort
-    rev: 5.11.4
+-   repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: 'v0.0.237'
     hooks:
-    -   id: isort
-        args: ['--resolve-all-configs', '--filter-files']
+    -   id: ruff
+        args: ["--fix"]
 -   repo: local
     hooks:
     -   id: cargo-fmt
