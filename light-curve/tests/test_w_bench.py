@@ -269,19 +269,6 @@ class _Test:
         benchmark.group = type(self).__name__
         benchmark(self.feets, t, m, sigma)
 
-    @pytest.mark.nobs
-    @pytest.mark.parametrize("n_obs", np.logspace(1, 6, 6))
-    def test_benchmark_feets_n(self, benchmark, n_obs):
-        if self.feets_extractor is None:
-            pytest.skip("No feets feature provided")
-
-        self.n_obs = int(n_obs)
-        t, m, sigma = self.random_data()
-
-        benchmark.group = f"{n_obs}_observations"
-        benchmark.name = f"{str(type(self).__name__)}_feets"
-        benchmark(self.feets, t, m, sigma)
-
 
 class TestAmplitude(_Test):
     name = "Amplitude"
