@@ -3,6 +3,7 @@ from functools import lru_cache, wraps
 from itertools import count
 from pathlib import Path
 from typing import Generator, Iterator, List, Optional, Union
+from joblib import Parallel, delayed
 
 import feets
 import numpy as np
@@ -184,6 +185,16 @@ class _Test:
         benchmark.group = str(type(self).__name__)
         benchmark(self.rust, t, m, sigma, sorted=True, check=False)
 
+    @pytest.mark.nobs
+    @pytest.mark.parametrize("n_obs", np.logspace(1, 6, 6))
+    def test_benchmark_rust_n(self, benchmark, n_obs):
+        self.n_obs = int(n_obs)
+        t, m, sigma = self.random_data()
+
+        benchmark.group = f"{n_obs}_observations"
+        benchmark.name = f"{str(type(self).__name__)}_rust"
+        benchmark(self.rust, t, m, sigma, sorted=True, check=False)
+
     def test_benchmark_lc_py(self, benchmark):
         if self.py_feature is None:
             pytest.skip("No matched light_curve_py class for the feature")
@@ -191,6 +202,19 @@ class _Test:
         t, m, sigma = self.random_data()
 
         benchmark.group = str(type(self).__name__)
+        benchmark(self.py_feature, t, m, sigma, sorted=True, check=False)
+
+    @pytest.mark.nobs
+    @pytest.mark.parametrize("n_obs", np.logspace(1, 6, 6))
+    def test_benchmark_lc_py_n(self, benchmark, n_obs):
+        if self.py_feature is None:
+            pytest.skip("No matched light_curve_py class for the feature")
+
+        self.n_obs = int(n_obs)
+        t, m, sigma = self.random_data()
+
+        benchmark.group = f"{n_obs}_observations"
+        benchmark.name = f"{str(type(self).__name__)}_py"
         benchmark(self.py_feature, t, m, sigma, sorted=True, check=False)
 
     def test_close_to_naive(self, subtests):
@@ -207,6 +231,19 @@ class _Test:
         t, m, sigma = self.random_data()
 
         benchmark.group = type(self).__name__
+        benchmark(self.naive, t, m, sigma)
+
+    @pytest.mark.nobs
+    @pytest.mark.parametrize("n_obs", np.logspace(1, 6, 6))
+    def test_benchmark_naive_n(self, benchmark, n_obs):
+        if self.naive is None:
+            pytest.skip("No naive implementation for the feature")
+
+        self.n_obs = int(n_obs)
+        t, m, sigma = self.random_data()
+
+        benchmark.group = f"{n_obs}_observations"
+        benchmark.name = f"{str(type(self).__name__)}_naive"
         benchmark(self.naive, t, m, sigma)
 
     def feets(self, t, m, sigma):
@@ -567,6 +604,100 @@ class TestAllPy(_Test):
             features.append(getattr(lc_ext, cls.name)(*cls.args))
         self.rust = lc_ext.Extractor(*features)
         self.py_feature = lc_py.Extractor(*py_features)
+
+
+class TestBenchmarkParallel(_Test):
+    phot_types = frozenset(["mag"])
+    features_subset = [
+        "AndersonDarlingNormal",
+        "Beyond1Std",
+        "Cusum",
+        "EtaE",
+        "InterPercentileRange",
+        "Kurtosis",
+        "LinearTrend",
+        "MaximumSlope",
+        "Mean",
+        "MeanVariance",
+        "MedianAbsoluteDeviation",
+        "MedianBufferRangePercentage",
+        "PercentAmplitude",
+        "PercentDifferenceMagnitudePercentile",
+        "Skew",
+        "StandardDeviation",
+        "StetsonK",
+    ]
+
+    def setup_method(self):
+        features = []
+        py_features = []
+        for cls in _Test.__subclasses__():
+            if cls.name is None and cls.name not in self.features_subset:
+                continue
+
+            try:
+                py_features.append(getattr(lc_py, cls.name)(*cls.args))
+            except AttributeError:
+                continue
+            features.append(getattr(lc_ext, cls.name)(*cls.args))
+        self.rust = lc_ext.Extractor(*features)
+        self.py_feature = lc_py.Extractor(*py_features)
+
+    def rust_many(self, n_jobs, light_curves):
+        return self.rust.many(
+            light_curves,
+            n_jobs=int(n_jobs),
+            sorted=True,
+            check=False,
+        )
+
+    def py_parallel(self, n_jobs, light_curves):
+        return Parallel(n_jobs=int(n_jobs))(delayed(self.py_feature)(*lc) for lc in light_curves)
+
+    def rust_parallel(self, n_jobs, light_curves):
+        return Parallel(n_jobs=int(n_jobs))(delayed(self.rust)(*lc) for lc in light_curves)
+
+    @pytest.mark.parametrize("n_core", np.linspace(1, 8, 8))
+    @pytest.mark.multi
+    def test_benchmark_many_rust(self, benchmark, n_core):
+        light_curves = []
+
+        for _ in range(1000):
+            t, m, sigma = self.random_data()
+            light_curves.append((t, m, sigma))
+
+        benchmark.group = f"{n_core}_cores"
+        benchmark.name = "rust multiprocessing (many)"
+
+        benchmark(self.rust_many, n_core, light_curves)
+
+    @pytest.mark.parametrize("n_core", np.linspace(1, 8, 8))
+    @pytest.mark.multi
+    def test_benchmark_multi_python(self, benchmark, n_core):
+        light_curves = []
+
+        for _ in range(1000):
+            t, m, sigma = self.random_data()
+            light_curves.append((t, m, sigma))
+
+        benchmark.group = f"{n_core}_cores"
+        benchmark.name = "python multiprocessing"
+
+        benchmark(self.py_parallel, n_core, light_curves)
+
+    @pytest.mark.parametrize("n_core", np.linspace(1, 8, 8))
+    @pytest.mark.multi
+    def test_benchmark_multi_rust(self, benchmark, n_core):
+        light_curves = []
+
+        for _ in range(1000):
+            t, m, sigma = self.random_data()
+            light_curves.append((t, m, sigma))
+
+        benchmark.group = f"{n_core}_cores"
+        benchmark.name = "rust multiprocessing"
+
+        benchmark(self.rust_parallel, n_core, light_curves)
 
 
 class TestAllNaive(_Test):
