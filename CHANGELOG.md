@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
---
+- Reduce Rust-Python inter-op cost for numpy arrays significantly. It dropped from ~4 μs per array to ~100ns. https://github.com/light-curve/light-curve-python/pull/174
 
 ### Security
 
