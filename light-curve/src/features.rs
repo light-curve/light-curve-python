@@ -2,19 +2,20 @@ use crate::check::{check_finite, check_no_nans, is_sorted};
 use crate::cont_array::ContCowArray;
 use crate::errors::{Exception, Res};
 use crate::ln_prior::LnPrior1D;
-use crate::np_array::{Arr, GenericFloatArray1};
+use crate::np_array::Arr;
 
 use const_format::formatcp;
+use conv::ConvUtil;
 use light_curve_feature::{self as lcf, prelude::*, DataSample};
 use macro_const::macro_const;
 use ndarray::IntoNdProducer;
-use numpy::IntoPyArray;
+use numpy::{IntoPyArray, PyArray1};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyTuple};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryInto;
 
 // Details of pickle support implementation
 // ----------------------------------------
@@ -214,6 +215,7 @@ impl PyFeatureEvaluator {
     #[allow(clippy::too_many_arguments)]
     fn call_impl<T>(
         feature_evaluator: &lcf::Feature<T>,
+        py: Python,
         t: Arr<T>,
         m: Arr<T>,
         sigma: Option<Arr<T>>,
@@ -221,7 +223,7 @@ impl PyFeatureEvaluator {
         check: bool,
         is_t_required: bool,
         fill_value: Option<T>,
-    ) -> Res<ndarray::Array1<T>>
+    ) -> Res<PyObject>
     where
         T: lcf::Float + numpy::Element,
     {
@@ -241,7 +243,8 @@ impl PyFeatureEvaluator {
                 .eval(&mut ts)
                 .map_err(|e| Exception::ValueError(e.to_string()))?,
         };
-        Ok(result.into())
+        let array = PyArray1::from_vec(py, result);
+        Ok(array.into_py(py))
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -249,11 +252,7 @@ impl PyFeatureEvaluator {
         &self,
         feature_evaluator: &lcf::Feature<T>,
         py: Python,
-        lcs: Vec<(
-            GenericFloatArray1<'a>,
-            GenericFloatArray1<'a>,
-            Option<GenericFloatArray1<'a>>,
-        )>,
+        lcs: Vec<(&'a PyAny, &'a PyAny, Option<&'a PyAny>)>,
         sorted: Option<bool>,
         check: bool,
         fill_value: Option<T>,
@@ -261,15 +260,16 @@ impl PyFeatureEvaluator {
     ) -> Res<PyObject>
     where
         T: lcf::Float + numpy::Element,
-        Arr<'a, T>: TryFrom<GenericFloatArray1<'a>>,
     {
         let wrapped_lcs = lcs
             .into_iter()
             .enumerate()
             .map(|(i, (t, m, sigma))| {
-                let t = TryInto::<Arr<_>>::try_into(t);
-                let m = TryInto::<Arr<_>>::try_into(m);
-                let sigma = sigma.map(TryInto::<Arr<_>>::try_into).transpose();
+                let t = t.downcast::<PyArray1<T>>().map(|a| a.readonly());
+                let m = m.downcast::<PyArray1<T>>().map(|a| a.readonly());
+                let sigma = sigma
+                    .map(|a| a.downcast::<PyArray1<T>>().map(|a| a.readonly()))
+                    .transpose();
 
                 match (t, m, sigma) {
                     (Ok(t), Ok(m), Ok(sigma)) => Ok((t, m, sigma)),
@@ -372,61 +372,76 @@ impl PyFeatureEvaluator {
     fn __call__(
         &self,
         py: Python,
-        t: GenericFloatArray1,
-        m: GenericFloatArray1,
-        sigma: Option<GenericFloatArray1>,
+        t: &PyAny,
+        m: &PyAny,
+        sigma: Option<&PyAny>,
         sorted: Option<bool>,
         check: bool,
         fill_value: Option<f64>,
     ) -> Res<PyObject> {
-        match (t, m) {
-            (GenericFloatArray1::Float32(t), GenericFloatArray1::Float32(m)) => {
-                let sigma = sigma
-                    .map(|sigma| {
-                        sigma.try_into().map_err(|_| {
-                            Exception::ValueError(
-                                "sigma is float64, but t & m are float32".to_string(),
-                            )
-                        })
-                    })
-                    .transpose()?;
-                Ok(Self::call_impl(
-                    &self.feature_evaluator_f32,
-                    t,
-                    m,
-                    sigma,
-                    sorted,
-                    check,
-                    self.is_t_required(sorted),
-                    fill_value.map(|v| v as f32),
-                )?
-                .into_pyarray(py)
-                .into_py(py))
-            }
-            (GenericFloatArray1::Float64(t), GenericFloatArray1::Float64(m)) => {
-                let sigma = sigma
-                    .map(|sigma| {
-                        sigma.try_into().map_err(|_| {
-                            Exception::ValueError(
-                                "sigma is float32, but t & m are float64".to_string(),
-                            )
-                        })
-                    })
-                    .map_or(Ok(None), |result| result.map(Some))?;
-                Ok(Self::call_impl(
-                    &self.feature_evaluator_f64,
-                    t,
-                    m,
-                    sigma,
-                    sorted,
-                    check,
-                    self.is_t_required(sorted),
-                    fill_value,
-                )?
-                .into_pyarray(py)
-                .into_py(py))
-            }
-            _ => Err(Exception::ValueError("t and m have different dtype".into())),
+        if let Some(sigma) = sigma {
+            dtype_dispatch!(
+                |t, m, sigma| {
+                    Self::call_impl(
+                        &self.feature_evaluator_f32,
+                        py,
+                        t,
+                        m,
+                        Some(sigma),
+                        sorted,
+                        check,
+                        self.is_t_required(sorted),
+                        fill_value.map(|v| v as f32),
+                    )
+                },
+                |t, m, sigma| {
+                    Self::call_impl(
+                        &self.feature_evaluator_f64,
+                        py,
+                        t,
+                        m,
+                        Some(sigma),
+                        sorted,
+                        check,
+                        self.is_t_required(sorted),
+                        fill_value,
+                    )
+                },
+                t,
+                m,
+                sigma
+            )
+        } else {
+            dtype_dispatch!(
+                |t, m| {
+                    Self::call_impl(
+                        &self.feature_evaluator_f32,
+                        py,
+                        t,
+                        m,
+                        None,
+                        sorted,
+                        check,
+                        self.is_t_required(sorted),
+                        fill_value.map(|v| v as f32),
+                    )
+                },
+                |t, m| {
+                    Self::call_impl(
+                        &self.feature_evaluator_f64,
+                        py,
+                        t,
+                        m,
+                        None,
+                        sorted,
+                        check,
+                        self.is_t_required(sorted),
+                        fill_value,
+                    )
+                },
+                t,
+                m,
+            )
         }
     }
 
@@ -435,11 +450,7 @@ impl PyFeatureEvaluator {
     fn many(
         &self,
         py: Python,
-        lcs: Vec<(
-            GenericFloatArray1,
-            GenericFloatArray1,
-            Option<GenericFloatArray1>,
-        )>,
+        lcs: Vec<(&PyAny, &PyAny, Option<&PyAny>)>,
         sorted: Option<bool>,
         check: bool,
         fill_value: Option<f64>,
@@ -448,26 +459,31 @@ impl PyFeatureEvaluator {
         if lcs.is_empty() {
             Err(Exception::ValueError("lcs is empty".to_string()))
         } else {
-            match lcs[0].0 {
-                GenericFloatArray1::Float32(_) => self.py_many(
-                    &self.feature_evaluator_f32,
-                    py,
-                    lcs,
-                    sorted,
-                    check,
-                    fill_value.map(|v| v as f32),
-                    n_jobs,
-                ),
-                GenericFloatArray1::Float64(_) => self.py_many(
-                    &self.feature_evaluator_f64,
-                    py,
-                    lcs,
-                    sorted,
-                    check,
-                    fill_value,
-                    n_jobs,
-                ),
-            }
+            dtype_dispatch!(
+                |_first_t| {
+                    self.py_many(
+                        &self.feature_evaluator_f32,
+                        py,
+                        lcs,
+                        sorted,
+                        check,
+                        fill_value.map(|v| v as f32),
+                        n_jobs,
+                    )
+                },
+                |_first_t| {
+                    self.py_many(
+                        &self.feature_evaluator_f64,
+                        py,
+                        lcs,
+                        sorted,
+                        check,
+                        fill_value,
+                        n_jobs,
+                    )
+                },
+                lcs[0].0
+            )
         }
     }
 
@@ -787,20 +803,12 @@ macro_rules! fit_evaluator {
             #[args(t, params)]
             fn model(
                 py: Python,
-                t: GenericFloatArray1,
-                params: GenericFloatArray1,
+                t: &PyAny,
+                params: &PyAny,
             ) -> Res<PyObject> {
-                match (t, params) {
-                    (GenericFloatArray1::Float32(t), GenericFloatArray1::Float32(params)) => {
-                        Ok(Self::model_impl(t, params).into_pyarray(py).into_py(py))
-                    }
-                    (GenericFloatArray1::Float64(t), GenericFloatArray1::Float64(params)) => {
-                        Ok(Self::model_impl(t, params).into_pyarray(py).into_py(py))
-                    }
-                    _ => Err(Exception::ValueError(
-                        "t and params must have the same dtype".to_string(),
-                    )),
-                }
+                dtype_dispatch!({
+                    |t, params| Ok(Self::model_impl(t, params).into_pyarray(py).into_py(py))
+                }(t, params))
             }
 
             #[classattr]
@@ -1305,9 +1313,10 @@ impl Periodogram {
 
     fn freq_power_impl<T>(
         eval: &lcf::Periodogram<T, lcf::Feature<T>>,
+        py: Python,
         t: Arr<T>,
         m: Arr<T>,
-    ) -> (ndarray::Array1<T>, ndarray::Array1<T>)
+    ) -> (PyObject, PyObject)
     where
         T: lcf::Float + numpy::Element,
     {
@@ -1315,7 +1324,9 @@ impl Periodogram {
         let m: DataSample<_> = m.as_array().into();
         let mut ts = lcf::TimeSeries::new_without_weight(t, m);
         let (freq, power) = eval.freq_power(&mut ts);
-        (freq.into(), power.into())
+        let freq = PyArray1::from_vec(py, freq);
+        let power = PyArray1::from_vec(py, power);
+        (freq.into_py(py), power.into_py(py))
     }
 }
 
@@ -1362,31 +1373,13 @@ impl Periodogram {
 
     /// Angular frequencies and periodogram values
     #[pyo3(text_signature = "(t, m)")]
-    fn freq_power(
-        &self,
-        py: Python,
-        t: GenericFloatArray1,
-        m: GenericFloatArray1,
-    ) -> Res<(PyObject, PyObject)> {
-        match (t, m) {
-            (GenericFloatArray1::Float32(t), GenericFloatArray1::Float32(m)) => {
-                let (freq, power) = Self::freq_power_impl(&self.eval_f32, t, m);
-                Ok((
-                    freq.into_pyarray(py).into_py(py),
-                    power.into_pyarray(py).into_py(py),
-                ))
-            }
-            (GenericFloatArray1::Float64(t), GenericFloatArray1::Float64(m)) => {
-                let (freq, power) = Self::freq_power_impl(&self.eval_f64, t, m);
-                Ok((
-                    freq.into_pyarray(py).into_py(py),
-                    power.into_pyarray(py).into_py(py),
-                ))
-            }
-            _ => Err(Exception::ValueError(
-                "t and m must have the same dtype".to_string(),
-            )),
-        }
+    fn freq_power(&self, py: Python, t: &PyAny, m: &PyAny) -> Res<(PyObject, PyObject)> {
+        dtype_dispatch!(
+            |t, m| Ok(Self::freq_power_impl(&self.eval_f32, py, t, m)),
+            |t, m| Ok(Self::freq_power_impl(&self.eval_f64, py, t, m)),
+            t,
+            m
+        )
     }
 
     #[classattr]
@@ -1507,11 +1500,8 @@ impl OtsuSplit {
 
     #[staticmethod]
     #[args(m)]
-    fn threshold(m: GenericFloatArray1) -> Res<f64> {
-        match m {
-            GenericFloatArray1::Float32(m) => Self::thr_impl(m).map(|x| x as f64),
-            GenericFloatArray1::Float64(m) => Self::thr_impl(m),
-        }
+    fn threshold(m: &PyAny) -> Res<f64> {
+        dtype_dispatch!({ Self::threshold_impl }(m))
     }
 
     #[classattr]
@@ -1525,7 +1515,7 @@ impl OtsuSplit {
 }
 
 impl OtsuSplit {
-    fn thr_impl<T>(m: Arr<T>) -> Res<T>
+    fn threshold_impl<T>(m: Arr<T>) -> Res<f64>
     where
         T: lcf::Float + numpy::Element,
     {
@@ -1535,7 +1525,7 @@ impl OtsuSplit {
                 "not enough points to find the threshold (minimum is 2)".to_string(),
             )
         })?;
-        Ok(thr)
+        Ok(thr.value_as().unwrap())
     }
 }
 

@@ -13,7 +13,7 @@ import_exception!(pickle, UnpicklingError);
 #[allow(clippy::enum_variant_names)]
 #[derive(Clone, Error, Debug)]
 #[error("{0}")]
-pub enum Exception {
+pub(crate) enum Exception {
     // builtins
     IndexError(String),
     NotImplementedError(String),
@@ -41,4 +41,4 @@ impl From<Exception> for PyErr {
     }
 }
 
-pub type Res<T> = Result<T, Exception>;
+pub(crate) type Res<T> = Result<T, Exception>;

@@ -3,13 +3,14 @@ use features as f;
 use ln_prior::*;
 use pyo3::prelude::*;
 
+#[macro_use]
+mod np_array;
 mod check;
 mod cont_array;
 mod dmdt;
 mod errors;
 mod features;
 mod ln_prior;
-mod np_array;
 
 /// High-performance time-series feature extractor
 ///

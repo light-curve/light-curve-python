@@ -4,14 +4,14 @@ use itertools::Itertools;
 use light_curve_feature::Float;
 use ndarray::{ArrayView1, Zip};
 
-pub fn is_sorted<T>(a: &[T]) -> bool
+pub(crate) fn is_sorted<T>(a: &[T]) -> bool
 where
     T: PartialOrd,
 {
     a.iter().tuple_windows().all(|(a, b)| a < b)
 }
 
-pub fn check_sorted<T>(a: &[T], sorted: Option<bool>) -> Res<()>
+pub(crate) fn check_sorted<T>(a: &[T], sorted: Option<bool>) -> Res<()>
 where
     T: PartialOrd,
 {
@@ -32,7 +32,7 @@ where
     }
 }
 
-pub fn check_finite<T>(a: ArrayView1<'_, T>) -> Res<()>
+pub(crate) fn check_finite<T>(a: ArrayView1<'_, T>) -> Res<()>
 where
     T: Float,
 {
@@ -45,7 +45,7 @@ where
     }
 }
 
-pub fn check_no_nans<T>(a: ArrayView1<'_, T>) -> Res<()>
+pub(crate) fn check_no_nans<T>(a: ArrayView1<'_, T>) -> Res<()>
 where
     T: Float,
 {
