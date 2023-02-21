@@ -35,7 +35,7 @@ names : list of str
 descriptions : list of str
     Feature descriptions"#;
 
-const METHOD_CALL_DOC: &str = r#"__call__(self, t, m, sigma=None, sorted=None, check=True, fill_value=None)
+const METHOD_CALL_DOC: &str = r#"__call__(self, t, m, sigma=None, *, sorted=None, check=True, fill_value=None)
     Extract features and return them as a numpy array
 
     Parameters
@@ -66,11 +66,11 @@ const METHOD_CALL_DOC: &str = r#"__call__(self, t, m, sigma=None, sorted=None, c
 
 macro_const! {
     const METHOD_MANY_DOC: &str = r#"
-many(self, lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)
+many(self, lcs, *, sorted=None, check=True, fill_value=None, n_jobs=-1)
     Parallel light curve feature extraction
 
     It is a parallel executed equivalent of
-    >>> def many(self, lcs, sorted=None, check=True, fill_value=None):
+    >>> def many(self, lcs, *, sorted=None, check=True, fill_value=None):
     ...     return np.stack(
     ...         [
     ...             self(
@@ -361,14 +361,15 @@ impl PyFeatureEvaluator {
 #[pymethods]
 impl PyFeatureEvaluator {
     #[allow(clippy::too_many_arguments)]
-    #[args(
+    #[pyo3(signature = (
         t,
         m,
-        sigma = "None",
-        sorted = "None",
-        check = "true",
-        fill_value = "None"
-    )]
+        sigma = None,
+        *,
+        sorted = None,
+        check = true,
+        fill_value = None
+    ))]
     fn __call__(
         &self,
         py: Python,
@@ -446,7 +447,7 @@ impl PyFeatureEvaluator {
     }
 
     #[doc = METHOD_MANY_DOC!()]
-    #[args(lcs, sorted = "None", check = "true", fill_value = "None", n_jobs = -1)]
+    #[pyo3(signature = (lcs, *, sorted=None, check=true, fill_value=None, n_jobs=-1))]
     fn many(
         &self,
         py: Python,
@@ -500,7 +501,6 @@ impl PyFeatureEvaluator {
     }
 
     /// Used by pickle.load / pickle.loads
-    #[args(state)]
     fn __setstate__(&mut self, state: &PyBytes) -> Res<()> {
         *self = serde_pickle::from_slice(state.as_bytes(), serde_pickle::DeOptions::new())
             .map_err(|err| {
@@ -512,7 +512,6 @@ impl PyFeatureEvaluator {
     }
 
     /// Used by pickle.dump / pickle.dumps
-    #[args()]
     fn __getstate__<'py>(&self, py: Python<'py>) -> Res<&'py PyBytes> {
         let vec_bytes =
             serde_pickle::to_vec(&self, serde_pickle::SerOptions::new()).map_err(|err| {
@@ -524,13 +523,11 @@ impl PyFeatureEvaluator {
     }
 
     /// Used by copy.copy
-    #[args()]
     fn __copy__(&self) -> Self {
         self.clone()
     }
 
     /// Used by copy.deepcopy
-    #[args(memo)]
     fn __deepcopy__(&self, _memo: &PyAny) -> Self {
         self.clone()
     }
@@ -543,9 +540,9 @@ pub struct Extractor {}
 #[pymethods]
 impl Extractor {
     #[new]
-    #[args(args = "*")]
-    fn __new__(args: &PyTuple) -> PyResult<(Self, PyFeatureEvaluator)> {
-        let evals_iter = args.iter().map(|arg| {
+    #[pyo3(signature = (*features))]
+    fn __new__(features: &PyTuple) -> PyResult<(Self, PyFeatureEvaluator)> {
+        let evals_iter = features.iter().map(|arg| {
             arg.downcast::<PyCell<PyFeatureEvaluator>>().map(|fe| {
                 let fe = fe.borrow();
                 (
@@ -659,7 +656,7 @@ pub(crate) enum FitLnPrior<'a> {
 macro_rules! fit_evaluator {
     ($name: ident, $eval: ty, $ib: ty, $nparam: literal, $ln_prior_by_str: tt, $ln_prior_doc: literal $(,)?) => {
         #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-        #[pyo3(text_signature = "(algorithm, mcmc_niter=None, lmsder_niter=None, init=None, bounds=None, ln_prior=None)")]
+        #[pyo3(text_signature = "(algorithm, *, mcmc_niter=None, lmsder_niter=None, init=None, bounds=None, ln_prior=None)")]
         pub struct $name {}
 
         impl $name {
@@ -681,14 +678,15 @@ macro_rules! fit_evaluator {
         #[pymethods]
         impl $name {
             #[new]
-            #[args(
+            #[pyo3(signature = (
                 algorithm,
-                mcmc_niter = "None",
-                lmsder_niter = "None",
-                init = "None",
-                bounds = "None",
-                ln_prior = "None",
-            )]
+                *,
+                mcmc_niter = None,
+                lmsder_niter = None,
+                init = None,
+                bounds = None,
+                ln_prior = None,
+            ))]
             fn __new__(
                 algorithm: &str,
                 mcmc_niter: Option<u32>,
@@ -793,14 +791,12 @@ macro_rules! fit_evaluator {
 
             /// Required by pickle.dump / pickle.dumps
             #[staticmethod]
-            #[args()]
             fn __getnewargs__() -> (&'static str,) {
                 ("mcmc",)
             }
 
             #[doc = FIT_METHOD_MODEL_DOC!()]
             #[staticmethod]
-            #[args(t, params)]
             fn model(
                 py: Python,
                 t: &PyAny,
@@ -900,7 +896,6 @@ pub struct BeyondNStd {}
 #[pymethods]
 impl BeyondNStd {
     #[new]
-    #[args(nstd)]
     fn __new__(nstd: f64) -> (Self, PyFeatureEvaluator) {
         (
             Self {},
@@ -913,7 +908,6 @@ impl BeyondNStd {
 
     /// Required by pickle.load / pickle.loads
     #[staticmethod]
-    #[args()]
     fn __getnewargs__() -> (f64,) {
         (lcf::BeyondNStd::default_nstd(),)
     }
@@ -955,7 +949,7 @@ pub struct Bins {}
 #[pymethods]
 impl Bins {
     #[new]
-    #[args(features, window, offset)]
+    #[pyo3(signature = (features, *, window, offset))]
     fn __new__(
         py: Python,
         features: PyObject,
@@ -987,7 +981,6 @@ impl Bins {
 
     /// Required by pickle.load / pickle.loads
     #[staticmethod]
-    #[args()]
     fn __getnewargs__(py: Python) -> (&PyTuple, f64, f64) {
         (
             PyTuple::empty(py),
@@ -1030,7 +1023,6 @@ pub struct InterPercentileRange {}
 #[pymethods]
 impl InterPercentileRange {
     #[new]
-    #[args(quantile)]
     fn __new__(quantile: f32) -> (Self, PyFeatureEvaluator) {
         (
             Self {},
@@ -1043,7 +1035,6 @@ impl InterPercentileRange {
 
     /// Required by pickle.load / pickle.loads
     #[staticmethod]
-    #[args()]
     fn __getnewargs__() -> (f32,) {
         (lcf::InterPercentileRange::default_quantile(),)
     }
@@ -1077,7 +1068,6 @@ pub struct MagnitudePercentageRatio {}
 #[pymethods]
 impl MagnitudePercentageRatio {
     #[new]
-    #[args(quantile_numerator, quantile_denominator)]
     fn __new__(
         quantile_numerator: f32,
         quantile_denominator: f32,
@@ -1111,7 +1101,6 @@ impl MagnitudePercentageRatio {
 
     /// Required by pickle.load / pickle.loads
     #[staticmethod]
-    #[args()]
     fn __getnewargs__() -> (f32, f32) {
         (
             lcf::MagnitudePercentageRatio::default_quantile_numerator(),
@@ -1154,7 +1143,6 @@ pub struct MedianBufferRangePercentage {}
 #[pymethods]
 impl MedianBufferRangePercentage {
     #[new]
-    #[args(quantile)]
     fn __new__(quantile: f64) -> (Self, PyFeatureEvaluator) {
         (
             Self {},
@@ -1168,7 +1156,6 @@ impl MedianBufferRangePercentage {
 
     /// Required by pickle.load / pickle.loads
     #[staticmethod]
-    #[args()]
     fn __getnewargs__() -> (f64,) {
         (lcf::MedianBufferRangePercentage::default_quantile(),)
     }
@@ -1198,7 +1185,6 @@ pub struct PercentDifferenceMagnitudePercentile {}
 #[pymethods]
 impl PercentDifferenceMagnitudePercentile {
     #[new]
-    #[args(quantile)]
     fn __new__(quantile: f32) -> (Self, PyFeatureEvaluator) {
         (
             Self {},
@@ -1213,7 +1199,6 @@ impl PercentDifferenceMagnitudePercentile {
 
     /// Required by pickle.load / pickle.loads
     #[staticmethod]
-    #[args()]
     fn __getnewargs__() -> (f32,) {
         (lcf::PercentDifferenceMagnitudePercentile::default_quantile(),)
     }
@@ -1333,14 +1318,15 @@ impl Periodogram {
 #[pymethods]
 impl Periodogram {
     #[new]
-    #[args(
-        peaks = "None",
-        resolution = "None",
-        max_freq_factor = "None",
-        nyquist = "None",
-        fast = "None",
-        features = "None"
-    )]
+    #[pyo3(signature = (
+        *,
+        peaks = None,
+        resolution = None,
+        max_freq_factor = None,
+        nyquist = None,
+        fast = None,
+        features = None,
+    ))]
     fn __new__(
         py: Python,
         peaks: Option<usize>,
@@ -1372,7 +1358,6 @@ impl Periodogram {
     }
 
     /// Angular frequencies and periodogram values
-    #[pyo3(text_signature = "(t, m)")]
     fn freq_power(&self, py: Python, t: &PyAny, m: &PyAny) -> Res<(PyObject, PyObject)> {
         dtype_dispatch!(
             |t, m| Ok(Self::freq_power_impl(&self.eval_f32, py, t, m)),
@@ -1499,7 +1484,6 @@ impl OtsuSplit {
     }
 
     #[staticmethod]
-    #[args(m)]
     fn threshold(m: &PyAny) -> Res<f64> {
         dtype_dispatch!({ Self::threshold_impl }(m))
     }
