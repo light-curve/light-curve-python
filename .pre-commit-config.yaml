@@ -39,7 +39,7 @@ repos:
     -   id: cargo-clippy-fix
         name: cargo clippy fix
         language: rust
-        entry: cargo clippy --manifest-path=light-curve/Cargo.toml --all-targets --fix --allow-dirty
+        entry: cargo clippy --manifest-path=light-curve/Cargo.toml --all-targets --fix --allow-dirty --allow-staged
         files: \.rs
         pass_filenames: false
     -   id: cargo-clippy-check
