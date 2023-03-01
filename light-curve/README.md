@@ -403,6 +403,16 @@ The plot shows that the Rust implementation of the package outperforms other one
 This allows to extract a large set of "cheap" features well under one ms for n=1000.
 The performance of parametric fits (`BazinFit` and `VillarFit`) and `Periodogram` depend on their parameters, but the typical timescale of feature extraction including these features is 20—50 ms for few hundred observations.
 
+![Benchmark for different number of observations](https://github.com/light-curve/light-curve-python/raw/readme-benchs/light-curve/.readme/nobs_bench_v2.png)
+
+Benchmark results of several features for both the pure-Python and Rust implementations of the ”light-curve” package, as a function of the number of observations in a light curve. Both the x-axis and y-axis are on a logarithmic scale.
+
+![Benchmark for multithreading and multiprocessing](https://github.com/light-curve/light-curve-python/raw/readme-benchs/light-curve/.readme/multi_bench_v2.png)
+
+Processing time per a single light curve for extraction of features subset presented in first benchmark versus the number of CPU cores used. The dataset consists of 10,000 light curves with 1,000 observations in each.
+
+See benchmarks' descriptions in more details in ["Performant feature extraction for photometric time series"](https://arxiv.org/abs/2302.10837).
+
 ## dm-dt map
 
 Class `DmDt` provides dm–dt mapper (based on [Mahabal et al. 2011](https://ui.adsabs.harvard.edu/abs/2011BASI...39..387M/abstract), [Soraisam et al. 2020](https://ui.adsabs.harvard.edu/abs/2020ApJ...892..112S/abstract)). It is a Python wrapper for [`light-curve-dmdt` Rust crate](https://crates.io/crates/light-curve-dmdt).
