@@ -397,7 +397,7 @@ where $N_j$ is a number of sampling observations and all sums are over observati
 
 We benchmark the Rust implementation (`rust`) versus [`feets`](https://feets.readthedocs.io/en/latest/) package and our own Python implementation (`lc_py`) for a light curve having n=1000 observations.
 
-![Benchmarks, Rust is much faster](https://github.com/light-curve/light-curve-python/raw/readme-benchs/light-curve/.readme/benchplot.png)
+![Benchmarks, Rust is much faster](https://github.com/light-curve/light-curve-python/raw/readme-benchs/light-curve/.readme/benchplot_v2.png)
 
 The plot shows that the Rust implementation of the package outperforms other ones by a factor of 1.5—50.
 This allows to extract a large set of "cheap" features well under one ms for n=1000.
