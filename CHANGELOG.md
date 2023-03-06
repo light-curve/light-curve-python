@@ -13,7 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
---
+- **API breaking:** Features' `__call__()` signature changed to make `sorted=None`, `check=True` and `fill_value=None` arguments to be keyword-only
+- **API breaking:** Features' `many()` signature changed to make all but the first `lcs` arguments to be keyword-only
+- **API breaking:** `Bins` constructor signature changed to make `offset` and `window` arguments to be keyword-only
+- **API breaking:** `BazinFit` and `VillarFit` constructor signatures changed to make everything but the first `lcs` argument to be keyword-only
+- **API breaking:** `Periodogram` constructor signature changed to make all arguments to be keyword-only
+- **API breaking:** `DmDt` constructor signature changed to make all arguments but `dt` and `dm` to be keyword-only. `DmDt.from_borders` class-method constructor has all agruments to be keyword-only
+- **API breaking:** `DmDt` methods' signatures changed to make all arguments but data (like `t`, `t, m` or `lcs`) to be keyword-only
+- Bump `pyo3` 0.17.3 -> 0.18.1
+- Bump `rust-numpy` 0.17.2 -> 0.18.0
 
 ### Deprecated
 
