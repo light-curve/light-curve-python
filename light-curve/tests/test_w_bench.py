@@ -292,7 +292,8 @@ if lc_ext._built_with_gsl:
 
     class TestBazinFit(_Test):
         name = "BazinFit"
-        args = ("lmsder", None, 20)
+        args = ("lmsder",)
+        kwargs = {"lmsder_niter": 20}
         rtol = 1e-4  # Precision used in the feature implementation
 
         add_to_all_features = False  # in All* random data is used
