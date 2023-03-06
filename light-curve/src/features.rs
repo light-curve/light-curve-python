@@ -10,11 +10,12 @@ use light_curve_feature::{self as lcf, prelude::*, DataSample};
 use macro_const::macro_const;
 use ndarray::IntoNdProducer;
 use numpy::{IntoPyArray, PyArray1};
-use pyo3::exceptions::PyValueError;
+use pyo3::exceptions::{PyNotImplementedError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyTuple};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::convert::TryInto;
 
 // Details of pickle support implementation
@@ -22,11 +23,12 @@ use std::convert::TryInto;
 // [PyFeatureEvaluator] implements __getstate__ and __setstate__ required for pickle serialisation,
 // which gives the support of pickle protocols 2+. However it is not enough for child classes with
 // mandatory constructor arguments since __setstate__(self, state) is a method applied after
-// __new__ is called. Thus we implement __getnewargs__ for such classes. Despite the "standard" way
-// we return some default arguments from this method and de-facto re-create the underlying Rust
-// objects during __setstate__, which could reduce performance of deserialising. We also make this
-// method static to use it in tests, which is also a bit weird thing to do. We use a simple but
-// compact and performant binary (de)serialization format provided by [bincode] crate.
+// __new__ is called. Thus we implement __getnewargs__ (or __getnewargs_ex__ when constructor has
+// keyword-only arguments) for such classes. Despite the "standard" way we return some default
+// arguments from this method and de-facto re-create the underlying Rust objects during
+// __setstate__, which could reduce performance of deserialising. We also make this method static
+// to use it in tests, which is also a bit weird thing to do. We use pickle as a serialization
+// format for it, so all Rust object internals can be inspected from Python.
 
 const ATTRIBUTES_DOC: &str = r#"Attributes
 ----------
@@ -979,13 +981,24 @@ impl Bins {
         ))
     }
 
+    /// Use __getnewargs_ex__ instead
+    #[staticmethod]
+    fn __getnewargs__() -> PyResult<()> {
+        Err(PyNotImplementedError::new_err(
+            "use __getnewargs_ex__ instead",
+        ))
+    }
+
     /// Required by pickle.load / pickle.loads
     #[staticmethod]
-    fn __getnewargs__(py: Python) -> (&PyTuple, f64, f64) {
+    fn __getnewargs_ex__(py: Python) -> ((&PyTuple,), HashMap<&'static str, f64>) {
         (
-            PyTuple::empty(py),
-            lcf::Bins::<_, Feature<_>>::default_window(),
-            lcf::Bins::<_, Feature<_>>::default_window(),
+            (PyTuple::empty(py),),
+            [
+                ("window", lcf::Bins::<_, Feature<_>>::default_window()),
+                ("offset", lcf::Bins::<_, Feature<_>>::default_offset()),
+            ]
+            .into(),
         )
     }
 
