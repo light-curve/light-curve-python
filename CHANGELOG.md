@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
---
+- **Build breaking:** `fftw-static`, `fftw-dynamic`, `mkl` Cargo features are removed after deprecation in v0.6.2 and replaced with `fftw-source`, `fftw-system` and `fftw-mkl`.
 
 ### Fixed
 
