@@ -31,7 +31,7 @@ class MagnitudeNNotDetBeforeFd(BaseFeature):
     sigma_non_detection: float = np.Inf
     strictly_fainter: bool = False
 
-    def _eval(self, t, m, sigma=None, sorted=None, fill_value=None):
+    def _eval(self, t, m, sigma=None):
         detections = np.argwhere(sigma != self.sigma_non_detection).flatten()
 
         if len(detections) == len(m):

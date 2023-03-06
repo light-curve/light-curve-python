@@ -1,3 +1,4 @@
+import sys
 from dataclasses import dataclass
 
 import numpy as np
@@ -6,12 +7,21 @@ from scipy import ndimage
 from ._base_meta import BaseMetaFeature
 
 
+if sys.version_info >= (3, 10):
+    from dataclasses import field
+else:
+    from dataclasses import field as _field
+
+    def field(*, kw_only, **kwargs):
+        return _field(**kwargs)
+
+
 @dataclass()
 class Bins(BaseMetaFeature):
-    window: float = 1.0
-    offset: float = 0.0
+    window: float = field(default=1.0, kw_only=True)
+    offset: float = field(default=0.0, kw_only=True)
 
-    def transform(self, t, m, sigma=None, sorted=None, fill_value=None):
+    def transform(self, t, m, sigma=None, *, sorted=None, fill_value=None):
         assert self.window > 0, "Window should be a positive number."
         n = np.ceil((t[-1] - t[0]) / self.window) + 1
         j = np.arange(0, n)
