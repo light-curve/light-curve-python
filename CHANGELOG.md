@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **API breaking:** Features' `__call__()` signature changed to make `sorted=None`, `check=True` and `fill_value=None` arguments to be keyword-only
 - **API breaking:** Features' `many()` signature changed to make all but the first `lcs` arguments to be keyword-only
-- **API breaking:** `Bins` constructor signature changed to make `offset` and `window` arguments to be keyword-only
+- **API breaking:** `Bins` constructor signature changed to make `offset` and `window` arguments to be keyword-only. Please note that this for the case of Python implementation and Python version < 3.10, `Bins` still accepts positional arguments
 - **API breaking:** `BazinFit` and `VillarFit` constructor signatures changed to make everything but the first `lcs` argument to be keyword-only
 - **API breaking:** `Periodogram` constructor signature changed to make all arguments to be keyword-only
 - **API breaking:** `DmDt` constructor signature changed to make all arguments but `dt` and `dm` to be keyword-only. `DmDt.from_borders` class-method constructor has all agruments to be keyword-only
