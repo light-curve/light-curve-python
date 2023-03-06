@@ -36,7 +36,7 @@ class BaseFeature(ABC):
 
         return t, m, sigma
 
-    def _eval_and_fill(self, t, m, sigma, fill_value):
+    def _eval_and_fill(self, t, m, sigma, *, fill_value):
         try:
             a = self._eval(t, m, sigma)
             if np.any(~np.isfinite(a)):
@@ -47,15 +47,15 @@ class BaseFeature(ABC):
                 return np.full(self.size, fill_value)
             raise e
 
-    def __call__(self, t, m, sigma=None, sorted=None, check=True, fill_value=None):
+    def __call__(self, t, m, sigma=None, *, sorted=None, check=True, fill_value=None):
         t, m, sigma = self._normalize_input(t=t, m=m, sigma=sigma, sorted=sorted, check=check)
-        return self._eval_and_fill(t, m, sigma, fill_value)
+        return self._eval_and_fill(t, m, sigma, fill_value=fill_value)
 
     @mark_experimental
     def __post_init__(self):
         pass
 
-    def many(self, lcs, sorted=None, check=True, fill_value=None, n_jobs=-1):
+    def many(self, lcs, *, sorted=None, check=True, fill_value=None, n_jobs=-1):
         """Extract features in bulk
 
         This exists for computability only and doesn't support parallel

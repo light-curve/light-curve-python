@@ -26,7 +26,7 @@ class BaseMetaFeature(BaseFeature):
     def _eval(self, t, m, sigma=None):
         raise NotImplementedError("_eval is missed for BaseMetaFeature")
 
-    def _eval_and_fill(self, t, m, sigma, fill_value):
+    def _eval_and_fill(self, t, m, sigma, *, fill_value):
         t, m, sigma = self.transform(t, m, sigma)
         return self.extractor._eval_and_fill(t, m, sigma, fill_value)
 

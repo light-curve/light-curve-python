@@ -31,7 +31,7 @@ class FluxNNotDetBeforeFd(BaseFeature):
     signal_to_noise: float
     strictly_fainter: bool = False
 
-    def _eval(self, t, m, sigma=None, sorted=None, fill_value=None):
+    def _eval(self, t, m, sigma=None):
         detections = np.argwhere(m > self.signal_to_noise * sigma).flatten()
 
         if len(detections) == len(m):

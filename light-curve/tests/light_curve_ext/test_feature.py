@@ -41,22 +41,32 @@ def construct_example_objects(cls, *, parametric_variants=1, rng=None):
     if not hasattr(cls, "__getnewargs__"):
         return [cls()]
 
-    args = cls.__getnewargs__()  # default mandatory arguments
+    # default mandatory arguments
+    if hasattr(cls, "__getnewargs_ex__"):
+        args, kwargs = cls.__getnewargs_ex__()
+    else:
+        args, kwargs = cls.__getnewargs__(), {}
+
     # Add Mean feature for metafeatures
     args = [[lc.Mean()] if arg == () else arg for arg in args]
 
-    objects = [cls(*args)]
+    objects = [cls(*args, **kwargs)]
     # Nothing to mutate
-    if not any(isinstance(arg, float) for arg in args):
+    if not any(isinstance(arg, float) for arg in args + list(kwargs.values())):
         return objects
 
     # Mutate floats
     rng = np.random.default_rng(rng)
+
+    def mutation(value):
+        if not isinstance(value, float):
+            return value
+        return value * rng.uniform(0.9, 1.1) + rng.uniform(0.0, 1e-3)
+
     for _ in range(1, parametric_variants):
-        mutated_args = [
-            arg * rng.uniform(0.9, 1.1) + rng.uniform(0.0, 1e-3) if isinstance(arg, float) else arg for arg in args
-        ]
-        objects.append(cls(*mutated_args))
+        mutated_args = list(map(mutation, args))
+        mutated_kwargs = {name: mutation(value) for name, value in kwargs.items()}
+        objects.append(cls(*mutated_args, **mutated_kwargs))
     return objects
 
 

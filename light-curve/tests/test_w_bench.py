@@ -104,6 +104,7 @@ class _Test:
     name = None
     # Argument tuple for the feature constructor
     args = ()
+    kwargs = {}
 
     py_feature = None
 
@@ -120,9 +121,9 @@ class _Test:
     phot_types = Data.phot_type_choices
 
     def setup_method(self):
-        self.rust = getattr(lc_ext, self.name)(*self.args)
+        self.rust = getattr(lc_ext, self.name)(*self.args, **self.kwargs)
         try:
-            self.py_feature = getattr(lc_py, self.name)(*self.args)
+            self.py_feature = getattr(lc_py, self.name)(*self.args, **self.kwargs)
         except AttributeError:
             pass
 
@@ -291,7 +292,8 @@ if lc_ext._built_with_gsl:
 
     class TestBazinFit(_Test):
         name = "BazinFit"
-        args = ("lmsder", None, 20)
+        args = ("lmsder",)
+        kwargs = {"lmsder_niter": 20}
         rtol = 1e-4  # Precision used in the feature implementation
 
         add_to_all_features = False  # in All* random data is used

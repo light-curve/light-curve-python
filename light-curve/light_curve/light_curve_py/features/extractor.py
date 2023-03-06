@@ -17,7 +17,7 @@ class _PyExtractor(BaseFeature):
         raise NotImplementedError("_eval is missed for _PyExtractor")
 
     def _eval_and_fill(self, t, m, sigma, fill_value):
-        return np.concatenate([np.atleast_1d(feature(t, m, sigma, fill_value)) for feature in self.features])
+        return np.concatenate([np.atleast_1d(feature(t, m, sigma, fill_value=fill_value)) for feature in self.features])
 
     @property
     def size(self):
