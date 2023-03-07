@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **API breaking:** `DmDt` constructor signature changed to make all arguments but `dt` and `dm` to be keyword-only, `__getnewargs__` is replaced with `__getnewargs_ex__`. `DmDt.from_borders` class-method constructor has all agruments to be keyword-only
 - **API breaking:** `DmDt` methods' signatures changed to make all arguments but data (like `t`, `t, m` or `lcs`) to be keyword-only
 - **Build breaking:** building with Ceres Solver (`ceres-source` Cargo feature) is now a default, and potentially could break a building pipeline in some cases. If you want to build without Ceres Solver, you need to explicitly disable default features with `--no-default-features` flag
+- CI: switch from `macos-11` to `macos-latest` for testing
 - Bump `pyo3` 0.17.3 -> 0.18.1
 - Bump `rust-numpy` 0.17.2 -> 0.18.0
 
