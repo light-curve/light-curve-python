@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
---
+- `BazinFit` and `VillarFit` have got `ceres` and `mcmc-ceres` algorithms using [Ceres Solver](http://ceres-solver.org) as a non-linear least squares optimizer. `ceres` is found to be more robust than `lmsder` algorithm (available via `gsl` Cargo feature) but working roughly twice slower. Ceres can be built from source (`ceres-source` Cargo feature, enabled by default in `Cargo.toml`) or linked to system library (`ceres-system` Cargo feature, enabled for cibuildwheel in `pyproject.toml`)
 
 ### Changed
 
@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **API breaking:** `Periodogram` constructor signature changed to make all arguments to be keyword-only
 - **API breaking:** `DmDt` constructor signature changed to make all arguments but `dt` and `dm` to be keyword-only, `__getnewargs__` is replaced with `__getnewargs_ex__`. `DmDt.from_borders` class-method constructor has all agruments to be keyword-only
 - **API breaking:** `DmDt` methods' signatures changed to make all arguments but data (like `t`, `t, m` or `lcs`) to be keyword-only
+- **Build breaking:** building with Ceres Solver (`ceres-source` Cargo feature) is now a default, and potentially could break a building pipeline in some cases. If you want to build without Ceres Solver, you need to explicitly disable default features with `--no-default-features` flag
 - Bump `pyo3` 0.17.3 -> 0.18.1
 - Bump `rust-numpy` 0.17.2 -> 0.18.0
 
