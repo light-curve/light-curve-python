@@ -18,7 +18,9 @@ lto = true
 codegen-units = 1
 
 [features]
-default = ["fftw-source", "gsl"]
+default = ["ceres-source", "fftw-source", "gsl"]
+ceres-source = ["light-curve-feature/ceres-source"]
+ceres-system = ["light-curve-feature/ceres-system"]
 fftw-source = ["light-curve-feature/fftw-source"]
 fftw-system = ["light-curve-feature/fftw-system"]
 fftw-mkl = ["light-curve-feature/fftw-mkl"]
@@ -51,5 +53,5 @@ version = "0.7.1"
 features = ["serde"]
 
 [dependencies.light-curve-feature]
-version = "0.5.2"
+version = "0.5.4"
 default_features = false

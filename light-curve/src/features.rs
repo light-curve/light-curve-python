@@ -608,19 +608,36 @@ macro_rules! evaluator {
     };
 }
 
-const N_ALGO_CURVE_FIT: usize = {
+const N_ALGO_CURVE_FIT_CERES: usize = {
+    #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+    {
+        2
+    }
+    #[cfg(not(any(feature = "ceres-source", feature = "ceres-system")))]
+    {
+        0
+    }
+};
+const N_ALGO_CURVE_FIT_GSL: usize = {
     #[cfg(feature = "gsl")]
     {
-        3
+        2
     }
     #[cfg(not(feature = "gsl"))]
     {
-        1
+        0
     }
 };
+const N_ALGO_CURVE_FIT_PURE_MCMC: usize = 1;
+const N_ALGO_CURVE_FIT: usize =
+    N_ALGO_CURVE_FIT_CERES + N_ALGO_CURVE_FIT_GSL + N_ALGO_CURVE_FIT_PURE_MCMC;
 
 const SUPPORTED_ALGORITHMS_CURVE_FIT: [&str; N_ALGO_CURVE_FIT] = [
     "mcmc",
+    #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+    "ceres",
+    #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+    "mcmc-ceres",
     #[cfg(feature = "gsl")]
     "lmsder",
     #[cfg(feature = "gsl")]
@@ -658,7 +675,7 @@ pub(crate) enum FitLnPrior<'a> {
 macro_rules! fit_evaluator {
     ($name: ident, $eval: ty, $ib: ty, $nparam: literal, $ln_prior_by_str: tt, $ln_prior_doc: literal $(,)?) => {
         #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-        #[pyo3(text_signature = "(algorithm, *, mcmc_niter=None, lmsder_niter=None, init=None, bounds=None, ln_prior=None)")]
+        #[pyo3(text_signature = "(algorithm, *, mcmc_niter=None, ceres_niter=None, ceres_loss_reg=None, lmsder_niter=None, init=None, bounds=None, ln_prior=None)")]
         pub struct $name {}
 
         impl $name {
@@ -677,6 +694,7 @@ macro_rules! fit_evaluator {
             }
         }
 
+        #[allow(clippy::too_many_arguments)]
         #[pymethods]
         impl $name {
             #[new]
@@ -685,6 +703,8 @@ macro_rules! fit_evaluator {
                 *,
                 mcmc_niter = None,
                 lmsder_niter = None,
+                ceres_niter = None,
+                ceres_loss_reg = None,
                 init = None,
                 bounds = None,
                 ln_prior = None,
@@ -693,6 +713,8 @@ macro_rules! fit_evaluator {
                 algorithm: &str,
                 mcmc_niter: Option<u32>,
                 lmsder_niter: Option<u16>,
+                ceres_niter: Option<u16>,
+                ceres_loss_reg: Option<f64>,
                 init: Option<Vec<Option<f64>>>,
                 bounds: Option<Vec<(Option<f64>, Option<f64>)>>,
                 ln_prior: Option<FitLnPrior<'_>>,
@@ -708,6 +730,18 @@ macro_rules! fit_evaluator {
                 if lmsder_niter.is_some() {
                     return Err(PyValueError::new_err(
                         "Compiled without GSL support, lmsder_niter is not supported",
+                    ));
+                }
+
+                #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+                let ceres_fit: lcf::CurveFitAlgorithm = lcf::CeresCurveFit::new(
+                    ceres_niter.unwrap_or_else(lcf::CeresCurveFit::default_niterations),
+                    ceres_loss_reg.or_else(lcf::CeresCurveFit::default_loss_factor),
+                ).into();
+                #[cfg(not(any(feature = "ceres-source", feature = "ceres-system")))]
+                if ceres_niter.is_some() || ceres_loss_reg.is_some() {
+                    return Err(PyValueError::new_err(
+                        "Compiled without Ceres support, ceres_niter and ceres_loss_reg are not supported",
                     ));
                 }
 
@@ -759,6 +793,10 @@ macro_rules! fit_evaluator {
 
                 let curve_fit_algorithm: lcf::CurveFitAlgorithm = match algorithm {
                     "mcmc" => lcf::McmcCurveFit::new(mcmc_niter, None).into(),
+                    #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+                    "ceres" => ceres_fit,
+                    #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+                    "mcmc-ceres" => lcf::McmcCurveFit::new(mcmc_niter, Some(ceres_fit)).into(),
                     #[cfg(feature = "gsl")]
                     "lmsder" => lmsder_fit,
                     #[cfg(feature = "gsl")]
@@ -816,6 +854,19 @@ macro_rules! fit_evaluator {
 
             #[classattr]
             fn __doc__() -> String {
+                #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+                let ceres_args = format!(
+                    r#"ceres_niter : int, optional
+    Number of Ceres iterations, default is {niter}
+ceres_loss_reg : float, optional
+    Ceres loss regularization, default is to use square norm as is, if set to
+    a number, the loss function is reqgualized to descriminate outlier
+    residuals larger than this value.
+"#,
+                    niter = lcf::CeresCurveFit::default_niterations()
+                );
+                #[cfg(not(any(feature = "ceres-source", feature = "ceres-system")))]
+                let ceres_args = "";
                 #[cfg(feature = "gsl")]
                 let lmsder_niter = format!(
                     r#"lmsder_niter : int, optional
@@ -835,7 +886,7 @@ algorithm : str
     {supported_algo}.
 mcmc_niter : int, optional
     Number of MCMC iterations, default is {mcmc_niter}
-{lmsder_niter}init : list or None, optional
+{ceres_args}{lmsder_niter}init : list or None, optional
     Initial conditions, must be `None` or a `list` of `float`s or `None`s.
     The length of the list must be {nparam}, `None` values will be replaced
     with some defauls values. It is supported by MCMC only
@@ -874,6 +925,7 @@ Examples
                     intro = <$eval>::doc().trim_start(),
                     supported_algo = Self::supported_algorithms_str(),
                     mcmc_niter = lcf::McmcCurveFit::default_niterations(),
+                    ceres_args = ceres_args,
                     lmsder_niter = lmsder_niter,
                     attr = ATTRIBUTES_DOC,
                     methods = METHODS_DOC,
