@@ -160,7 +160,7 @@ before-all = [
     # Install Rust
     "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y",
     # Install FFTW and GSL
-    "brew install fftw gsl",
+    "brew install ceres-solver fftw gsl",
 ]
 
 # Build with Intel MKL on Linux x86_64
