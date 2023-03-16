@@ -10,11 +10,12 @@ use light_curve_feature::{self as lcf, prelude::*, DataSample};
 use macro_const::macro_const;
 use ndarray::IntoNdProducer;
 use numpy::{IntoPyArray, PyArray1};
-use pyo3::exceptions::PyValueError;
+use pyo3::exceptions::{PyNotImplementedError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyTuple};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::convert::TryInto;
 
 // Details of pickle support implementation
@@ -22,11 +23,12 @@ use std::convert::TryInto;
 // [PyFeatureEvaluator] implements __getstate__ and __setstate__ required for pickle serialisation,
 // which gives the support of pickle protocols 2+. However it is not enough for child classes with
 // mandatory constructor arguments since __setstate__(self, state) is a method applied after
-// __new__ is called. Thus we implement __getnewargs__ for such classes. Despite the "standard" way
-// we return some default arguments from this method and de-facto re-create the underlying Rust
-// objects during __setstate__, which could reduce performance of deserialising. We also make this
-// method static to use it in tests, which is also a bit weird thing to do. We use a simple but
-// compact and performant binary (de)serialization format provided by [bincode] crate.
+// __new__ is called. Thus we implement __getnewargs__ (or __getnewargs_ex__ when constructor has
+// keyword-only arguments) for such classes. Despite the "standard" way we return some default
+// arguments from this method and de-facto re-create the underlying Rust objects during
+// __setstate__, which could reduce performance of deserialising. We also make this method static
+// to use it in tests, which is also a bit weird thing to do. We use pickle as a serialization
+// format for it, so all Rust object internals can be inspected from Python.
 
 const ATTRIBUTES_DOC: &str = r#"Attributes
 ----------
@@ -35,7 +37,7 @@ names : list of str
 descriptions : list of str
     Feature descriptions"#;
 
-const METHOD_CALL_DOC: &str = r#"__call__(self, t, m, sigma=None, sorted=None, check=True, fill_value=None)
+const METHOD_CALL_DOC: &str = r#"__call__(self, t, m, sigma=None, *, sorted=None, check=True, fill_value=None)
     Extract features and return them as a numpy array
 
     Parameters
@@ -66,11 +68,11 @@ const METHOD_CALL_DOC: &str = r#"__call__(self, t, m, sigma=None, sorted=None, c
 
 macro_const! {
     const METHOD_MANY_DOC: &str = r#"
-many(self, lcs, sorted=None, check=True, fill_value=None, n_jobs=-1)
+many(self, lcs, *, sorted=None, check=True, fill_value=None, n_jobs=-1)
     Parallel light curve feature extraction
 
     It is a parallel executed equivalent of
-    >>> def many(self, lcs, sorted=None, check=True, fill_value=None):
+    >>> def many(self, lcs, *, sorted=None, check=True, fill_value=None):
     ...     return np.stack(
     ...         [
     ...             self(
@@ -361,14 +363,15 @@ impl PyFeatureEvaluator {
 #[pymethods]
 impl PyFeatureEvaluator {
     #[allow(clippy::too_many_arguments)]
-    #[args(
+    #[pyo3(signature = (
         t,
         m,
-        sigma = "None",
-        sorted = "None",
-        check = "true",
-        fill_value = "None"
-    )]
+        sigma = None,
+        *,
+        sorted = None,
+        check = true,
+        fill_value = None
+    ))]
     fn __call__(
         &self,
         py: Python,
@@ -446,7 +449,7 @@ impl PyFeatureEvaluator {
     }
 
     #[doc = METHOD_MANY_DOC!()]
-    #[args(lcs, sorted = "None", check = "true", fill_value = "None", n_jobs = -1)]
+    #[pyo3(signature = (lcs, *, sorted=None, check=true, fill_value=None, n_jobs=-1))]
     fn many(
         &self,
         py: Python,
@@ -500,7 +503,6 @@ impl PyFeatureEvaluator {
     }
 
     /// Used by pickle.load / pickle.loads
-    #[args(state)]
     fn __setstate__(&mut self, state: &PyBytes) -> Res<()> {
         *self = serde_pickle::from_slice(state.as_bytes(), serde_pickle::DeOptions::new())
             .map_err(|err| {
@@ -512,7 +514,6 @@ impl PyFeatureEvaluator {
     }
 
     /// Used by pickle.dump / pickle.dumps
-    #[args()]
     fn __getstate__<'py>(&self, py: Python<'py>) -> Res<&'py PyBytes> {
         let vec_bytes =
             serde_pickle::to_vec(&self, serde_pickle::SerOptions::new()).map_err(|err| {
@@ -524,13 +525,11 @@ impl PyFeatureEvaluator {
     }
 
     /// Used by copy.copy
-    #[args()]
     fn __copy__(&self) -> Self {
         self.clone()
     }
 
     /// Used by copy.deepcopy
-    #[args(memo)]
     fn __deepcopy__(&self, _memo: &PyAny) -> Self {
         self.clone()
     }
@@ -543,9 +542,9 @@ pub struct Extractor {}
 #[pymethods]
 impl Extractor {
     #[new]
-    #[args(args = "*")]
-    fn __new__(args: &PyTuple) -> PyResult<(Self, PyFeatureEvaluator)> {
-        let evals_iter = args.iter().map(|arg| {
+    #[pyo3(signature = (*features))]
+    fn __new__(features: &PyTuple) -> PyResult<(Self, PyFeatureEvaluator)> {
+        let evals_iter = features.iter().map(|arg| {
             arg.downcast::<PyCell<PyFeatureEvaluator>>().map(|fe| {
                 let fe = fe.borrow();
                 (
@@ -609,19 +608,36 @@ macro_rules! evaluator {
     };
 }
 
-const N_ALGO_CURVE_FIT: usize = {
+const N_ALGO_CURVE_FIT_CERES: usize = {
+    #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+    {
+        2
+    }
+    #[cfg(not(any(feature = "ceres-source", feature = "ceres-system")))]
+    {
+        0
+    }
+};
+const N_ALGO_CURVE_FIT_GSL: usize = {
     #[cfg(feature = "gsl")]
     {
-        3
+        2
     }
     #[cfg(not(feature = "gsl"))]
     {
-        1
+        0
     }
 };
+const N_ALGO_CURVE_FIT_PURE_MCMC: usize = 1;
+const N_ALGO_CURVE_FIT: usize =
+    N_ALGO_CURVE_FIT_CERES + N_ALGO_CURVE_FIT_GSL + N_ALGO_CURVE_FIT_PURE_MCMC;
 
 const SUPPORTED_ALGORITHMS_CURVE_FIT: [&str; N_ALGO_CURVE_FIT] = [
     "mcmc",
+    #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+    "ceres",
+    #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+    "mcmc-ceres",
     #[cfg(feature = "gsl")]
     "lmsder",
     #[cfg(feature = "gsl")]
@@ -659,7 +675,7 @@ pub(crate) enum FitLnPrior<'a> {
 macro_rules! fit_evaluator {
     ($name: ident, $eval: ty, $ib: ty, $nparam: literal, $ln_prior_by_str: tt, $ln_prior_doc: literal $(,)?) => {
         #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-        #[pyo3(text_signature = "(algorithm, mcmc_niter=None, lmsder_niter=None, init=None, bounds=None, ln_prior=None)")]
+        #[pyo3(text_signature = "(algorithm, *, mcmc_niter=None, ceres_niter=None, ceres_loss_reg=None, lmsder_niter=None, init=None, bounds=None, ln_prior=None)")]
         pub struct $name {}
 
         impl $name {
@@ -678,21 +694,27 @@ macro_rules! fit_evaluator {
             }
         }
 
+        #[allow(clippy::too_many_arguments)]
         #[pymethods]
         impl $name {
             #[new]
-            #[args(
+            #[pyo3(signature = (
                 algorithm,
-                mcmc_niter = "None",
-                lmsder_niter = "None",
-                init = "None",
-                bounds = "None",
-                ln_prior = "None",
-            )]
+                *,
+                mcmc_niter = None,
+                lmsder_niter = None,
+                ceres_niter = None,
+                ceres_loss_reg = None,
+                init = None,
+                bounds = None,
+                ln_prior = None,
+            ))]
             fn __new__(
                 algorithm: &str,
                 mcmc_niter: Option<u32>,
                 lmsder_niter: Option<u16>,
+                ceres_niter: Option<u16>,
+                ceres_loss_reg: Option<f64>,
                 init: Option<Vec<Option<f64>>>,
                 bounds: Option<Vec<(Option<f64>, Option<f64>)>>,
                 ln_prior: Option<FitLnPrior<'_>>,
@@ -708,6 +730,18 @@ macro_rules! fit_evaluator {
                 if lmsder_niter.is_some() {
                     return Err(PyValueError::new_err(
                         "Compiled without GSL support, lmsder_niter is not supported",
+                    ));
+                }
+
+                #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+                let ceres_fit: lcf::CurveFitAlgorithm = lcf::CeresCurveFit::new(
+                    ceres_niter.unwrap_or_else(lcf::CeresCurveFit::default_niterations),
+                    ceres_loss_reg.or_else(lcf::CeresCurveFit::default_loss_factor),
+                ).into();
+                #[cfg(not(any(feature = "ceres-source", feature = "ceres-system")))]
+                if ceres_niter.is_some() || ceres_loss_reg.is_some() {
+                    return Err(PyValueError::new_err(
+                        "Compiled without Ceres support, ceres_niter and ceres_loss_reg are not supported",
                     ));
                 }
 
@@ -759,6 +793,10 @@ macro_rules! fit_evaluator {
 
                 let curve_fit_algorithm: lcf::CurveFitAlgorithm = match algorithm {
                     "mcmc" => lcf::McmcCurveFit::new(mcmc_niter, None).into(),
+                    #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+                    "ceres" => ceres_fit,
+                    #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+                    "mcmc-ceres" => lcf::McmcCurveFit::new(mcmc_niter, Some(ceres_fit)).into(),
                     #[cfg(feature = "gsl")]
                     "lmsder" => lmsder_fit,
                     #[cfg(feature = "gsl")]
@@ -793,14 +831,12 @@ macro_rules! fit_evaluator {
 
             /// Required by pickle.dump / pickle.dumps
             #[staticmethod]
-            #[args()]
             fn __getnewargs__() -> (&'static str,) {
                 ("mcmc",)
             }
 
             #[doc = FIT_METHOD_MODEL_DOC!()]
             #[staticmethod]
-            #[args(t, params)]
             fn model(
                 py: Python,
                 t: &PyAny,
@@ -818,6 +854,19 @@ macro_rules! fit_evaluator {
 
             #[classattr]
             fn __doc__() -> String {
+                #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+                let ceres_args = format!(
+                    r#"ceres_niter : int, optional
+    Number of Ceres iterations, default is {niter}
+ceres_loss_reg : float, optional
+    Ceres loss regularization, default is to use square norm as is, if set to
+    a number, the loss function is reqgualized to descriminate outlier
+    residuals larger than this value.
+"#,
+                    niter = lcf::CeresCurveFit::default_niterations()
+                );
+                #[cfg(not(any(feature = "ceres-source", feature = "ceres-system")))]
+                let ceres_args = "";
                 #[cfg(feature = "gsl")]
                 let lmsder_niter = format!(
                     r#"lmsder_niter : int, optional
@@ -837,7 +886,7 @@ algorithm : str
     {supported_algo}.
 mcmc_niter : int, optional
     Number of MCMC iterations, default is {mcmc_niter}
-{lmsder_niter}init : list or None, optional
+{ceres_args}{lmsder_niter}init : list or None, optional
     Initial conditions, must be `None` or a `list` of `float`s or `None`s.
     The length of the list must be {nparam}, `None` values will be replaced
     with some defauls values. It is supported by MCMC only
@@ -876,6 +925,7 @@ Examples
                     intro = <$eval>::doc().trim_start(),
                     supported_algo = Self::supported_algorithms_str(),
                     mcmc_niter = lcf::McmcCurveFit::default_niterations(),
+                    ceres_args = ceres_args,
                     lmsder_niter = lmsder_niter,
                     attr = ATTRIBUTES_DOC,
                     methods = METHODS_DOC,
@@ -900,7 +950,6 @@ pub struct BeyondNStd {}
 #[pymethods]
 impl BeyondNStd {
     #[new]
-    #[args(nstd)]
     fn __new__(nstd: f64) -> (Self, PyFeatureEvaluator) {
         (
             Self {},
@@ -913,7 +962,6 @@ impl BeyondNStd {
 
     /// Required by pickle.load / pickle.loads
     #[staticmethod]
-    #[args()]
     fn __getnewargs__() -> (f64,) {
         (lcf::BeyondNStd::default_nstd(),)
     }
@@ -955,7 +1003,7 @@ pub struct Bins {}
 #[pymethods]
 impl Bins {
     #[new]
-    #[args(features, window, offset)]
+    #[pyo3(signature = (features, *, window, offset))]
     fn __new__(
         py: Python,
         features: PyObject,
@@ -985,14 +1033,24 @@ impl Bins {
         ))
     }
 
+    /// Use __getnewargs_ex__ instead
+    #[staticmethod]
+    fn __getnewargs__() -> PyResult<()> {
+        Err(PyNotImplementedError::new_err(
+            "use __getnewargs_ex__ instead",
+        ))
+    }
+
     /// Required by pickle.load / pickle.loads
     #[staticmethod]
-    #[args()]
-    fn __getnewargs__(py: Python) -> (&PyTuple, f64, f64) {
+    fn __getnewargs_ex__(py: Python) -> ((&PyTuple,), HashMap<&'static str, f64>) {
         (
-            PyTuple::empty(py),
-            lcf::Bins::<_, Feature<_>>::default_window(),
-            lcf::Bins::<_, Feature<_>>::default_window(),
+            (PyTuple::empty(py),),
+            [
+                ("window", lcf::Bins::<_, Feature<_>>::default_window()),
+                ("offset", lcf::Bins::<_, Feature<_>>::default_offset()),
+            ]
+            .into(),
         )
     }
 
@@ -1030,7 +1088,6 @@ pub struct InterPercentileRange {}
 #[pymethods]
 impl InterPercentileRange {
     #[new]
-    #[args(quantile)]
     fn __new__(quantile: f32) -> (Self, PyFeatureEvaluator) {
         (
             Self {},
@@ -1043,7 +1100,6 @@ impl InterPercentileRange {
 
     /// Required by pickle.load / pickle.loads
     #[staticmethod]
-    #[args()]
     fn __getnewargs__() -> (f32,) {
         (lcf::InterPercentileRange::default_quantile(),)
     }
@@ -1077,7 +1133,6 @@ pub struct MagnitudePercentageRatio {}
 #[pymethods]
 impl MagnitudePercentageRatio {
     #[new]
-    #[args(quantile_numerator, quantile_denominator)]
     fn __new__(
         quantile_numerator: f32,
         quantile_denominator: f32,
@@ -1111,7 +1166,6 @@ impl MagnitudePercentageRatio {
 
     /// Required by pickle.load / pickle.loads
     #[staticmethod]
-    #[args()]
     fn __getnewargs__() -> (f32, f32) {
         (
             lcf::MagnitudePercentageRatio::default_quantile_numerator(),
@@ -1154,7 +1208,6 @@ pub struct MedianBufferRangePercentage {}
 #[pymethods]
 impl MedianBufferRangePercentage {
     #[new]
-    #[args(quantile)]
     fn __new__(quantile: f64) -> (Self, PyFeatureEvaluator) {
         (
             Self {},
@@ -1168,7 +1221,6 @@ impl MedianBufferRangePercentage {
 
     /// Required by pickle.load / pickle.loads
     #[staticmethod]
-    #[args()]
     fn __getnewargs__() -> (f64,) {
         (lcf::MedianBufferRangePercentage::default_quantile(),)
     }
@@ -1198,7 +1250,6 @@ pub struct PercentDifferenceMagnitudePercentile {}
 #[pymethods]
 impl PercentDifferenceMagnitudePercentile {
     #[new]
-    #[args(quantile)]
     fn __new__(quantile: f32) -> (Self, PyFeatureEvaluator) {
         (
             Self {},
@@ -1213,7 +1264,6 @@ impl PercentDifferenceMagnitudePercentile {
 
     /// Required by pickle.load / pickle.loads
     #[staticmethod]
-    #[args()]
     fn __getnewargs__() -> (f32,) {
         (lcf::PercentDifferenceMagnitudePercentile::default_quantile(),)
     }
@@ -1333,14 +1383,15 @@ impl Periodogram {
 #[pymethods]
 impl Periodogram {
     #[new]
-    #[args(
-        peaks = "None",
-        resolution = "None",
-        max_freq_factor = "None",
-        nyquist = "None",
-        fast = "None",
-        features = "None"
-    )]
+    #[pyo3(signature = (
+        *,
+        peaks = None,
+        resolution = None,
+        max_freq_factor = None,
+        nyquist = None,
+        fast = None,
+        features = None,
+    ))]
     fn __new__(
         py: Python,
         peaks: Option<usize>,
@@ -1372,7 +1423,6 @@ impl Periodogram {
     }
 
     /// Angular frequencies and periodogram values
-    #[pyo3(text_signature = "(t, m)")]
     fn freq_power(&self, py: Python, t: &PyAny, m: &PyAny) -> Res<(PyObject, PyObject)> {
         dtype_dispatch!(
             |t, m| Ok(Self::freq_power_impl(&self.eval_f32, py, t, m)),
@@ -1499,7 +1549,6 @@ impl OtsuSplit {
     }
 
     #[staticmethod]
-    #[args(m)]
     fn threshold(m: &PyAny) -> Res<f64> {
         dtype_dispatch!({ Self::threshold_impl }(m))
     }

@@ -1,6 +1,6 @@
 [package]
 name = "light-curve-python"
-version = "0.6.5"
+version = "0.7.0"
 authors = ["Konstantin Malanchev <hombit@gmail.com>", "Anastasia Lavrukhina <lavrukhina.ad@gmail.com>"]
 description = "Feature extractor from noisy time series"
 readme = "README.md"
@@ -18,13 +18,12 @@ lto = true
 codegen-units = 1
 
 [features]
-default = ["fftw-source", "gsl"]
+default = ["ceres-source", "fftw-source", "gsl"]
+ceres-source = ["light-curve-feature/ceres-source"]
+ceres-system = ["light-curve-feature/ceres-system"]
 fftw-source = ["light-curve-feature/fftw-source"]
-fftw-static = ["fftw-source"] # deprecated
 fftw-system = ["light-curve-feature/fftw-system"]
-fftw-dynamic = ["fftw-system"] # deprecated
 fftw-mkl = ["light-curve-feature/fftw-mkl"]
-mkl = ["fftw-mkl"] # deprecated
 gsl = ["light-curve-feature/gsl"]
 
 [dependencies]
@@ -37,10 +36,10 @@ enumflags2 = { version = "0.7.5", features = ["serde"] }
 itertools = "0.10.5"
 macro_const = "0.1.0"
 ndarray = { version = "0.15.3", features = ["rayon"] }
-numpy = "0.17.2"
+numpy = "0.18.0"
 num_cpus = "1.13.0"
 num-traits = "0.2"
-pyo3 = {version = "0.17.3", features = ["extension-module"]}
+pyo3 = {version = "0.18.1", features = ["extension-module"]}
 rand = "0.8.5"
 rand_xoshiro = "0.6.0"
 thiserror = "1.0.37"
@@ -54,5 +53,5 @@ version = "0.7.1"
 features = ["serde"]
 
 [dependencies.light-curve-feature]
-version = "0.5.2"
+version = "0.5.4"
 default_features = false

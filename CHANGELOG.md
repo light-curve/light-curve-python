@@ -31,6 +31,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 --
 
+
+## [0.7.0] 2023-03-16
+
+### Added
+
+- `BazinFit` and `VillarFit` have got `ceres` and `mcmc-ceres` algorithms using [Ceres Solver](http://ceres-solver.org) as a non-linear least squares optimizer. `ceres` is found to be more robust than `lmsder` algorithm (available via `gsl` Cargo feature) but working roughly twice slower. Ceres can be built from source (`ceres-source` Cargo feature, enabled by default in `Cargo.toml`) or linked to system library (`ceres-system` Cargo feature, enabled for cibuildwheel in `pyproject.toml`)
+
+### Changed
+
+- **API breaking:** Features' `__call__()` signature changed to make `sorted=None`, `check=True` and `fill_value=None` arguments to be keyword-only
+- **API breaking:** Features' `many()` signature changed to make all arguments but the first `lcs` to be keyword-only
+- **API breaking:** `Bins` constructor signature changed to make `offset` and `window` arguments to be keyword-only. For Rust implementation `__getnewargs__` is replaced with `__getnewargs_ex__`. Please note that for the specific case of Python implementation and Python version < 3.10, `Bins` still accepts positional arguments
+- **API breaking:** `BazinFit` and `VillarFit` constructor signatures changed to make everything but the first `lcs` argument to be keyword-only
+- **API breaking:** `Periodogram` constructor signature changed to make all arguments to be keyword-only
+- **API breaking:** `DmDt` constructor signature changed to make all arguments but `dt` and `dm` to be keyword-only, `__getnewargs__` is replaced with `__getnewargs_ex__`. `DmDt.from_borders` class-method constructor has all arguments to be keyword-only
+- **API breaking:** `DmDt` methods' signatures changed to make all arguments but data (like `t`, `t, m` or `lcs`) to be keyword-only
+- **Build breaking:** building with Ceres Solver (`ceres-source` Cargo feature) is now a default, and potentially could break a building pipeline in some cases. If you want to build without Ceres Solver, you need to explicitly disable default features with `--no-default-features` maturin flag
+- CI: switch from `macos-11` to `macos-latest` for testing
+- Bump `pyo3` 0.17.3 -> 0.18.1
+- Bump `rust-numpy` 0.17.2 -> 0.18.0
+
+### Removed
+
+- **Build breaking:** `fftw-static`, `fftw-dynamic`, `mkl` Cargo features are removed after deprecation in v0.6.2 and replaced with `fftw-source`, `fftw-system` and `fftw-mkl`.
+
+
 ## [0.6.5] 2023-02-22
 
 ### Fixed

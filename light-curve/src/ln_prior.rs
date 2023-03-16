@@ -17,13 +17,11 @@ pub struct LnPrior1D(pub lcf::LnPrior1D);
 #[pymethods]
 impl LnPrior1D {
     #[new]
-    #[args()]
     fn __new__() -> Self {
         Self(lcf::LnPrior1D::none())
     }
 
     /// Used by pickle.load / pickle.loads
-    #[args(state)]
     fn __setstate__(&mut self, state: &PyBytes) -> Res<()> {
         *self = serde_pickle::from_slice(state.as_bytes(), serde_pickle::DeOptions::new())
             .map_err(|err| {
@@ -35,7 +33,6 @@ impl LnPrior1D {
     }
 
     /// Used by pickle.dump / pickle.dumps
-    #[args()]
     fn __getstate__<'py>(&self, py: Python<'py>) -> Res<&'py PyBytes> {
         let vec_bytes =
             serde_pickle::to_vec(&self, serde_pickle::SerOptions::new()).map_err(|err| {
@@ -47,13 +44,11 @@ impl LnPrior1D {
     }
 
     /// Used by copy.copy
-    #[args()]
     fn __copy__(&self) -> Self {
         self.clone()
     }
 
     /// Used by copy.deepcopy
-    #[args(memo)]
     fn __deepcopy__(&self, _memo: &PyAny) -> Self {
         self.clone()
     }
@@ -64,7 +59,7 @@ impl LnPrior1D {
 /// Returns
 /// -------
 /// LnPrior1D
-#[pyfunction(text_signature = "()", module = "light_curve.light_curve_ext.ln_prior")]
+#[pyfunction]
 fn none() -> LnPrior1D {
     LnPrior1D(lcf::LnPrior1D::none())
 }
@@ -81,10 +76,7 @@ fn none() -> LnPrior1D {
 /// LnPrior1D
 ///
 /// https://en.wikipedia.org/wiki/Log-normal_distribution
-#[pyfunction(
-    text_signature = "(mu, sigma)",
-    module = "light_curve.light_curve_ext.ln_prior"
-)]
+#[pyfunction]
 fn log_normal(mu: f64, sigma: f64) -> LnPrior1D {
     LnPrior1D(lcf::LnPrior1D::log_normal(mu, sigma))
 }
@@ -101,10 +93,7 @@ fn log_normal(mu: f64, sigma: f64) -> LnPrior1D {
 /// Returns
 /// -------
 /// LnPrior1D
-#[pyfunction(
-    text_signature = "(left, right)",
-    module = "light_curve.light_curve_ext.ln_prior"
-)]
+#[pyfunction]
 fn log_uniform(left: f64, right: f64) -> LnPrior1D {
     LnPrior1D(lcf::LnPrior1D::log_uniform(left, right))
 }
@@ -119,7 +108,7 @@ fn log_uniform(left: f64, right: f64) -> LnPrior1D {
 /// Returns
 /// -------
 /// LnPrior1D
-#[pyfunction(text_signature = "(mu, sigma)", module = "light_curve.light_curve_ext")]
+#[pyfunction]
 fn normal(mu: f64, sigma: f64) -> LnPrior1D {
     LnPrior1D(lcf::LnPrior1D::normal(mu, sigma))
 }
@@ -136,10 +125,7 @@ fn normal(mu: f64, sigma: f64) -> LnPrior1D {
 /// Returns
 /// -------
 /// LnPrior1D
-#[pyfunction(
-    text_signature = "(left, right)",
-    module = "light_curve.light_curve_ext"
-)]
+#[pyfunction]
 fn uniform(left: f64, right: f64) -> LnPrior1D {
     LnPrior1D(lcf::LnPrior1D::uniform(left, right))
 }
@@ -153,7 +139,7 @@ fn uniform(left: f64, right: f64) -> LnPrior1D {
 ///     mixed logarithm of prior is
 ///     ln(sum(norm_weight_i * exp(ln_prior_i(x))))
 ///     where norm_weight_i = weight_i / sum(weight_j)
-#[pyfunction(text_signature = "mix", module = "light_curve.light_curve_ext")]
+#[pyfunction]
 fn mix(mix: Vec<(f64, LnPrior1D)>) -> LnPrior1D {
     let priors = mix
         .into_iter()

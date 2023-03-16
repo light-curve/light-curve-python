@@ -32,6 +32,10 @@ mod ln_prior;
 fn light_curve(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
 
+    m.add(
+        "_built_with_ceres",
+        cfg!(any(feature = "ceres-source", feature = "ceres-system")),
+    )?;
     m.add("_built_with_gsl", cfg!(feature = "gsl"))?;
     m.add("_fft_backend", {
         #[cfg(feature = "fftw-mkl")]

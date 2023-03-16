@@ -1,4 +1,5 @@
 #![allow(clippy::borrow_deref_ref)] // https://github.com/rust-lang/rust-clippy/issues/8971
+#![allow(clippy::redundant_closure)] // false positive for pyo3(signature(arg=vec![]))
 
 use crate::check::check_sorted;
 use crate::cont_array::{ContArray, ContCowArray};
@@ -968,15 +969,16 @@ impl DmDt {
 impl DmDt {
     #[allow(clippy::too_many_arguments)]
     #[new]
-    #[args(
+    #[pyo3(signature = (
         dt,
         dm,
-        dt_type = "\"auto\"",
-        dm_type = "\"auto\"",
-        norm = "vec![]",
+        *,
+        dm_type = "auto",
+        dt_type = "auto",
+        norm=vec![],
         n_jobs = -1,
-        approx_erf = "false"
-    )]
+        approx_erf = false
+    ))]
     fn __new__<'a>(
         dt: Arr<'a, f64>,
         dm: Arr<'a, f64>,
@@ -1003,16 +1005,17 @@ impl DmDt {
 
     #[allow(clippy::too_many_arguments)]
     #[staticmethod]
-    #[args(
+    #[pyo3(signature = (
+        *,
         min_lgdt,
         max_lgdt,
         max_abs_dm,
         lgdt_size,
         dm_size,
-        norm = "vec![]",
+        norm=vec![],
         n_jobs = -1,
-        approx_erf = "false"
-    )]
+        approx_erf = false
+    ))]
     fn from_borders(
         min_lgdt: f64,
         max_lgdt: f64,
@@ -1104,7 +1107,7 @@ impl DmDt {
     /// Returns
     /// 1d-array of float
     ///
-    #[args(t, sorted = "None")]
+    #[pyo3(signature=(t, *, sorted=None))]
     fn count_dt(&self, py: Python, t: &PyAny, sorted: Option<bool>) -> Res<PyObject> {
         dtype_dispatch!(
             |t| self.dmdt_f32.py_count_dt(py, t, sorted),
@@ -1128,7 +1131,7 @@ impl DmDt {
     /// Returns
     /// 1d-array of float
     ///
-    #[args(t_, sorted = "None")]
+    #[pyo3(signature = (t_, sorted=None))]
     fn count_dt_many(&self, py: Python, t_: Vec<&PyAny>, sorted: Option<bool>) -> Res<PyObject> {
         if t_.is_empty() {
             Err(Exception::ValueError("t_ is empty".to_owned()))
@@ -1156,7 +1159,7 @@ impl DmDt {
     /// -------
     /// 2d-ndarray of float
     ///
-    #[args(t, m, sorted = "None")]
+    #[pyo3(signature = (t, m, *, sorted=None))]
     fn points(&self, py: Python, t: &PyAny, m: &PyAny, sorted: Option<bool>) -> Res<PyObject> {
         dtype_dispatch!(
             |t, m| self.dmdt_f32.py_points(py, t, m, sorted),
@@ -1182,7 +1185,7 @@ impl DmDt {
     /// -------
     /// 3d-ndarray of float
     ///
-    #[args(lcs, sorted = "None")]
+    #[pyo3(signature = (lcs, *, sorted=None))]
     fn points_many(
         &self,
         py: Python,
@@ -1239,14 +1242,18 @@ impl DmDt {
     /// Iterable of 3d-ndarray or (1d-ndarray, 3d-ndarray)
     ///
     #[allow(clippy::too_many_arguments)]
-    #[args(
-        lcs,
-        sorted = "None",
-        batch_size = 1,
-        yield_index = false,
-        shuffle = false,
-        drop_nobs = "DropNObsType::Int(0)",
-        random_seed = "None"
+    #[pyo3(
+        signature = (
+            lcs,
+            *,
+            sorted=None,
+            batch_size=1,
+            yield_index=false,
+            shuffle=false,
+            drop_nobs=DropNObsType::Int(0),
+            random_seed=None,
+        ),
+        text_signature = "(lcs, *, sorted=None, batch_size=1, yield_index=False, shuffle=False, drop_nobs=0, random_seed=None)",
     )]
     fn points_batches(
         &self,
@@ -1309,7 +1316,7 @@ impl DmDt {
     /// -------
     /// 2d-array of float
     ///
-    #[args(t, m, sigma, sorted = "None")]
+    #[pyo3(signature = (t, m, sigma, *, sorted=None))]
     fn gausses(
         &self,
         py: Python,
@@ -1343,7 +1350,7 @@ impl DmDt {
     /// -------
     /// 3d-ndarray of float
     ///
-    #[args(lcs, sorted = "None")]
+    #[pyo3(signature = (lcs, *, sorted=None))]
     fn gausses_many(
         &self,
         py: Python,
@@ -1396,14 +1403,18 @@ impl DmDt {
     ///     means random seed
     ///
     #[allow(clippy::too_many_arguments)]
-    #[args(
-        lcs,
-        sorted = "None",
-        batch_size = 1,
-        yield_index = false,
-        shuffle = false,
-        drop_nobs = "DropNObsType::Int(0)",
-        random_seed = "None"
+    #[pyo3(
+        signature = (
+            lcs,
+            *,
+            sorted=None,
+            batch_size=1,
+            yield_index=false,
+            shuffle=false,
+            drop_nobs=DropNObsType::Int(0),
+            random_seed=None,
+        ),
+        text_signature = "($self, lcs, *, sorted=None, batch_size=1, yield_index=False, shuffle=False, drop_nobs=0, random_seed=None)"
     )]
     fn gausses_batches(
         &self,
@@ -1450,7 +1461,6 @@ impl DmDt {
     }
 
     /// Used by pickle.load / pickle.loads
-    #[args(state)]
     fn __setstate__(&mut self, state: &PyBytes) -> Res<()> {
         *self = serde_pickle::from_slice(state.as_bytes(), serde_pickle::DeOptions::new())
             .map_err(|err| {
@@ -1462,7 +1472,6 @@ impl DmDt {
     }
 
     /// Used by pickle.dump / pickle.dumps
-    #[args()]
     fn __getstate__<'py>(&self, py: Python<'py>) -> Res<&'py PyBytes> {
         let vec_bytes =
             serde_pickle::to_vec(&self, serde_pickle::SerOptions::new()).map_err(|err| {
@@ -1474,20 +1483,17 @@ impl DmDt {
     }
 
     /// Used by pickle.dump / pickle.dumps
-    #[args()]
     fn __getnewargs__<'py>(&self, py: Python<'py>) -> (&'py PyArray1<f64>, &'py PyArray1<f64>) {
         let a = ndarray::array![1.0, 2.0].to_pyarray(py);
         (a, a)
     }
 
     /// Used by copy.copy
-    #[args()]
     fn __copy__(&self) -> Self {
         self.clone()
     }
 
     /// Used by copy.deepcopy
-    #[args(memo)]
     fn __deepcopy__(&self, _memo: &PyAny) -> Self {
         self.clone()
     }

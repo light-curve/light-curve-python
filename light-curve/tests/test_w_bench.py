@@ -104,6 +104,7 @@ class _Test:
     name = None
     # Argument tuple for the feature constructor
     args = ()
+    kwargs = {}
 
     py_feature = None
 
@@ -120,9 +121,9 @@ class _Test:
     phot_types = Data.phot_type_choices
 
     def setup_method(self):
-        self.rust = getattr(lc_ext, self.name)(*self.args)
+        self.rust = getattr(lc_ext, self.name)(*self.args, **self.kwargs)
         try:
-            self.py_feature = getattr(lc_py, self.name)(*self.args)
+            self.py_feature = getattr(lc_py, self.name)(*self.args, **self.kwargs)
         except AttributeError:
             pass
 
@@ -287,62 +288,85 @@ class TestAndersonDarlingNormal(_Test):
         return stats.anderson(m).statistic * (1.0 + 4.0 / m.size - 25.0 / m.size**2)
 
 
+class _TestBazinFit:
+    name = "BazinFit"
+    kwargs = {"mcmc_niter": 1 << 10, "ceres_niter": 20, "lmsder_niter": 20}
+    rtol = 1e-3  # 10x of the precision used in the feature implementation
+
+    add_to_all_features = False  # in All* random data is used
+
+    phot_types = frozenset(["flux"])
+
+    @staticmethod
+    def _model(t, a, b, t0, rise, fall):
+        dt = t - t0
+        return b + a * np.exp(-dt / fall) / (1.0 + np.exp(-dt / rise))
+
+    def _params(self):
+        a = 100
+        c = 100
+        t0 = 0.5 * (self.t_min + self.t_max)
+        rise = 0.1 * (self.t_max - self.t_min)
+        fall = 0.2 * (self.t_max - self.t_min)
+        return a, c, t0, rise, fall
+
+    # Random data yields to random results because target function has a lot of local minima
+    # BTW, this test shouldn't use fixed random seed because the curve has good enough S/N to be fitted for any give
+    # noise sample
+    def random_data(self):
+        rng = np.random.default_rng(0)
+        t = np.linspace(self.t_min, self.t_max, self.n_obs)
+        model = self._model(t, *self._params())
+        sigma = np.sqrt(model)
+        m = model + sigma * rng.normal(size=self.n_obs)
+        return Data("Bazin+noise", "flux", t, m, sigma)
+
+    # Keep random data only
+    def data_gen(self) -> Generator[Data, None, None]:
+        yield self.random_data()
+        # All these fail because curve_fit is not good enough or because of the multiple local minima
+        # yield from get_first_n_snia_data(n=10, convert_to_flux=True)
+
+    def naive(self, t, m, sigma):
+        params, _cov = curve_fit(
+            self._model,
+            xdata=t,
+            ydata=m,
+            sigma=sigma,
+            xtol=self.rtol,
+            # We give really good parameters' estimation!
+            # p0=self._params(),
+            # The same parameter estimations we use in Rust
+            p0=(0.5 * np.ptp(m), np.min(m), t[np.argmax(m)], 0.5 * np.ptp(t), 0.5 * np.ptp(t)),
+        )
+        reduced_chi2 = np.sum(np.square((self._model(t, *params) - m) / sigma)) / (t.size - params.size)
+        return_value = tuple(params) + (reduced_chi2,)
+        return return_value
+
+
+@pytest.mark.skip("Runs too long")
+class TestBazinFitMcmc(_TestBazinFit, _Test):
+    args = ("mcmc",)
+
+
+if lc_ext._built_with_ceres:
+
+    class TestBazinFitCeres(_TestBazinFit, _Test):
+        args = ("ceres",)
+
+    @pytest.mark.skip("Runs too long")
+    class TestBazinFitMcmcCeres(_TestBazinFit, _Test):
+        args = ("mcmc-ceres",)
+
+
 if lc_ext._built_with_gsl:
 
-    class TestBazinFit(_Test):
-        name = "BazinFit"
-        args = ("lmsder", None, 20)
-        rtol = 1e-4  # Precision used in the feature implementation
+    class TestBazinFitLmsder(_TestBazinFit, _Test):
+        args = ("lmsder",)
 
-        add_to_all_features = False  # in All* random data is used
-
-        phot_types = frozenset(["flux"])
-
-        @staticmethod
-        def _model(t, a, b, t0, rise, fall):
-            dt = t - t0
-            return b + a * np.exp(-dt / fall) / (1.0 + np.exp(-dt / rise))
-
-        def _params(self):
-            a = 100
-            c = 100
-            t0 = 0.5 * (self.t_min + self.t_max)
-            rise = 0.1 * (self.t_max - self.t_min)
-            fall = 0.2 * (self.t_max - self.t_min)
-            return a, c, t0, rise, fall
-
-        # Random data yields to random results because target function has a lot of local minima
-        # BTW, this test shouldn't use fixed random seed because the curve has good enough S/N to be fitted for any give
-        # noise sample
-        def random_data(self):
-            rng = np.random.default_rng(0)
-            t = np.linspace(self.t_min, self.t_max, self.n_obs)
-            model = self._model(t, *self._params())
-            sigma = np.sqrt(model)
-            m = model + sigma * rng.normal(size=self.n_obs)
-            return Data("Bazin+noise", "flux", t, m, sigma)
-
-        # Keep random data only
-        def data_gen(self) -> Generator[Data, None, None]:
-            yield self.random_data()
-            # All these fail =(
-            # yield from get_first_n_snia_data(n=10, convert_to_flux=True)
-
-        def naive(self, t, m, sigma):
-            params, _cov = curve_fit(
-                self._model,
-                xdata=t,
-                ydata=m,
-                sigma=sigma,
-                xtol=self.rtol,
-                # We give really good parameters estimation!
-                # p0=self._params(),
-                # The same parameter estimations we use in Rust
-                p0=(0.5 * np.ptp(m), np.min(m), t[np.argmax(m)], 0.5 * np.ptp(t), 0.5 * np.ptp(t)),
-            )
-            reduced_chi2 = np.sum(np.square((self._model(t, *params) - m) / sigma)) / (t.size - params.size)
-            return_value = tuple(params) + (reduced_chi2,)
-            return return_value
+    @pytest.mark.skip("Runs too long")
+    class TestBazinFitMcmcLmsder(_TestBazinFit, _Test):
+        args = ("mcmc-lmsder",)
 
 
 class TestBeyond1Std(_Test):
