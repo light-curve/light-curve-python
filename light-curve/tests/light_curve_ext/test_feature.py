@@ -246,3 +246,17 @@ def test_benchmark_copy(feature, benchmark):
 @pytest.mark.parametrize("feature", PICKLE_BENCHMARK_FEATURES)
 def test_benchmark_deepcopy(feature, benchmark):
     benchmark(copy.deepcopy, feature)
+
+
+# We do not check pure MCMC because it requires a lot of iterations and would be too slow
+@pytest.mark.parametrize("algo", ("ceres", "mcmc-ceres", "lmsder", "mcmc-lmsder"))
+def test_bazin_fit_precise(algo):
+    bazin = lc.BazinFit(algo)
+
+    true_params = np.array([10.0, -2.0, 10.0, 10.0, 25.0])
+    t = np.linspace(-50.0, 120.0, 1000)
+    flux = bazin.model(t, true_params)
+    fluxerr = np.ones_like(t)
+
+    *params, reduced_chi2 = bazin(t, flux, fluxerr)
+    assert_allclose(true_params, params, rtol=1e-4)  # tolerance set to underlying algorithms
