@@ -9,6 +9,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+--
+
+### Changed
+
+--
+
+### Deprecated
+
+--
+
+### Removed
+
+--
+
+### Fixed
+
+--
+
+### Security
+
+--
+
+
+## [0.7.0] 2023-03-16
+
+### Added
+
 - `BazinFit` and `VillarFit` have got `ceres` and `mcmc-ceres` algorithms using [Ceres Solver](http://ceres-solver.org) as a non-linear least squares optimizer. `ceres` is found to be more robust than `lmsder` algorithm (available via `gsl` Cargo feature) but working roughly twice slower. Ceres can be built from source (`ceres-source` Cargo feature, enabled by default in `Cargo.toml`) or linked to system library (`ceres-system` Cargo feature, enabled for cibuildwheel in `pyproject.toml`)
 
 ### Changed
@@ -25,21 +52,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `pyo3` 0.17.3 -> 0.18.1
 - Bump `rust-numpy` 0.17.2 -> 0.18.0
 
-### Deprecated
-
---
-
 ### Removed
 
 - **Build breaking:** `fftw-static`, `fftw-dynamic`, `mkl` Cargo features are removed after deprecation in v0.6.2 and replaced with `fftw-source`, `fftw-system` and `fftw-mkl`.
 
-### Fixed
-
---
-
-### Security
-
---
 
 ## [0.6.5] 2023-02-22
 
