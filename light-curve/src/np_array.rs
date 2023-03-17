@@ -26,22 +26,27 @@ pub(crate) fn extract_matched_array<'py, T>(
     y: &'py PyAny,
     x_name: &'static str,
     x: &Arr<'py, T>,
+    check_size: bool,
 ) -> Res<Arr<'py, T>>
 where
     T: Element + DType,
 {
     if let Ok(y) = y.downcast::<PyArray1<T>>() {
         let y = y.readonly();
-        if y.len() == x.len() {
-            Ok(y)
+        if check_size {
+            if y.len() == x.len() {
+                Ok(y)
+            } else {
+                Err(Exception::ValueError(format!(
+                    "Mismatched length ({}: {}, {}: {})",
+                    y_name,
+                    y.len(),
+                    x_name,
+                    x.len(),
+                )))
+            }
         } else {
-            Err(Exception::ValueError(format!(
-                "Mismatched length ({}: {}, {}: {})",
-                y_name,
-                y.len(),
-                x_name,
-                x.len(),
-            )))
+            Ok(y)
         }
     } else {
         let y_type = y
@@ -73,9 +78,18 @@ where
     }
 }
 
+macro_rules! _distinguish_eq_symbol {
+    (=) => {
+        true
+    };
+    (!=) => {
+        false
+    };
+}
+
 macro_rules! dtype_dispatch {
-    ($func: tt ($first_arg:expr $(,$arg:expr)* $(,)?)) => {
-        dtype_dispatch!($func, $func, $first_arg $(,$arg)*)
+    ($func: tt ($first_arg:expr $(,$eq:tt $arg:expr)* $(,)?)) => {
+        dtype_dispatch!($func, $func, $first_arg $(,$eq $arg)*)
     };
     ($f32:expr, $f64:expr, $first_arg:expr $(,)?) => {{
         if let Ok(x32) = $first_arg.downcast::<numpy::PyArray1<f32>>() {
@@ -90,16 +104,16 @@ macro_rules! dtype_dispatch {
             Err(crate::errors::Exception::TypeError("Unsupported dtype".into()).into())
         }
     }};
-    ($f32:expr, $f64:expr, $first_arg:expr $(,$arg:expr)+ $(,)?) => {{
+    ($f32:expr, $f64:expr, $first_arg:expr $(,$eq:tt $arg:expr)+ $(,)?) => {{
         let x_name = stringify!($first_arg);
         if let Ok(x32) = $first_arg.downcast::<numpy::PyArray1<f32>>() {
             let x32 = x32.readonly();
             let f32 = $f32;
-            f32(x32.clone(), $(crate::np_array::extract_matched_array(stringify!($arg), $arg, x_name, &x32)?,)*)
+            f32(x32.clone(), $(crate::np_array::extract_matched_array(stringify!($arg), $arg, x_name, &x32, _distinguish_eq_symbol!($eq))?,)*)
         } else if let Ok(x64) = $first_arg.downcast::<numpy::PyArray1<f64>>() {
             let x64 = x64.readonly();
             let f64 = $f64;
-            f64(x64.clone(), $(crate::np_array::extract_matched_array(stringify!($arg), $arg, x_name, &x64)?,)*)
+            f64(x64.clone(), $(crate::np_array::extract_matched_array(stringify!($arg), $arg, x_name, &x64, _distinguish_eq_symbol!($eq))?,)*)
         } else {
             Err(crate::errors::Exception::TypeError("Unsupported dtype".into()).into())
         }

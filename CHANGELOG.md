@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
---
+- Bug introduced in v0.6.5: `*Fit.model(t, params)` wrongly checked `t` and `params` arrays to have the same length
 
 ### Security
 

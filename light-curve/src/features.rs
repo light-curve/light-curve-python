@@ -408,8 +408,8 @@ impl PyFeatureEvaluator {
                     )
                 },
                 t,
-                m,
-                sigma
+                =m,
+                =sigma
             )
         } else {
             dtype_dispatch!(
@@ -440,7 +440,7 @@ impl PyFeatureEvaluator {
                     )
                 },
                 t,
-                m,
+                =m,
             )
         }
     }
@@ -808,7 +808,7 @@ macro_rules! fit_evaluator {
             ) -> Res<PyObject> {
                 dtype_dispatch!({
                     |t, params| Ok(Self::model_impl(t, params).into_pyarray(py).into_py(py))
-                }(t, params))
+                }(t, !=params))
             }
 
             #[classattr]
@@ -1378,7 +1378,7 @@ impl Periodogram {
             |t, m| Ok(Self::freq_power_impl(&self.eval_f32, py, t, m)),
             |t, m| Ok(Self::freq_power_impl(&self.eval_f64, py, t, m)),
             t,
-            m
+            =m
         )
     }
 

@@ -1162,7 +1162,7 @@ impl DmDt {
             |t, m| self.dmdt_f32.py_points(py, t, m, sorted),
             |t, m| self.dmdt_f64.py_points(py, t, m, sorted),
             t,
-            m
+            =m
         )
     }
 
@@ -1322,8 +1322,8 @@ impl DmDt {
             |t, m, sigma| self.dmdt_f32.py_gausses(py, t, m, sigma, sorted),
             |t, m, sigma| self.dmdt_f64.py_gausses(py, t, m, sigma, sorted),
             t,
-            m,
-            sigma
+            =m,
+            =sigma
         )
     }
 
