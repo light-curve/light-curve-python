@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
--
+--
 
 ### Security
 
@@ -62,6 +62,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - **Build breaking:** `fftw-static`, `fftw-dynamic`, `mkl` Cargo features are removed after deprecation in v0.6.2 and replaced with `fftw-source`, `fftw-system` and `fftw-mkl`.
+
+
+## [0.6.6] 2023-03-17
+
+### Fixed
+
+- Bug introduced in v0.6.5: `*Fit.model(t, params)` wrongly checked `t` and `params` arrays to have the same length
 
 
 ## [0.6.5] 2023-02-22
