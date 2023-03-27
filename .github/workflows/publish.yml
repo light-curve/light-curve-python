@@ -34,19 +34,30 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, macos-11]
-        arch: [aarch64, ppc64le, x86_64]
+        os: [ubuntu-20.04, macos-11, windows-2019]
+        arch: [aarch64, ppc64le, x86_64, amd64]  # amd64 is Windows-only
         interpreter: [cp37, cp38, cp39, cp310, cp311, pp37, pp38, pp39]
-        platform: [manylinux, musllinux, macosx]
+        platform: [manylinux, musllinux, macosx, win]
         exclude:
           # Build Linux on Linux
           - os: macos-11
             platform: manylinux
           - os: macos-11
             platform: musllinux
+          - os: windows-2019
+            platform: manylinux
+          - os: windows-2019
+            platform: musllinux
           # Build macOS on macOS
           - os: ubuntu-20.04
             platform: macosx
+          - os: windows-2019
+            platform: macosx
+          # Build Windows on Windows
+          - os: ubuntu-20.04
+            platform: win
+          - os: macos-11
+            platform: win
           # PyPy doesn't support musllinux
           - interpreter: pp37
             platform: musllinux
@@ -69,21 +80,47 @@ jobs:
             arch: aarch64
           - os: macos-11
             arch: ppc64le
+          # amd64 is Windows-only
+          - os: ubuntu-20.04
+            arch: amd64
+          - os: macos-11
+            arch: amd64
+          # We only support amd64 on Windows
+          - os: windows-2019
+            arch: aarch64
+          - os: windows-2019
+            arch: ppc64le
+          - os: windows-2019
+            arch: x86_64
 
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up QEMU
-        if: ${{ matrix.os != 'macos-11' }}
+      - name: Set up QEMU on Linux
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
         uses: docker/setup-qemu-action@v2
         with:
           platforms: all
 
-      - name: Set CIBW_BUILD
-        run: echo "CIBW_BUILD=${{ matrix.interpreter }}-${{ matrix.platform }}_${{ matrix.arch }}" >> $GITHUB_ENV
+      - name: Set up Rust toolchain on Windows
+        uses: dtolnay/rust-toolchain@master
+        if: ${{ matrix.os == 'windows-2019' }}
+        with:
+          toolchain: stable
+          targets: x86_64-pc-windows-msvc
 
-      - name: Set CIBW_ARCHS
-        run: echo "CIBW_ARCHS=${{ matrix.arch }}" >> $GITHUB_ENV
+      # We only support AMD64 architecture for Windows, so we hard-code it here.
+      - name: Set CIBW envs on Windows
+        if: ${{ matrix.os == 'windows-2019' }}
+        run: |
+          "CIBW_BUILD=${{ matrix.interpreter }}-${{ matrix.platform }}_${{ matrix.arch }}" >> $env:GITHUB_ENV
+          "CIBW_ARCHS=AMD64" >> $env:GITHUB_ENV
+
+      - name: Set CIBW envs on Linux or macOS
+        if: ${{ matrix.os != 'windows-2019' }}
+        run: |
+          echo "CIBW_BUILD=${{ matrix.interpreter }}-${{ matrix.platform }}_${{ matrix.arch }}" >> $GITHUB_ENV
+          echo "CIBW_ARCHS=${{ matrix.arch }}" >> $GITHUB_ENV
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.12.0
