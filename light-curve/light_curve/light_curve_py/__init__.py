@@ -20,6 +20,7 @@ from .features.meanvar import *
 from .features.medabsdev import *
 from .features.medbufrperc import *
 from .features.median import *
+from .features.mendoza_fit import *
 from .features.otsusplit import *
 from .features.pdiffmperc import *
 from .features.percampl import *
