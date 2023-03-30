@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Bump `light-curve-feature` 0.5.4 -> 0.5.5
 - Bump `pyO3` 0.18.1 -> 0.18.2
 - Most of the parametric features have default values for their parameters now, which, due to `pyO3` limitations, are not presented in the signatures, but documented in the docstrings. It also makes Python and Rust implementations more consistent https://github.com/light-curve/light-curve-python/issues/194 https://github.com/light-curve/light-curve-python/pull/195
 - Development: switch from `pytest-markdown` to `markdown-pytest` which allowed us to use up-to-date pytest https://github.com/light-curve/light-curve-python/pull/198
@@ -30,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
---
+- `Bins` feature had non-optimal lower boundary check for time series length: it checked if it is at least unity for any underlying features. Now it takes underlying feature requirements into account. It was fixed by updating `light-curve-feature` to v0.5.5.
 
 ### Security
 
