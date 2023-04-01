@@ -53,5 +53,5 @@ version = "0.7.1"
 features = ["serde"]
 
 [dependencies.light-curve-feature]
-version = "0.5.4"
+version = "0.5.5"
 default_features = false
