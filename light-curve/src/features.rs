@@ -944,12 +944,13 @@ evaluator!(Amplitude, lcf::Amplitude);
 evaluator!(AndersonDarlingNormal, lcf::AndersonDarlingNormal);
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(nstd, /)")]
+#[pyo3(text_signature = "(nstd)")]
 pub struct BeyondNStd {}
 
 #[pymethods]
 impl BeyondNStd {
     #[new]
+    #[pyo3(signature = (nstd=lcf::BeyondNStd::default_nstd()))]
     fn __new__(nstd: f64) -> (Self, PyFeatureEvaluator) {
         (
             Self {},
@@ -969,15 +970,16 @@ impl BeyondNStd {
     #[classattr]
     fn __doc__() -> String {
         format!(
-            r#"{}
+            r#"{header}
 
 Parameters
 ----------
 nstd : positive float
-    N
-{}"#,
-            lcf::BeyondNStd::<f64>::doc().trim_start(),
-            COMMON_FEATURE_DOC,
+    N, default is {nstd_default:.1}
+{footer}"#,
+            header = lcf::BeyondNStd::<f64>::doc().trim_start(),
+            nstd_default = lcf::BeyondNStd::<f64>::default_nstd(),
+            footer = COMMON_FEATURE_DOC,
         )
     }
 }
@@ -1088,6 +1090,7 @@ pub struct InterPercentileRange {}
 #[pymethods]
 impl InterPercentileRange {
     #[new]
+    #[pyo3(signature = (quantile=lcf::InterPercentileRange::default_quantile()))]
     fn __new__(quantile: f32) -> (Self, PyFeatureEvaluator) {
         (
             Self {},
@@ -1107,15 +1110,16 @@ impl InterPercentileRange {
     #[classattr]
     fn __doc__() -> String {
         format!(
-            r#"{}
+            r#"{header}
 
 Parameters
 ----------
 quantile : positive float
-    Range is (100% * quantile, 100% * (1 - quantile))
-{}"#,
-            lcf::InterPercentileRange::doc().trim_start(),
-            COMMON_FEATURE_DOC
+    Range is (100% * quantile, 100% * (1 - quantile)). Default quantile is {quantile_default:.2}
+{footer}"#,
+            header = lcf::InterPercentileRange::doc().trim_start(),
+            quantile_default = lcf::InterPercentileRange::default_quantile(),
+            footer = COMMON_FEATURE_DOC
         )
     }
 }
@@ -1133,6 +1137,10 @@ pub struct MagnitudePercentageRatio {}
 #[pymethods]
 impl MagnitudePercentageRatio {
     #[new]
+    #[pyo3(signature = (
+        quantile_numerator=lcf::MagnitudePercentageRatio::default_quantile_numerator(),
+        quantile_denominator=lcf::MagnitudePercentageRatio::default_quantile_denominator()
+    ))]
     fn __new__(
         quantile_numerator: f32,
         quantile_denominator: f32,
@@ -1176,17 +1184,23 @@ impl MagnitudePercentageRatio {
     #[classattr]
     fn __doc__() -> String {
         format!(
-            r#"{}
+            r#"{header}
 
 Parameters
 ----------
 quantile_numerator: positive float
-    Numerator is inter-percentile range (100% * q, 100% (1 - q))
+    Numerator is inter-percentile range (100% * q, 100% (1 - q)).
+    Default value is {quantile_numerator_default:.2}
 quantile_denominator: positive float
     Denominator is inter-percentile range (100% * q, 100% (1 - q))
-{}"#,
-            lcf::MagnitudePercentageRatio::doc().trim_start(),
-            COMMON_FEATURE_DOC
+    Default value is {quantile_denominator_default:.2}
+{footer}"#,
+            header = lcf::MagnitudePercentageRatio::doc().trim_start(),
+            quantile_numerator_default =
+                lcf::MagnitudePercentageRatio::default_quantile_numerator(),
+            quantile_denominator_default =
+                lcf::MagnitudePercentageRatio::default_quantile_denominator(),
+            footer = COMMON_FEATURE_DOC
         )
     }
 }
@@ -1208,6 +1222,7 @@ pub struct MedianBufferRangePercentage {}
 #[pymethods]
 impl MedianBufferRangePercentage {
     #[new]
+    #[pyo3(signature = (quantile=lcf::MedianBufferRangePercentage::<f64>::default_quantile()))]
     fn __new__(quantile: f64) -> (Self, PyFeatureEvaluator) {
         (
             Self {},
@@ -1228,15 +1243,16 @@ impl MedianBufferRangePercentage {
     #[classattr]
     fn __doc__() -> String {
         format!(
-            r#"{}
+            r#"{header}
 
 Parameters
 ----------
 quantile : positive float
-    Relative range size
-{}"#,
-            lcf::MedianBufferRangePercentage::<f64>::doc(),
-            COMMON_FEATURE_DOC
+    Relative range size, default is {quantile_default:.2}
+{footer}"#,
+            header = lcf::MedianBufferRangePercentage::<f64>::doc(),
+            quantile_default = lcf::MedianBufferRangePercentage::<f64>::default_quantile(),
+            footer = COMMON_FEATURE_DOC
         )
     }
 }
@@ -1250,6 +1266,7 @@ pub struct PercentDifferenceMagnitudePercentile {}
 #[pymethods]
 impl PercentDifferenceMagnitudePercentile {
     #[new]
+    #[pyo3(signature = (quantile=lcf::PercentDifferenceMagnitudePercentile::default_quantile()))]
     fn __new__(quantile: f32) -> (Self, PyFeatureEvaluator) {
         (
             Self {},
@@ -1271,15 +1288,16 @@ impl PercentDifferenceMagnitudePercentile {
     #[classattr]
     fn __doc__() -> String {
         format!(
-            r#"{}
+            r#"{header}
 
 Parameters
 ----------
 quantile : positive float
-    Relative range size
-{}"#,
-            lcf::PercentDifferenceMagnitudePercentile::doc(),
-            COMMON_FEATURE_DOC
+    Relative range size, default is {quantile_default:.2}
+{footer}"#,
+            header = lcf::PercentDifferenceMagnitudePercentile::doc(),
+            quantile_default = lcf::PercentDifferenceMagnitudePercentile::default_quantile(),
+            footer = COMMON_FEATURE_DOC
         )
     }
 }
@@ -1439,13 +1457,13 @@ impl Periodogram {
 Parameters
 ----------
 peaks : int or None, optional
-    Number of peaks to find
+    Number of peaks to find, default is {default_peaks}
 
 resolution : float or None, optional
-    Resolution of frequency grid
+    Resolution of frequency grid, default is {default_resolution}
 
 max_freq_factor : float or None, optional
-    Mulitplier for Nyquist frequency
+    Mulitplier for Nyquist frequency, default is {default_max_freq_factor}
 
 nyquist : str or float or None, optional
     Type of Nyquist frequency. Could be one of:
@@ -1454,12 +1472,15 @@ nyquist : str or float or None, optional
         between observations
      - float: Nyquist frequency is defined by given quantile of time
         intervals between observations
+    Default is '{default_nyquist}'
 
 fast : bool or None, optional
-    Use "Fast" (approximate and FFT-based) or direct periodogram algorithm
+    Use "Fast" (approximate and FFT-based) or direct periodogram algorithm,
+    default is {default_fast}
 
 features : iterable or None, optional
-    Features to extract from periodogram considering it as a time-series
+    Features to extract from periodogram considering it as a time-series,
+    default is no additional features
 
 {common}
 freq_power(t, m)
@@ -1490,7 +1511,12 @@ Examples
 >>> peaks = periodogram(t, m, sorted=True)[::2]
 >>> frequency, power = periodogram.freq_power(t, m)
 "#,
-            intro = lcf::Periodogram::<f64, lcf::Feature<f64>>::doc(),
+            intro = LcfPeriodogram::<f64>::doc(),
+            default_peaks = LcfPeriodogram::<f64>::default_peaks(),
+            default_resolution = LcfPeriodogram::<f64>::default_resolution(),
+            default_max_freq_factor = LcfPeriodogram::<f64>::default_max_freq_factor(),
+            default_nyquist = "average",
+            default_fast = "True",
             common = ATTRIBUTES_DOC,
         )
     }
