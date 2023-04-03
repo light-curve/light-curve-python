@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
---
+- Bump `pyO3` 0.18.1 -> 0.18.2
 
 ### Deprecated
 
