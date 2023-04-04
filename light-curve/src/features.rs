@@ -1327,9 +1327,15 @@ quantile : positive float
 
 type LcfPeriodogram<T> = lcf::Periodogram<T, lcf::Feature<T>>;
 
+#[derive(FromPyObject)]
+enum NyquistArgumentOfPeriodogram<'py> {
+    String(&'py str),
+    Float(f32),
+}
+
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 #[pyo3(
-    text_signature = "(peaks=None, resolution=None, max_freq_factor=None, nyquist=None, fast=None, features=None)"
+    text_signature = "(peaks=..., resolution=..., max_freq_factor=..., nyquist='average', fast=True, features=None)"
 )]
 pub struct Periodogram {
     eval_f32: LcfPeriodogram<f32>,
@@ -1342,7 +1348,7 @@ impl Periodogram {
         peaks: Option<usize>,
         resolution: Option<f32>,
         max_freq_factor: Option<f32>,
-        nyquist: Option<PyObject>,
+        nyquist: Option<NyquistArgumentOfPeriodogram>,
         fast: Option<bool>,
         features: Option<PyObject>,
     ) -> PyResult<(LcfPeriodogram<f32>, LcfPeriodogram<f64>)> {
@@ -1365,20 +1371,17 @@ impl Periodogram {
         }
         if let Some(nyquist) = nyquist {
             let nyquist_freq: lcf::NyquistFreq =
-                if let Ok(s) = nyquist.extract::<&str>(py) {
-                    match s {
+                match nyquist {
+                    NyquistArgumentOfPeriodogram::String(nyquist_type) => match nyquist_type {
                         "average" => lcf::AverageNyquistFreq {}.into(),
                         "median" => lcf::MedianNyquistFreq {}.into(),
                         _ => return Err(PyValueError::new_err(
                             "nyquist must be one of: None, 'average', 'median' or quantile value",
                         )),
+                    },
+                    NyquistArgumentOfPeriodogram::Float(quantile) => {
+                        lcf::QuantileNyquistFreq { quantile }.into()
                     }
-                } else if let Ok(quantile) = nyquist.extract::<f32>(py) {
-                    lcf::QuantileNyquistFreq { quantile }.into()
-                } else {
-                    return Err(PyValueError::new_err(
-                        "nyquist must be one of: None, 'average', 'median' or quantile value",
-                    ));
                 };
             eval_f32.set_nyquist(nyquist_freq.clone());
             eval_f64.set_nyquist(nyquist_freq);
@@ -1426,11 +1429,11 @@ impl Periodogram {
     #[new]
     #[pyo3(signature = (
         *,
-        peaks = None,
-        resolution = None,
-        max_freq_factor = None,
-        nyquist = None,
-        fast = None,
+        peaks = LcfPeriodogram::<f64>::default_peaks(),
+        resolution = LcfPeriodogram::<f64>::default_resolution(),
+        max_freq_factor = LcfPeriodogram::<f64>::default_max_freq_factor(),
+        nyquist = NyquistArgumentOfPeriodogram::String("average"),
+        fast = true,
         features = None,
     ))]
     fn __new__(
@@ -1438,7 +1441,7 @@ impl Periodogram {
         peaks: Option<usize>,
         resolution: Option<f32>,
         max_freq_factor: Option<f32>,
-        nyquist: Option<PyObject>,
+        nyquist: Option<NyquistArgumentOfPeriodogram>,
         fast: Option<bool>,
         features: Option<PyObject>,
     ) -> PyResult<(Self, PyFeatureEvaluator)> {
@@ -1503,7 +1506,7 @@ fast : bool or None, optional
 
 features : iterable or None, optional
     Features to extract from periodogram considering it as a time-series,
-    default is no additional features
+    default is None which means no additional features
 
 {common}
 freq_power(t, m)

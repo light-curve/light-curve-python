@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 
 - `BazinFit` and `VillarFit` constructors will not accept `None` for `mcmc_niter`, `ceres_niter`, and `lmsder_niter` arguments in the future, just do not specify them to use defaults instead. https://github.com/light-curve/light-curve-python/pull/195
+- `Periodogram` constructor will not accept `None` for `peaks`, `resolution`, `max_freq_factor`, `nyquist` and `fast` in the future, just do not specify them to use defaults instead. https://github.com/light-curve/light-curve-python/pull/195
 
 ### Removed
 
