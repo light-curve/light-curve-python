@@ -944,7 +944,7 @@ evaluator!(Amplitude, lcf::Amplitude);
 evaluator!(AndersonDarlingNormal, lcf::AndersonDarlingNormal);
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(nstd)")]
+#[pyo3(text_signature = "(nstd=...)")]
 pub struct BeyondNStd {}
 
 #[pymethods]
@@ -1084,7 +1084,7 @@ evaluator!(EtaE, lcf::EtaE);
 evaluator!(ExcessVariance, lcf::ExcessVariance);
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(quantile)")]
+#[pyo3(text_signature = "(quantile=...)")]
 pub struct InterPercentileRange {}
 
 #[pymethods]
@@ -1131,7 +1131,7 @@ evaluator!(LinearFit, lcf::LinearFit);
 evaluator!(LinearTrend, lcf::LinearTrend);
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(quantile_numerator, quantile_denominator)")]
+#[pyo3(text_signature = "(quantile_numerator=..., quantile_denominator=...)")]
 pub struct MagnitudePercentageRatio {}
 
 #[pymethods]
@@ -1216,7 +1216,7 @@ evaluator!(Median, lcf::Median);
 evaluator!(MedianAbsoluteDeviation, lcf::MedianAbsoluteDeviation,);
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(quantile)")]
+#[pyo3(text_signature = "(quantile=...)")]
 pub struct MedianBufferRangePercentage {}
 
 #[pymethods]
@@ -1260,7 +1260,7 @@ quantile : positive float
 evaluator!(PercentAmplitude, lcf::PercentAmplitude);
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(quantile)")]
+#[pyo3(text_signature = "(quantile=...)")]
 pub struct PercentDifferenceMagnitudePercentile {}
 
 #[pymethods]
