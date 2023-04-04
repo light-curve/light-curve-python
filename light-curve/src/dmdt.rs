@@ -810,6 +810,9 @@ py_dmdt_batches!(
 ///     Gives a reusable iterable which yields smeared dmdt-maps
 ///
 #[pyclass(module = "light_curve.light_curve_ext")]
+#[pyo3(
+    text_signature = "(dt, dm, *, dt_type='auto', dm_type='auto', norm=[], n_jobs=-1, approx_erf=False)"
+)]
 #[derive(Serialize, Deserialize, Clone)]
 pub struct DmDt {
     dmdt_f64: GenericDmDt<f64>,
@@ -970,8 +973,8 @@ impl DmDt {
         dt,
         dm,
         *,
-        dm_type = "auto",
         dt_type = "auto",
+        dm_type = "auto",
         norm=vec![],
         n_jobs = -1,
         approx_erf = false
@@ -979,8 +982,8 @@ impl DmDt {
     fn __new__<'a>(
         dt: Arr<'a, f64>,
         dm: Arr<'a, f64>,
-        dm_type: &str,
         dt_type: &str,
+        dm_type: &str,
         norm: Vec<&str>,
         n_jobs: i64,
         approx_erf: bool,
