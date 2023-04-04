@@ -675,7 +675,7 @@ pub(crate) enum FitLnPrior<'a> {
 macro_rules! fit_evaluator {
     ($name: ident, $eval: ty, $ib: ty, $nparam: literal, $ln_prior_by_str: tt, $ln_prior_doc: literal $(,)?) => {
         #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-        #[pyo3(text_signature = "(algorithm, *, mcmc_niter=None, ceres_niter=None, ceres_loss_reg=None, lmsder_niter=None, init=None, bounds=None, ln_prior=None)")]
+        #[pyo3(text_signature = "(algorithm, *, mcmc_niter=..., ceres_niter=..., ceres_loss_reg=None, lmsder_niter=..., init=None, bounds=None, ln_prior=None)")]
         pub struct $name {}
 
         impl $name {
@@ -692,6 +692,28 @@ macro_rules! fit_evaluator {
                 let params = ContCowArray::from_view(params.as_array(), true);
                 t.as_array().mapv(|x| <$eval>::f(x, params.as_slice()))
             }
+
+            fn default_lmsder_iterations() -> u16 {
+                #[cfg(feature = "gsl")]
+                {
+                    lcf::LmsderCurveFit::default_niterations()
+                }
+                #[cfg(not(feature = "gsl"))]
+                {
+                    0
+                }
+            }
+
+            fn default_ceres_iterations() -> u16 {
+                #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+                {
+                    lcf::CeresCurveFit::default_niterations()
+                }
+                #[cfg(not(any(feature = "ceres-source", feature = "ceres-system")))]
+                {
+                    0
+                }
+            }
         }
 
         #[allow(clippy::too_many_arguments)]
@@ -701,9 +723,9 @@ macro_rules! fit_evaluator {
             #[pyo3(signature = (
                 algorithm,
                 *,
-                mcmc_niter = None,
-                lmsder_niter = None,
-                ceres_niter = None,
+                mcmc_niter = lcf::McmcCurveFit::default_niterations(),
+                lmsder_niter = Self::default_lmsder_iterations(),
+                ceres_niter = Self::default_ceres_iterations(),
                 ceres_loss_reg = None,
                 init = None,
                 bounds = None,
@@ -862,6 +884,7 @@ ceres_loss_reg : float, optional
     Ceres loss regularization, default is to use square norm as is, if set to
     a number, the loss function is reqgualized to descriminate outlier
     residuals larger than this value.
+    Default is None which means no regularization.
 "#,
                     niter = lcf::CeresCurveFit::default_niterations()
                 );
