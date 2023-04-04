@@ -1,6 +1,3 @@
-#![allow(clippy::borrow_deref_ref)] // https://github.com/rust-lang/rust-clippy/issues/8971
-#![allow(clippy::redundant_closure)] // false positive for pyo3(signature(arg=vec![]))
-
 use crate::check::check_sorted;
 use crate::cont_array::{ContArray, ContCowArray};
 use crate::errors::{Exception, Res};
