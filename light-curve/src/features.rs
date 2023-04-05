@@ -3,16 +3,18 @@ use crate::cont_array::ContCowArray;
 use crate::errors::{Exception, Res};
 use crate::ln_prior::LnPrior1D;
 use crate::np_array::Arr;
+use crate::transform::{parse_transform, StockTransformer};
 
 use const_format::formatcp;
 use conv::ConvUtil;
+use itertools::Itertools;
 use light_curve_feature::{self as lcf, prelude::*, DataSample};
 use macro_const::macro_const;
 use ndarray::IntoNdProducer;
 use numpy::{IntoPyArray, PyArray1};
 use pyo3::exceptions::{PyNotImplementedError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyTuple};
+use pyo3::types::{PyBool, PyBytes, PyTuple};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -44,10 +46,10 @@ const METHOD_CALL_DOC: &str = r#"__call__(self, t, m, sigma=None, *, sorted=None
     ----------
     t : numpy.ndarray of np.float32 or np.float64 dtype
         Time moments
-    m : numpy.ndarray of the same dtype as t
+    m : numpy.ndarray of the same dtype and size as t
         Signal in magnitude or fluxes. Refer to the feature description to
         decide which would work better in your case
-    sigma : numpy.ndarray of the same dtype as t, optional
+    sigma : numpy.ndarray of the same dtype and size as t, optional
         Observation error, if None it is assumed to be unity
     sorted : bool or None, optional
         Specifies if input array are sorted by time moments.
@@ -115,6 +117,26 @@ const METHODS_DOC: &str = formatcp!(
 
 const COMMON_FEATURE_DOC: &str = formatcp!("\n{}\n\n{}\n", ATTRIBUTES_DOC, METHODS_DOC);
 
+fn transform_parameter_doc(default: StockTransformer) -> String {
+    let default_name: &str = default.into();
+    let variants = StockTransformer::all_variants().format_with("\n     - ", |variant, fmt| {
+        let name: &str = variant.into();
+        let doc = variant.doc().trim();
+        fmt(&format_args!("'{name}' - {doc}"))
+    });
+    format!(
+        r#"transform : str or bool or None
+    Transformer to apply to the feature values. If str, must be one of:
+     - 'default' - use default transformer for the feature, it same as giving
+       True. The default for this feature is '{default_name}'
+     - {variants}
+    If bool, must be True to use default transformer or False to disable.
+    If None, no transformation is applied"#,
+        default_name = default_name,
+        variants = variants,
+    )
+}
+
 type PyLightCurve<'a, T> = (Arr<'a, T>, Arr<'a, T>, Option<Arr<'a, T>>);
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -129,6 +151,46 @@ pub struct PyFeatureEvaluator {
 }
 
 impl PyFeatureEvaluator {
+    fn with_transform(
+        (fe_f32, fe_f64): (lcf::Feature<f32>, lcf::Feature<f64>),
+        (tr_f32, tr_f64): (lcf::Transformer<f32>, lcf::Transformer<f64>),
+    ) -> Res<Self> {
+        Ok(Self {
+            feature_evaluator_f32: lcf::Transformed::new(fe_f32, tr_f32)
+                .map_err(|err| {
+                    Exception::ValueError(format!(
+                        "feature and transformation are incompatible: {:?}",
+                        err
+                    ))
+                })?
+                .into(),
+            feature_evaluator_f64: lcf::Transformed::new(fe_f64, tr_f64)
+                .map_err(|err| {
+                    Exception::ValueError(format!(
+                        "feature and transformation are incompatible: {:?}",
+                        err
+                    ))
+                })?
+                .into(),
+        })
+    }
+
+    fn with_py_transform(
+        fe_f32: lcf::Feature<f32>,
+        fe_f64: lcf::Feature<f64>,
+        transform: Option<&PyAny>,
+        default_transformer: StockTransformer,
+    ) -> Res<Self> {
+        let transform = parse_transform(transform, default_transformer)?;
+        match transform {
+            Some(transform) => Self::with_transform((fe_f32, fe_f64), transform.into()),
+            None => Ok(Self {
+                feature_evaluator_f32: fe_f32,
+                feature_evaluator_f64: fe_f64,
+            }),
+        }
+    }
+
     fn ts_from_numpy<'a, T>(
         feature_evaluator: &lcf::Feature<T>,
         t: &'a Arr<'a, T>,
@@ -535,15 +597,43 @@ impl PyFeatureEvaluator {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone)]
+#[pyclass(
+    extends = PyFeatureEvaluator,
+    subclass,
+    name = "_FeatureWithStockTransformer",
+    module = "light_curve.light_curve_ext"
+)]
+pub struct FeatureWithStockTransformer {}
+
+#[pymethods]
+impl FeatureWithStockTransformer {
+    /// Supported transform names
+    #[classattr]
+    fn supported_transforms() -> Vec<&'static str> {
+        StockTransformer::all_names().collect()
+    }
+}
+
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(*features)")]
+#[pyo3(text_signature = "(*features, transform=None)")]
 pub struct Extractor {}
 
 #[pymethods]
 impl Extractor {
     #[new]
-    #[pyo3(signature = (*features))]
-    fn __new__(features: &PyTuple) -> PyResult<(Self, PyFeatureEvaluator)> {
+    #[pyo3(signature = (*features, transform=None))]
+    fn __new__(
+        features: &PyTuple,
+        transform: Option<&PyAny>,
+    ) -> PyResult<(Self, PyFeatureEvaluator)> {
+        if transform.is_some() {
+            return Err(Exception::NotImplementedError(
+                "transform is not implemented for Extractor, transform individual features instead"
+                    .to_string(),
+            )
+            .into());
+        }
         let evals_iter = features.iter().map(|arg| {
             arg.downcast::<PyCell<PyFeatureEvaluator>>().map(|fe| {
                 let fe = fe.borrow();
@@ -573,6 +663,8 @@ Parameters
 ----------
 *features : iterable
     Feature objects
+transform : None, optional
+    Not implemented for Extractor, transform individual features instead
 {}
 "#,
             lcf::FeatureExtractor::<f64, lcf::Feature<f64>>::doc().trim_start(),
@@ -582,27 +674,43 @@ Parameters
 }
 
 macro_rules! evaluator {
-    ($name: ident, $eval: ty $(,)?) => {
-        #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
+    ($name: ident, $eval: ty, $default_transform: expr $(,)?) => {
+        #[pyclass(extends = FeatureWithStockTransformer, module="light_curve.light_curve_ext")]
         #[pyo3(text_signature = "()")]
         pub struct $name {}
+
+        impl $name {
+            const DEFAULT_TRANSFORMER: StockTransformer = $default_transform;
+        }
 
         #[pymethods]
         impl $name {
             #[new]
-            fn __new__() -> (Self, PyFeatureEvaluator) {
-                (
-                    Self {},
-                    PyFeatureEvaluator {
-                        feature_evaluator_f32: <$eval>::new().into(),
-                        feature_evaluator_f64: <$eval>::new().into(),
-                    },
-                )
+            #[pyo3(signature=(*, transform=None))]
+            fn __new__(transform: Option<&PyAny>) -> Res<PyClassInitializer<Self>> {
+                let base = PyFeatureEvaluator::with_py_transform(
+                    <$eval>::new().into(),
+                    <$eval>::new().into(),
+                    transform,
+                    Self::DEFAULT_TRANSFORMER,
+                )?;
+                Ok(PyClassInitializer::from(base)
+                    .add_subclass(FeatureWithStockTransformer {})
+                    .add_subclass(Self {}))
             }
 
             #[classattr]
             fn __doc__() -> String {
-                format!("{}{}", <$eval>::doc().trim_start(), COMMON_FEATURE_DOC)
+                format!(
+                    r#"{header}
+Parameters
+----------
+{transform_variant}
+{footer}"#,
+                    header = <$eval>::doc().trim_start(),
+                    transform_variant = transform_parameter_doc(Self::DEFAULT_TRANSFORMER),
+                    footer = COMMON_FEATURE_DOC
+                )
             }
         }
     };
@@ -673,9 +781,9 @@ pub(crate) enum FitLnPrior<'a> {
 }
 
 macro_rules! fit_evaluator {
-    ($name: ident, $eval: ty, $ib: ty, $nparam: literal, $ln_prior_by_str: tt, $ln_prior_doc: literal $(,)?) => {
+    ($name: ident, $eval: ty, $ib: ty, $transform: expr, $nparam: literal, $ln_prior_by_str: tt, $ln_prior_doc: literal $(,)?) => {
         #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-        #[pyo3(text_signature = "(algorithm, *, mcmc_niter=..., ceres_niter=..., ceres_loss_reg=None, lmsder_niter=..., init=None, bounds=None, ln_prior=None)")]
+        #[pyo3(text_signature = "(algorithm, *, mcmc_niter=..., ceres_niter=..., ceres_loss_reg=None, lmsder_niter=..., init=None, bounds=None, ln_prior=None, transform=None)")]
         pub struct $name {}
 
         impl $name {
@@ -730,6 +838,7 @@ macro_rules! fit_evaluator {
                 init = None,
                 bounds = None,
                 ln_prior = None,
+                transform = None,
             ))]
             fn __new__(
                 algorithm: &str,
@@ -740,6 +849,7 @@ macro_rules! fit_evaluator {
                 init: Option<Vec<Option<f64>>>,
                 bounds: Option<Vec<(Option<f64>, Option<f64>)>>,
                 ln_prior: Option<FitLnPrior<'_>>,
+                transform: Option<&PyAny>,
             ) -> PyResult<(Self, PyFeatureEvaluator)> {
                 let mcmc_niter = mcmc_niter.unwrap_or_else(lcf::McmcCurveFit::default_niterations);
 
@@ -832,23 +942,38 @@ macro_rules! fit_evaluator {
                     }
                 };
 
-                Ok((
-                    Self {},
-                    PyFeatureEvaluator {
-                        feature_evaluator_f32: <$eval>::new(
+                let (fe_f32, fe_f64) = (<$eval>::new(
                             curve_fit_algorithm.clone(),
                             ln_prior.clone(),
                             init_bounds.clone(),
                         )
                         .into(),
-                        feature_evaluator_f64: <$eval>::new(
+                <$eval>::new(
                             curve_fit_algorithm,
                             ln_prior,
                             init_bounds,
                         )
-                        .into(),
-                    },
-                ))
+                        .into(),);
+
+                let make_transformation = match transform {
+                    None => false,
+                    Some(py_transform) => match py_transform.downcast::<PyBool>() {
+                        Ok(py_bool) => py_bool.is_true(),
+                        Err(_) => return Err(PyValueError::new_err(
+                            "transform must be a bool or None, other types are not implemented yet",
+                        )),
+                    }
+                };
+                let fe = if make_transformation {
+                    PyFeatureEvaluator::with_transform((fe_f32, fe_f64), ($transform.into(), $transform.into()))?
+                } else {
+                    PyFeatureEvaluator {
+                        feature_evaluator_f32: fe_f32,
+                        feature_evaluator_f64: fe_f64,
+                    }
+                };
+
+                Ok((Self{}, fe))
             }
 
             /// Required by pickle.dump / pickle.dumps
@@ -923,6 +1048,18 @@ ln_prior : str or list of ln_prior.LnPrior1D or None, optional
     or a list of {nparam} `ln_prior.LnPrior1D` objects, see `ln_prior`
     submodule for corresponding functions. Available string literals are:
     {ln_prior}
+transform : bool or None, optional
+    If `False` or `None` (default) output is not transformed. If `True` output
+    is transformed as following:
+     - Half-amplitude A is transformed as `zp - 2.5 lg(2*A)`, zp = 8.9,
+       so that the amplitude is assumed to be the object peak flux in Jy.
+     - baseline flux is normalised by A: baseline -> baseline / A
+     - reference time is removed
+     - goodness of fit is transformed as `ln(reduced chi^2 + 1)` to reduce
+       its spread
+     - other parameters are not transformed
+    See `names` and `descriptions` attributes an object for the list and order
+    of features.
 
 {attr}
 supported_algorithms : list of str
@@ -962,25 +1099,36 @@ Examples
     };
 }
 
-evaluator!(Amplitude, lcf::Amplitude);
+evaluator!(Amplitude, lcf::Amplitude, StockTransformer::Identity);
 
-evaluator!(AndersonDarlingNormal, lcf::AndersonDarlingNormal);
+evaluator!(
+    AndersonDarlingNormal,
+    lcf::AndersonDarlingNormal,
+    StockTransformer::Lg
+);
 
-#[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(nstd=...)")]
+#[pyclass(extends = FeatureWithStockTransformer, module="light_curve.light_curve_ext")]
+#[pyo3(text_signature = "(nstd=..., *, transform=None)")]
 pub struct BeyondNStd {}
+
+impl BeyondNStd {
+    const DEFAULT_TRANSFORMER: StockTransformer = StockTransformer::Identity;
+}
 
 #[pymethods]
 impl BeyondNStd {
     #[new]
-    #[pyo3(signature = (nstd=lcf::BeyondNStd::default_nstd()))]
-    fn __new__(nstd: f64) -> (Self, PyFeatureEvaluator) {
-        (
-            Self {},
-            PyFeatureEvaluator {
-                feature_evaluator_f32: lcf::BeyondNStd::new(nstd as f32).into(),
-                feature_evaluator_f64: lcf::BeyondNStd::new(nstd).into(),
-            },
+    #[pyo3(signature = (nstd=lcf::BeyondNStd::default_nstd(), *, transform=None))]
+    fn __new__(nstd: f64, transform: Option<&PyAny>) -> Res<PyClassInitializer<Self>> {
+        Ok(
+            PyClassInitializer::from(PyFeatureEvaluator::with_py_transform(
+                lcf::BeyondNStd::new(nstd as f32).into(),
+                lcf::BeyondNStd::new(nstd).into(),
+                transform,
+                Self::DEFAULT_TRANSFORMER,
+            )?)
+            .add_subclass(FeatureWithStockTransformer {})
+            .add_subclass(Self {}),
         )
     }
 
@@ -1011,6 +1159,7 @@ fit_evaluator!(
     BazinFit,
     lcf::BazinFit,
     lcf::BazinInitsBounds,
+    lcf::transformers::bazin_fit::BazinFitTransformer::default(),
     5,
     {
         "no" => lcf::BazinLnPrior::fixed(lcf::LnPrior::none()),
@@ -1022,19 +1171,27 @@ fit_evaluator!(
 );
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(features, window, offset)")]
+#[pyo3(text_signature = "(features, *, window, offset, transform = None)")]
 pub struct Bins {}
 
 #[pymethods]
 impl Bins {
     #[new]
-    #[pyo3(signature = (features, *, window, offset))]
+    #[pyo3(signature = (features, *, window, offset, transform = None))]
     fn __new__(
         py: Python,
         features: PyObject,
         window: f64,
         offset: f64,
+        transform: Option<&PyAny>,
     ) -> PyResult<(Self, PyFeatureEvaluator)> {
+        if transform.is_some() {
+            return Err(Exception::ValueError(
+                "transform is not supported by Bins, apply transformations to individual features"
+                    .to_string(),
+            )
+            .into());
+        }
         let mut eval_f32 = lcf::Bins::default();
         let mut eval_f64 = lcf::Bins::default();
         for x in features.extract::<&PyAny>(py)?.iter()? {
@@ -1082,7 +1239,7 @@ impl Bins {
     #[classattr]
     fn __doc__() -> String {
         format!(
-            r#"{}
+            r#"{header}
 
 Parameters
 ----------
@@ -1092,35 +1249,50 @@ window : positive float
     Width of binning interval in units of time
 offset : float
     Zero time moment
+transform : None
+    Not supported, apply transformations to individual features
+{footer}
 "#,
-            lcf::Bins::<f64, lcf::Feature<f64>>::doc().trim_start()
+            header = lcf::Bins::<f64, lcf::Feature<f64>>::doc().trim_start(),
+            footer = COMMON_FEATURE_DOC,
         )
     }
 }
 
-evaluator!(Cusum, lcf::Cusum);
+evaluator!(Cusum, lcf::Cusum, StockTransformer::Identity);
 
-evaluator!(Eta, lcf::Eta);
+evaluator!(Eta, lcf::Eta, StockTransformer::Identity);
 
-evaluator!(EtaE, lcf::EtaE);
+evaluator!(EtaE, lcf::EtaE, StockTransformer::Lg);
 
-evaluator!(ExcessVariance, lcf::ExcessVariance);
+evaluator!(
+    ExcessVariance,
+    lcf::ExcessVariance,
+    StockTransformer::Identity
+);
 
-#[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(quantile=...)")]
+#[pyclass(extends = FeatureWithStockTransformer, module="light_curve.light_curve_ext")]
+#[pyo3(text_signature = "(quantile=..., *, transform = None)")]
 pub struct InterPercentileRange {}
+
+impl InterPercentileRange {
+    const DEFAULT_TRANSFORMER: StockTransformer = StockTransformer::Identity;
+}
 
 #[pymethods]
 impl InterPercentileRange {
     #[new]
-    #[pyo3(signature = (quantile=lcf::InterPercentileRange::default_quantile()))]
-    fn __new__(quantile: f32) -> (Self, PyFeatureEvaluator) {
-        (
-            Self {},
-            PyFeatureEvaluator {
-                feature_evaluator_f32: lcf::InterPercentileRange::new(quantile).into(),
-                feature_evaluator_f64: lcf::InterPercentileRange::new(quantile).into(),
-            },
+    #[pyo3(signature = (quantile=lcf::InterPercentileRange::default_quantile(), *, transform = None))]
+    fn __new__(quantile: f32, transform: Option<&PyAny>) -> Res<PyClassInitializer<Self>> {
+        Ok(
+            PyClassInitializer::from(PyFeatureEvaluator::with_py_transform(
+                lcf::InterPercentileRange::new(quantile).into(),
+                lcf::InterPercentileRange::new(quantile).into(),
+                transform,
+                Self::DEFAULT_TRANSFORMER,
+            )?)
+            .add_subclass(FeatureWithStockTransformer {})
+            .add_subclass(Self {}),
         )
     }
 
@@ -1139,60 +1311,64 @@ Parameters
 ----------
 quantile : positive float
     Range is (100% * quantile, 100% * (1 - quantile)). Default quantile is {quantile_default:.2}
+{transform}
 {footer}"#,
             header = lcf::InterPercentileRange::doc().trim_start(),
             quantile_default = lcf::InterPercentileRange::default_quantile(),
+            transform = transform_parameter_doc(Self::DEFAULT_TRANSFORMER),
             footer = COMMON_FEATURE_DOC
         )
     }
 }
 
-evaluator!(Kurtosis, lcf::Kurtosis);
+evaluator!(Kurtosis, lcf::Kurtosis, StockTransformer::Arcsinh);
 
-evaluator!(LinearFit, lcf::LinearFit);
+evaluator!(LinearFit, lcf::LinearFit, StockTransformer::Identity);
 
-evaluator!(LinearTrend, lcf::LinearTrend);
+evaluator!(LinearTrend, lcf::LinearTrend, StockTransformer::Identity);
 
-#[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(quantile_numerator=..., quantile_denominator=...)")]
+#[pyclass(extends = FeatureWithStockTransformer, module="light_curve.light_curve_ext")]
+#[pyo3(text_signature = "(quantile_numerator=..., quantile_denominator=..., *, transform = None)")]
 pub struct MagnitudePercentageRatio {}
+
+impl MagnitudePercentageRatio {
+    const DEFAULT_TRANSFORMER: StockTransformer = StockTransformer::Identity;
+}
 
 #[pymethods]
 impl MagnitudePercentageRatio {
     #[new]
     #[pyo3(signature = (
         quantile_numerator=lcf::MagnitudePercentageRatio::default_quantile_numerator(),
-        quantile_denominator=lcf::MagnitudePercentageRatio::default_quantile_denominator()
+        quantile_denominator=lcf::MagnitudePercentageRatio::default_quantile_denominator(),
+        *,
+        transform=None,
     ))]
     fn __new__(
         quantile_numerator: f32,
         quantile_denominator: f32,
-    ) -> PyResult<(Self, PyFeatureEvaluator)> {
+        transform: Option<&PyAny>,
+    ) -> Res<PyClassInitializer<Self>> {
         if !(0.0..0.5).contains(&quantile_numerator) {
-            return Err(PyValueError::new_err(
-                "quantile_numerator must be between 0.0 and 0.5",
+            return Err(Exception::ValueError(
+                "quantile_numerator must be between 0.0 and 0.5".to_string(),
             ));
         }
         if !(0.0..0.5).contains(&quantile_denominator) {
-            return Err(PyValueError::new_err(
-                "quantile_denumerator must be between 0.0 and 0.5",
+            return Err(Exception::ValueError(
+                "quantile_denumerator must be between 0.0 and 0.5".to_string(),
             ));
         }
-        Ok((
-            Self {},
-            PyFeatureEvaluator {
-                feature_evaluator_f32: lcf::MagnitudePercentageRatio::new(
-                    quantile_numerator,
-                    quantile_denominator,
-                )
-                .into(),
-                feature_evaluator_f64: lcf::MagnitudePercentageRatio::new(
-                    quantile_numerator,
-                    quantile_denominator,
-                )
-                .into(),
-            },
-        ))
+        Ok(
+            PyClassInitializer::from(PyFeatureEvaluator::with_py_transform(
+                lcf::MagnitudePercentageRatio::new(quantile_numerator, quantile_denominator).into(),
+                lcf::MagnitudePercentageRatio::new(quantile_numerator, quantile_denominator).into(),
+                transform,
+                Self::DEFAULT_TRANSFORMER,
+            )?)
+            .add_subclass(FeatureWithStockTransformer {})
+            .add_subclass(Self {}),
+        )
     }
 
     /// Required by pickle.load / pickle.loads
@@ -1215,45 +1391,57 @@ quantile_numerator: positive float
     Numerator is inter-percentile range (100% * q, 100% (1 - q)).
     Default value is {quantile_numerator_default:.2}
 quantile_denominator: positive float
-    Denominator is inter-percentile range (100% * q, 100% (1 - q))
+    Denominator is inter-percentile range (100% * q, 100% (1 - q)).
     Default value is {quantile_denominator_default:.2}
+{transform}
 {footer}"#,
             header = lcf::MagnitudePercentageRatio::doc().trim_start(),
             quantile_numerator_default =
                 lcf::MagnitudePercentageRatio::default_quantile_numerator(),
             quantile_denominator_default =
                 lcf::MagnitudePercentageRatio::default_quantile_denominator(),
+            transform = transform_parameter_doc(Self::DEFAULT_TRANSFORMER),
             footer = COMMON_FEATURE_DOC
         )
     }
 }
 
-evaluator!(MaximumSlope, lcf::MaximumSlope);
+evaluator!(MaximumSlope, lcf::MaximumSlope, StockTransformer::ClippedLg);
 
-evaluator!(Mean, lcf::Mean);
+evaluator!(Mean, lcf::Mean, StockTransformer::Identity);
 
-evaluator!(MeanVariance, lcf::MeanVariance);
+evaluator!(MeanVariance, lcf::MeanVariance, StockTransformer::Identity);
 
-evaluator!(Median, lcf::Median);
+evaluator!(Median, lcf::Median, StockTransformer::Identity);
 
-evaluator!(MedianAbsoluteDeviation, lcf::MedianAbsoluteDeviation,);
+evaluator!(
+    MedianAbsoluteDeviation,
+    lcf::MedianAbsoluteDeviation,
+    StockTransformer::Identity
+);
 
-#[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(quantile=...)")]
+#[pyclass(extends = FeatureWithStockTransformer, module="light_curve.light_curve_ext")]
+#[pyo3(text_signature = "(quantile=..., *, transform = None)")]
 pub struct MedianBufferRangePercentage {}
+
+impl MedianBufferRangePercentage {
+    const DEFAULT_TRANSFORMER: StockTransformer = StockTransformer::Identity;
+}
 
 #[pymethods]
 impl MedianBufferRangePercentage {
     #[new]
-    #[pyo3(signature = (quantile=lcf::MedianBufferRangePercentage::<f64>::default_quantile()))]
-    fn __new__(quantile: f64) -> (Self, PyFeatureEvaluator) {
-        (
-            Self {},
-            PyFeatureEvaluator {
-                feature_evaluator_f32: lcf::MedianBufferRangePercentage::new(quantile as f32)
-                    .into(),
-                feature_evaluator_f64: lcf::MedianBufferRangePercentage::new(quantile).into(),
-            },
+    #[pyo3(signature = (quantile=lcf::MedianBufferRangePercentage::<f64>::default_quantile(), *, transform = None))]
+    fn __new__(quantile: f64, transform: Option<&PyAny>) -> Res<PyClassInitializer<Self>> {
+        Ok(
+            PyClassInitializer::from(PyFeatureEvaluator::with_py_transform(
+                lcf::MedianBufferRangePercentage::new(quantile as f32).into(),
+                lcf::MedianBufferRangePercentage::new(quantile).into(),
+                transform,
+                Self::DEFAULT_TRANSFORMER,
+            )?)
+            .add_subclass(FeatureWithStockTransformer {})
+            .add_subclass(Self {}),
         )
     }
 
@@ -1272,33 +1460,49 @@ Parameters
 ----------
 quantile : positive float
     Relative range size, default is {quantile_default:.2}
+{transform}
 {footer}"#,
             header = lcf::MedianBufferRangePercentage::<f64>::doc(),
             quantile_default = lcf::MedianBufferRangePercentage::<f64>::default_quantile(),
+            transform = transform_parameter_doc(Self::DEFAULT_TRANSFORMER),
             footer = COMMON_FEATURE_DOC
         )
     }
 }
 
-evaluator!(PercentAmplitude, lcf::PercentAmplitude);
+evaluator!(
+    PercentAmplitude,
+    lcf::PercentAmplitude,
+    StockTransformer::Identity
+);
 
-#[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(quantile=...)")]
+#[pyclass(extends = FeatureWithStockTransformer, module="light_curve.light_curve_ext")]
+#[pyo3(text_signature = "(quantile=..., *, transform = None)")]
 pub struct PercentDifferenceMagnitudePercentile {}
+
+impl PercentDifferenceMagnitudePercentile {
+    const DEFAULT_TRANSFORMER: StockTransformer = StockTransformer::ClippedLg;
+}
 
 #[pymethods]
 impl PercentDifferenceMagnitudePercentile {
     #[new]
-    #[pyo3(signature = (quantile=lcf::PercentDifferenceMagnitudePercentile::default_quantile()))]
-    fn __new__(quantile: f32) -> (Self, PyFeatureEvaluator) {
-        (
-            Self {},
-            PyFeatureEvaluator {
-                feature_evaluator_f32: lcf::PercentDifferenceMagnitudePercentile::new(quantile)
-                    .into(),
-                feature_evaluator_f64: lcf::PercentDifferenceMagnitudePercentile::new(quantile)
-                    .into(),
-            },
+    #[pyo3(signature = (quantile=lcf::PercentDifferenceMagnitudePercentile::default_quantile(), *, transform = None))]
+    fn __new__(quantile: f32, transform: Option<&PyAny>) -> Res<PyClassInitializer<Self>> {
+        if !(0.0..0.5).contains(&quantile) {
+            return Err(Exception::ValueError(
+                "quantile must be between 0.0 and 0.5".to_string(),
+            ));
+        }
+        Ok(
+            PyClassInitializer::from(PyFeatureEvaluator::with_py_transform(
+                lcf::PercentDifferenceMagnitudePercentile::new(quantile).into(),
+                lcf::PercentDifferenceMagnitudePercentile::new(quantile).into(),
+                transform,
+                Self::DEFAULT_TRANSFORMER,
+            )?)
+            .add_subclass(FeatureWithStockTransformer {})
+            .add_subclass(Self {}),
         )
     }
 
@@ -1317,9 +1521,11 @@ Parameters
 ----------
 quantile : positive float
     Relative range size, default is {quantile_default:.2}
+{transform}
 {footer}"#,
             header = lcf::PercentDifferenceMagnitudePercentile::doc(),
             quantile_default = lcf::PercentDifferenceMagnitudePercentile::default_quantile(),
+            transform = transform_parameter_doc(Self::DEFAULT_TRANSFORMER),
             footer = COMMON_FEATURE_DOC
         )
     }
@@ -1335,7 +1541,7 @@ enum NyquistArgumentOfPeriodogram<'py> {
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 #[pyo3(
-    text_signature = "(peaks=..., resolution=..., max_freq_factor=..., nyquist='average', fast=True, features=None)"
+    text_signature = "(peaks=..., resolution=..., max_freq_factor=..., nyquist='average', fast=True, features=None, transform=None)"
 )]
 pub struct Periodogram {
     eval_f32: LcfPeriodogram<f32>,
@@ -1426,6 +1632,7 @@ impl Periodogram {
 
 #[pymethods]
 impl Periodogram {
+    #[allow(clippy::too_many_arguments)]
     #[new]
     #[pyo3(signature = (
         *,
@@ -1435,6 +1642,7 @@ impl Periodogram {
         nyquist = NyquistArgumentOfPeriodogram::String("average"),
         fast = true,
         features = None,
+        transform = None,
     ))]
     fn __new__(
         py: Python,
@@ -1444,7 +1652,13 @@ impl Periodogram {
         nyquist: Option<NyquistArgumentOfPeriodogram>,
         fast: Option<bool>,
         features: Option<PyObject>,
+        transform: Option<&PyAny>,
     ) -> PyResult<(Self, PyFeatureEvaluator)> {
+        if transform.is_some() {
+            return Err(PyValueError::new_err(
+                "transform is not supported for Periodogram, peaks are not transformed, but you still may apply transformation for the underlying features",
+            ));
+        }
         let (eval_f32, eval_f64) = Self::create_evals(
             py,
             peaks,
@@ -1484,13 +1698,10 @@ Parameters
 ----------
 peaks : int or None, optional
     Number of peaks to find, default is {default_peaks}
-
 resolution : float or None, optional
     Resolution of frequency grid, default is {default_resolution}
-
 max_freq_factor : float or None, optional
     Mulitplier for Nyquist frequency, default is {default_max_freq_factor}
-
 nyquist : str or float or None, optional
     Type of Nyquist frequency. Could be one of:
      - 'average': "Average" Nyquist frequency
@@ -1499,14 +1710,17 @@ nyquist : str or float or None, optional
      - float: Nyquist frequency is defined by given quantile of time
         intervals between observations
     Default is '{default_nyquist}'
-
 fast : bool or None, optional
     Use "Fast" (approximate and FFT-based) or direct periodogram algorithm,
     default is {default_fast}
-
 features : iterable or None, optional
     Features to extract from periodogram considering it as a time-series,
     default is None which means no additional features
+    Features to extract from periodogram considering it as a time-series
+transform : None, optional
+    Not supported for Periodogram, peaks are not transformed, but you still
+    may apply transformation for the underlying features with thier
+    constructors
 
 {common}
 freq_power(t, m)
@@ -1548,18 +1762,23 @@ Examples
     }
 }
 
-evaluator!(ReducedChi2, lcf::ReducedChi2);
+evaluator!(ReducedChi2, lcf::ReducedChi2, StockTransformer::Ln1p);
 
-evaluator!(Skew, lcf::Skew);
+evaluator!(Skew, lcf::Skew, StockTransformer::Arcsinh);
 
-evaluator!(StandardDeviation, lcf::StandardDeviation);
+evaluator!(
+    StandardDeviation,
+    lcf::StandardDeviation,
+    StockTransformer::Identity
+);
 
-evaluator!(StetsonK, lcf::StetsonK);
+evaluator!(StetsonK, lcf::StetsonK, StockTransformer::Identity);
 
 fit_evaluator!(
     VillarFit,
     lcf::VillarFit,
     lcf::VillarInitsBounds,
+    lcf::transformers::villar_fit::VillarFitTransformer::default(),
     7,
     {
         "no" => lcf::VillarLnPrior::fixed(lcf::LnPrior::none()),
@@ -1573,31 +1792,49 @@ fit_evaluator!(
       assumes that `t` is in days"#,
 );
 
-evaluator!(WeightedMean, lcf::WeightedMean);
+evaluator!(WeightedMean, lcf::WeightedMean, StockTransformer::Identity);
 
-evaluator!(Duration, lcf::Duration);
+evaluator!(Duration, lcf::Duration, StockTransformer::Identity);
 
-evaluator!(MaximumTimeInterval, lcf::MaximumTimeInterval);
+evaluator!(
+    MaximumTimeInterval,
+    lcf::MaximumTimeInterval,
+    StockTransformer::Identity
+);
 
-evaluator!(MinimumTimeInterval, lcf::MinimumTimeInterval);
+evaluator!(
+    MinimumTimeInterval,
+    lcf::MinimumTimeInterval,
+    StockTransformer::Identity
+);
 
-evaluator!(ObservationCount, lcf::ObservationCount);
+evaluator!(
+    ObservationCount,
+    lcf::ObservationCount,
+    StockTransformer::Identity
+);
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "()")]
+#[pyo3(text_signature = "(*, transform=None)")]
 pub struct OtsuSplit {}
 
 #[pymethods]
 impl OtsuSplit {
     #[new]
-    fn __new__() -> (Self, PyFeatureEvaluator) {
-        (
+    #[pyo3(signature = (*, transform=None))]
+    fn __new__(transform: Option<&PyAny>) -> Res<(Self, PyFeatureEvaluator)> {
+        if transform.is_some() {
+            return Err(Exception::NotImplementedError(
+                "OtsuSplit does not support transformations yet".to_string(),
+            ));
+        }
+        Ok((
             Self {},
             PyFeatureEvaluator {
                 feature_evaluator_f32: lcf::OtsuSplit::new().into(),
                 feature_evaluator_f64: lcf::OtsuSplit::new().into(),
             },
-        )
+        ))
     }
 
     #[staticmethod]
@@ -1630,6 +1867,10 @@ impl OtsuSplit {
     }
 }
 
-evaluator!(TimeMean, lcf::TimeMean);
+evaluator!(TimeMean, lcf::TimeMean, StockTransformer::Identity);
 
-evaluator!(TimeStandardDeviation, lcf::TimeStandardDeviation);
+evaluator!(
+    TimeStandardDeviation,
+    lcf::TimeStandardDeviation,
+    StockTransformer::Identity
+);

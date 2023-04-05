@@ -11,6 +11,7 @@ mod dmdt;
 mod errors;
 mod features;
 mod ln_prior;
+mod transform;
 
 /// High-performance time-series feature extractor
 ///
@@ -63,6 +64,7 @@ fn light_curve(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<DmDt>()?;
 
     m.add_class::<f::PyFeatureEvaluator>()?;
+    m.add_class::<f::FeatureWithStockTransformer>()?;
 
     m.add_class::<f::Extractor>()?;
 

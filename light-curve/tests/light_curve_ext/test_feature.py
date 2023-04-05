@@ -9,27 +9,37 @@ from numpy.testing import assert_allclose, assert_array_equal
 import light_curve.light_curve_ext as lc
 
 
-def _feature_classes(module, exclude_parametric=True):
-    for name, obj in inspect.getmembers(module):
+def _feature_classes(module, *, exclude_parametric=True, stock_transform_only=False):
+    for name, member in inspect.getmembers(module):
         if name.startswith("_"):
             continue
-        if inspect.ismodule(obj):
-            yield from _feature_classes(obj)
-        if not inspect.isclass(obj):
+        if inspect.ismodule(member):
+            yield from _feature_classes(member)
+        if not inspect.isclass(member):
             continue
-        if not issubclass(obj, lc._FeatureEvaluator):
+        if not issubclass(member, lc._FeatureEvaluator):
             continue
         # Skip classes with non-trivial constructors
+        if stock_transform_only and not hasattr(member, "supported_transforms"):
+            continue
         if exclude_parametric:
             try:
-                obj()
+                member()
             except TypeError:
                 continue
-        yield obj
+        yield member
 
 
-non_param_feature_classes = frozenset(_feature_classes(lc, True))
-all_feature_classes = frozenset(_feature_classes(lc, False))
+non_param_feature_classes = frozenset(_feature_classes(lc, exclude_parametric=True))
+assert len(non_param_feature_classes) > 0
+
+non_param_feature_classes_with_stock_transform = frozenset(
+    _feature_classes(lc, exclude_parametric=True, stock_transform_only=True)
+)
+assert len(non_param_feature_classes_with_stock_transform) > 0
+
+all_feature_classes = frozenset(_feature_classes(lc, exclude_parametric=False))
+assert len(all_feature_classes) > 0
 
 
 def construct_example_objects(cls, *, parametric_variants=1, rng=None):
@@ -88,6 +98,15 @@ def gen_lc(n, rng=None):
     sigma = np.full_like(t, 0.1)
 
     return t, m, sigma
+
+
+@pytest.mark.parametrize("cls", list(non_param_feature_classes_with_stock_transform))
+def test_available_transforms(cls):
+    cls(transform=None)
+    cls(transform=False)
+    cls(transform=True)
+    for transform in cls.supported_transforms:
+        cls(transform=transform)
 
 
 @pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=2))
