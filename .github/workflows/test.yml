@@ -26,7 +26,7 @@ jobs:
     - name: Install tox
       run: pip install tox
     - name: Run Python tests
-      run: tox -p -q -e py3${{ matrix.python_minor }}
+      run: tox -e py3${{ matrix.python_minor }}
 
   cargo-fmt:
     runs-on: ubuntu-latest
@@ -156,6 +156,42 @@ jobs:
       run: pip install 'maturin>=0.14,<0.15'
     - name: Build for ${{ matrix.name }}
       run: maturin build --find-interpreter --manylinux=off ${{ matrix.maturin_build_args }}
+
+  coverage:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: light-curve
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - name: Install maturin
+        run: pip install $(python -c 'import tomllib; print(" ".join(tomllib.load(open("pyproject.toml", "rb"))["build-system"]["requires"]))')
+      - name: Generate code coverage
+        run: |
+          source <(cargo llvm-cov show-env --export-prefix)
+          python -m venv venv
+          source venv/bin/activate
+          maturin develop --extras=test
+          python -m pytest
+          cargo llvm-cov report --lcov --output-path lcov.info
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: lcov.info
+          fail_ci_if_error: true
 
   msrv-build:
     runs-on: ubuntu-latest

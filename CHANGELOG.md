@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Binary wheels for x86_64 Windows built with no Ceres nor GSL features https://github.com/light-curve/light-curve-python/issues/12 https://github.com/light-curve/light-curve-python/pull/185
+- CI: code coverage with `codecov` https://github.com/light-curve/light-curve-python/pull/197
 
 ### Changed
 
