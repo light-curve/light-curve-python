@@ -26,7 +26,7 @@ jobs:
     - name: Install tox
       run: pip install tox
     - name: Run Python tests
-      run: tox -p -q -e py3${{ matrix.python_minor }}
+      run: tox -e py3${{ matrix.python_minor }}
 
   cargo-fmt:
     runs-on: ubuntu-latest
@@ -173,12 +173,15 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
-      - name: Install tox
-        run: pip install tox
+      - name: Install maturin
+        run: pip install $(python -c 'import tomllib; print(" ".join(tomllib.load(open("pyproject.toml", "rb"))["build-system"]["requires"]))')
       - name: Generate code coverage
         run: |
           source <(cargo llvm-cov show-env --export-prefix)
-          tox -p -q -e py311
+          python -m venv venv
+          source venv/bin/activate
+          maturin develop --extras=test
+          python -m pytest
           cargo llvm-cov report --lcov --output-path lcov.info
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
