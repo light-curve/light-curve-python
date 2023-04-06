@@ -157,6 +157,35 @@ jobs:
     - name: Build for ${{ matrix.name }}
       run: maturin build --find-interpreter --manylinux=off ${{ matrix.maturin_build_args }}
 
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - name: Install tox
+        run: pip install tox
+      - name: Generate code coverage
+        run: |
+          source <(cargo llvm-cov show-env --export-prefix)
+          tox -p -q -e py311
+          cargo llvm-cov report --lcov --output-path lcov.info
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: lcov.info
+          fail_ci_if_error: true
+
   msrv-build:
     runs-on: ubuntu-latest
 
