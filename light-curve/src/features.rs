@@ -597,24 +597,6 @@ impl PyFeatureEvaluator {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
-#[pyclass(
-    extends = PyFeatureEvaluator,
-    subclass,
-    name = "_FeatureWithStockTransformer",
-    module = "light_curve.light_curve_ext"
-)]
-pub struct FeatureWithStockTransformer {}
-
-#[pymethods]
-impl FeatureWithStockTransformer {
-    /// Supported transform names
-    #[classattr]
-    fn supported_transforms() -> Vec<&'static str> {
-        StockTransformer::all_names().collect()
-    }
-}
-
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 #[pyo3(text_signature = "(*features, transform=None)")]
 pub struct Extractor {}
@@ -673,15 +655,36 @@ transform : None, optional
     }
 }
 
-macro_rules! evaluator {
-    ($name: ident, $eval: ty, $default_transform: expr $(,)?) => {
-        #[pyclass(extends = FeatureWithStockTransformer, module="light_curve.light_curve_ext")]
-        #[pyo3(text_signature = "()")]
-        pub struct $name {}
-
+macro_rules! impl_stock_transform {
+    ($name: ident, $default_transform: expr $(,)?) => {
         impl $name {
             const DEFAULT_TRANSFORMER: StockTransformer = $default_transform;
         }
+
+        #[pymethods]
+        impl $name {
+            /// Supported transform names
+            #[classattr]
+            fn supported_transforms() -> Vec<&'static str> {
+                StockTransformer::all_names().collect()
+            }
+
+            /// Default transform name
+            #[classattr]
+            fn default_transform() -> &'static str {
+                Self::DEFAULT_TRANSFORMER.into()
+            }
+        }
+    };
+}
+
+macro_rules! evaluator {
+    ($name: ident, $eval: ty, $default_transform: expr $(,)?) => {
+        #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
+        #[pyo3(text_signature = "()")]
+        pub struct $name {}
+
+        impl_stock_transform!($name, $default_transform);
 
         #[pymethods]
         impl $name {
@@ -694,9 +697,7 @@ macro_rules! evaluator {
                     transform,
                     Self::DEFAULT_TRANSFORMER,
                 )?;
-                Ok(PyClassInitializer::from(base)
-                    .add_subclass(FeatureWithStockTransformer {})
-                    .add_subclass(Self {}))
+                Ok(PyClassInitializer::from(base).add_subclass(Self {}))
             }
 
             #[classattr]
@@ -1107,13 +1108,11 @@ evaluator!(
     StockTransformer::Lg
 );
 
-#[pyclass(extends = FeatureWithStockTransformer, module="light_curve.light_curve_ext")]
+#[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 #[pyo3(text_signature = "(nstd=..., *, transform=None)")]
 pub struct BeyondNStd {}
 
-impl BeyondNStd {
-    const DEFAULT_TRANSFORMER: StockTransformer = StockTransformer::Identity;
-}
+impl_stock_transform!(BeyondNStd, StockTransformer::Identity);
 
 #[pymethods]
 impl BeyondNStd {
@@ -1127,7 +1126,6 @@ impl BeyondNStd {
                 transform,
                 Self::DEFAULT_TRANSFORMER,
             )?)
-            .add_subclass(FeatureWithStockTransformer {})
             .add_subclass(Self {}),
         )
     }
@@ -1147,9 +1145,11 @@ Parameters
 ----------
 nstd : positive float
     N, default is {nstd_default:.1}
+{transform}
 {footer}"#,
             header = lcf::BeyondNStd::<f64>::doc().trim_start(),
             nstd_default = lcf::BeyondNStd::<f64>::default_nstd(),
+            transform = transform_parameter_doc(Self::DEFAULT_TRANSFORMER),
             footer = COMMON_FEATURE_DOC,
         )
     }
@@ -1186,7 +1186,7 @@ impl Bins {
         transform: Option<&PyAny>,
     ) -> PyResult<(Self, PyFeatureEvaluator)> {
         if transform.is_some() {
-            return Err(Exception::ValueError(
+            return Err(Exception::NotImplementedError(
                 "transform is not supported by Bins, apply transformations to individual features"
                     .to_string(),
             )
@@ -1271,13 +1271,11 @@ evaluator!(
     StockTransformer::Identity
 );
 
-#[pyclass(extends = FeatureWithStockTransformer, module="light_curve.light_curve_ext")]
+#[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 #[pyo3(text_signature = "(quantile=..., *, transform = None)")]
 pub struct InterPercentileRange {}
 
-impl InterPercentileRange {
-    const DEFAULT_TRANSFORMER: StockTransformer = StockTransformer::Identity;
-}
+impl_stock_transform!(InterPercentileRange, StockTransformer::Identity);
 
 #[pymethods]
 impl InterPercentileRange {
@@ -1291,7 +1289,6 @@ impl InterPercentileRange {
                 transform,
                 Self::DEFAULT_TRANSFORMER,
             )?)
-            .add_subclass(FeatureWithStockTransformer {})
             .add_subclass(Self {}),
         )
     }
@@ -1327,13 +1324,11 @@ evaluator!(LinearFit, lcf::LinearFit, StockTransformer::Identity);
 
 evaluator!(LinearTrend, lcf::LinearTrend, StockTransformer::Identity);
 
-#[pyclass(extends = FeatureWithStockTransformer, module="light_curve.light_curve_ext")]
+#[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 #[pyo3(text_signature = "(quantile_numerator=..., quantile_denominator=..., *, transform = None)")]
 pub struct MagnitudePercentageRatio {}
 
-impl MagnitudePercentageRatio {
-    const DEFAULT_TRANSFORMER: StockTransformer = StockTransformer::Identity;
-}
+impl_stock_transform!(MagnitudePercentageRatio, StockTransformer::Identity);
 
 #[pymethods]
 impl MagnitudePercentageRatio {
@@ -1366,7 +1361,6 @@ impl MagnitudePercentageRatio {
                 transform,
                 Self::DEFAULT_TRANSFORMER,
             )?)
-            .add_subclass(FeatureWithStockTransformer {})
             .add_subclass(Self {}),
         )
     }
@@ -1420,13 +1414,11 @@ evaluator!(
     StockTransformer::Identity
 );
 
-#[pyclass(extends = FeatureWithStockTransformer, module="light_curve.light_curve_ext")]
+#[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 #[pyo3(text_signature = "(quantile=..., *, transform = None)")]
 pub struct MedianBufferRangePercentage {}
 
-impl MedianBufferRangePercentage {
-    const DEFAULT_TRANSFORMER: StockTransformer = StockTransformer::Identity;
-}
+impl_stock_transform!(MedianBufferRangePercentage, StockTransformer::Identity);
 
 #[pymethods]
 impl MedianBufferRangePercentage {
@@ -1440,7 +1432,6 @@ impl MedianBufferRangePercentage {
                 transform,
                 Self::DEFAULT_TRANSFORMER,
             )?)
-            .add_subclass(FeatureWithStockTransformer {})
             .add_subclass(Self {}),
         )
     }
@@ -1476,13 +1467,14 @@ evaluator!(
     StockTransformer::Identity
 );
 
-#[pyclass(extends = FeatureWithStockTransformer, module="light_curve.light_curve_ext")]
+#[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 #[pyo3(text_signature = "(quantile=..., *, transform = None)")]
 pub struct PercentDifferenceMagnitudePercentile {}
 
-impl PercentDifferenceMagnitudePercentile {
-    const DEFAULT_TRANSFORMER: StockTransformer = StockTransformer::ClippedLg;
-}
+impl_stock_transform!(
+    PercentDifferenceMagnitudePercentile,
+    StockTransformer::ClippedLg
+);
 
 #[pymethods]
 impl PercentDifferenceMagnitudePercentile {
@@ -1501,7 +1493,6 @@ impl PercentDifferenceMagnitudePercentile {
                 transform,
                 Self::DEFAULT_TRANSFORMER,
             )?)
-            .add_subclass(FeatureWithStockTransformer {})
             .add_subclass(Self {}),
         )
     }
@@ -1655,8 +1646,8 @@ impl Periodogram {
         transform: Option<&PyAny>,
     ) -> PyResult<(Self, PyFeatureEvaluator)> {
         if transform.is_some() {
-            return Err(PyValueError::new_err(
-                "transform is not supported for Periodogram, peaks are not transformed, but you still may apply transformation for the underlying features",
+            return Err(PyNotImplementedError::new_err(
+                "transform is not supported by Periodogram, peak-related features are not transformed, but you still may apply transformation for the underlying features",
             ));
         }
         let (eval_f32, eval_f64) = Self::create_evals(

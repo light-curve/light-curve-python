@@ -7,8 +7,9 @@ use light_curve_feature::transformers::{
 };
 use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyString};
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, IntoEnumIterator)]
+#[derive(Clone, Copy, IntoEnumIterator, Serialize, Deserialize)]
 pub(crate) enum StockTransformer {
     Arcsinh,
     ClippedLg,
