@@ -9,27 +9,45 @@ from numpy.testing import assert_allclose, assert_array_equal
 import light_curve.light_curve_ext as lc
 
 
-def _feature_classes(module, exclude_parametric=True):
-    for name, obj in inspect.getmembers(module):
+def _feature_classes(module, *, exclude_parametric=True):
+    for name, member in inspect.getmembers(module):
         if name.startswith("_"):
             continue
-        if inspect.ismodule(obj):
-            yield from _feature_classes(obj)
-        if not inspect.isclass(obj):
+        if inspect.ismodule(member):
+            yield from _feature_classes(member)
+        if not inspect.isclass(member):
             continue
-        if not issubclass(obj, lc._FeatureEvaluator):
+        if not issubclass(member, lc._FeatureEvaluator):
             continue
         # Skip classes with non-trivial constructors
         if exclude_parametric:
             try:
-                obj()
+                member()
             except TypeError:
                 continue
-        yield obj
+        yield member
 
 
-non_param_feature_classes = frozenset(_feature_classes(lc, True))
-all_feature_classes = frozenset(_feature_classes(lc, False))
+non_param_feature_classes = frozenset(_feature_classes(lc, exclude_parametric=True))
+assert len(non_param_feature_classes) > 0
+
+all_feature_classes = frozenset(_feature_classes(lc, exclude_parametric=False))
+assert len(all_feature_classes) > 0
+
+
+def get_new_args_kwargs(cls):
+    if hasattr(cls, "__getnewargs_ex__"):
+        return cls.__getnewargs_ex__()
+    if hasattr(cls, "__getnewargs__"):
+        args = cls.__getnewargs__()
+        return args, {}
+    return (), {}
+
+
+def new_default(cls, **kwargs):
+    args, kwargs_ = get_new_args_kwargs(cls)
+    kwargs = dict(kwargs_, **kwargs)
+    return cls(*args, **kwargs)
 
 
 def construct_example_objects(cls, *, parametric_variants=1, rng=None):
@@ -42,10 +60,7 @@ def construct_example_objects(cls, *, parametric_variants=1, rng=None):
         return [cls()]
 
     # default mandatory arguments
-    if hasattr(cls, "__getnewargs_ex__"):
-        args, kwargs = cls.__getnewargs_ex__()
-    else:
-        args, kwargs = cls.__getnewargs__(), {}
+    args, kwargs = get_new_args_kwargs(cls)
 
     # Add Mean feature for metafeatures
     args = [[lc.Mean()] if arg == () else arg for arg in args]
@@ -88,6 +103,39 @@ def gen_lc(n, rng=None):
     sigma = np.full_like(t, 0.1)
 
     return t, m, sigma
+
+
+@pytest.mark.parametrize("cls", list(all_feature_classes))
+def test_available_transforms(cls):
+    # All available features should consume transform=None
+    none = new_default(cls, transform=None)
+
+    # If transform consumes False it
+    # 1) should give the same feature as transform=None
+    # 2) should be able to consume transform=True
+    try:
+        false = new_default(cls, transform=False)
+    except NotImplementedError:
+        return
+    # It would be better to compare objects themselves, but __eq__ is not implemented yet
+    # https://github.com/light-curve/light-curve-python/issues/148
+    assert false.names == none.names
+    true = new_default(cls, transform=True)
+    # Check if transform=True is not the same as transform=False
+    default_transform = getattr(cls, "default_transform", None)
+    if default_transform != "identity":
+        assert true.names != false.names
+
+    # Both attributes should be present or absent
+    assert hasattr(cls, "supported_transforms") == hasattr(cls, "default_transform")
+
+    if not hasattr(cls, "supported_transforms"):
+        return
+
+    assert cls.default_transform in cls.supported_transforms
+
+    for transform in cls.supported_transforms + ["default"]:
+        new_default(cls, transform=transform)
 
 
 @pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=2))

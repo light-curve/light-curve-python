@@ -7,7 +7,7 @@ readme = "README.md"
 repository = "https://github.com/light-curve/light-curve-python"
 license = "GPL-3.0-or-later"
 edition = "2021"
-rust-version = "1.60"
+rust-version = "1.62"
 
 [lib]
 name = "light_curve"
@@ -32,6 +32,7 @@ gsl = ["light-curve-feature/gsl"]
 anyhow = "<1.0.49"
 const_format = "0.2.30"
 conv = "0.3.3"
+enum-iterator = "1.1.0,<1.2.0" # 1.2.0 requires MSRV 1.63
 enumflags2 = { version = "0.7.5", features = ["serde"] }
 itertools = "0.10.5"
 macro_const = "0.1.0"
@@ -39,7 +40,7 @@ ndarray = { version = "0.15.3", features = ["rayon"] }
 numpy = "0.18.0"
 num_cpus = "1.13.0"
 num-traits = "0.2"
-pyo3 = {version = "0.18.2", features = ["extension-module"]}
+pyo3 = {version = "0.18.2", features = ["extension-module", "multiple-pymethods"]}
 rand = "0.8.5"
 rand_xoshiro = "0.6.0"
 thiserror = "1.0.37"
@@ -53,5 +54,5 @@ version = "0.7.1"
 features = ["serde"]
 
 [dependencies.light-curve-feature]
-version = "0.5.4"
+version = "0.5.5"
 default_features = false

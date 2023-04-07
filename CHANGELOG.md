@@ -9,12 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Feature transformations via `transoform` constructor keyword. For most of the features it could accept string with a transformation name such as 'arcsinh' or 'clipped_lg', `True` or 'default' for the default transformation, `None` or `False` for no transformation https://github.com/light-curve/light-curve-python/issues/184 https://github.com/light-curve/light-curve-python/pull/188
 - Binary wheels for x86_64 Windows built with no Ceres nor GSL features https://github.com/light-curve/light-curve-python/issues/12 https://github.com/light-curve/light-curve-python/pull/185
+- `enum-iterator` crate dependency https://github.com/light-curve/light-curve-python/pull/188
 - CI: code coverage with `codecov` https://github.com/light-curve/light-curve-python/pull/197
 - Development: now project has extras for testing (`test`) and development (`dev`) https://github.com/light-curve/light-curve-python/pull/197
 
 ### Changed
 
+- **Build breaking**: minimum supported Rust version (MSRV) is bump from 1.60 to 1.62
+- Bump `light-curve-feature` 0.5.4 -> 0.5.5
 - Bump `pyO3` 0.18.1 -> 0.18.2
 - Most of the parametric features have default values for their parameters now, which, due to `pyO3` limitations, are not presented in the signatures, but documented in the docstrings. It also makes Python and Rust implementations more consistent https://github.com/light-curve/light-curve-python/issues/194 https://github.com/light-curve/light-curve-python/pull/195
 - Development: switch from `pytest-markdown` to `markdown-pytest` which allowed us to use up-to-date pytest https://github.com/light-curve/light-curve-python/pull/198
@@ -30,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
---
+- `Bins` feature had non-optimal lower boundary check for time series length: it checked if it is at least unity for any underlying features. Now it takes underlying feature requirements into account. It was fixed by updating `light-curve-feature` to v0.5.5.
 
 ### Security
 

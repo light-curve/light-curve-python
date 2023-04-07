@@ -11,6 +11,7 @@ mod dmdt;
 mod errors;
 mod features;
 mod ln_prior;
+mod transform;
 
 /// High-performance time-series feature extractor
 ///
