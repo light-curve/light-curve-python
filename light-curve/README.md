@@ -42,6 +42,7 @@ twine upload wheelhouse/*.whl
 Most of the classes implement various feature evaluators useful for light-curve based
 astrophysical source classification and characterisation.
 
+<!-- name: test_feature_evaluators_basic -->
 ```python
 import light_curve as lc
 import numpy as np
@@ -83,6 +84,7 @@ Note that if your inputs are not valid and are not validated by
 `sorted=None` and `check=True` (default values) then all kind of bad things could happen.
 
 Print feature classes list
+<!-- name: test_feature_evaluators_list -->
 ```python
 import light_curve as lc
 
@@ -90,6 +92,7 @@ print([x for x in dir(lc) if hasattr(getattr(lc, x), "names")])
 ```
 
 Read feature docs
+<!-- name: test_feature_evaluators_help -->
 ```python
 import light_curve as lc
 
@@ -105,6 +108,7 @@ However, the Python implementation provides some new feature extractors you can 
 
 You can manually use extractors from both implementations:
 
+<!-- name: test_experimental_extractors -->
 ```python
 import numpy as np
 from numpy.testing import assert_allclose
@@ -417,6 +421,7 @@ See benchmarks' descriptions in more details in ["Performant feature extraction 
 
 Class `DmDt` provides dm–dt mapper (based on [Mahabal et al. 2011](https://ui.adsabs.harvard.edu/abs/2011BASI...39..387M/abstract), [Soraisam et al. 2020](https://ui.adsabs.harvard.edu/abs/2020ApJ...892..112S/abstract)). It is a Python wrapper for [`light-curve-dmdt` Rust crate](https://crates.io/crates/light-curve-dmdt).
 
+<!-- name: test_dmdt -->
 ```python
 import numpy as np
 from light_curve import DmDt

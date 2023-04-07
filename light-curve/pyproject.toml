@@ -28,7 +28,7 @@ test = [
     "pandas",
     "pytest",
     "pytest-benchmark",
-    "pytest-markdown",
+    "markdown-pytest",
     "pytest-subtests",
 ]
 dev = [
@@ -100,7 +100,7 @@ minversion = "6.0"
 addopts = "-ra --import-mode=append --benchmark-min-time=0.1 --benchmark-max-time=5.0 --benchmark-sort=mean --benchmark-disable"
 testpaths = [
     "tests/",
-    "README.md", # requires pytest-markdown
+    "README.md", # requires markdown-pytest
 ]
 
 [tool.tox]
@@ -127,7 +127,7 @@ test-command = "pytest {package}/README.md {package}/light_curve/ {package}/test
 test-requires = [
     "pytest",
     "pytest-benchmark",
-    "pytest-markdown",
+    "markdown-pytest",
     "pytest-subtests",
     "numpy",
     "scipy",
