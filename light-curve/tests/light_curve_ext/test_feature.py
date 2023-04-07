@@ -124,7 +124,7 @@ def test_available_transforms(cls):
     # Check if transform=True is not the same as transform=False
     default_transform = getattr(cls, "default_transform", None)
     if default_transform != "identity":
-        assert true.names != false.names, f"{default_transform = }"
+        assert true.names != false.names
 
     # Both attributes should be present or absent
     assert hasattr(cls, "supported_transforms") == hasattr(cls, "default_transform")
