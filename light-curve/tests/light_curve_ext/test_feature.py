@@ -46,7 +46,7 @@ def get_new_args_kwargs(cls):
 
 def new_default(cls, **kwargs):
     args, kwargs_ = get_new_args_kwargs(cls)
-    kwargs = kwargs_ | kwargs
+    kwargs = dict(kwargs_, **kwargs)
     return cls(*args, **kwargs)
 
 
@@ -122,7 +122,8 @@ def test_available_transforms(cls):
     assert false.names == none.names
     true = new_default(cls, transform=True)
     # Check if transform=True is not the same as transform=False
-    if (default_transform := getattr(cls, "default_transform", None)) != "identity":
+    default_transform = getattr(cls, "default_transform", None)
+    if default_transform != "identity":
         assert true.names != false.names, f"{default_transform = }"
 
     # Both attributes should be present or absent
