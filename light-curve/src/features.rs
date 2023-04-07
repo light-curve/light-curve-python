@@ -675,7 +675,7 @@ pub(crate) enum FitLnPrior<'a> {
 macro_rules! fit_evaluator {
     ($name: ident, $eval: ty, $ib: ty, $nparam: literal, $ln_prior_by_str: tt, $ln_prior_doc: literal $(,)?) => {
         #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-        #[pyo3(text_signature = "(algorithm, *, mcmc_niter=None, ceres_niter=None, ceres_loss_reg=None, lmsder_niter=None, init=None, bounds=None, ln_prior=None)")]
+        #[pyo3(text_signature = "(algorithm, *, mcmc_niter=..., ceres_niter=..., ceres_loss_reg=None, lmsder_niter=..., init=None, bounds=None, ln_prior=None)")]
         pub struct $name {}
 
         impl $name {
@@ -692,6 +692,28 @@ macro_rules! fit_evaluator {
                 let params = ContCowArray::from_view(params.as_array(), true);
                 t.as_array().mapv(|x| <$eval>::f(x, params.as_slice()))
             }
+
+            fn default_lmsder_iterations() -> u16 {
+                #[cfg(feature = "gsl")]
+                {
+                    lcf::LmsderCurveFit::default_niterations()
+                }
+                #[cfg(not(feature = "gsl"))]
+                {
+                    0
+                }
+            }
+
+            fn default_ceres_iterations() -> u16 {
+                #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+                {
+                    lcf::CeresCurveFit::default_niterations()
+                }
+                #[cfg(not(any(feature = "ceres-source", feature = "ceres-system")))]
+                {
+                    0
+                }
+            }
         }
 
         #[allow(clippy::too_many_arguments)]
@@ -701,9 +723,9 @@ macro_rules! fit_evaluator {
             #[pyo3(signature = (
                 algorithm,
                 *,
-                mcmc_niter = None,
-                lmsder_niter = None,
-                ceres_niter = None,
+                mcmc_niter = lcf::McmcCurveFit::default_niterations(),
+                lmsder_niter = Self::default_lmsder_iterations(),
+                ceres_niter = Self::default_ceres_iterations(),
                 ceres_loss_reg = None,
                 init = None,
                 bounds = None,
@@ -862,6 +884,7 @@ ceres_loss_reg : float, optional
     Ceres loss regularization, default is to use square norm as is, if set to
     a number, the loss function is reqgualized to descriminate outlier
     residuals larger than this value.
+    Default is None which means no regularization.
 "#,
                     niter = lcf::CeresCurveFit::default_niterations()
                 );
@@ -944,12 +967,13 @@ evaluator!(Amplitude, lcf::Amplitude);
 evaluator!(AndersonDarlingNormal, lcf::AndersonDarlingNormal);
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(nstd, /)")]
+#[pyo3(text_signature = "(nstd=...)")]
 pub struct BeyondNStd {}
 
 #[pymethods]
 impl BeyondNStd {
     #[new]
+    #[pyo3(signature = (nstd=lcf::BeyondNStd::default_nstd()))]
     fn __new__(nstd: f64) -> (Self, PyFeatureEvaluator) {
         (
             Self {},
@@ -969,15 +993,16 @@ impl BeyondNStd {
     #[classattr]
     fn __doc__() -> String {
         format!(
-            r#"{}
+            r#"{header}
 
 Parameters
 ----------
 nstd : positive float
-    N
-{}"#,
-            lcf::BeyondNStd::<f64>::doc().trim_start(),
-            COMMON_FEATURE_DOC,
+    N, default is {nstd_default:.1}
+{footer}"#,
+            header = lcf::BeyondNStd::<f64>::doc().trim_start(),
+            nstd_default = lcf::BeyondNStd::<f64>::default_nstd(),
+            footer = COMMON_FEATURE_DOC,
         )
     }
 }
@@ -1082,12 +1107,13 @@ evaluator!(EtaE, lcf::EtaE);
 evaluator!(ExcessVariance, lcf::ExcessVariance);
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(quantile)")]
+#[pyo3(text_signature = "(quantile=...)")]
 pub struct InterPercentileRange {}
 
 #[pymethods]
 impl InterPercentileRange {
     #[new]
+    #[pyo3(signature = (quantile=lcf::InterPercentileRange::default_quantile()))]
     fn __new__(quantile: f32) -> (Self, PyFeatureEvaluator) {
         (
             Self {},
@@ -1107,15 +1133,16 @@ impl InterPercentileRange {
     #[classattr]
     fn __doc__() -> String {
         format!(
-            r#"{}
+            r#"{header}
 
 Parameters
 ----------
 quantile : positive float
-    Range is (100% * quantile, 100% * (1 - quantile))
-{}"#,
-            lcf::InterPercentileRange::doc().trim_start(),
-            COMMON_FEATURE_DOC
+    Range is (100% * quantile, 100% * (1 - quantile)). Default quantile is {quantile_default:.2}
+{footer}"#,
+            header = lcf::InterPercentileRange::doc().trim_start(),
+            quantile_default = lcf::InterPercentileRange::default_quantile(),
+            footer = COMMON_FEATURE_DOC
         )
     }
 }
@@ -1127,12 +1154,16 @@ evaluator!(LinearFit, lcf::LinearFit);
 evaluator!(LinearTrend, lcf::LinearTrend);
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(quantile_numerator, quantile_denominator)")]
+#[pyo3(text_signature = "(quantile_numerator=..., quantile_denominator=...)")]
 pub struct MagnitudePercentageRatio {}
 
 #[pymethods]
 impl MagnitudePercentageRatio {
     #[new]
+    #[pyo3(signature = (
+        quantile_numerator=lcf::MagnitudePercentageRatio::default_quantile_numerator(),
+        quantile_denominator=lcf::MagnitudePercentageRatio::default_quantile_denominator()
+    ))]
     fn __new__(
         quantile_numerator: f32,
         quantile_denominator: f32,
@@ -1176,17 +1207,23 @@ impl MagnitudePercentageRatio {
     #[classattr]
     fn __doc__() -> String {
         format!(
-            r#"{}
+            r#"{header}
 
 Parameters
 ----------
 quantile_numerator: positive float
-    Numerator is inter-percentile range (100% * q, 100% (1 - q))
+    Numerator is inter-percentile range (100% * q, 100% (1 - q)).
+    Default value is {quantile_numerator_default:.2}
 quantile_denominator: positive float
     Denominator is inter-percentile range (100% * q, 100% (1 - q))
-{}"#,
-            lcf::MagnitudePercentageRatio::doc().trim_start(),
-            COMMON_FEATURE_DOC
+    Default value is {quantile_denominator_default:.2}
+{footer}"#,
+            header = lcf::MagnitudePercentageRatio::doc().trim_start(),
+            quantile_numerator_default =
+                lcf::MagnitudePercentageRatio::default_quantile_numerator(),
+            quantile_denominator_default =
+                lcf::MagnitudePercentageRatio::default_quantile_denominator(),
+            footer = COMMON_FEATURE_DOC
         )
     }
 }
@@ -1202,12 +1239,13 @@ evaluator!(Median, lcf::Median);
 evaluator!(MedianAbsoluteDeviation, lcf::MedianAbsoluteDeviation,);
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(quantile)")]
+#[pyo3(text_signature = "(quantile=...)")]
 pub struct MedianBufferRangePercentage {}
 
 #[pymethods]
 impl MedianBufferRangePercentage {
     #[new]
+    #[pyo3(signature = (quantile=lcf::MedianBufferRangePercentage::<f64>::default_quantile()))]
     fn __new__(quantile: f64) -> (Self, PyFeatureEvaluator) {
         (
             Self {},
@@ -1228,15 +1266,16 @@ impl MedianBufferRangePercentage {
     #[classattr]
     fn __doc__() -> String {
         format!(
-            r#"{}
+            r#"{header}
 
 Parameters
 ----------
 quantile : positive float
-    Relative range size
-{}"#,
-            lcf::MedianBufferRangePercentage::<f64>::doc(),
-            COMMON_FEATURE_DOC
+    Relative range size, default is {quantile_default:.2}
+{footer}"#,
+            header = lcf::MedianBufferRangePercentage::<f64>::doc(),
+            quantile_default = lcf::MedianBufferRangePercentage::<f64>::default_quantile(),
+            footer = COMMON_FEATURE_DOC
         )
     }
 }
@@ -1244,12 +1283,13 @@ quantile : positive float
 evaluator!(PercentAmplitude, lcf::PercentAmplitude);
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(quantile)")]
+#[pyo3(text_signature = "(quantile=...)")]
 pub struct PercentDifferenceMagnitudePercentile {}
 
 #[pymethods]
 impl PercentDifferenceMagnitudePercentile {
     #[new]
+    #[pyo3(signature = (quantile=lcf::PercentDifferenceMagnitudePercentile::default_quantile()))]
     fn __new__(quantile: f32) -> (Self, PyFeatureEvaluator) {
         (
             Self {},
@@ -1271,24 +1311,31 @@ impl PercentDifferenceMagnitudePercentile {
     #[classattr]
     fn __doc__() -> String {
         format!(
-            r#"{}
+            r#"{header}
 
 Parameters
 ----------
 quantile : positive float
-    Relative range size
-{}"#,
-            lcf::PercentDifferenceMagnitudePercentile::doc(),
-            COMMON_FEATURE_DOC
+    Relative range size, default is {quantile_default:.2}
+{footer}"#,
+            header = lcf::PercentDifferenceMagnitudePercentile::doc(),
+            quantile_default = lcf::PercentDifferenceMagnitudePercentile::default_quantile(),
+            footer = COMMON_FEATURE_DOC
         )
     }
 }
 
 type LcfPeriodogram<T> = lcf::Periodogram<T, lcf::Feature<T>>;
 
+#[derive(FromPyObject)]
+enum NyquistArgumentOfPeriodogram<'py> {
+    String(&'py str),
+    Float(f32),
+}
+
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 #[pyo3(
-    text_signature = "(peaks=None, resolution=None, max_freq_factor=None, nyquist=None, fast=None, features=None)"
+    text_signature = "(peaks=..., resolution=..., max_freq_factor=..., nyquist='average', fast=True, features=None)"
 )]
 pub struct Periodogram {
     eval_f32: LcfPeriodogram<f32>,
@@ -1301,7 +1348,7 @@ impl Periodogram {
         peaks: Option<usize>,
         resolution: Option<f32>,
         max_freq_factor: Option<f32>,
-        nyquist: Option<PyObject>,
+        nyquist: Option<NyquistArgumentOfPeriodogram>,
         fast: Option<bool>,
         features: Option<PyObject>,
     ) -> PyResult<(LcfPeriodogram<f32>, LcfPeriodogram<f64>)> {
@@ -1324,20 +1371,17 @@ impl Periodogram {
         }
         if let Some(nyquist) = nyquist {
             let nyquist_freq: lcf::NyquistFreq =
-                if let Ok(s) = nyquist.extract::<&str>(py) {
-                    match s {
+                match nyquist {
+                    NyquistArgumentOfPeriodogram::String(nyquist_type) => match nyquist_type {
                         "average" => lcf::AverageNyquistFreq {}.into(),
                         "median" => lcf::MedianNyquistFreq {}.into(),
                         _ => return Err(PyValueError::new_err(
                             "nyquist must be one of: None, 'average', 'median' or quantile value",
                         )),
+                    },
+                    NyquistArgumentOfPeriodogram::Float(quantile) => {
+                        lcf::QuantileNyquistFreq { quantile }.into()
                     }
-                } else if let Ok(quantile) = nyquist.extract::<f32>(py) {
-                    lcf::QuantileNyquistFreq { quantile }.into()
-                } else {
-                    return Err(PyValueError::new_err(
-                        "nyquist must be one of: None, 'average', 'median' or quantile value",
-                    ));
                 };
             eval_f32.set_nyquist(nyquist_freq.clone());
             eval_f64.set_nyquist(nyquist_freq);
@@ -1385,11 +1429,11 @@ impl Periodogram {
     #[new]
     #[pyo3(signature = (
         *,
-        peaks = None,
-        resolution = None,
-        max_freq_factor = None,
-        nyquist = None,
-        fast = None,
+        peaks = LcfPeriodogram::<f64>::default_peaks(),
+        resolution = LcfPeriodogram::<f64>::default_resolution(),
+        max_freq_factor = LcfPeriodogram::<f64>::default_max_freq_factor(),
+        nyquist = NyquistArgumentOfPeriodogram::String("average"),
+        fast = true,
         features = None,
     ))]
     fn __new__(
@@ -1397,7 +1441,7 @@ impl Periodogram {
         peaks: Option<usize>,
         resolution: Option<f32>,
         max_freq_factor: Option<f32>,
-        nyquist: Option<PyObject>,
+        nyquist: Option<NyquistArgumentOfPeriodogram>,
         fast: Option<bool>,
         features: Option<PyObject>,
     ) -> PyResult<(Self, PyFeatureEvaluator)> {
@@ -1439,13 +1483,13 @@ impl Periodogram {
 Parameters
 ----------
 peaks : int or None, optional
-    Number of peaks to find
+    Number of peaks to find, default is {default_peaks}
 
 resolution : float or None, optional
-    Resolution of frequency grid
+    Resolution of frequency grid, default is {default_resolution}
 
 max_freq_factor : float or None, optional
-    Mulitplier for Nyquist frequency
+    Mulitplier for Nyquist frequency, default is {default_max_freq_factor}
 
 nyquist : str or float or None, optional
     Type of Nyquist frequency. Could be one of:
@@ -1454,12 +1498,15 @@ nyquist : str or float or None, optional
         between observations
      - float: Nyquist frequency is defined by given quantile of time
         intervals between observations
+    Default is '{default_nyquist}'
 
 fast : bool or None, optional
-    Use "Fast" (approximate and FFT-based) or direct periodogram algorithm
+    Use "Fast" (approximate and FFT-based) or direct periodogram algorithm,
+    default is {default_fast}
 
 features : iterable or None, optional
-    Features to extract from periodogram considering it as a time-series
+    Features to extract from periodogram considering it as a time-series,
+    default is None which means no additional features
 
 {common}
 freq_power(t, m)
@@ -1490,7 +1537,12 @@ Examples
 >>> peaks = periodogram(t, m, sorted=True)[::2]
 >>> frequency, power = periodogram.freq_power(t, m)
 "#,
-            intro = lcf::Periodogram::<f64, lcf::Feature<f64>>::doc(),
+            intro = LcfPeriodogram::<f64>::doc(),
+            default_peaks = LcfPeriodogram::<f64>::default_peaks(),
+            default_resolution = LcfPeriodogram::<f64>::default_resolution(),
+            default_max_freq_factor = LcfPeriodogram::<f64>::default_max_freq_factor(),
+            default_nyquist = "average",
+            default_fast = "True",
             common = ATTRIBUTES_DOC,
         )
     }

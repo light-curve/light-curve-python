@@ -15,10 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Bump `pyO3` 0.18.1 -> 0.18.2
+- Most of the parametric features have default values for their parameters now, which, due to `pyO3` limitations, are not presented in the signatures, but documented in the docstrings. It also makes Python and Rust implementations more consistent https://github.com/light-curve/light-curve-python/issues/194 https://github.com/light-curve/light-curve-python/pull/195
 
 ### Deprecated
 
---
+- `BazinFit` and `VillarFit` constructors will not accept `None` for `mcmc_niter`, `ceres_niter`, and `lmsder_niter` arguments in the future, just do not specify them to use defaults instead. https://github.com/light-curve/light-curve-python/pull/195
+- `Periodogram` constructor will not accept `None` for `peaks`, `resolution`, `max_freq_factor`, `nyquist` and `fast` in the future, just do not specify them to use defaults instead. https://github.com/light-curve/light-curve-python/pull/195
 
 ### Removed
 
