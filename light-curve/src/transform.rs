@@ -1,15 +1,14 @@
 use crate::errors::{Exception, Res};
 
-use enum_iterator::IntoEnumIterator;
+use enum_iterator::Sequence;
 use light_curve_feature::transformers::{
     arcsinh::ArcsinhTransformer, clipped_lg::ClippedLgTransformer, identity::IdentityTransformer,
     lg::LgTransformer, ln1p::Ln1pTransformer, sqrt::SqrtTransformer, Transformer,
 };
 use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyString};
-use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, IntoEnumIterator, Serialize, Deserialize)]
+#[derive(Clone, Copy, Sequence)]
 pub(crate) enum StockTransformer {
     Arcsinh,
     ClippedLg,
@@ -21,7 +20,7 @@ pub(crate) enum StockTransformer {
 
 impl StockTransformer {
     pub(crate) fn all_variants() -> impl Iterator<Item = Self> {
-        Self::into_enum_iter()
+        enum_iterator::all::<Self>()
     }
 
     pub(crate) fn all_names() -> impl Iterator<Item = &'static str> {
