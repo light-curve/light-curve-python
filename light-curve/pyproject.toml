@@ -102,6 +102,10 @@ testpaths = [
     "tests/",
     "README.md", # requires markdown-pytest
 ]
+markers = [
+    "nobs: marks benchmarks for different numbers of observations (deselect with '-m \"not nobs\"')",
+    "multi: marks multiprocessing benchmarks (deselect with '-m \"not multi\"')",
+]
 
 [tool.tox]
 legacy_tox_ini = """
