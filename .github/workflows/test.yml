@@ -104,10 +104,6 @@ jobs:
       run:
         working-directory: light-curve
 
-    env:
-      # maturin sets it to 10.7, which is too low for Ceres
-      MACOSX_DEPLOYMENT_TARGET: '10.9'
-
     steps:
     - uses: actions/checkout@v3
     - name:  GSL, macOS
