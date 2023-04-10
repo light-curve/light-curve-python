@@ -9,6 +9,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+--
+
+### Changed
+
+--
+
+### Deprecated
+
+--
+
+### Removed
+
+--
+
+### Fixed
+
+--
+
+### Security
+
+--
+
+
+## [0.7.2] 2023-04-10
+
+### Added
+
 - Feature transformations via `transoform` constructor keyword. For most of the features it could accept string with a transformation name such as 'arcsinh' or 'clipped_lg', `True` or 'default' for the default transformation, `None` or `False` for no transformation https://github.com/light-curve/light-curve-python/issues/184 https://github.com/light-curve/light-curve-python/pull/188
 - Binary wheels for x86_64 Windows built with no Ceres nor GSL features https://github.com/light-curve/light-curve-python/issues/12 https://github.com/light-curve/light-curve-python/pull/185
 - `enum-iterator` crate dependency https://github.com/light-curve/light-curve-python/pull/188
@@ -28,17 +55,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `BazinFit` and `VillarFit` constructors will not accept `None` for `mcmc_niter`, `ceres_niter`, and `lmsder_niter` arguments in the future, just do not specify them to use defaults instead. https://github.com/light-curve/light-curve-python/pull/195
 - `Periodogram` constructor will not accept `None` for `peaks`, `resolution`, `max_freq_factor`, `nyquist` and `fast` in the future, just do not specify them to use defaults instead. https://github.com/light-curve/light-curve-python/pull/195
 
-### Removed
-
---
-
 ### Fixed
 
 - `Bins` feature had non-optimal lower boundary check for time series length: it checked if it is at least unity for any underlying features. Now it takes underlying feature requirements into account. It was fixed by updating `light-curve-feature` to v0.5.5.
-
-### Security
-
---
 
 
 ## [0.7.1] 2023-03-17
