@@ -22,7 +22,7 @@ jobs:
           diff /tmp/.crate_version /tmp/.tag
 
   cibuildwheel:
-    name: Build ${{ matrix.platform }} ${{ matrix.arch }} ${{ matrix.interpreter }}
+    name: Build ${{ matrix.platform }} ${{ matrix.arch }} ${{ matrix.abi3 && 'ABI3 ' || '' }}${{ matrix.interpreter }}
     runs-on: ${{ matrix.os }}
 
     needs: check-version
@@ -38,6 +38,7 @@ jobs:
         arch: [aarch64, ppc64le, x86_64, amd64]  # amd64 is Windows-only
         interpreter: [cp37, cp38, cp39, cp310, cp311, pp37, pp38, pp39]
         platform: [manylinux, musllinux, macosx, win]
+        abi3: [false, true]
         exclude:
           # Build Linux on Linux
           - os: macos-11
@@ -92,6 +93,21 @@ jobs:
             arch: ppc64le
           - os: windows-2019
             arch: x86_64
+          # We need a single interpreter for ABI, so we use py310 only
+          - abi3: true
+            interpreter: cp37
+          - abi3: true
+            interpreter: cp38
+          - abi3: true
+            interpreter: cp39
+          - abi3: true
+            interpreter: cp311
+          - abi3: true
+            interpreter: pp37
+          - abi3: true
+            interpreter: pp38
+          - abi3: true
+            interpreter: pp39
 
     steps:
       - uses: actions/checkout@v3
@@ -121,6 +137,14 @@ jobs:
         run: |
           echo "CIBW_BUILD=${{ matrix.interpreter }}-${{ matrix.platform }}_${{ matrix.arch }}" >> $GITHUB_ENV
           echo "CIBW_ARCHS=${{ matrix.arch }}" >> $GITHUB_ENV
+
+      - name: Set up ABI3 build on Windows
+        if: ${{ matrix.abi3 && matrix.os == 'windows-2019' }}
+        run: echo "ADDITIONAL_CARGO_FEATURES=abi3" >> $env:GITHUB_ENV
+
+      - name: Set up ABI3 build on Linux or macOS
+        if: ${{ matrix.abi3 && matrix.os != 'windows-2019' }}
+        run: echo "ADDITIONAL_CARGO_FEATURES=abi3" >> $GITHUB_ENV
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.12.1
