@@ -21,15 +21,19 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+test-no-bench = [
+    "pytest",
+    "markdown-pytest",
+    "pytest-benchmark",  # We need it here because we use benchmark-specific command line options
+    "pytest-subtests>=0.10",
+    "numpy",
+    "scipy",
+]
 test = [
+    "light-curve[test-no-bench]",
     "feets",
     "joblib",
-    "numpy",
     "pandas",
-    "pytest",
-    "pytest-benchmark",
-    "markdown-pytest",
-    "pytest-subtests",
 ]
 dev = [
     "light-curve[test]",
@@ -121,22 +125,6 @@ commands =
 """
 
 
-# Test
-# We skip benchmark tests, because it requires feets and its transitive
-# dependencies, which are tricky and slow to compile on marginal platforms.
-# For testing we use only platforms for which scipy binary wheels are available
-[[tool.cibuildwheel.overrides]]
-select = "cp*-manylinux_x86_64 cp*-manylinux_aarch64 cp*-macosx*"
-test-command = "pytest {package}/README.md {package}/light_curve/ {package}/tests/ --ignore {package}/tests/test_w_bench.py"
-test-requires = [
-    "pytest",
-    "pytest-benchmark",
-    "markdown-pytest",
-    "pytest-subtests",
-    "numpy",
-    "scipy",
-]
-
 [tool.cibuildwheel]
 # We use our own images which include Rust, GSL and platform-optimised FFTW
 # Manylinux CPython
@@ -191,3 +179,12 @@ environment = { "MATURIN_PEP517_ARGS" = "--locked --no-default-features --featur
 select = "*linux_x86_64"
 # We use system Ceres because it is available as a static library in our build environment
 environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features ceres-system,fftw-mkl,gsl" }
+
+# Test
+# We skip benchmark tests, because it requires feets and its transitive
+# dependencies, which are tricky and slow to compile on marginal platforms.
+# For testing we use only platforms for which scipy binary wheels are available
+[[tool.cibuildwheel.overrides]]
+select = "cp*-manylinux_x86_64 cp*-manylinux_aarch64 cp*-macosx*"
+test-command = "pytest {package}/README.md {package}/light_curve/ {package}/tests/ --ignore {package}/tests/test_w_bench.py"
+test-extras = ["test-no-bench"]
