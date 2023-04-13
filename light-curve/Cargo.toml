@@ -19,6 +19,8 @@ codegen-units = 1
 
 [features]
 default = ["ceres-source", "fftw-source", "gsl"]
+abi3 = ["abi3-py310"]
+abi3-py310 = ["pyo3/abi3-py310"]
 ceres-source = ["light-curve-feature/ceres-source"]
 ceres-system = ["light-curve-feature/ceres-system"]
 fftw-source = ["light-curve-feature/fftw-source"]

@@ -48,57 +48,42 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        os: ['macos-latest', 'ubuntu-latest']
+        abi3: [true, false]
+        ceres: [false, 'source', 'system']
+        fftw: ['source', 'system', 'mkl']
+        gsl: [true, false]
+        exclude:
+          # We don't support MKL on macOS
+          - os: 'macos-latest'
+            fftw: 'mkl'
+          # Matrix is huge, let's make it more sparse
+          - ceres: 'system'
+            fftw: 'source'
+          - ceres: 'source'
+            fftw: 'system'
+          - ceres: 'source'
+            fftw: 'source'
+            gsl: false
+          - abi3: true
+            ceres: 'system'
+          - abi3: false
+            fftw: 'system'
+          - os: 'macos-latest'
+            ceres: 'system'
+            gsl: true
+        # We have very limited support for Windows, fftw-source is the only supported feature
         include:
-        - name: 'Linux, default features'
-          os: 'ubuntu-latest'
-          maturin_build_args: '--locked'
-          install_ceres: false
-          install_fftw: false
-        - name: 'macOS, default features'
-          os: 'macos-11'
-          maturin_build_args: '--locked'
-          install_ceres: false
-          install_fftw: false
-        - name: 'Linux, system FFTW, source Ceres'
-          os: 'ubuntu-latest'
-          maturin_build_args: '--locked --no-default-features --features ceres-source,fftw-system'
-          install_ceres: false
-          install_fftw: true
-        - name: 'macOS, system FFTW, source Ceres'
-          os: 'macos-11'
-          maturin_build_args: '--locked --no-default-features --features ceres-source,fftw-system'
-          install_ceres: false
-          install_fftw: true
-        - name: 'Linux, system FFTW, system Ceres'
-          os: 'ubuntu-latest'
-          maturin_build_args: '--locked --no-default-features --features ceres-system,fftw-system'
-          install_ceres: true
-          install_fftw: true
-        - name: 'macOS, system FFTW, system Ceres'
-          os: 'macos-11'
-          maturin_build_args: '--locked --no-default-features --features ceres-system,fftw-system'
-          install_ceres: true
-          install_fftw: true
-        - name: 'Linux, system FFTW + GSL'
-          os: 'ubuntu-latest'
-          maturin_build_args: '--locked --no-default-features --features fftw-system,gsl'
-          install_ceres: false
-          install_fftw: true
-        - name: 'macOS, system FFTW + GSL'
-          os: 'macos-11'
-          maturin_build_args: '--locked --no-default-features --features fftw-system,gsl'
-          install_ceres: false
-          install_fftw: true
-        - name: 'Linux, MKL + GSL'
-          os: 'ubuntu-latest'
-          maturin_build_args: '--locked --no-default-features --features fftw-mkl,gsl'
-          install_ceres: false
-          install_fftw: false
-        - name: 'Windows, statically linked FFTW for fftw-src'
-          os: 'windows-latest'
-          maturin_build_args: '--locked --no-default-features --features fftw-source'
-          install_ceres: false
-          install_fftw: false
+          - os: 'windows-latest'
+            abi3: false
+            ceres: false
+            fftw: 'source'
+            gsl: false
+          - os: 'windows-latest'
+            abi3: true
+            ceres: false
+            fftw: 'source'
+            gsl: false
 
     defaults:
       run:
@@ -110,52 +95,72 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name:  GSL, macOS
-      if: ${{ startsWith( matrix.os, 'macos' ) }}
-      run: brew install gsl
-    - name: Install CERES, Linux
-      if: ${{ matrix.install_ceres && startsWith( matrix.os, 'ubuntu' ) }}
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libunwind-dev
-        sudo apt-get install -y libceres-dev
-    - name: Install FFTW, macOS
-      if: ${{ matrix.install_ceres && startsWith( matrix.os, 'macos' ) }}
+    - name: Install ceres on macOS
+      if: ${{ matrix.ceres == 'system' && startsWith( matrix.os, 'macos' ) }}
       run: brew install ceres-solver
-    - name: Install FFTW, Linux
-      if: ${{ matrix.install_fftw && startsWith( matrix.os, 'ubuntu' ) }}
+    - name: Install ceres on Linux
+      if: ${{ matrix.ceres == 'system' && startsWith( matrix.os, 'ubuntu' ) }}
       run: |
-        sudo apt-get update
-        sudo apt-get install -y libfftw3-dev
-    - name: Install FFTW, macOS
-      if: ${{ matrix.install_fftw && startsWith( matrix.os, 'macos' ) }}
+          sudo apt-get update
+          sudo apt-get install -y libunwind-dev
+          sudo apt-get install -y libceres-dev
+    - name: Install FFTW on macOS
+      if: ${{ matrix.fftw == 'system' && startsWith( matrix.os, 'macos' ) }}
       run: brew install fftw
+    - name: Install FFTW on Linux
+      if: ${{ matrix.fftw == 'system' && startsWith( matrix.os, 'ubuntu' ) }}
+      run: |
+          sudo apt-get update
+          sudo apt-get install -y libfftw3-dev
+    - name: Install GSL on macOS
+      if: ${{ matrix.gsl && startsWith( matrix.os, 'macos' ) }}
+      run: brew install gsl
+    - name: Install GSL on Linux
+      if: ${{ matrix.gsl && startsWith( matrix.os, 'ubuntu' ) }}
+      run: |
+          sudo apt-get update
+          sudo apt-get install -y libgsl-dev
     - name: Set up Python 3.7
+      if: ${{ ! matrix.abi3 }}
       uses: actions/setup-python@v4
       with:
         python-version: '3.7'
     - name: Set up Python 3.8
+      if: ${{ ! matrix.abi3 }}
       uses: actions/setup-python@v4
       with:
         python-version: '3.8'
     - name: Set up Python 3.9
+      if: ${{ ! matrix.abi3 }}
       uses: actions/setup-python@v4
       with:
         python-version: '3.9'
     - name: Set up Python 3.10
+      # No if here, we want to build abi3 wheels on 3.10
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
     - name: Set up Python 3.11
+      if: ${{ ! matrix.abi3 }}
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
     - name: Set up Rust toolchain
       uses: dtolnay/rust-toolchain@stable
     - name: Install maturin
-      run: pip install 'maturin>=0.14,<0.15'
-    - name: Build for ${{ matrix.name }}
-      run: maturin build --find-interpreter --manylinux=off ${{ matrix.maturin_build_args }}
+      run: python3 -mpip install 'maturin>=0.14,<0.15'
+    - name: Build wheels for abi3=${{ matrix.abi3 }} fftw=${{ matrix.fftw }} ceres=${{ matrix.ceres }} gsl=${{ matrix.gsl }}
+      run: |
+        maturin build --find-interpreter --manylinux=off --locked --no-default-features --features=fftw-${{ matrix.fftw }}${{ matrix.ceres == 'source' && ',ceres-source' || '' }}${{ matrix.ceres == 'system' && ',ceres-system' || '' }}${{ matrix.gsl && ',gsl' || '' }}${{ matrix.abi3 && ',abi3' || '' }}
+    - name: Install abi3audit
+      if: ${{ matrix.abi3 }}
+      run: python3 -mpip install abi3audit
+    - name: Check wheels for ABI compatibility on Linux
+      if: ${{ matrix.abi3 && startsWith( matrix.os, 'ubuntu' ) }}
+      run: abi3audit --strict target/wheels/*.whl
+    - name: Check wheels for ABI compatibility on Windows
+      if: ${{ matrix.abi3 && startsWith( matrix.os, 'windows' ) }}
+      run: Get-ChildItem -Path .\target\wheels -Filter *.whl | ForEach-Object { abi3audit --strict $_.FullName }
 
   coverage:
     runs-on: ubuntu-latest
