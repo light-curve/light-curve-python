@@ -33,7 +33,10 @@ We provide binary wheels via [PyPi](https://pypi.org/project/light-curve/) for n
 We build aarch64 macOS 12.0+ Python 3.8+ wheels locally and submit them running this command in `light-curve` directory:
 ```
 rm -rf ./wheelhouse
-CIBW_BUILD='cp3*-macosx_arm64' CIBW_ENVIRONMENT="MACOSX_DEPLOYMENT_TARGET=12.0 MATURIN_PEP517_ARGS='--locked --no-default-features --features ceres-source,fftw-source,gsl'" CIBW_BEFORE_ALL='curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y; brew install gsl' python3 -mcibuildwheel --platform macos
+curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y
+brew install gsl
+CIBW_BUILD='cp3*-macosx_arm64' CIBW_ENVIRONMENT="MACOSX_DEPLOYMENT_TARGET=12.0 MATURIN_PEP517_ARGS='--locked --no-default-features --features ceres-source,fftw-source,gsl'" CIBW_BEFORE_ALL='' python3 -mcibuildwheel --platform macos
+CIBW_BUILD='cp310-macosx_arm64' CIBW_ENVIRONMENT="MACOSX_DEPLOYMENT_TARGET=12.0 MATURIN_PEP517_ARGS='--locked --no-default-features --features ceres-source,fftw-source,gsl,abi3'" CIBW_BEFORE_ALL='' python3 -mcibuildwheel --platform macos
 twine upload wheelhouse/*.whl
 ```
 
