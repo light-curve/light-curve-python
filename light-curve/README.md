@@ -402,7 +402,7 @@ where $N_j$ is a number of sampling observations and all sums are over observati
 
 ### Benchmarks
 
-You can run all benchmarks from the Python project folder with `python3 -mpytest --benchmark-enable`, or with slow benchmarks disabled `python3 -mpytest -m "not nobs and multi" --benchmark-enable`.
+You can run all benchmarks from the Python project folder with `python3 -mpytest --benchmark-enable tests/test_w_bench.py`, or with slow benchmarks disabled `python3 -mpytest -m "not (nobs or multi)" --benchmark-enable tests/test_w_bench.py`.
 
 Here we benchmark the Rust implementation (`rust`) versus [`feets`](https://feets.readthedocs.io/en/latest/) package and our own Python implementation (`lc_py`) for a light curve having n=1000 observations.
 
