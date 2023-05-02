@@ -402,7 +402,9 @@ where $N_j$ is a number of sampling observations and all sums are over observati
 
 ### Benchmarks
 
-We benchmark the Rust implementation (`rust`) versus [`feets`](https://feets.readthedocs.io/en/latest/) package and our own Python implementation (`lc_py`) for a light curve having n=1000 observations.
+You can run all benchmarks from the Python project folder with by `python3 -mpytest --benchmark-enable`, or with slow benchmarks disabled `python3 -mpytest -m "not nobs and multi" --benchmark-enable`.
+
+Here we benchmark the Rust implementation (`rust`) versus [`feets`](https://feets.readthedocs.io/en/latest/) package and our own Python implementation (`lc_py`) for a light curve having n=1000 observations.
 
 ![Benchmarks, Rust is much faster](https://github.com/light-curve/light-curve-python/raw/readme-benchs/light-curve/.readme/benchplot_v2.png)
 
