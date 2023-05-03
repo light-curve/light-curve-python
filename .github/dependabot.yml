@@ -13,3 +13,7 @@ updates:
     directory: "/light-curve"
     schedule:
       interval: "monthly"
+  - package-ecosystem: "pip"
+    directory: "/light-curve"
+    schedule:
+      interval: "monthly"
