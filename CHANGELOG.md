@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
---
+- **Build breaking**: the only Python build requirement `maturin` updated from v0.14.x to v0.15
 
 ### Deprecated
 
@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
---
+- Building from sdist on x86-64 macOS required manual setting of `$MACOSX_DEPLOYMENT_TARGET` to 10.9 or higher. Recent `maturin` update allowed us to specify it via `pyproject.toml`
 
 ### Security
 

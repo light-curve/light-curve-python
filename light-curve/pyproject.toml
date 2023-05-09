@@ -1,5 +1,5 @@
 [build-system]
-requires = ["maturin>=0.14.0,<0.15"]
+requires = ["maturin>=0.15,<0.16"]
 build-backend = "maturin"
 
 [project]
@@ -54,6 +54,14 @@ dynamic = [
 [tool.maturin]
 # It asks to use Cargo.lock to make the build reproducible
 locked = true
+
+[tool.maturin.target.aarch64-apple-darwin]
+# I belive Rust requires it
+macos-deployment-target = "11.0"
+
+[tool.maturin.target.x86_64-apple-darwin]
+# Default is 10.7, but we need 10.9 for Ceres
+macos-deployment-target = "10.9"
 
 [tool.black]
 line-length = 120
