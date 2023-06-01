@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Build breaking**: the only Python build requirement `maturin` updated from v0.14.x to v1.0
 - CI: bump cibuildwheel to 2.13.1
+- Bump `pyO3` 0.18.2 -> 0.18.3
 
 ### Deprecated
 
