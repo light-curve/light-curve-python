@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Build breaking**: the only Python build requirement `maturin` updated from v0.14.x to v1.0
+- CI: bump cibuildwheel to 2.13.0
 
 ### Deprecated
 
