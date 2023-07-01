@@ -40,7 +40,7 @@ itertools = "0.10.5"
 macro_const = "0.1.0"
 ndarray = { version = "0.15.3", features = ["rayon"] }
 numpy = "0.18.0"
-num_cpus = "1.13.0"
+num_cpus = "1.16.0"
 num-traits = "0.2"
 pyo3 = {version = "0.18.2", features = ["extension-module", "multiple-pymethods"]}
 rand = "0.8.5"
