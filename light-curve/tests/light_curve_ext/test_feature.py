@@ -19,6 +19,8 @@ def _feature_classes(module, *, exclude_parametric=True):
             continue
         if not issubclass(member, lc._FeatureEvaluator):
             continue
+        if member is lc.JSONDeserializedFeature:
+            continue
         # Skip classes with non-trivial constructors
         if exclude_parametric:
             try:
