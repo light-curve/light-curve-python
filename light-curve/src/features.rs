@@ -552,6 +552,11 @@ impl PyFeatureEvaluator {
         }
     }
 
+    /// Serialize feature evaluator to json string
+    fn to_json(&self) -> String {
+        serde_json::to_string(&self.feature_evaluator_f64).unwrap()
+    }
+
     /// Feature names
     #[getter]
     fn names(&self) -> Vec<&str> {

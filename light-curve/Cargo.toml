@@ -48,6 +48,7 @@ rand_xoshiro = "0.6.0"
 thiserror = "1.0.37"
 serde = { version = "1", features = ["derive"] }
 serde-pickle = "1"
+serde_json = "1"
 rayon = "1.6.1"
 unzip3 = "1.0.0"
 
