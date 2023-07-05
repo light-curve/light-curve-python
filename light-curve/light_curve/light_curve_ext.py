@@ -10,3 +10,8 @@ def __register_submodules():
 
 
 __register_submodules()
+
+
+def feature_from_json(s: str) -> JSONDeserializedFeature:
+    """Deserialize a JSON string into a Feature object."""
+    return JSONDeserializedFeature(s)

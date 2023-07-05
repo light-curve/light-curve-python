@@ -19,6 +19,8 @@ def _feature_classes(module, *, exclude_parametric=True):
             continue
         if not issubclass(member, lc._FeatureEvaluator):
             continue
+        if member is lc.JSONDeserializedFeature:
+            continue
         # Skip classes with non-trivial constructors
         if exclude_parametric:
             try:
@@ -308,3 +310,27 @@ def test_bazin_fit_precise(algo):
 
     *params, reduced_chi2 = bazin(t, flux, fluxerr)
     assert_allclose(true_params, params, rtol=1e-4)  # tolerance set to underlying algorithms
+
+
+@pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=5, rng=None))
+def test_json_serialization(feature):
+    n_obs = 128
+    data = gen_lc(n_obs)
+    values = feature(*data)
+
+    from_to_json = lc.feature_from_json(feature.to_json())
+    values_from_to_json = from_to_json(*data)
+    assert_array_equal(values, values_from_to_json)
+
+
+def test_json_deserialization():
+    json = """
+    {"FeatureExtractor":{"features":[{"Transformed":{"feature":{"AndersonDarlingNormal":{}},"transformer":{"Ln1p":{}}}},
+    {"Transformed":{"feature":{"BazinFit":{"algorithm":{"Ceres":{"loss_factor":null,"niterations":20}},"inits_bounds":
+    {"OptionArrays":{"init":[null,null,null,null,null],"lower":[0.0036307805477010066,null,null,0.0001,0.0001],"upper":
+    [3630780547.7010174,null,null,30000.0,30000.0]}},"ln_prior":{"Fixed":{"None":{}}}}},"transformer":{"BazinFit":
+    {"mag_zp":23.899999618530273}}}},{"ExcessVariance":{}}]}}
+    """
+    from_json = lc.feature_from_json(json)
+    assert isinstance(from_json, lc._FeatureEvaluator)
+    from_json(*gen_lc(128))

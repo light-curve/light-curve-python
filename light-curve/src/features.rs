@@ -552,6 +552,11 @@ impl PyFeatureEvaluator {
         }
     }
 
+    /// Serialize feature evaluator to json string
+    fn to_json(&self) -> String {
+        serde_json::to_string(&self.feature_evaluator_f64).unwrap()
+    }
+
     /// Feature names
     #[getter]
     fn names(&self) -> Vec<&str> {
@@ -1865,3 +1870,29 @@ evaluator!(
     lcf::TimeStandardDeviation,
     StockTransformer::Identity
 );
+
+/// Feature evaluator deserialized from JSON string
+#[pyclass(name = "JSONDeserializedFeature", extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
+#[pyo3(text_signature = "(json_string)")]
+pub struct JsonDeserializedFeature {}
+
+#[pymethods]
+impl JsonDeserializedFeature {
+    #[new]
+    fn __new__(s: String) -> Res<(Self, PyFeatureEvaluator)> {
+        let feature_evaluator_f32: lcf::Feature<f32> = serde_json::from_str(&s).map_err(|err| {
+            Exception::ValueError(format!("Cannot deserialize feature from JSON: {err}"))
+        })?;
+        let feature_evaluator_f64: lcf::Feature<f64> = serde_json::from_str(&s).map_err(|err| {
+            Exception::ValueError(format!("Cannot deserialize feature from JSON: {err}"))
+        })?;
+
+        Ok((
+            Self {},
+            PyFeatureEvaluator {
+                feature_evaluator_f32,
+                feature_evaluator_f64,
+            },
+        ))
+    }
+}
