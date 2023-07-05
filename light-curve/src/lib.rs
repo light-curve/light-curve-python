@@ -77,6 +77,7 @@ fn light_curve(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<f::Eta>()?;
     m.add_class::<f::EtaE>()?;
     m.add_class::<f::ExcessVariance>()?;
+    m.add_class::<f::JsonDeserializedFeature>()?;
     m.add_class::<f::InterPercentileRange>()?;
     m.add_class::<f::Kurtosis>()?;
     m.add_class::<f::LinearFit>()?;

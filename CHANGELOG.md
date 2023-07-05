@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- All Rust features got `.to_json()` method to serialize their state to JSON string.
+- New special Rust feature `JSONDeserializedFeature` and a helper function `feature_from_json()` to deserialize features from JSON string.
 - Build: "abi3" and "abi3-py310" Cargo features (the least one is enabled by the first one) to build a wheel for CPython 3.10+. This stable ABI wheel is less performant than the regular one, but it is compatible with all future Python versions. See [PEP 384](https://www.python.org/dev/peps/pep-0384/) for details. https://github.com/light-curve/light-curve-python/issues/79
 
 ### Changed
