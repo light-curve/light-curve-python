@@ -9,16 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- All Rust features got `.to_json()` method to serialize their state to JSON string.
-- New special Rust feature `JSONDeserializedFeature` and a helper function `feature_from_json()` to deserialize features from JSON string.
-- Build: "abi3" and "abi3-py310" Cargo features (the least one is enabled by the first one) to build a wheel for CPython 3.10+. This stable ABI wheel is less performant than the regular one, but it is compatible with all future Python versions. See [PEP 384](https://www.python.org/dev/peps/pep-0384/) for details. https://github.com/light-curve/light-curve-python/issues/79
+--
 
 ### Changed
 
-- **Build breaking**: the only Python build requirement `maturin` updated from v0.14.x to v1.0
-- CI: bump cibuildwheel to 2.13.1
-- Bump `itertools` 0.10.5 -> 0.11.0
-- Bump `pyO3` 0.18.2 -> 0.18.3
+--
 
 ### Deprecated
 
@@ -30,11 +25,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Building from sdist on x86-64 macOS required manual setting of `$MACOSX_DEPLOYMENT_TARGET` to 10.9 or higher. Recent `maturin` update allowed us to specify it via `pyproject.toml`
+--
 
 ### Security
 
 --
+
+## [0.7.3] 2023-07-06
+
+### Added
+
+- All Rust features got `.to_json()` method to serialize their state to JSON string. https://github.com/light-curve/light-curve-python/pull/226
+- New special Rust feature `JSONDeserializedFeature` and a helper function `feature_from_json()` to deserialize features from JSON string. https://github.com/light-curve/light-curve-python/pull/226
+- Build: "abi3" and "abi3-py310" Cargo features (the least one is enabled by the first one) to build a wheel for CPython 3.10+. This stable ABI wheel is less performant than the regular one, but it is compatible with all future Python versions. See [PEP 384](https://www.python.org/dev/peps/pep-0384/) for details. https://github.com/light-curve/light-curve-python/issues/79
+
+### Changed
+
+- **Build breaking**: the only Python build requirement `maturin` updated from v0.14.x to v1.0 https://github.com/light-curve/light-curve-python/pull/216 https://github.com/light-curve/light-curve-python/pull/215
+- CI: bump cibuildwheel to 2.13.1 https://github.com/light-curve/light-curve-python/pull/225
+- Bump `itertools` 0.10.5 -> 0.11.0 https://github.com/light-curve/light-curve-python/pull/224
+- Bump `pyO3` 0.18.2 -> 0.18.3 https://github.com/light-curve/light-curve-python/pull/207
+
+### Fixed
+
+- Building from sdist on x86-64 macOS required manual setting of `$MACOSX_DEPLOYMENT_TARGET` to 10.9 or higher. Recent `maturin` update allowed us to specify it via `pyproject.toml`
 
 
 ## [0.7.2] 2023-04-12
