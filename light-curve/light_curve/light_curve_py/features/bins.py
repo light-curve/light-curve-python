@@ -6,7 +6,6 @@ from scipy import ndimage
 
 from ._base_meta import BaseMetaFeature
 
-
 if sys.version_info >= (3, 10):
     from dataclasses import field
 else:

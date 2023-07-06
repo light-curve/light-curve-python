@@ -3,12 +3,12 @@ from functools import lru_cache, wraps
 from itertools import count
 from pathlib import Path
 from typing import Generator, Iterator, List, Optional, Union
-from joblib import Parallel, delayed
 
 import feets
 import numpy as np
 import pandas as pd
 import pytest
+from joblib import Parallel, delayed
 from numpy.testing import assert_allclose
 from scipy import stats
 from scipy.optimize import curve_fit

@@ -111,7 +111,7 @@ target-version = "py37"
 
 [tool.ruff.per-file-ignores]
 # Unused and star imports
-"light_curve/__init__.py" = ["F401", "F403"]
+"light_curve/__init__.py" = ["F401", "F403", "I001"]
 "light_curve/light_curve_ext.py" = ["F403", "F405"]
 "light_curve/light_curve_py/__init__.py" = ["F403"]
 
