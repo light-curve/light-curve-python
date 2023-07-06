@@ -603,7 +603,6 @@ impl PyFeatureEvaluator {
 }
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(*features, transform=None)")]
 pub struct Extractor {}
 
 #[pymethods]
@@ -686,7 +685,6 @@ macro_rules! impl_stock_transform {
 macro_rules! evaluator {
     ($name: ident, $eval: ty, $default_transform: expr $(,)?) => {
         #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-        #[pyo3(text_signature = "()")]
         pub struct $name {}
 
         impl_stock_transform!($name, $default_transform);
@@ -789,7 +787,6 @@ pub(crate) enum FitLnPrior<'a> {
 macro_rules! fit_evaluator {
     ($name: ident, $eval: ty, $ib: ty, $transform: expr, $nparam: literal, $ln_prior_by_str: tt, $ln_prior_doc: literal $(,)?) => {
         #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-        #[pyo3(text_signature = "(algorithm, *, mcmc_niter=..., ceres_niter=..., ceres_loss_reg=None, lmsder_niter=..., init=None, bounds=None, ln_prior=None, transform=None)")]
         pub struct $name {}
 
         impl $name {
@@ -1114,7 +1111,6 @@ evaluator!(
 );
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(nstd=..., *, transform=None)")]
 pub struct BeyondNStd {}
 
 impl_stock_transform!(BeyondNStd, StockTransformer::Identity);
@@ -1176,7 +1172,6 @@ fit_evaluator!(
 );
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(features, *, window, offset, transform = None)")]
 pub struct Bins {}
 
 #[pymethods]
@@ -1277,7 +1272,6 @@ evaluator!(
 );
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(quantile=..., *, transform = None)")]
 pub struct InterPercentileRange {}
 
 impl_stock_transform!(InterPercentileRange, StockTransformer::Identity);
@@ -1330,7 +1324,6 @@ evaluator!(LinearFit, lcf::LinearFit, StockTransformer::Identity);
 evaluator!(LinearTrend, lcf::LinearTrend, StockTransformer::Identity);
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(quantile_numerator=..., quantile_denominator=..., *, transform = None)")]
 pub struct MagnitudePercentageRatio {}
 
 impl_stock_transform!(MagnitudePercentageRatio, StockTransformer::Identity);
@@ -1420,7 +1413,6 @@ evaluator!(
 );
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(quantile=..., *, transform = None)")]
 pub struct MedianBufferRangePercentage {}
 
 impl_stock_transform!(MedianBufferRangePercentage, StockTransformer::Identity);
@@ -1473,7 +1465,6 @@ evaluator!(
 );
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(quantile=..., *, transform = None)")]
 pub struct PercentDifferenceMagnitudePercentile {}
 
 impl_stock_transform!(
@@ -1536,9 +1527,6 @@ enum NyquistArgumentOfPeriodogram<'py> {
 }
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(
-    text_signature = "(peaks=..., resolution=..., max_freq_factor=..., nyquist='average', fast=True, features=None, transform=None)"
-)]
 pub struct Periodogram {
     eval_f32: LcfPeriodogram<f32>,
     eval_f64: LcfPeriodogram<f64>,
@@ -1811,7 +1799,6 @@ evaluator!(
 );
 
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(*, transform=None)")]
 pub struct OtsuSplit {}
 
 #[pymethods]
@@ -1873,12 +1860,12 @@ evaluator!(
 
 /// Feature evaluator deserialized from JSON string
 #[pyclass(name = "JSONDeserializedFeature", extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
-#[pyo3(text_signature = "(json_string)")]
 pub struct JsonDeserializedFeature {}
 
 #[pymethods]
 impl JsonDeserializedFeature {
     #[new]
+    #[pyo3(text_signature = "(json_string)")]
     fn __new__(s: String) -> Res<(Self, PyFeatureEvaluator)> {
         let feature_evaluator_f32: lcf::Feature<f32> = serde_json::from_str(&s).map_err(|err| {
             Exception::ValueError(format!("Cannot deserialize feature from JSON: {err}"))

@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
---
+- Bump `pyO3` 0.18.3 -> 0.19.1, it simplified signature generations for classes https://github.com/light-curve/light-curve-python/pull/230
+- Bump `rust-numpy` 0.18.0 -> 0.19.0 https://github.com/light-curve/light-curve-python/pull/230
 
 ### Deprecated
 
