@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Tuple
 
 import numpy as np
 from iminuit import Minuit
@@ -17,13 +18,13 @@ class MendozaFit(BaseFeature):
     for white-light flares:
 
     $$
-    f(t) = \frac{\sqrt{\pi} A C}{2} \times (F_1 h(t, B, C, D_1) + F_2 h(t, B, C, D_2)),
+    f(t) = f^* + \frac{\sqrt{\pi} A C}{2} \times (F_1 h(t, B, C, D_1) + F_2 h(t, B, C, D_2)),
     $$
 
-    where $h(t, B, C, D) = e^{-D t + (\frac{B}{C} + \frac{D C}{2})^2} \times erfc \left(\frac{B - t}{C} +
-    \frac{D C}{2}\right)$, where $erfc$ is $1-erf(t)$, t -- relative time, A -- amplitude, B -- position of the peak of
-    the flare, C -- Gaussian heating timescale, $D_1$ -- rapid cooling phase timescale, $D_2$ -- slow cooling phase
-    timescale, $F_2 \equiv 1 - F_1$ and  describe the relative importance of the exponential cooling terms.
+    where $h(t, B, C, D) = \exp{(\alpha C D)} \times \text{erfc} (\alpha)$, $\alpha(t, C, D) = \frac12 C D + \frac{B
+    - t}{C}$, where $erfc$ is $1-erf(t)$, t -- relative time, A -- amplitude, B -- position of the peak of the flare,
+    C -- Gaussian heating timescale, $D_1$ -- rapid cooling phase timescale, $D_2$ -- slow cooling phase timescale,
+    $F_2 \equiv 1 - F_1$ and  describe the relative importance of the exponential cooling terms.
 
     - Depends on:  **time**, **magnitude**, **sigma**
     - Minimum number of observations: **7**
@@ -84,25 +85,25 @@ class MendozaFit(BaseFeature):
 
     @staticmethod
     def _func(amplitude):
-        eq = lambda t, A, B, C, D1, D2, f1, background: amplitude * (
+        eq = lambda t, A1, A2, B, C, D1, D2, f1, background: amplitude * (
             background
             + (
                 (1 / 2)
                 * np.sqrt(np.pi)
-                * A
+                * A1
                 * C
                 * f1
-                * np.exp(-D1 * t + ((B / C) + (D1 * C / 2)) ** 2)
-                * erfc(((B - t) / C) + (C * D1 / 2))
+                * np.exp(((1 / 2) * C * D1 + (B - t) / C) * C * D1)
+                * erfc((1 / 2) * C * D1 + (B - t) / C)
             )
             + (
                 (1 / 2)
                 * np.sqrt(np.pi)
-                * A
+                * A2
                 * C
                 * (1 - f1)
-                * np.exp(-D2 * t + ((B / C) + (D2 * C / 2)) ** 2)
-                * erfc(((B - t) / C) + (C * D2 / 2))
+                * np.exp(((1 / 2) * C * D2 + (B - t) / C) * C * D2)
+                * erfc((1 / 2) * C * D2 + (B - t) / C)
             )
         )
 
@@ -114,7 +115,8 @@ class MendozaFit(BaseFeature):
         norm_t = (t - tpeak) / fwhm
 
         initial_dict = {
-            "A": 0.9687734504375167,
+            "A1": 0.9687734504375167,
+            "A2": 0.9687734504375167,
             "B": -0.251299705922117,
             "C": 0.22675974948468916,
             "D1": 0.15551880775110513,
@@ -122,6 +124,16 @@ class MendozaFit(BaseFeature):
             "f1": 0.12695865022878844,
             "background": background / amplitude,
         }
+
+        initial_dict["A1"] = initial_dict["A1"] * np.exp(
+            -(initial_dict["B"] ** 2) / (initial_dict["C"] ** 2)
+            + (initial_dict["D1"] ** 2 * initial_dict["C"] ** 2) / 4
+        )
+
+        initial_dict["A2"] = initial_dict["A2"] * np.exp(
+            -(initial_dict["B"] ** 2) / (initial_dict["C"] ** 2)
+            + (initial_dict["D2"] ** 2 * initial_dict["C"] ** 2) / 4
+        )
 
         least_squares = LeastSquares(norm_t, m, sigma, func)
         fit = Minuit(least_squares, **initial_dict).migrad()
@@ -141,6 +153,10 @@ class MendozaFit(BaseFeature):
     @property
     def size(self):
         return 11
+
+    @property
+    def names(self) -> Tuple[str, ...]:
+        return ("amplitude", "fwhm", "tpeak", "chi2", "A1", "A2", "B", "C", "D1", "D2", "f1", "background")
 
 
 __all__ = ("MendozaFit",)
