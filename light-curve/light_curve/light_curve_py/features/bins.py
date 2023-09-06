@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import numpy as np
 from scipy import ndimage
 
-from ._base_meta import BaseMetaFeature
+from ._base_meta import BaseMetaSingleBandFeature
 
 if sys.version_info >= (3, 10):
     from dataclasses import field
@@ -16,7 +16,7 @@ else:
 
 
 @dataclass()
-class Bins(BaseMetaFeature):
+class Bins(BaseMetaSingleBandFeature):
     window: float = field(default=1.0, kw_only=True)
     offset: float = field(default=0.0, kw_only=True)
 

@@ -3,7 +3,7 @@ import numpy as np
 from light_curve.light_curve_ext import Eta, Mean
 from light_curve.light_curve_ext import _FeatureEvaluator as _RustBaseFeature
 from light_curve.light_curve_py import Amplitude, Extractor, OtsuSplit
-from light_curve.light_curve_py.features._base import BaseFeature as _PythonBaseFeature
+from light_curve.light_curve_py.features._base import BaseSingleBandFeature as _PythonBaseFeature
 
 
 def test_extractor_all_python():

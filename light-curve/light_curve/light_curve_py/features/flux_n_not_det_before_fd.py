@@ -3,11 +3,11 @@ from typing import Tuple
 
 import numpy as np
 
-from ._base import BaseFeature
+from ._base import BaseSingleBandFeature
 
 
 @dataclass()
-class FluxNNotDetBeforeFd(BaseFeature):
+class FluxNNotDetBeforeFd(BaseSingleBandFeature):
     """Number of non-detections before the first detection for measurements of the flux.
 
     Feature use a user-defined signal to noise ratio to define non-detections and count their number before
@@ -31,7 +31,7 @@ class FluxNNotDetBeforeFd(BaseFeature):
     signal_to_noise: float
     strictly_fainter: bool = False
 
-    def _eval(self, t, m, sigma=None):
+    def _eval_single_band(self, t, m, sigma=None):
         detections = np.argwhere(m > self.signal_to_noise * sigma).flatten()
 
         if len(detections) == len(m):
@@ -56,7 +56,7 @@ class FluxNNotDetBeforeFd(BaseFeature):
         return ("number of non detections before the first detection for fluxes",)
 
     @property
-    def size(self) -> int:
+    def size_single_band(self) -> int:
         return 1
 
 
