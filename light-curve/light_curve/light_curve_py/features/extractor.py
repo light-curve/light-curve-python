@@ -7,11 +7,14 @@ from light_curve.light_curve_ext import Extractor as _RustExtractor
 from light_curve.light_curve_ext import _FeatureEvaluator as _RustBaseFeature
 
 from ._base import BaseSingleBandFeature
+from ..dataclass_field import dataclass_field
 
 
 @dataclass()
 class _PyExtractor(BaseSingleBandFeature):
-    features: Collection[Union[BaseSingleBandFeature, _RustBaseFeature]] = ()
+    features: Collection[Union[BaseSingleBandFeature, _RustBaseFeature]] = dataclass_field(
+        default_factory=list, kw_only=True
+    )
 
     def _eval_single_band(self, t, m, sigma=None):
         raise NotImplementedError("_eval_single_band is missed for _PyExtractor")
@@ -21,7 +24,10 @@ class _PyExtractor(BaseSingleBandFeature):
 
     @property
     def size_single_band(self):
-        return sum(feature.size_single_band for feature in self.features)
+        return sum(
+            feature.size if isinstance(feature, _RustBaseFeature) else feature.size_single_band
+            for feature in self.features
+        )
 
 
 class Extractor:
@@ -29,7 +35,7 @@ class Extractor:
         if len(args) > 0 and all(isinstance(feature, _RustBaseFeature) for feature in args):
             return _RustExtractor(*args)
         else:
-            return _PyExtractor(args)
+            return _PyExtractor(features=args)
 
 
 __all__ = ("Extractor",)

@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional, Sequence
 
 import numpy as np
 
+from light_curve.light_curve_py.dataclass_field import dataclass_field
 from light_curve.light_curve_py.warnings import mark_experimental
 
 
@@ -106,7 +107,7 @@ class BaseMultiBandFeature(ABC):
 
 @dataclass
 class BaseSingleBandFeature(BaseMultiBandFeature):
-    bands: Optional[Sequence[str]] = field(default=None, kw_only=True)
+    bands: Optional[Sequence[str]] = dataclass_field(default=None, kw_only=True)
 
     @property
     @abstractmethod

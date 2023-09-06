@@ -7,11 +7,14 @@ from light_curve.light_curve_ext import _FeatureEvaluator as _RustBaseFeature
 
 from ._base import BaseSingleBandFeature
 from .extractor import Extractor, _PyExtractor
+from ..dataclass_field import dataclass_field
 
 
 @dataclass
 class BaseMetaSingleBandFeature(BaseSingleBandFeature):
-    features: Collection[Union[BaseSingleBandFeature, _RustBaseFeature]] = ()
+    features: Collection[Union[BaseSingleBandFeature, _RustBaseFeature]] = dataclass_field(
+        default_factory=list, kw_only=True
+    )
     extractor: Union[_RustExtractor, _PyExtractor] = field(init=False)
 
     def __post_init__(self):
@@ -32,4 +35,6 @@ class BaseMetaSingleBandFeature(BaseSingleBandFeature):
 
     @property
     def size_single_band(self):
+        if isinstance(self.extractor, _RustExtractor):
+            return self.extractor.size
         return self.extractor.size_single_band

@@ -1,24 +1,16 @@
-import sys
 from dataclasses import dataclass
 
 import numpy as np
 from scipy import ndimage
 
 from ._base_meta import BaseMetaSingleBandFeature
-
-if sys.version_info >= (3, 10):
-    from dataclasses import field
-else:
-    from dataclasses import field as _field
-
-    def field(*, kw_only, **kwargs):
-        return _field(**kwargs)
+from ..dataclass_field import dataclass_field
 
 
 @dataclass()
 class Bins(BaseMetaSingleBandFeature):
-    window: float = field(default=1.0, kw_only=True)
-    offset: float = field(default=0.0, kw_only=True)
+    window: float = dataclass_field(default=1.0, kw_only=True)
+    offset: float = dataclass_field(default=0.0, kw_only=True)
 
     def transform(self, t, m, sigma=None, *, sorted=None, fill_value=None):
         assert self.window > 0, "Window should be a positive number."

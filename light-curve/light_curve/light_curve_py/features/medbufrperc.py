@@ -3,15 +3,16 @@ from dataclasses import dataclass
 import numpy as np
 
 from ._base import BaseSingleBandFeature
+from ..dataclass_field import dataclass_field
 
 
 @dataclass()
 class MedianBufferRangePercentage(BaseSingleBandFeature):
-    q: float = 0.1
+    quantile: float = dataclass_field(default=0.1, kw_only=True)
 
     def _eval_single_band(self, t, m, sigma=None):
         median = np.median(m)
-        return np.count_nonzero(np.abs(median - m) < self.q * (np.max(m) - np.min(m)) / 2) / len(m)
+        return np.count_nonzero(np.abs(median - m) < self.quantile * (np.max(m) - np.min(m)) / 2) / len(m)
 
     @property
     def size_single_band(self):

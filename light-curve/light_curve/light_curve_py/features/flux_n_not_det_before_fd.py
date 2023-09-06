@@ -4,6 +4,7 @@ from typing import Tuple
 import numpy as np
 
 from ._base import BaseSingleBandFeature
+from ..dataclass_field import dataclass_field
 
 
 @dataclass()
@@ -28,8 +29,8 @@ class FluxNNotDetBeforeFd(BaseSingleBandFeature):
     P. Sánchez-Sáez et al 2021, [DOI:10.3847/1538-3881/abd5c1](https://doi.org/10.3847/1538-3881/abd5c1)
     """
 
-    signal_to_noise: float
-    strictly_fainter: bool = False
+    signal_to_noise: float = dataclass_field(default=5.0, kw_only=True)
+    strictly_fainter: bool = dataclass_field(default=False, kw_only=True)
 
     def _eval_single_band(self, t, m, sigma=None):
         detections = np.argwhere(m > self.signal_to_noise * sigma).flatten()
