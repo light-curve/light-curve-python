@@ -104,6 +104,7 @@ class _Test:
     name = None
     # Argument tuple for the feature constructor
     args = ()
+    # And keyword arguments
     kwargs = {}
 
     py_feature = None
@@ -122,10 +123,15 @@ class _Test:
 
     def setup_method(self):
         self.rust = getattr(lc_ext, self.name)(*self.args, **self.kwargs)
+
         try:
-            self.py_feature = getattr(lc_py, self.name)(*self.args, **self.kwargs)
+            self.py_feature_cls = getattr(lc_py, self.name)
         except AttributeError:
             pass
+        else:
+            if len(self.args) > 0:
+                raise ValueError("Py features must be called with keyword arguments only")
+            self.py_feature = self.py_feature_cls(**self.kwargs)
 
         if self.feets_feature is not None:
             self.feets_extractor = feets.FeatureSpace(only=[self.feets_feature], data=["time", "magnitude", "error"])
@@ -373,7 +379,7 @@ class TestBeyond1Std(_Test):
     nstd = 1.0
 
     name = "BeyondNStd"
-    args = (nstd,)
+    kwargs = dict(nstd=nstd)
 
     feets_feature = "Beyond1Std"
     feets_skip_test = "feets uses biased statistics"
@@ -423,7 +429,7 @@ class TestInterPercentileRange(_Test):
     quantile = 0.25
 
     name = "InterPercentileRange"
-    args = (quantile,)
+    kwargs = dict(quantile=quantile)
 
     feets_feature = "Q31"
     feets_skip_test = "feets uses different quantile type"
@@ -472,14 +478,14 @@ class TestLinearTrend(_Test):
         return np.array([slope, np.sqrt(slope_sigma2), sigma_noise])
 
 
-def generate_test_magnitude_percentile_ratio(quantile_numerator, quantile_denumerator, feets_feature):
+def generate_test_magnitude_percentile_ratio(quantile_numerator, quantile_denominator, feets_feature):
     return type(
         f"TestMagnitudePercentageRatio{int(quantile_numerator * 100):d}",
         (_Test,),
         dict(
-            args=(quantile_numerator, quantile_denumerator),
+            kwargs=dict(quantile_numerator=quantile_numerator, quantile_denominator=quantile_denominator),
             quantile_numerator=quantile_numerator,
-            quantile_denumerator=quantile_denumerator,
+            quantile_denominator=quantile_denominator,
             name="MagnitudePercentageRatio",
             feets_feature=feets_feature,
             feets_skip_test="feets uses different quantile type",
@@ -539,7 +545,7 @@ class TestMedianBufferRangePercentage(_Test):
     quantile = 0.2
 
     name = "MedianBufferRangePercentage"
-    args = (quantile,)
+    kwargs = dict(quantile=quantile)
 
     feets_feature = "MedianBRP"
 
@@ -559,7 +565,7 @@ class TestPercentDifferenceMagnitudePercentile(_Test):
     quantile = 0.05
 
     name = "PercentDifferenceMagnitudePercentile"
-    args = (quantile,)
+    kwargs = dict(quantile=quantile)
 
     feets_feature = "PercentDifferenceFluxPercentile"
     feets_skip_test = "feets uses different quantile type"
@@ -622,10 +628,10 @@ class TestAllPy(_Test):
                 continue
 
             try:
-                py_features.append(getattr(lc_py, cls.name)(*cls.args))
+                py_features.append(getattr(lc_py, cls.name)(**cls.kwargs))
             except AttributeError:
                 continue
-            features.append(getattr(lc_ext, cls.name)(*cls.args))
+            features.append(getattr(lc_ext, cls.name)(**cls.kwargs))
         self.rust = lc_ext.Extractor(*features)
         self.py_feature = lc_py.Extractor(*py_features)
 
@@ -660,10 +666,10 @@ class TestBenchmarkParallel(_Test):
                 continue
 
             try:
-                py_features.append(getattr(lc_py, cls.name)(*cls.args))
+                py_features.append(getattr(lc_py, cls.name)(**cls.kwargs))
             except AttributeError:
                 continue
-            features.append(getattr(lc_ext, cls.name)(*cls.args))
+            features.append(getattr(lc_ext, cls.name)(**cls.kwargs))
         self.rust = lc_ext.Extractor(*features)
         self.py_feature = lc_py.Extractor(*py_features)
 
@@ -738,7 +744,7 @@ class TestAllNaive(_Test):
                 continue
             if not cls.add_to_all_features:
                 continue
-            features.append(getattr(lc_ext, cls.name)(*cls.args))
+            features.append(getattr(lc_ext, cls.name)(*cls.args, **cls.kwargs))
             self.naive_features.append(cls().naive)
         self.rust = lc_ext.Extractor(*features)
 
@@ -762,7 +768,7 @@ class TestAllFeets(_Test):
                 continue
             if not cls.add_to_all_features:
                 continue
-            features.append(getattr(lc_ext, cls.name)(*cls.args))
+            features.append(getattr(lc_ext, cls.name)(*(cls.args + tuple(cls.kwargs.values()))))
             feets_features.append(cls.feets_feature)
         self.rust = lc_ext.Extractor(*features)
         self.feets_extractor = feets.FeatureSpace(only=feets_features, data=["time", "magnitude", "error"])

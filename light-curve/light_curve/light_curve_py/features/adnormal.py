@@ -1,15 +1,15 @@
 from scipy.stats import anderson
 
-from ._base import BaseFeature
+from ._base import BaseSingleBandFeature
 
 
-class AndersonDarlingNormal(BaseFeature):
-    def _eval(self, t, m, sigma=None):
+class AndersonDarlingNormal(BaseSingleBandFeature):
+    def _eval_single_band(self, t, m, sigma=None):
         n = len(m)
         return anderson(m).statistic * (1 + 4 / n - 25 / n**2)
 
     @property
-    def size(self):
+    def size_single_band(self):
         return 1
 
 

@@ -47,5 +47,5 @@ def test_bins_3():
 
 
 def test_bins_size():
-    feature = Bins((Mean(), Amplitude(), Median()), window=2.0, offset=1.0)
-    assert feature.size == 3
+    feature = Bins(features=[Mean(), Amplitude(), Median()], window=2.0, offset=1.0)
+    assert feature.size_single_band == 3

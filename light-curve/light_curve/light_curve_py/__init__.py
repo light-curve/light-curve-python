@@ -2,6 +2,7 @@ from .features.adnormal import *
 from .features.amplitude import *
 from .features.beyondnstd import *
 from .features.bins import *
+from .features.color_of_median import *
 from .features.cusum import *
 from .features.eta import *
 from .features.etae import *
