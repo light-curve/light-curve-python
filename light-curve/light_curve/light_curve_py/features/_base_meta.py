@@ -5,9 +5,9 @@ from typing import Collection, Union
 from light_curve.light_curve_ext import Extractor as _RustExtractor
 from light_curve.light_curve_ext import _FeatureEvaluator as _RustBaseFeature
 
+from ..dataclass_field import dataclass_field
 from ._base import BaseSingleBandFeature
 from .extractor import Extractor, _PyExtractor
-from ..dataclass_field import dataclass_field
 
 
 @dataclass

@@ -6,8 +6,8 @@ import numpy as np
 from light_curve.light_curve_ext import Extractor as _RustExtractor
 from light_curve.light_curve_ext import _FeatureEvaluator as _RustBaseFeature
 
-from ._base import BaseSingleBandFeature
 from ..dataclass_field import dataclass_field
+from ._base import BaseSingleBandFeature
 
 
 @dataclass()

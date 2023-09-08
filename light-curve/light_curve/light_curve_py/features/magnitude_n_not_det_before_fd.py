@@ -3,8 +3,8 @@ from typing import Tuple
 
 import numpy as np
 
-from ._base import BaseSingleBandFeature
 from ..dataclass_field import dataclass_field
+from ._base import BaseSingleBandFeature
 
 
 @dataclass()

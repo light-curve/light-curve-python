@@ -2,8 +2,8 @@ from dataclasses import dataclass
 
 from scipy.stats.mstats import mquantiles
 
-from ._base import BaseSingleBandFeature
 from ..dataclass_field import dataclass_field
+from ._base import BaseSingleBandFeature
 
 
 @dataclass()

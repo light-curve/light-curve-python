@@ -3,8 +3,8 @@ from dataclasses import dataclass
 import numpy as np
 from scipy import ndimage
 
-from ._base_meta import BaseMetaSingleBandFeature
 from ..dataclass_field import dataclass_field
+from ._base_meta import BaseMetaSingleBandFeature
 
 
 @dataclass()

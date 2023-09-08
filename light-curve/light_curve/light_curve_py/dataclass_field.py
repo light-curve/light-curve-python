@@ -1,6 +1,5 @@
 import sys
 
-
 if sys.version_info >= (3, 10):
     from dataclasses import field as dataclass_field
 else:
