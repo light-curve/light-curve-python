@@ -1771,9 +1771,9 @@ fit_evaluator!(
             "unsupported ln_prior name '{s}'"
         )).into()),
     },
-    r#"- 'no': no prior,\
+    r"- 'no': no prior,\
     - 'hosseinzadeh2020': prior addopted from Hosseinzadeh et al. 2020, it
-      assumes that `t` is in days"#,
+      assumes that `t` is in days",
 );
 
 evaluator!(WeightedMean, lcf::WeightedMean, StockTransformer::Identity);
