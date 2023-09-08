@@ -1,10 +1,10 @@
 import numpy as np
 
-from ._base import BaseFeature
+from ._base import BaseSingleBandFeature
 
 
-class Cusum(BaseFeature):
-    def _eval(self, t, m, sigma=None):
+class Cusum(BaseSingleBandFeature):
+    def _eval_single_band(self, t, m, sigma=None):
         m_mean = np.mean(m)
         m_std = np.std(m, ddof=1)
         m_new = np.cumsum(m - m_mean)
@@ -12,7 +12,7 @@ class Cusum(BaseFeature):
         return np.ptp(result)
 
     @property
-    def size(self):
+    def size_single_band(self):
         return 1
 
 

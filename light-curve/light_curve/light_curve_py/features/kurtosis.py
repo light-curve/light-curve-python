@@ -1,10 +1,10 @@
 import numpy as np
 
-from ._base import BaseFeature
+from ._base import BaseSingleBandFeature
 
 
-class Kurtosis(BaseFeature):
-    def _eval(self, t, m, sigma=None):
+class Kurtosis(BaseSingleBandFeature):
+    def _eval_single_band(self, t, m, sigma=None):
         n = len(m)
         m_mean = np.mean(m)
         m_st = np.std(m, ddof=1) ** 4
@@ -14,7 +14,7 @@ class Kurtosis(BaseFeature):
         )
 
     @property
-    def size(self):
+    def size_single_band(self):
         return 1
 
 

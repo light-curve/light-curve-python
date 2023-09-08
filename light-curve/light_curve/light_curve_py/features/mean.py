@@ -1,14 +1,14 @@
 import numpy as np
 
-from ._base import BaseFeature
+from ._base import BaseSingleBandFeature
 
 
-class Mean(BaseFeature):
-    def _eval(self, t, m, sigma=None):
+class Mean(BaseSingleBandFeature):
+    def _eval_single_band(self, t, m, sigma=None):
         return np.mean(m)
 
     @property
-    def size(self):
+    def size_single_band(self):
         return 1
 
 

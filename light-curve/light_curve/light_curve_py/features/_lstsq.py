@@ -2,6 +2,9 @@ import numpy as np
 
 
 def least_squares(t, m, sigma):
+    if t.size < 3:
+        raise ValueError("Time series must have at least 3 points")
+
     A = np.vstack([t, np.ones(len(t))]).T
 
     if sigma is not None:
