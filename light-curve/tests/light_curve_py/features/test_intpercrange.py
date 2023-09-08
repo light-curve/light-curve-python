@@ -14,7 +14,7 @@ def test_intpercrange_1():
 
 def test_intpercrange_2():
     m = np.arange(1.0, 10.0)
-    feature = InterPercentileRange(0.5)
+    feature = InterPercentileRange(quantile=0.5)
     actual = feature(m, m)
     desired = 0.0
     assert_allclose(actual, desired)

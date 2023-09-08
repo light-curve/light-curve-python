@@ -1,11 +1,11 @@
 import numpy as np
 
-from ._base import BaseFeature
+from ._base import BaseSingleBandFeature
 from ._lstsq import least_squares
 
 
-class LinearFit(BaseFeature):
-    def _eval(self, t, m, sigma=None):
+class LinearFit(BaseSingleBandFeature):
+    def _eval_single_band(self, t, m, sigma=None):
         n = len(t)
 
         slope, chi2 = least_squares(t, m, sigma)
@@ -20,7 +20,7 @@ class LinearFit(BaseFeature):
         return np.array([slope, np.sqrt(1 / ((weighted_t2 - weighted_t) * sigma_sum)), red_chi2])
 
     @property
-    def size(self):
+    def size_single_band(self):
         return 3
 
 

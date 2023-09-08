@@ -3,11 +3,12 @@ from typing import Tuple
 
 import numpy as np
 
-from ._base import BaseFeature
+from ..dataclass_field import dataclass_field
+from ._base import BaseSingleBandFeature
 
 
 @dataclass()
-class MagnitudeNNotDetBeforeFd(BaseFeature):
+class MagnitudeNNotDetBeforeFd(BaseSingleBandFeature):
     """Number of non detections before the first detection for measurements of the magnitude.
 
     Feature use a user-defined value to mark non-detections: measurements with sigma equal to this value
@@ -28,10 +29,10 @@ class MagnitudeNNotDetBeforeFd(BaseFeature):
     P. Sánchez-Sáez et al 2021, [DOI:10.3847/1538-3881/abd5c1](https://doi.org/10.3847/1538-3881/abd5c1)
     """
 
-    sigma_non_detection: float = np.Inf
-    strictly_fainter: bool = False
+    sigma_non_detection: float = dataclass_field(default=np.Inf, kw_only=True)
+    strictly_fainter: bool = dataclass_field(default=False, kw_only=True)
 
-    def _eval(self, t, m, sigma=None):
+    def _eval_single_band(self, t, m, sigma=None):
         detections = np.argwhere(sigma != self.sigma_non_detection).flatten()
 
         if len(detections) == len(m):
@@ -56,7 +57,7 @@ class MagnitudeNNotDetBeforeFd(BaseFeature):
         return ("number of non detections before the first detection for magnitudes",)
 
     @property
-    def size(self):
+    def size_single_band(self):
         return 1
 
 

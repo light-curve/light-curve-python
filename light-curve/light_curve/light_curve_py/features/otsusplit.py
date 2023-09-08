@@ -1,9 +1,9 @@
 import numpy as np
 
-from ._base import BaseFeature
+from ._base import BaseSingleBandFeature
 
 
-class OtsuSplit(BaseFeature):
+class OtsuSplit(BaseSingleBandFeature):
     """Otsu threshholding algorithm
 
     Difference of subset means, standard deviation of the lower subset, standard deviation
@@ -21,7 +21,7 @@ class OtsuSplit(BaseFeature):
     Otsu, Nobuyuki 1979. [DOI:10.1109/tsmc.1979.4310076](https://doi.org/10.1109/tsmc.1979.4310076)
     """
 
-    def _eval(self, t, m, sigma=None):
+    def _eval_single_band(self, t, m, sigma=None):
         n = len(m)
         m = np.sort(m)
         arg, mean0, mean1 = self._threshold_arg(m)
@@ -76,7 +76,7 @@ class OtsuSplit(BaseFeature):
         )
 
     @property
-    def size(self):
+    def size_single_band(self):
         return 4
 
 

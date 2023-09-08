@@ -1,10 +1,10 @@
 import numpy as np
 
-from ._base import BaseFeature
+from ._base import BaseSingleBandFeature
 
 
-class ReducedChi2(BaseFeature):
-    def _eval(self, t, m, sigma=None):
+class ReducedChi2(BaseSingleBandFeature):
+    def _eval_single_band(self, t, m, sigma=None):
         n = len(m)
         weights = sigma**-2
         m_wmean = np.average(m, weights=weights)
@@ -12,7 +12,7 @@ class ReducedChi2(BaseFeature):
         return np.sum(s) / (n - 1)
 
     @property
-    def size(self):
+    def size_single_band(self):
         return 1
 
 

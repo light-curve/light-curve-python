@@ -2,19 +2,20 @@ from dataclasses import dataclass
 
 from scipy.stats.mstats import mquantiles
 
-from ._base import BaseFeature
+from ..dataclass_field import dataclass_field
+from ._base import BaseSingleBandFeature
 
 
 @dataclass()
-class InterPercentileRange(BaseFeature):
-    p: float = 0.25
+class InterPercentileRange(BaseSingleBandFeature):
+    quantile: float = dataclass_field(default=0.25, kw_only=True)
 
-    def _eval(self, t, m, sigma=None):
-        q1, q2 = mquantiles(m, [self.p, 1 - self.p], alphap=0.5, betap=0.5)
+    def _eval_single_band(self, t, m, sigma=None):
+        q1, q2 = mquantiles(m, [self.quantile, 1 - self.quantile], alphap=0.5, betap=0.5)
         return q2 - q1
 
     @property
-    def size(self):
+    def size_single_band(self):
         return 1
 
 
