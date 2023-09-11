@@ -9,11 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
---
+- **Breaking change in experimental features** Multiband support is introduced for features implemented in Python. It changes class inheritance interface in a backward-incompatible way
+- `light-curve[full]` extras which installs all optional Python dependencies required by experimental features
 
 ### Changed
 
-- **Breaking change in experimental features** Multiband support is introduced for features implemented in Python. It changes class inheritance interface in a backward-incompatible way
+- **Breaking change in experimental features** `scipy` dependency is now optional for experimental features implemented in Python
 - **Breaking change in experimental features** All experimental features implemented in Python require keyword-only arguments in their constructors. Also, all names of the arguments are changed to be the same as for Rust features
 - Bump `pyO3` 0.18.3 -> 0.19.1, it simplified signature generations for classes https://github.com/light-curve/light-curve-python/pull/230
 - Bump `rust-numpy` 0.18.0 -> 0.19.0 https://github.com/light-curve/light-curve-python/pull/230

@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "light-curve"
-dependencies = ["numpy", "scipy"]
+dependencies = ["numpy"]
 requires-python = ">=3.7"
 classifiers = [
     "Intended Audience :: Science/Research",
@@ -21,6 +21,12 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+# Packages required by some experimental features
+full = [
+    "scipy",
+]
+
+# Testing environment
 test-no-bench = [
     "pytest",
     "markdown-pytest",

@@ -12,7 +12,7 @@ def get_light_curve_version():
 
 def main():
     version = get_light_curve_version()
-    requirement = f"light-curve=={version}"
+    requirement = f"light-curve[full]=={version}"
 
     setup(
         version=version,

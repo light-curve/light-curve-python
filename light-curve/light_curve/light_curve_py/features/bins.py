@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
 import numpy as np
-from scipy import ndimage
 
 from ..dataclass_field import dataclass_field
 from ._base_meta import BaseMetaSingleBandFeature
@@ -13,6 +12,11 @@ class Bins(BaseMetaSingleBandFeature):
     offset: float = dataclass_field(default=0.0, kw_only=True)
 
     def transform(self, t, m, sigma=None, *, sorted=None, fill_value=None):
+        try:
+            from scipy import ndimage
+        except ImportError:
+            raise ImportError("scipy is required for Bins feature, please install it")
+
         assert self.window > 0, "Window should be a positive number."
         n = np.ceil((t[-1] - t[0]) / self.window) + 1
         j = np.arange(0, n)

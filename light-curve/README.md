@@ -9,13 +9,15 @@ The Python wrapper for Rust [`light-curve-feature`](https://github.com/light-cur
 ## Installation
 
 ```sh
-python3 -mpip install light-curve
+python3 -mpip install 'light-curve[full]'
 ```
 
-We also provide `light-curve-python` package which is just an "alias" to the main `light-curve` package.
+`full` extras would install the package with all optional Python dependencies required by experimental features.
+We also provide `light-curve-python` package which is just an "alias" to the main `light-curve[full]` package.
 
 Minimum supported Python version is 3.7.
 We provide binary wheels via [PyPi](https://pypi.org/project/light-curve/) for number of platforms and architectures, both for CPython and PyPy.
+We also provide binary wheels for stable CPython ABI, so the package is guaranteed to work with all future CPython3 versions.
 
 ### Support matrix
 
