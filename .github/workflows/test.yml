@@ -64,6 +64,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - uses: Swatinem/rust-cache@v2
+      with:
+        shared-key: "stable-${{ runner.os }}"
+        workspaces: "light-curve"
     - run: cargo clippy --manifest-path=light-curve/Cargo.toml --all-targets -- -D warnings
 
   build:
@@ -171,6 +175,10 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
     - name: Install build deps
       run: python3 -mpip install "${{ needs.py_build_deps.outputs.output }}"
+    - uses: Swatinem/rust-cache@v2
+      with:
+        shared-key: "stable-${{ runner.os }}"
+        workspaces: "light-curve"
     - name: Build wheels for abi3=${{ matrix.abi3 }} fftw=${{ matrix.fftw }} ceres=${{ matrix.ceres }} gsl=${{ matrix.gsl }}
       run: |
         maturin build --find-interpreter --manylinux=off --locked --no-default-features --features=fftw-${{ matrix.fftw }}${{ matrix.ceres == 'source' && ',ceres-source' || '' }}${{ matrix.ceres == 'system' && ',ceres-system' || '' }}${{ matrix.gsl && ',gsl' || '' }}${{ matrix.abi3 && ',abi3' || '' }}
@@ -202,6 +210,10 @@ jobs:
           toolchain: stable
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "stable-${{ runner.os }}"
+          workspaces: "light-curve"
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -259,6 +271,10 @@ jobs:
     - uses: dtolnay/rust-toolchain@master
       with:
         toolchain: ${{ steps.get_msrv.outputs.msrv }}
+    - uses: Swatinem/rust-cache@v2
+      with:
+        shared-key: "msrv-${{ runner.os }}"
+        workspaces: "light-curve"
     - name: Install build_deps
       run: pip install "${{ needs.py_build_deps.outputs.output }}"
     - name: Build
