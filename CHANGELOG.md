@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Breaking change in experimental features** Multiband support is introduced for features implemented in Python. It changes class inheritance interface in a backward-incompatible way
 - `light-curve[full]` extras which installs all optional Python dependencies required by experimental features
+- Experimental `RainbowFit` feature for fitting multiband light curves with a single model, Russeil+23 in prep. It requires Python 3.8 or later because of `iminuit` dependency
+- Optional `iminuit>=2,<3` dependency (included into `[full]`) for `RainbowFit` feature
 
 ### Changed
 

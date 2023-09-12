@@ -23,6 +23,7 @@ classifiers = [
 [project.optional-dependencies]
 # Packages required by some experimental features
 full = [
+    "iminuit>=2,<3",
     "scipy",
 ]
 
@@ -32,6 +33,8 @@ test-no-bench = [
     "markdown-pytest",
     "pytest-benchmark",  # We need it here because we use benchmark-specific command line options
     "pytest-subtests>=0.10",
+    # Minimal required version of iminuit does not support Python 3.7
+    "iminuit>=2.21,<3;python_version>='3.8'",
     "numpy",
     "scipy",
 ]
