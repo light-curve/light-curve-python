@@ -93,7 +93,7 @@ jobs:
             arch: ppc64le
           - os: windows-2019
             arch: x86_64
-          # We need a single interpreter for ABI, so we use py310 only
+          # We need a single interpreter for ABI, so we use py311 only
           - abi3: true
             interpreter: cp37
           - abi3: true
@@ -101,7 +101,7 @@ jobs:
           - abi3: true
             interpreter: cp39
           - abi3: true
-            interpreter: cp311
+            interpreter: cp310
           - abi3: true
             interpreter: pp37
           - abi3: true
