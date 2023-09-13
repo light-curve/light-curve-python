@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "light-curve"
-dependencies = ["numpy", "scipy"]
+dependencies = ["numpy"]
 requires-python = ">=3.7"
 classifiers = [
     "Intended Audience :: Science/Research",
@@ -21,11 +21,20 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+# Packages required by some experimental features
+full = [
+    "iminuit>=2,<3",
+    "scipy",
+]
+
+# Testing environment
 test-no-bench = [
     "pytest",
     "markdown-pytest",
     "pytest-benchmark",  # We need it here because we use benchmark-specific command line options
     "pytest-subtests>=0.10",
+    # Minimal required version of iminuit does not support Python 3.7
+    "iminuit>=2.21,<3;python_version>='3.8'",
     "numpy",
     "scipy",
 ]
