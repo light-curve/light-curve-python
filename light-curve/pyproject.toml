@@ -134,6 +134,15 @@ commands =
 
 
 [tool.cibuildwheel]
+# Default is "pip", but it is recommended to use "build"
+build-frontend = "build"
+
+config-settings = { "build-args" = "--locked --no-default-features --features ceres-system,fftw-system,gsl" }
+
+# We'd like to link system FFTW, because is is usually better optimised
+# We use system Ceres because it is available as a static library in our build environment
+environment = { "PATH" = "$PATH:$HOME/.cargo/bin" }
+
 # We use our own images which include Rust, GSL and platform-optimised FFTW
 # Manylinux CPython
 manylinux-aarch64-image = "ghcr.io/light-curve/base-docker-images/manylinux2014_aarch64"
@@ -158,11 +167,6 @@ musllinux-aarch64-image = "ghcr.io/light-curve/base-docker-images/musllinux_1_1_
 # musllinux-s390x-image = "ghcr.io/light-curve/base-docker-images/musllinux_1_1_s390x"
 musllinux-x86_64-image = "ghcr.io/light-curve/base-docker-images/musllinux_1_1_x86_64"
 
-# We'd like to link system FFTW, because is is usually better optimised
-# We use system Ceres because it is available as a static library in our build environment
-# ADDITIONAL_CARGO_FEATURES is used to pass additional features to cargo, such as "abi3"
-environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features ceres-system,fftw-system,gsl,$ADDITIONAL_CARGO_FEATURES" }
-
 [tool.cibuildwheel.macos]
 before-all = [
     # Install Rust
@@ -181,15 +185,13 @@ before-all = [
 before-build = ["pip install delvewheel"]
 repair-wheel-command = "delvewheel repair --add-path=%USERPROFILE%\\Downloads\\fftw-dll64 -w {dest_dir} {wheel}"
 # We do not support Ceres and GSL on Windows
-# ADDITIONAL_CARGO_FEATURES is used to pass additional features to cargo, such as "abi3"
-environment = { "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features fftw-source,$ADDITIONAL_CARGO_FEATURES" }
+config-settings = { "build-args" = "--locked --no-default-features --features fftw-source" }
 
 # Build with Intel MKL on Linux x86_64
 [[tool.cibuildwheel.overrides]]
 select = "*linux_x86_64"
-# We use system Ceres because it is available as a static library in our build environment
-# ADDITIONAL_CARGO_FEATURES is used to pass additional features to cargo, such as "abi3"
-environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features ceres-system,fftw-mkl,gsl,$ADDITIONAL_CARGO_FEATURES" }
+# We'd like to use MKL for x86_64
+config-settings = { "build-args" = "--locked --no-default-features --features ceres-system,fftw-mkl,gsl" }
 
 # Test
 # We skip benchmark tests, because it requires feets and its transitive

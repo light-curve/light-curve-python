@@ -138,13 +138,33 @@ jobs:
           echo "CIBW_BUILD=${{ matrix.interpreter }}-${{ matrix.platform }}_${{ matrix.arch }}" >> $GITHUB_ENV
           echo "CIBW_ARCHS=${{ matrix.arch }}" >> $GITHUB_ENV
 
-      - name: Set up ABI3 build on Windows
-        if: ${{ matrix.abi3 && matrix.os == 'windows-2019' }}
-        run: echo "ADDITIONAL_CARGO_FEATURES=abi3" >> $env:GITHUB_ENV
+      - name: Patch pyproject.toml for ABI3 build
+        if: ${{ matrix.abi3 }}
+        run: |
+          python3 -m pip install tomlkit
+          python3 -c "
+          import tomlkit
 
-      - name: Set up ABI3 build on Linux or macOS
-        if: ${{ matrix.abi3 && matrix.os != 'windows-2019' }}
-        run: echo "ADDITIONAL_CARGO_FEATURES=abi3" >> $GITHUB_ENV
+          def update_pyproject(data):
+            for key, value in data.items():
+              if key == 'config-settings':
+                value['build-args'] += ',abi3'
+                continue
+
+              if isinstance(value, tomlkit.items.Table):
+                update_pyproject(value)
+              if isinstance(value, (tomlkit.items.Array, tomlkit.items.AoT)):
+                for item in value:
+                  if isinstance(item, tomlkit.items.Table):
+                    update_pyproject(item)
+
+          with open('pyproject.toml', 'r') as f:
+              pyproject = tomlkit.load(f)
+          print(pyproject)
+          update_pyproject(pyproject)
+          with open('pyproject.toml', 'w') as f:
+              tomlkit.dump(pyproject, f)
+          "
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.13.1
