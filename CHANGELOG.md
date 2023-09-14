@@ -12,7 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking change in experimental features**: Multiband support is introduced for features implemented in Python. It changes class inheritance interface in a backward-incompatible way
 - `light-curve[full]` extras which installs all optional Python dependencies required by experimental features
 - Experimental `RainbowFit` feature for fitting multiband light curves with a single model, Russeil+23 in prep. It requires Python 3.8 or later because of `iminuit` dependency
-- Optional `iminuit>=2,<3` dependency (included into `[full]`) for `RainbowFit` feature
+- Optional `iminuit>=2,<3` Python dependency (included into `[full]`) for `RainbowFit` feature
+- Add `once_cell` v1 dependency
 
 ### Changed
 
@@ -20,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking change in experimental features**: All experimental features implemented in Python require keyword-only arguments in their constructors. Also, all names of the arguments are changed to be the same as for Rust features
 - **Build breaking**: "abi3-py310" Cargo feature is replaced with "abi3-py311". "abi3" feature is now linked to "abi3-py311" feature. This is because our aim with ABI is to support future versions of Python
 - **Build breaking**: minimum supported Rust version (MSRV) is changed from 1.62 to 1.67 (released 2023-01-26)
+- Updat `*Fit` fatures doc-strings to list names of the features they output
 - Bump `light-curve-feature` 0.5.5 -> 0.6.0
 - Bump `pyO3` 0.18.3 -> 0.19.1, it simplified signature generations for classes https://github.com/light-curve/light-curve-python/pull/230
 - Bump `rust-numpy` 0.18.0 -> 0.19.0 https://github.com/light-curve/light-curve-python/pull/230

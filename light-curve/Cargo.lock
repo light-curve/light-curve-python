@@ -1031,6 +1031,7 @@ dependencies = [
  "num-traits",
  "num_cpus",
  "numpy",
+ "once_cell",
  "pyo3",
  "rand 0.8.5",
  "rand_xoshiro",
