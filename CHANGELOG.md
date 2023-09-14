@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `light-curve-feature` 0.5.5 -> 0.6.0
 - Bump `pyO3` 0.18.3 -> 0.19.1, it simplified signature generations for classes https://github.com/light-curve/light-curve-python/pull/230
 - Bump `rust-numpy` 0.18.0 -> 0.19.0 https://github.com/light-curve/light-curve-python/pull/230
+- Bump `enum-iterator` 1.2.0 -> 1.4.1 https://github.com/light-curve/light-curve-python/pull/233
 - Bump `thiserror` 1.0.41 -> 1.0.48 https://github.com/light-curve/light-curve-python/pull/242
 
 ### Deprecated
