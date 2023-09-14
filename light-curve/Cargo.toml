@@ -31,7 +31,7 @@ gsl = ["light-curve-feature/gsl"]
 [dependencies]
 const_format = "0.2.31"
 conv = "0.3.3"
-enum-iterator = "1.1.0,<1.2.0" # 1.2.0 requires MSRV 1.63
+enum-iterator = "1.4.1"
 enumflags2 = { version = "0.7.7", features = ["serde"] }
 itertools = "0.11.0"
 macro_const = "0.1.0"
