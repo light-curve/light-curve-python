@@ -12,6 +12,7 @@ use light_curve_feature::{self as lcf, prelude::*, DataSample};
 use macro_const::macro_const;
 use ndarray::IntoNdProducer;
 use numpy::{IntoPyArray, PyArray1};
+use once_cell::sync::OnceCell;
 use pyo3::exceptions::{PyNotImplementedError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyBytes, PyTuple};
@@ -793,6 +794,21 @@ macro_rules! fit_evaluator {
             fn supported_algorithms_str() -> String {
                 return SUPPORTED_ALGORITHMS_CURVE_FIT.join(", ");
             }
+
+            fn lazy_default() -> &'static $eval {
+                static DEFAULT: OnceCell<$eval> = OnceCell::new();
+                DEFAULT.get_or_init(|| <$eval>::default())
+            }
+
+            fn lazy_names() -> &'static Vec<&'static str> {
+                static NAMES: OnceCell<Vec<&str>> = OnceCell::new();
+                NAMES.get_or_init(|| Self::lazy_default().get_names())
+            }
+
+            fn lazy_descriptions() -> &'static Vec<&'static str> {
+                static DESC: OnceCell<Vec<&str>> = OnceCell::new();
+                DESC.get_or_init(|| Self::lazy_default().get_descriptions())
+            }
         }
 
         impl $name {
@@ -1028,8 +1044,14 @@ ceres_loss_reg : float, optional
                 #[cfg(not(feature = "gsl"))]
                 let lmsder_niter = "";
 
+                let names_descriptions: String = Self::lazy_names().iter().zip(Self::lazy_descriptions()).map(|(name, description)| {
+                    format!(" - {}: {}\n", name, description)
+                }).collect();
+
                 format!(
                     r#"{intro}
+Names and description of the output features:
+{names_descriptions}
 Parameters
 ----------
 algorithm : str
@@ -1086,6 +1108,7 @@ Examples
 >>> model = {feature}.model(t, result)
 "#,
                     intro = <$eval>::doc().trim_start(),
+                    names_descriptions = names_descriptions,
                     supported_algo = Self::supported_algorithms_str(),
                     mcmc_niter = lcf::McmcCurveFit::default_niterations(),
                     ceres_args = ceres_args,
