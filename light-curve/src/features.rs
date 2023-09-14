@@ -1346,6 +1346,21 @@ evaluator!(LinearFit, lcf::LinearFit, StockTransformer::Identity);
 
 evaluator!(LinearTrend, lcf::LinearTrend, StockTransformer::Identity);
 
+fit_evaluator!(
+    LinexpFit,
+    lcf::LinexpFit,
+    lcf::LinexpInitsBounds,
+    lcf::transformers::linexp_fit::LinexpFitTransformer::default(),
+    4,
+    {
+        "no" => lcf::LinexpLnPrior::fixed(lcf::LnPrior::none()),
+        s => return Err(Exception::ValueError(format!(
+            "unsupported ln_prior name '{s}'"
+        )).into()),
+    },
+    "'no': no prior",
+);
+
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 pub struct MagnitudePercentageRatio {}
 
