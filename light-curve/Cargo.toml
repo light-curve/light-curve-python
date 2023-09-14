@@ -7,7 +7,7 @@ readme = "README.md"
 repository = "https://github.com/light-curve/light-curve-python"
 license = "GPL-3.0-or-later"
 edition = "2021"
-rust-version = "1.62"
+rust-version = "1.67"
 
 [lib]
 name = "light_curve"
@@ -29,9 +29,6 @@ fftw-mkl = ["light-curve-feature/fftw-mkl"]
 gsl = ["light-curve-feature/gsl"]
 
 [dependencies]
-# it is a dependency of intel-mkl-tool, we pin it to temporary solve
-# https://github.com/rust-math/intel-mkl-src/issues/68
-anyhow = "<1.0.49"
 const_format = "0.2.31"
 conv = "0.3.3"
 enum-iterator = "1.1.0,<1.2.0" # 1.2.0 requires MSRV 1.63
@@ -57,5 +54,5 @@ version = "0.7.1"
 features = ["serde"]
 
 [dependencies.light-curve-feature]
-version = "0.5.5"
+version = "0.6.0-beta.0"
 default_features = false
