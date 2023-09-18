@@ -23,7 +23,7 @@ classifiers = [
 [project.optional-dependencies]
 # Packages required by some experimental features
 full = [
-    "iminuit>=2,<3",
+    "iminuit>=2.21,<3;python_version>='3.8'",
     "scipy",
 ]
 
