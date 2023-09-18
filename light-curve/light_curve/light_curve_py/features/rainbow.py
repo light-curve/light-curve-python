@@ -1,4 +1,3 @@
-import sys
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import Dict
@@ -27,6 +26,12 @@ planck_constant = 6.62607004e-27  # erg s
 speed_of_light = 2.99792458e10  # cm/s
 boltzman_constant = 1.380649e-16  # erg/K
 sigma_sb = 5.6703744191844314e-05  # erg/(cm^2 s K^4)
+
+
+IMINUIT_IMPORT_ERROR = (
+    "The `iminuit` package v2.21.0 or larger (exists for Python >= 3.8 only) is required for RainbowFit, "
+    "please install it manually or reinstall light-curve package with [full] extra"
+)
 
 
 @dataclass()
@@ -69,6 +74,12 @@ class RainbowFit(BaseMultiBandFeature):
     def __post_init__(self) -> None:
         super().__post_init__()
 
+        self._check_iminuit()
+
+        from iminuit import Minuit
+
+        self.Minuit = Minuit
+
         if len(self.band_wave_cm) == 0:
             raise ValueError("At least one band must be specified.")
 
@@ -95,6 +106,24 @@ class RainbowFit(BaseMultiBandFeature):
         """Initialize from a dictionary of band names and their effective wavelengths in angstroms."""
         band_wave_aa = {band: 1e-8 * wavelength for band, wavelength in band_wave_aa.items()}
         return cls(band_wave_cm=band_wave_aa, with_baseline=with_baseline)
+
+    @staticmethod
+    def _check_iminuit():
+        if LeastSquares is None:
+            raise ImportError(IMINUIT_IMPORT_ERROR)
+
+        try:
+            try:
+                from packaging.version import parse as parse_version
+            except ImportError:
+                from distutils.version import LooseVersion as parse_version
+
+            from iminuit import __version__
+        except ImportError:
+            raise ImportError(IMINUIT_IMPORT_ERROR)
+
+        if parse_version(__version__) < parse_version("2.21.0"):
+            raise ImportError(IMINUIT_IMPORT_ERROR)
 
     def bol_func(self, t, params):
         t0, amplitude, rise_time, fall_time = params[self.bol_params_idx]
@@ -145,19 +174,6 @@ class RainbowFit(BaseMultiBandFeature):
         return self._lsq_model((t, band_idx, wave_cm), *params)
 
     def _eval(self, *, t, m, sigma, band):
-        try:
-            from iminuit import Minuit
-
-            if LeastSquares is None:
-                raise ImportError("iminuit is required for RainbowFit feature, please install it")
-        except ImportError:
-            if sys.version_info < (3, 8):
-                raise ImportError(
-                    "iminuit is required for RainbowFit feature, "
-                    "and the required version is not available for Python < 3.8"
-                )
-            raise ImportError("iminuit is required for RainbowFit feature, please install it")
-
         # normalize input data
         t_shift = np.mean(t)
         t_scale = np.std(t)
@@ -214,7 +230,7 @@ class RainbowFit(BaseMultiBandFeature):
             y=m,
             yerror=sigma,
         )
-        minuit = Minuit(least_squares, **initial_guesses)
+        minuit = self.Minuit(least_squares, **initial_guesses)
         minuit.migrad()
 
         reduced_chi2 = minuit.fval / (len(t) - len(minuit.values))
