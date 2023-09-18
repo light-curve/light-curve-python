@@ -51,6 +51,20 @@ class RainbowFit(BaseMultiBandFeature):
         Whether to include an offset in the fit, individual for each band.
         If it is true, one more fit paramter per passband is added -
         the additive constant with the same units as input flux.
+
+    Methods
+    -------
+    __call__(t, m, sigma, band, *, sorted=False, check=True, fill_value=None)
+        Evaluate the feature. Positional arguments are numpy arrays of the same length,
+        `band` must consist of the same strings as keys in `band_wave_cm`. If `sorted` is True,
+        `t` must be sorted in ascending order. If `check` is True, the input is checked for
+        NaNs and Infs. If `fill_value` is not None, it is used to fill the output array if
+        the feature cannot be evaluated.
+
+    model(t, band, *params)
+        Evaluate Rainbow model on the given arrays of times and bands. `*params` are
+        fit parameters, basically the output of `__call__` method but without the last
+        parameter (reduced Chi^2 of the fit). See parameter names in the `.name` attribute.
     """
 
     band_wave_cm: Dict[str, float]
@@ -173,6 +187,17 @@ class RainbowFit(BaseMultiBandFeature):
         params[P.amplitude] /= self.average_nu
         return self._lsq_model((t, band_idx, wave_cm), *params)
 
+    @property
+    def _baseline_names(self):
+        if not self.with_baseline:
+            return []
+        return [f"baseline_{band}" for band in self.band_wave_cm]
+
+    @property
+    def names(self):
+        """Names of the parameters."""
+        return list(P.__members__) + self._baseline_names
+
     def _eval(self, *, t, m, sigma, band):
         # normalize input data
         t_shift = np.mean(t)
@@ -215,10 +240,9 @@ class RainbowFit(BaseMultiBandFeature):
             "k_sig": (0.0, 10 * t_amplitude),
         }
         if self.with_baseline:
-            baseline_par_names = [f"baseline_{band}" for band in self.band_wave_cm]
-            initial_guesses.update(dict.fromkeys(baseline_par_names, 0.0))
+            initial_guesses.update(dict.fromkeys(self._baseline_names, 0.0))
             baseline_limits = (np.min(m) - 10 * m_amplitude, np.max(m))
-            limits.update(dict.fromkeys(baseline_par_names, baseline_limits))
+            limits.update(dict.fromkeys(self._baseline_names, baseline_limits))
 
         band_idx = self.lookup_band_idx(band)
         wave_cm = self.wave_cm_array[band_idx]
