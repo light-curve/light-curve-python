@@ -58,8 +58,8 @@ class BaseMultiBandFeature(ABC):
         if band is not None:
             if not self.is_multiband_supported:
                 raise ValueError(
-                    "(band != None) is not supported by this feature instance, consider to re-create it with "
-                    "(bands=...)"
+                    "(band != None) is not supported by this feature instance, consider to pass a band array "
+                    "or recreate the feature instance with different parameters"
                 )
             band = np.asarray(band)
             if band.ndim != 1:
