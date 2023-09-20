@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+-
+
+### Changed
+
+-
+
+### Deprecated
+
+--
+
+### Removed
+
+--
+
+### Fixed
+
+--
+
+### Security
+
+--
+
+## [0.8.0] 2023-08-20
+
+### Added
+
 - **Breaking change in experimental features**: Multiband support is introduced for features implemented in Python. It changes class inheritance interface in a backward-incompatible way
 - `light-curve[full]` extras which installs all optional Python dependencies required by experimental features
 - New `LinexpFit` feature for parametric model fit comes with `light-curve-feature` v0.6.0
@@ -28,22 +54,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `rust-numpy` 0.18.0 -> 0.19.0 https://github.com/light-curve/light-curve-python/pull/230
 - Bump `enum-iterator` 1.2.0 -> 1.4.1 https://github.com/light-curve/light-curve-python/pull/233
 - Bump `thiserror` 1.0.41 -> 1.0.48 https://github.com/light-curve/light-curve-python/pull/242
-
-### Deprecated
-
---
-
-### Removed
-
---
-
-### Fixed
-
---
-
-### Security
-
---
 
 ## [0.7.3] 2023-07-06
 
