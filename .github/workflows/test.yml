@@ -14,7 +14,7 @@ jobs:
         working-directory: light-curve
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - name: Set up Python 3.11
@@ -40,7 +40,7 @@ jobs:
         working-directory: light-curve
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - name: Set up Python 3.${{ matrix.python_minor }}
@@ -56,14 +56,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - run: cargo fmt --manifest-path=light-curve/Cargo.toml -- --check
 
   cargo-clippy:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - uses: Swatinem/rust-cache@v2
       with:
         shared-key: "stable-${{ runner.os }}"
@@ -120,7 +120,7 @@ jobs:
         working-directory: light-curve
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Install ceres on macOS
       if: ${{ matrix.ceres == 'system' && startsWith( matrix.os, 'macos' ) }}
       run: brew install ceres-solver
@@ -202,7 +202,7 @@ jobs:
         working-directory: light-curve
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
       - uses: dtolnay/rust-toolchain@master
@@ -244,7 +244,7 @@ jobs:
         working-directory: light-curve
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python 3.7
       uses: actions/setup-python@v4
       with:
@@ -292,7 +292,7 @@ jobs:
         working-directory: light-curve
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Install build_deps
       run: pip install "${{ needs.py_build_deps.outputs.output }}"
     - name: Build
