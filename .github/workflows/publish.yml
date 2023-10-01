@@ -114,7 +114,7 @@ jobs:
 
       - name: Set up QEMU on Linux
         if: ${{ matrix.os == 'ubuntu-20.04' }}
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
         with:
           platforms: all
 
