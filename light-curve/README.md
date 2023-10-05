@@ -323,8 +323,8 @@ Otsu's method is used to perform automatic thresholding. The algorithm returns a
     
   <tr>
     <td>RainbowFit</td>
-    <td>Seven fit parameters and goodness of fit (reduced $\chi ^{2}$). The Rainbow method is developed and detailled here : https://arxiv.org/abs/2310.02916). This implementation is suited for transient objects. It is based on a Bazin bolometric flux and a sigmoid temperature evolution:
-<p align="center">$\displaystyle F_{\nu}(t, \nu) = \frac{\piup\,B\left(T(t),\nu\right)}{\sigma_\mathrm{SB}\,T(t)^{4}} \times F_\mathrm{bol}(t),$</p> where $F_{\nu}(t, \nu)-$ flux observation at a given wavelength</td>
+    <td>Seven fit parameters and goodness of fit (reduced $\chi ^{2}$). The Rainbow method is developed and detailed here : https://arxiv.org/abs/2310.02916). This implementation is suited for transient objects. It is based on a Bazin bolometric flux and a sigmoid temperature evolution:
+<p align="center">$\displaystyle F_{\nu}(t, \nu) = \frac{\pi\,B\left(T(t),\nu\right)}{\sigma_\mathrm{SB}\,T(t)^{4}} \times F_\mathrm{bol}(t),$</p> where $F_{\nu}(t, \nu)-$ flux observation at a given wavelength</td>
     <td align="center">6</td>
     <td align="center">1</td>
   </tr>
