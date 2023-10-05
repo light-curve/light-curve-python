@@ -104,34 +104,6 @@ import light_curve as lc
 help(lc.BazinFit)
 ```
 
-### Experimental extractors
-
-From the technical point of view the package consists of two parts: a wrapper for [`light-curve-feature` Rust crate](https://crates.io/crates/light-curve-feature) (`light_curve_ext` sub-package) and pure Python sub-package `light_curve_py`.
-We use the Python implementation of feature extractors to test Rust implementation and to implement new experimental extractors.
-Please note, that the Python implementation is much slower for the most of the extractors and doesn't provide the same functionality as the Rust implementation.
-However, the Python implementation provides some new feature extractors you can find useful.
-
-You can manually use extractors from both implementations:
-
-<!-- name: test_experimental_extractors -->
-```python
-import numpy as np
-from numpy.testing import assert_allclose
-from light_curve.light_curve_ext import LinearTrend as RustLinearTrend
-from light_curve.light_curve_py import LinearTrend as PythonLinearTrend
-
-rust_fe = RustLinearTrend()
-py_fe = PythonLinearTrend()
-
-n = 100
-t = np.sort(np.random.normal(size=n))
-m = 3.14 * t - 2.16 + np.random.normal(size=n)
-
-assert_allclose(rust_fe(t, m), py_fe(t, m),
-                err_msg="Python and Rust implementations must provide the same result")
-```
-
-This should print a warning about experimental status of the Python class
 
 ### Available features
 
@@ -409,6 +381,105 @@ $$m_j^* = \frac{\sum{m_i / \delta_i^2}}{\sum{\delta_i^{-2}}},$$
 $$\delta_j^* = \frac{N_j}{\sum{\delta_i^{-2}}},$$
 where $N_j$ is a number of sampling observations and all sums are over observations inside considering bin.
 
+### Multi-band features
+
+As of v0.8, experimental extractors (see bellow), support multi-band light-curve inputs.
+
+```python
+import numpy as np
+from light_curve.light_curve_py import LinearFit
+
+t = np.arange(20, dtype=float)
+m = np.arange(20, dtype=float)
+sigma = np.full_like(t, 0.1)
+bands = np.array(["g"] * 10 + ["r"] * 10)
+feature = LinearFit(bands=["g", "r"])
+values = feature(t, m, sigma, bands)
+print(values)
+```
+
+#### Rainbow Fit
+
+Rainbow ([Russeil+23](https://arxiv.org/abs/2310.02916)) is a black-body parametric model for transient light curves.
+It uses Bazin function as a model for bolometric flux evolution and a logistic function for the temperature evolutiion.
+This example demonstrates the reconstruction of a syntetic light curve with this model.
+`RainbowFit` requires `iminuit` package and Python 3.8+.
+
+```python
+import numpy as np
+from light_curve.light_curve_py import RainbowFit
+
+def bb_nu(wave_aa, T):
+    """Black-body spectral model"""
+    nu = 3e10 / (wave_aa * 1e-8)
+    return 2 * 6.626e-27 * nu**3 / 3e10**2 / np.expm1(6.626e-27 * nu / (1.38e-16 * T))
+
+# Effective wavelengths in Angstrom
+band_wave_aa = {"g": 4770.0, "r": 6231.0, "i": 7625.0, "z": 9134.0}
+
+# Parameter values
+reference_time = 60000.0  # time close to the peak time
+# Bolometric flux model parameters
+amplitude = 1.0  # bolometric flux semiamplitude, arbitrary (non-spectral) flux/luminosity units
+rise_time = 5.0  # exponential growth timescale, days
+fall_time = 30.0  # exponential decay timescale, days
+# Temperature model parameters
+Tmin = 5e3  # temperature on +infinite time, kelvins
+delta_T = 10e3  # (Tmin + delta_T) is temperature on -infinite time, kelvins
+k_sig = 4.0  # temperature evolution timescale, days
+
+rng = np.random.default_rng(0)
+t = np.sort(rng.uniform(reference_time - 3 * rise_time, reference_time + 3 * fall_time, 1000))
+band = rng.choice(list(band_wave_aa), size=len(t))
+waves = np.array([band_wave_aa[b] for b in band])
+
+# Temperature evolution is a sigmoid function
+temp = Tmin + delta_T / (1.0 + np.exp((t - reference_time) / k_sig))
+# Bolometric flux evolution is the Bazin function
+lum = amplitude * np.exp(-(t - reference_time) / fall_time) / (1.0 + np.exp(-(t - reference_time) / rise_time))
+
+# Spectral flux density for each given pair of time and passband
+flux = np.pi * bb_nu(waves, temp) / (5.67e-5 * temp**4) * lum
+# S/N = 5 for minimum flux, scale for Poisson noise
+flux_err = np.sqrt(flux * np.min(flux) / 5.0)
+flux += rng.normal(0.0, flux_err)
+
+feature = RainbowFit.from_angstrom(band_wave_aa, with_baseline=False)
+values = feature(t, flux, sigma=flux_err, band=band)
+print(dict(zip(feature.names, values)))
+print(f"Goodness of fit: {values[-1]}")
+```
+
+Note, that while we don't use precise physical constant values to generate the data, `RainbowFit` uses CODATA 2018 values.
+
+### Experimental extractors
+
+From the technical point of view the package consists of two parts: a wrapper for [`light-curve-feature` Rust crate](https://crates.io/crates/light-curve-feature) (`light_curve_ext` sub-package) and pure Python sub-package `light_curve_py`.
+We use the Python implementation of feature extractors to test Rust implementation and to implement new experimental extractors.
+Please note, that the Python implementation is much slower for the most of the extractors and doesn't provide the same functionality as the Rust implementation.
+However, the Python implementation provides some new feature extractors you can find useful.
+
+You can manually use extractors from both implementations:
+
+<!-- name: test_experimental_extractors -->
+```python
+import numpy as np
+from numpy.testing import assert_allclose
+from light_curve.light_curve_ext import LinearTrend as RustLinearTrend
+from light_curve.light_curve_py import LinearTrend as PythonLinearTrend
+
+rust_fe = RustLinearTrend()
+py_fe = PythonLinearTrend()
+
+n = 100
+t = np.sort(np.random.normal(size=n))
+m = 3.14 * t - 2.16 + np.random.normal(size=n)
+
+assert_allclose(rust_fe(t, m), py_fe(t, m),
+                err_msg="Python and Rust implementations must provide the same result")
+```
+
+This should print a warning about experimental status of the Python class
 
 ### Benchmarks
 
