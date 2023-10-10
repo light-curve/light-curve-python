@@ -16,7 +16,7 @@ python3 -mpip install 'light-curve[full]'
 We also provide `light-curve-python` package which is just an "alias" to the main `light-curve[full]` package.
 
 Minimum supported Python version is 3.7.
-We provide binary wheels via [PyPi](https://pypi.org/project/light-curve/) for number of platforms and architectures, both for CPython and PyPy.
+We provide binary wheels via [PyPi](https://pypi.org/project/light-curve/) for a number of platforms and architectures, both for CPython and PyPy.
 We also provide binary wheels for stable CPython ABI, so the package is guaranteed to work with all future CPython3 versions.
 
 ### Support matrix
@@ -83,7 +83,7 @@ results = amplitude.many(
 print("Amplitude of amplitude is {:.2f}".format(np.ptp(results)))
 ```
 
-If you confident in your inputs you could use `sorted = True` (`t` is in ascending order)
+If you're confident in your inputs you could use `sorted = True` (`t` is in ascending order)
 and `check = False` (no NaNs in inputs, no infs in `t` or `m`) for better performance.
 Note that if your inputs are not valid and are not validated by
 `sorted=None` and `check=True` (default values) then all kind of bad things could happen.
@@ -107,7 +107,7 @@ help(lc.BazinFit)
 
 ### Available features
 
-See the complite list of evailable feature evaluators and documentation in [`light-curve-feature` Rust crate docs](https://docs.rs/light-curve-feature/latest/light_curve_feature/features/index.html).
+See the complete list of available feature evaluators and documentation in [`light-curve-feature` Rust crate docs](https://docs.rs/light-curve-feature/latest/light_curve_feature/features/index.html).
 
 <table>
   <tr>
@@ -355,11 +355,11 @@ where $f(t) -$ flux observation, $A, \gamma , \tau _{rise} , \tau _{fall}  >0$, 
 </table>
 
 ### Meta-features
-Meta-features can accept another feature extractors and apply them to pre-processed data.
+Meta-features can accept other feature extractors and apply them to pre-processed data.
 
 #### Periodogram
 
-A number of features based on Lomb–Scargle periodogram as it was an evenly separeated uncertancy-less lime series.
+A number of features are based on Lomb–Scargle periodogram as it was an evenly separated uncertainty-less time series.
 Periodogram $P(\omega)$ is an estimate of spectral density of unevenly time series.
 `Periodogram`'s `peaks` argument corresponds to a number of the most significant spectral density peaks to return.
 For each peak its period and "signal to noise" ratio is returned.
@@ -383,7 +383,7 @@ where $N_j$ is a number of sampling observations and all sums are over observati
 
 ### Multi-band features
 
-As of v0.8, experimental extractors (see bellow), support multi-band light-curve inputs.
+As of v0.8, experimental extractors (see below), support multi-band light-curve inputs.
 
 ```python
 import numpy as np
@@ -456,7 +456,7 @@ Note, that while we don't use precise physical constant values to generate the d
 
 From the technical point of view the package consists of two parts: a wrapper for [`light-curve-feature` Rust crate](https://crates.io/crates/light-curve-feature) (`light_curve_ext` sub-package) and pure Python sub-package `light_curve_py`.
 We use the Python implementation of feature extractors to test Rust implementation and to implement new experimental extractors.
-Please note, that the Python implementation is much slower for the most of the extractors and doesn't provide the same functionality as the Rust implementation.
+Please note, that the Python implementation is much slower for most of the extractors and doesn't provide the same functionality as the Rust implementation.
 However, the Python implementation provides some new feature extractors you can find useful.
 
 You can manually use extractors from both implementations:
@@ -495,7 +495,7 @@ The performance of parametric fits (`BazinFit` and `VillarFit`) and `Periodogram
 
 ![Benchmark for different number of observations](https://github.com/light-curve/light-curve-python/raw/readme-benchs/light-curve/.readme/nobs_bench_v2.png)
 
-Benchmark results of several features for both the pure-Python and Rust implementations of the ”light-curve” package, as a function of the number of observations in a light curve. Both the x-axis and y-axis are on a logarithmic scale.
+Benchmark results of several features for both the pure-Python and Rust implementations of the "light-curve" package, as a function of the number of observations in a light curve. Both the x-axis and y-axis are on a logarithmic scale.
 
 ![Benchmark for multithreading and multiprocessing](https://github.com/light-curve/light-curve-python/raw/readme-benchs/light-curve/.readme/multi_bench_v2.png)
 
