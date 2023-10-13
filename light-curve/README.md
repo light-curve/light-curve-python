@@ -359,16 +359,13 @@ Meta-features can accept other feature extractors and apply them to pre-processe
 
 #### Periodogram
 
-A number of features are based on Lomb–Scargle periodogram as it was an evenly separated uncertainty-less time series.
-Periodogram $P(\omega)$ is an estimate of spectral density of unevenly time series.
-`Periodogram`'s `peaks` argument corresponds to a number of the most significant spectral density peaks to return.
-For each peak its period and "signal to noise" ratio is returned.
+This feature transforms time-series data into the Lomb-Scargle periodogram, providing an estimation of the power spectrum. The peaks argument corresponds to the number of the most significant spectral density peaks to return. For each peak, its period and "signal-to-noise" ratio are returned.
 
 $$
 \text{signal to noise of peak} \equiv \frac{P(\omega_\mathrm{peak}) - \langle P(\omega) \rangle}{\sigma\_{P(\omega)}}
 $$
 
-`features` argument accepts a list of additional feature evaluators.
+The optional features argument accepts a list of additional feature evaluators, which are applied to the power spectrum: frequency is passed as "time," power spectrum is passed as "magnitude," and no uncertainties are set.
 
 #### Bins
 
