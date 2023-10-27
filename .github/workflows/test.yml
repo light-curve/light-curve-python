@@ -1,6 +1,6 @@
 name: Test
 
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
 
 jobs:
   py_build_deps:
@@ -233,6 +233,37 @@ jobs:
         with:
           files: lcov.info
           fail_ci_if_error: true
+
+  benchmarks:
+    runs-on: ubuntu-latest
+
+    needs: [py_build_deps]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libunwind-dev
+          sudo apt-get install -y libceres-dev libfftw3-dev libgsl-dev
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@v1
+        with:
+          token: ${{ secrets.CODSPEED_TOKEN }}
+          run: |
+            cd light-curve
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install "${{ needs.py_build_deps.outputs.output }}" pytest-codspeed
+            maturin develop --extras=test-no-bench,test --release --no-default-features --features=ceres-system,fftw-system,gsl
+            python3 -mpytest -m "not (nobs or multi)" --codspeed tests/test_w_bench.py
 
   msrv-build:
     runs-on: ubuntu-latest
