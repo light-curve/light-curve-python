@@ -15,10 +15,8 @@ class P(IntEnum):
     reference_time = 0
     amplitude = 1
     rise_time = 2
-    fall_time = 3
-    Tmin = 4
-    delta_T = 5
-    k_sig = 6
+    temperature = 3
+
 
 
 # CODATA 2018, grab from astropy
@@ -97,8 +95,8 @@ class RainbowFit(BaseMultiBandFeature):
         if len(self.band_wave_cm) == 0:
             raise ValueError("At least one band must be specified.")
 
-        self.bol_params_idx = np.array([P.reference_time, P.amplitude, P.rise_time, P.fall_time])
-        self.temp_params_idx = np.array([P.reference_time, P.Tmin, P.delta_T, P.k_sig])
+        self.bol_params_idx = np.array([P.reference_time, P.amplitude, P.rise_time])
+        self.temp_params_idx = np.array([P.temperature])
 
         band_to_index = {band: i for i, band in enumerate(self.band_wave_cm)}
         self.lookup_band_idx = np.vectorize(band_to_index.get)
@@ -140,14 +138,12 @@ class RainbowFit(BaseMultiBandFeature):
             raise ImportError(IMINUIT_IMPORT_ERROR)
 
     def bol_func(self, t, params):
-        t0, amplitude, rise_time, fall_time = params[self.bol_params_idx]
+        t0, amplitude, rise_time = params[self.bol_params_idx]
         dt = t - t0
-        return amplitude * np.exp(-dt / fall_time) / (1.0 + np.exp(-dt / rise_time))
+        return amplitude / (1.0 + np.exp(-dt / rise_time))
 
     def temp_func(self, t, params):
-        t0, T_min, delta_T, k_sig = params[self.temp_params_idx]
-        dt = t - t0
-        return T_min + delta_T / (1.0 + np.exp(dt / k_sig))
+        return params[self.temp_params_idx]
 
     @staticmethod
     def planck_nu(wave_cm, T):
@@ -225,19 +221,13 @@ class RainbowFit(BaseMultiBandFeature):
             "reference_time": 0.0,
             "amplitude": 1.0,
             "rise_time": 1.0,
-            "fall_time": 1.0,
-            "Tmin": 4000.0,
-            "delta_T": 7000.0,
-            "k_sig": 1.0,
+            "temperature": 30000
         }
         limits = {
             "reference_time": (t[0] - 10 * t_amplitude, t[-1] + 10 * t_amplitude),
             "amplitude": (0.0, 10 * m_amplitude),
             "rise_time": (0.0, 10 * t_amplitude),
-            "fall_time": (0.0, 10 * t_amplitude),
-            "Tmin": (1e2, 1e6),  # K
-            "delta_T": (0.0, 1e6),  # K
-            "k_sig": (0.0, 10 * t_amplitude),
+            "temperature": (1000, 100000),
         }
         if self.with_baseline:
             initial_guesses.update(dict.fromkeys(self._baseline_names, 0.0))
