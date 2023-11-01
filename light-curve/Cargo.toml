@@ -29,7 +29,7 @@ fftw-mkl = ["light-curve-feature/fftw-mkl"]
 gsl = ["light-curve-feature/gsl"]
 
 [dependencies]
-const_format = "0.2.31"
+const_format = "0.2.32"
 conv = "0.3.3"
 enum-iterator = "1.4.1"
 enumflags2 = { version = "0.7.7", features = ["serde"] }
