@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Breaking:** stop supporting Python 3.7
+- **Breaking**: stop supporting Python 3.7 https://github.com/light-curve/light-curve-python/pull/282
+- We stop distributing CPython wheels for specific Python versions, now we distribute ABI3 wheels which are compatible with all future Python versions
 
 ### Deprecated
 
@@ -21,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
---
+- **Build breaking**: `abi311` feature, now we plan to have `abi3` feature only, which would correspond to the minimum supported Python version. Feel free to use `pyo3/abi3..` features directly for newer ABI versions.
 
 ### Fixed
 
@@ -73,7 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking change in experimental features**: All experimental features implemented in Python require keyword-only arguments in their constructors. Also, all names of the arguments are changed to be the same as for Rust features
 - **Build breaking**: "abi3-py310" Cargo feature is replaced with "abi3-py311". "abi3" feature is now linked to "abi3-py311" feature. This is because our aim with ABI is to support future versions of Python
 - **Build breaking**: minimum supported Rust version (MSRV) is changed from 1.62 to 1.67 (released 2023-01-26)
-- Updat `*Fit` fatures doc-strings to list names of the features they output
+- Update `*Fit` fatures doc-strings to list names of the features they output
 - Bump `light-curve-feature` 0.5.5 -> 0.6.0
 - Bump `pyO3` 0.18.3 -> 0.19.1, it simplified signature generations for classes https://github.com/light-curve/light-curve-python/pull/230
 - Bump `rust-numpy` 0.18.0 -> 0.19.0 https://github.com/light-curve/light-curve-python/pull/230

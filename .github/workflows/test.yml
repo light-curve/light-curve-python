@@ -150,7 +150,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgsl-dev
     - name: Set up Python 3.8
-      if: ${{ ! matrix.abi3 }}
       uses: actions/setup-python@v5
       with:
         python-version: '3.8'
@@ -160,7 +159,7 @@ jobs:
       with:
         python-version: '3.9'
     - name: Set up Python 3.10
-      # No if here, we want to build abi3 wheels on 3.10
+      if: ${{ ! matrix.abi3 }}
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
