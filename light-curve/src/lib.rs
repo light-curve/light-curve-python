@@ -26,15 +26,6 @@ static GLOBAL_ALLOCATOR: MiMalloc = MiMalloc;
 ///
 /// dm-lg(dt) maps generator is represented by `DmDt` class, while all other classes are
 /// feature extractors
-#[cfg_attr(
-    feature = "fftw-static",
-    deprecated(note = "fftw-static feature is deprecated")
-)]
-#[cfg_attr(
-    feature = "fftw-dynamic",
-    deprecated(note = "fftw-dynamic feature is deprecated")
-)]
-#[cfg_attr(feature = "mkl", deprecated(note = "mkl feature is deprecated"))]
 #[pymodule]
 fn light_curve(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
