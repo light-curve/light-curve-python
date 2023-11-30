@@ -221,20 +221,20 @@ class RainbowRisingFit(BaseMultiBandFeature):
         m_amplitude = np.ptp(m)
 
         initial_guesses = {
-                "reference_time": 0.0,
-                "amplitude": 1.0,
-                "rise_time": 1.0,
-                "Tmin": 4000.0,
-                "delta_T": 7000.0,
-                "k_sig": 1.0,
+            "reference_time": 0.0,
+            "amplitude": 1.0,
+            "rise_time": 1.0,
+            "Tmin": 4000.0,
+            "delta_T": 7000.0,
+            "k_sig": 1.0,
         }
         limits = {
-                "reference_time": (t[0] - 10 * t_amplitude, t[-1] + 10 * t_amplitude),
-                "amplitude": (0.0, 10 * m_amplitude),
-                "rise_time": (0.0, 10 * t_amplitude),
-                "Tmin": (1e2, 1e6),  # K
-                "delta_T": (0.0, 1e6),  # K
-                "k_sig": (0.0, 10 * t_amplitude),
+            "reference_time": (t[0] - 10 * t_amplitude, t[-1] + 10 * t_amplitude),
+            "amplitude": (0.0, 10 * m_amplitude),
+            "rise_time": (0.0, 10 * t_amplitude),
+            "Tmin": (1e2, 1e6),  # K
+            "delta_T": (0.0, 1e6),  # K
+            "k_sig": (0.0, 10 * t_amplitude),
         }
         if self.with_baseline:
             initial_guesses.update(dict.fromkeys(self._baseline_names, 0.0))
@@ -255,7 +255,7 @@ class RainbowRisingFit(BaseMultiBandFeature):
         minuit.migrad()
 
         reduced_chi2 = minuit.fval / (len(t) - len(minuit.values))
-        t0, amplitude, rise_time = minuit.values[self.bol_params_idx]        
+        t0, amplitude, rise_time = minuit.values[self.bol_params_idx]
         t0 = t0 * t_scale + t_shift
         # Internally we use amplitude of F_bol / <nu> instead of F_bol.
         amplitude = amplitude * m_scale * self.average_nu

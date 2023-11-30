@@ -40,7 +40,7 @@ def test_noisy_no_baseline():
 
     feature = RainbowRisingFit.from_angstrom(band_wave_aa, with_baseline=False)
     actual = feature(t, flux, sigma=flux_err, band=band)[-1]
-    
+
     np.testing.assert_allclose(actual, 1, rtol=0.05)
 
 

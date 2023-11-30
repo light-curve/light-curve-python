@@ -300,7 +300,7 @@ Otsu's method is used to perform automatic thresholding. The algorithm returns a
     <td align="center">6</td>
     <td align="center">1</td>
   </tr>
-    
+
   <tr>
     <td>RainbowRisingFit</td>
     <td>Six fit parameters and goodness of fit (reduced $\chi ^{2}$). The Rainbow method is developed and detailed here : https://arxiv.org/abs/2310.02916). This implementation is suited for rising transient objects. It is based on a rising sigmoid bolometric flux and a sigmoid temperature evolution:
