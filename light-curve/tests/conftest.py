@@ -9,7 +9,13 @@ def patch_astropy_for_feets():
     import importlib
     from importlib.metadata import version
 
-    if int(version("astropy").split(".")[0]) < 6:
+    try:
+        astropy_version = version("astropy")
+    except ImportError:
+        # astropy is not installed
+        return
+    if int(astropy_version.split(".")[0]) < 6:
+        # astropy is older than v6.0
         return
 
     lombscargle = importlib.import_module("astropy.timeseries.periodograms.lombscargle")
