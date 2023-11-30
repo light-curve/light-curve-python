@@ -22,7 +22,7 @@ jobs:
           diff /tmp/.crate_version /tmp/.tag
 
   cibuildwheel:
-    name: Build ${{ matrix.platform }} ${{ matrix.arch }} ${{ matrix.abi3 && 'ABI3 ' || '' }}${{ matrix.interpreter }}
+    name: Build ${{ matrix.platform }} ${{ matrix.arch }} ${{ matrix.interpreter }}
     runs-on: ${{ matrix.os }}
 
     needs: check-version
@@ -36,9 +36,8 @@ jobs:
       matrix:
         os: [ubuntu-20.04, macos-12, windows-2019]
         arch: [aarch64, ppc64le, x86_64, amd64]  # amd64 is Windows-only
-        interpreter: [cp38, cp39, cp310, cp311, pp38, pp39]
+        interpreter: [cp38, pp38, pp39]  # single cp38 interpreter for ABI3
         platform: [manylinux, musllinux, macosx, win]
-        abi3: [false, true]
         exclude:
           # Build Linux on Linux
           - os: macos-12
@@ -89,17 +88,6 @@ jobs:
             arch: ppc64le
           - os: windows-2019
             arch: x86_64
-          # We need a single interpreter for ABI, so we use py311 only
-          - abi3: true
-            interpreter: cp38
-          - abi3: true
-            interpreter: cp39
-          - abi3: true
-            interpreter: cp310
-          - abi3: true
-            interpreter: pp38
-          - abi3: true
-            interpreter: pp39
 
     steps:
       - uses: actions/checkout@v4
@@ -130,33 +118,13 @@ jobs:
           echo "CIBW_BUILD=${{ matrix.interpreter }}-${{ matrix.platform }}_${{ matrix.arch }}" >> $GITHUB_ENV
           echo "CIBW_ARCHS=${{ matrix.arch }}" >> $GITHUB_ENV
 
-      - name: Patch pyproject.toml for ABI3 build
-        if: ${{ matrix.abi3 }}
-        run: |
-          python3 -m pip install tomlkit
-          python3 -c "
-          import tomlkit
+      - name: Set ABI3 build on Linux of macOS
+        if: ${{ matrix.interpreter == 'cp38' && matrix.is != 'windows-2019' }}
+        run: echo "LICU_ADDITIONAL_FEATURES=abi3" >> $GITHUB_ENV
 
-          def update_pyproject(data):
-            for key, value in data.items():
-              if key == 'config-settings':
-                value['build-args'] += ',abi3'
-                continue
-
-              if isinstance(value, tomlkit.items.Table):
-                update_pyproject(value)
-              if isinstance(value, (tomlkit.items.Array, tomlkit.items.AoT)):
-                for item in value:
-                  if isinstance(item, tomlkit.items.Table):
-                    update_pyproject(item)
-
-          with open('pyproject.toml', 'r') as f:
-              pyproject = tomlkit.load(f)
-          print(pyproject)
-          update_pyproject(pyproject)
-          with open('pyproject.toml', 'w') as f:
-              tomlkit.dump(pyproject, f)
-          "
+      - name: Set ABI3 build on Windows
+        if: ${{ matrix.interpreter == 'cp38' && matrix.is == 'windows-2019' }}
+        run: echo "LICU_ADDITIONAL_FEATURES=abi3" >> $env:GITHUB_ENV
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.16.5
