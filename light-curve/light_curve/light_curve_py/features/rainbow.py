@@ -29,7 +29,7 @@ sigma_sb = 5.6703744191844314e-05  # erg/(cm^2 s K^4)
 
 
 IMINUIT_IMPORT_ERROR = (
-    "The `iminuit` package v2.21.0 or larger (exists for Python >= 3.8 only) is required for RainbowFit, "
+    "The `iminuit` package v2.21.0 or larger is required for RainbowFit, "
     "please install it manually or reinstall light-curve package with [full] extra"
 )
 
