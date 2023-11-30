@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_minor: ['7', '8', '9', '10', '11']
+        python_minor: ['8', '9', '10', '11']
 
     defaults:
       run:
@@ -146,11 +146,6 @@ jobs:
       run: |
           sudo apt-get update
           sudo apt-get install -y libgsl-dev
-    - name: Set up Python 3.7
-      if: ${{ ! matrix.abi3 }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.7'
     - name: Set up Python 3.8
       if: ${{ ! matrix.abi3 }}
       uses: actions/setup-python@v4
@@ -276,10 +271,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python 3.7
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.7'
     - name: Set up Python 3.8
       uses: actions/setup-python@v4
       with:

@@ -36,7 +36,7 @@ jobs:
       matrix:
         os: [ubuntu-20.04, macos-11, windows-2019]
         arch: [aarch64, ppc64le, x86_64, amd64]  # amd64 is Windows-only
-        interpreter: [cp37, cp38, cp39, cp310, cp311, pp37, pp38, pp39]
+        interpreter: [cp38, cp39, cp310, cp311, pp38, pp39]
         platform: [manylinux, musllinux, macosx, win]
         abi3: [false, true]
         exclude:
@@ -60,15 +60,11 @@ jobs:
           - os: macos-11
             platform: win
           # PyPy doesn't support musllinux
-          - interpreter: pp37
-            platform: musllinux
           - interpreter: pp38
             platform: musllinux
           - interpreter: pp39
             platform: musllinux
           # PyPy doesn't support PPC64le
-          - arch: ppc64le
-            interpreter: pp37
           - arch: ppc64le
             interpreter: pp38
           - arch: ppc64le
@@ -95,15 +91,11 @@ jobs:
             arch: x86_64
           # We need a single interpreter for ABI, so we use py311 only
           - abi3: true
-            interpreter: cp37
-          - abi3: true
             interpreter: cp38
           - abi3: true
             interpreter: cp39
           - abi3: true
             interpreter: cp310
-          - abi3: true
-            interpreter: pp37
           - abi3: true
             interpreter: pp38
           - abi3: true
