@@ -17,10 +17,10 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - name: Set up Python 3.11
+    - name: Set up Python 3.12
       uses: actions/setup-python@v5
       with:
-        python-version: "3.11"
+        python-version: "3.12"
     - name: Extract build deps from pyproject.toml
       id: extract_from_toml
       run: |
@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_minor: ['8', '9', '10', '11']
+        python_minor: ['8', '9', '10', '11', '12']
 
     defaults:
       run:
@@ -168,6 +168,11 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
+    - name: Set up Python 3.12
+      if: ${{ ! matrix.abi3 }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
     - name: Set up Rust toolchain
       uses: dtolnay/rust-toolchain@stable
     - name: Install build deps
@@ -214,7 +219,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - name: Install build deps
         run: pip install "${{ needs.py_build_deps.outputs.output }}"
       - name: Generate code coverage
@@ -246,7 +251,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - name: Install system packages
         run: |
           sudo apt-get update
@@ -290,6 +295,10 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
     - name: Get minimum supported Rust version
       run: echo "::set-output name=msrv::$(grep '^rust-version = ' Cargo.toml | grep -o '[0-9.]\+')"
       id: get_msrv
