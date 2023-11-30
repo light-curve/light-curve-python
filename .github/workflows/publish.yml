@@ -36,7 +36,7 @@ jobs:
       matrix:
         os: [ubuntu-20.04, macos-12, windows-2019]
         arch: [aarch64, ppc64le, x86_64, amd64]  # amd64 is Windows-only
-        interpreter: [cp38, pp38, pp39]  # single cp38 interpreter for ABI3
+        interpreter: [cp38, pp38, pp39, pp310]  # single cp38 interpreter for ABI3
         platform: [manylinux, musllinux, macosx, win]
         exclude:
           # Build Linux on Linux
@@ -63,11 +63,15 @@ jobs:
             platform: musllinux
           - interpreter: pp39
             platform: musllinux
+          - interpreter: pp310
+            platform: musllinux
           # PyPy doesn't support PPC64le
           - arch: ppc64le
             interpreter: pp38
           - arch: ppc64le
             interpreter: pp39
+          - arch: ppc64le
+            interpreter: pp310
           # There is no Rust toolchain for PPC64le with MUSL
           - arch: ppc64le
             platform: musllinux
