@@ -11,7 +11,6 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -23,8 +22,8 @@ classifiers = [
 [project.optional-dependencies]
 # Packages required by some experimental features
 full = [
-    "iminuit>=2.21,<3;python_version>='3.8'",
-    "scipy",
+    "iminuit>=2.21,<3",
+    "scipy<2",
 ]
 
 # Testing environment
@@ -33,8 +32,7 @@ test-no-bench = [
     "markdown-pytest",
     "pytest-benchmark",  # We need it here because we use benchmark-specific command line options
     "pytest-subtests>=0.10",
-    # Minimal required version of iminuit does not support Python 3.7
-    "iminuit>=2.21,<3;python_version>='3.8'",
+    "iminuit>=2.21,<3",
     "numpy",
     "scipy",
 ]
@@ -74,7 +72,7 @@ macos-deployment-target = "10.9"
 
 [tool.black]
 line-length = 120
-target-version = ["py37"]
+target-version = ["py38"]
 include = '\.py$'
 exclude = '''
      /(
@@ -116,7 +114,7 @@ exclude = [
     ".tox",
     "_build",
 ]
-target-version = "py37"
+target-version = "py38"
 
 [tool.ruff.per-file-ignores]
 # Unused and star imports
@@ -141,7 +139,7 @@ markers = [
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py37,py38,py39,py310,py311
+envlist = py38,py39,py310,py311
 isolated_build = True
 
 [testenv]

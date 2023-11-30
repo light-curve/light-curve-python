@@ -15,7 +15,7 @@ python3 -mpip install 'light-curve[full]'
 `full` extras would install the package with all optional Python dependencies required by experimental features.
 We also provide `light-curve-python` package which is just an "alias" to the main `light-curve[full]` package.
 
-Minimum supported Python version is 3.7.
+Minimum supported Python version is 3.8.
 We provide binary wheels via [PyPi](https://pypi.org/project/light-curve/) for a number of platforms and architectures, both for CPython and PyPy.
 We also provide binary wheels for stable CPython ABI, so the package is guaranteed to work with all future CPython3 versions.
 
@@ -32,7 +32,7 @@ We also provide binary wheels for stable CPython ABI, so the package is guarante
 - "src": the package is confirmed to be built and pass unit tests locally, but testing and package building is not supported by CI. It is required to have the [GNU scientific library (GSL)](https://www.gnu.org/software/gsl/) v2.1+ and the [Rust toolchain](https://rust-lang.org) v1.67+ to install it via `pip install`. `ceres-solver` and `fftw` may be installed locally or built from source, in the later case you would also need C/C++ compiler and `cmake`.
 - "not tested": building from the source code is not tested, please report us building status via issue/PR/email.
 
-We build aarch64 macOS 12.0+ Python 3.8+ wheels locally and submit them running this command in `light-curve` directory:
+We build aarch64 macOS 12.0+ wheels locally and submit them running this command in `light-curve` directory:
 ```
 rm -rf ./wheelhouse
 curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y
@@ -409,7 +409,7 @@ print(values)
 Rainbow ([Russeil+23](https://arxiv.org/abs/2310.02916)) is a black-body parametric model for transient light curves.
 It uses Bazin function as a model for bolometric flux evolution and a logistic function for the temperature evolutiion.
 This example demonstrates the reconstruction of a syntetic light curve with this model.
-`RainbowFit` requires `iminuit` package and Python 3.8+.
+`RainbowFit` requires `iminuit` package.
 
 ```python
 import numpy as np
