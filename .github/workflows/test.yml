@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_minor: ['7', '8', '9', '10', '11']
+        python_minor: ['8', '9', '10', '11']
 
     defaults:
       run:
@@ -149,11 +149,6 @@ jobs:
       run: |
           sudo apt-get update
           sudo apt-get install -y libgsl-dev
-    - name: Set up Python 3.7
-      if: ${{ ! matrix.abi3 }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.7'
     - name: Set up Python 3.8
       if: ${{ ! matrix.abi3 }}
       uses: actions/setup-python@v5
@@ -188,8 +183,8 @@ jobs:
     - name: Install abi3audit
       if: ${{ matrix.abi3 }}
       run: python3 -mpip install abi3audit
-    - name: Check wheels for ABI compatibility on Linux
-      if: ${{ matrix.abi3 && startsWith( matrix.os, 'ubuntu' ) }}
+    - name: Check wheels for ABI compatibility on Unix
+      if: ${{ matrix.abi3 && ! startsWith( matrix.os, 'windows' ) }}
       run: abi3audit --strict target/wheels/*.whl
     - name: Check wheels for ABI compatibility on Windows
       if: ${{ matrix.abi3 && startsWith( matrix.os, 'windows' ) }}
@@ -280,10 +275,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python 3.7
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.7'
     - name: Set up Python 3.8
       uses: actions/setup-python@v5
       with:

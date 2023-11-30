@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **breaking** `RainbowFit` is significantly refactored to make it more flexible for usage of different bolometric and temperature functions. It deletes `RainbowRisingFit` and `RainbowSymmetricFit` in favor of a single `RainbowFit` feature. https://github.com/light-curve/light-curve-python/pull/327
+- **Breaking:** stop supporting Python 3.7
+- **Breaking** `RainbowFit` is significantly refactored to make it more flexible for usage of different bolometric and temperature functions. It deletes `RainbowRisingFit` and `RainbowSymmetricFit` in favor of a single `RainbowFit` feature. https://github.com/light-curve/light-curve-python/pull/327
 
 ### Deprecated
 
