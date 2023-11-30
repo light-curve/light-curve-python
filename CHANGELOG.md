@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `RainbowRisingFit` experimental feature, https://github.com/light-curve/light-curve-python/pull/278 by [@erusseil](https://github.com/erusseil)
+—
 
 ### Changed
 
@@ -30,6 +30,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 --
+
+## [0.8.1] 2023-11-30
+
+### Added
+
+- `RainbowRisingFit` experimental feature, https://github.com/light-curve/light-curve-python/pull/278 by [@erusseil](https://github.com/erusseil)
+
 
 ## [0.8.0] 2023-09-20
 
