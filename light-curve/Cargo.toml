@@ -33,7 +33,7 @@ const_format = "0.2.32"
 conv = "0.3.3"
 enum-iterator = "1.4.1"
 enumflags2 = { version = "0.7.7", features = ["serde"] }
-itertools = "0.11.0"
+itertools = "0.12.0"
 macro_const = "0.1.0"
 ndarray = { version = "0.15.3", features = ["rayon"] }
 numpy = "0.19.0"
