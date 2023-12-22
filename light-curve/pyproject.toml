@@ -123,6 +123,7 @@ target-version = "py37"
 "light_curve/__init__.py" = ["F401", "F403", "I001"]
 "light_curve/light_curve_ext.py" = ["F403", "F405"]
 "light_curve/light_curve_py/__init__.py" = ["F403"]
+"light_curve/light_curve_py/features/rainbow/__init__.py" = ["F403"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"

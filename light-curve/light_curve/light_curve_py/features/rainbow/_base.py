@@ -1,0 +1,288 @@
+from abc import abstractmethod
+from dataclasses import dataclass
+from typing import Dict, List, Tuple
+
+import numpy as np
+
+from light_curve.light_curve_py.dataclass_field import dataclass_field
+from light_curve.light_curve_py.features._base import BaseMultiBandFeature
+from light_curve.light_curve_py.features.rainbow._bands import Bands
+from light_curve.light_curve_py.features.rainbow._parameters import create_parameters_class
+from light_curve.light_curve_py.features.rainbow._scaler import MultiBandScaler, Scaler
+from light_curve.light_curve_py.minuit_lsq import LeastSquares
+
+__all__ = ["BaseRainbowFit"]
+
+
+# CODATA 2018, grab from astropy
+planck_constant = 6.62607004e-27  # erg s
+speed_of_light = 2.99792458e10  # cm/s
+boltzman_constant = 1.380649e-16  # erg/K
+sigma_sb = 5.6703744191844314e-05  # erg/(cm^2 s K^4)
+
+
+IMINUIT_IMPORT_ERROR = (
+    "The `iminuit` package v2.21.0 or larger (exists for Python >= 3.8 only) is required for RainbowFit, "
+    "please install it manually or reinstall light-curve package with [full] extra"
+)
+
+
+@dataclass()
+class BaseRainbowFit(BaseMultiBandFeature):
+    band_wave_cm: Dict[str, float]
+    """Mapping of band names and their effective wavelengths in cm."""
+
+    with_baseline: bool = dataclass_field(default=True, kw_only=True)
+    """Whether to include a baseline in the fit, one per band."""
+
+    @property
+    def is_band_required(self) -> bool:
+        return True
+
+    @property
+    def is_multiband_supported(self) -> bool:
+        return True
+
+    @property
+    def size(self) -> int:
+        return len(self.p)
+
+    @staticmethod
+    @abstractmethod
+    def _common_parameter_names() -> List[str]:
+        """Common parameter names."""
+        return NotImplementedError
+
+    @staticmethod
+    @abstractmethod
+    def _bolometric_parameter_names() -> List[str]:
+        """Bolometric parameter names."""
+        return NotImplementedError
+
+    @staticmethod
+    @abstractmethod
+    def _temperature_parameter_names() -> List[str]:
+        """Temperature parameter names."""
+        return NotImplementedError
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+
+        self._initialize_minuit()
+
+        self.bands = Bands.from_dict(self.band_wave_cm)
+
+        self.p = create_parameters_class(
+            f"{self.__class__.__name__}Parameters",
+            common=self._common_parameter_names(),
+            bol=self._bolometric_parameter_names(),
+            temp=self._temperature_parameter_names(),
+            bands=self.bands,
+            with_baseline=self.with_baseline,
+        )
+
+        if len(self.band_wave_cm) == 0:
+            raise ValueError("At least one band must be specified.")
+
+        # We are going to use it for the normalization of amplitude,
+        # it is normally should be by the order of (\sigma_SB T^4) / (\pi B_\nu)
+        self.average_nu = speed_of_light / self.bands.mean_wave_cm
+
+        if self.with_baseline:
+            self._lsq_model = self._lsq_model_with_baseline
+        else:
+            self._lsq_model = self._lsq_model_no_baseline
+
+    def _initialize_minuit(self) -> None:
+        self._check_iminuit()
+
+        from iminuit import Minuit
+
+        self.Minuit = Minuit
+
+    @classmethod
+    def from_nm(cls, band_wave_nm, **kwargs):
+        """Initialize from a dictionary of band names and their effective wavelengths in nm."""
+        band_wave_nm = {band: 1e-7 * wavelength for band, wavelength in band_wave_nm.items()}
+        return cls(band_wave_cm=band_wave_nm, **kwargs)
+
+    @classmethod
+    def from_angstrom(cls, band_wave_aa, **kwargs):
+        """Initialize from a dictionary of band names and their effective wavelengths in angstroms."""
+        band_wave_aa = {band: 1e-8 * wavelength for band, wavelength in band_wave_aa.items()}
+        return cls(band_wave_cm=band_wave_aa, **kwargs)
+
+    @staticmethod
+    def _check_iminuit():
+        if LeastSquares is None:
+            raise ImportError(IMINUIT_IMPORT_ERROR)
+
+        try:
+            try:
+                from packaging.version import parse as parse_version
+            except ImportError:
+                from distutils.version import LooseVersion as parse_version
+
+            from iminuit import __version__
+        except ImportError:
+            raise ImportError(IMINUIT_IMPORT_ERROR)
+
+        if parse_version(__version__) < parse_version("2.21.0"):
+            raise ImportError(IMINUIT_IMPORT_ERROR)
+
+    @abstractmethod
+    def bol_func(self, t, params):
+        """Bolometric light curve function."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def temp_func(self, t, params):
+        """Temperature evolution function."""
+        return NotImplementedError
+
+    @abstractmethod
+    def _normalize_bolometric_flux(self, params) -> None:
+        """Normalize bolometric flux parameters to internal units in-place."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def _denormalize_bolometric_flux(self, params) -> None:
+        """Denormalize boloemtric flux parameters from internal units in-place."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def _unscale_parameters(self, params, t_scaler: Scaler, m_scaler: MultiBandScaler) -> None:
+        """Unscale parameters from internal units, in-place.
+
+        No baseline parameters are needed to be unscaled.
+        """
+        return NotImplementedError
+
+    def _unscale_baseline_parameters(self, params, m_scaler: MultiBandScaler) -> None:
+        """Unscale baseline parameters from internal units, in-place.
+
+        Must be used only if `with_baseline` is True.
+        """
+        for band_name in self.bands.names:
+            baseline_name = self.p.baseline_parameter_name(band_name)
+            baseline = params[self.p[baseline_name]]
+            params[self.p[baseline_name]] = m_scaler.undo_shift_scale_band(baseline, band_name)
+
+    @staticmethod
+    def planck_nu(wave_cm, T):
+        """Planck function in frequency units."""
+        nu = speed_of_light / wave_cm
+        return (
+            (2 * planck_constant / speed_of_light**2)
+            * nu**3
+            / np.expm1(planck_constant * nu / (boltzman_constant * T))
+        )
+
+    def _lsq_model_no_baseline(self, x, *params):
+        """Model function for the fit."""
+        t, _band_idx, wave_cm = x
+        params = np.array(params)
+
+        self._denormalize_bolometric_flux(params)
+
+        bol = self.bol_func(t, params)
+        temp = self.temp_func(t, params)
+        flux = np.pi * self.planck_nu(wave_cm, temp) / (sigma_sb * temp**4) * bol
+        return flux
+
+    def _lsq_model_with_baseline(self, x, *params):
+        flux = self._lsq_model_no_baseline(x, *params)
+
+        _t, band_idx, _wave_cm = x
+        params = np.array(params)
+        baselines = params[self.p.lookup_baseline_idx_with_band_idx(band_idx)]
+        flux += baselines
+
+        return flux
+
+    def model(self, t, band, *params):
+        """Model function for the fit."""
+        band_idx = self.bands.get_index(band)
+        wave_cm = self.bands.index_to_wave_cm(band_idx)
+        params = np.array(params)
+        self._normalize_bolometric_flux(params)
+        return self._lsq_model((t, band_idx, wave_cm), *params)
+
+    @property
+    def names(self):
+        """Names of the parameters."""
+        return list(self.p.__members__)
+
+    @abstractmethod
+    def _initial_guesses(self, t, m, band) -> Dict[str, float]:
+        """Initial guesses for the fit parameters.
+
+        t and m are *scaled* arrays. No baseline parameters are included.
+        """
+        return NotImplementedError
+
+    def _baseline_initial_guesses(self, t, m, band) -> Dict[str, float]:
+        """Initial guesses for the baseline parameters."""
+        del t
+        return {self.p.baseline_parameter_name(b): np.min(m[band == b]) for b in self.bands.names}
+
+    @abstractmethod
+    def _limits(self, t, m, band) -> Dict[str, Tuple[float, float]]:
+        """Limits for the fit parameters.
+
+        t and m are *scaled* arrays. No baseline parameters are included.
+        """
+        return NotImplementedError
+
+    def _baseline_limits(self, t, m, band) -> Dict[str, Tuple[float, float]]:
+        """Limits for the baseline parameters."""
+        del t
+        limits = {}
+        for b in self.bands.names:
+            m_band = m[band == b]
+            lower = np.min(m_band) - 10 * np.ptp(m_band)
+            upper = np.max(m_band)
+            limits[self.p.baseline_parameter_name(b)] = (lower, upper)
+        return limits
+
+    def _eval(self, *, t, m, sigma, band):
+        # Initialize data scalers
+        t_scaler = Scaler.from_time(t)
+        m_scaler = MultiBandScaler.from_flux(m, band, with_baseline=self.with_baseline)
+
+        # normalize input data
+        t = t_scaler.do_shift_scale(t)
+        m = m_scaler.do_shift_scale(m)
+        sigma = m_scaler.do_scale(sigma)
+
+        band_idx = self.bands.get_index(band)
+        wave_cm = self.bands.index_to_wave_cm(band_idx)
+
+        initial_guesses = self._initial_guesses(t, m, band)
+        limits = self._limits(t, m, band)
+        if self.with_baseline:
+            initial_guesses.update(self._baseline_initial_guesses(t, m, band))
+            limits.update(self._baseline_limits(t, m, band))
+
+        least_squares = LeastSquares(
+            model=self._lsq_model,
+            parameters=limits,
+            x=(t, band_idx, wave_cm),
+            y=m,
+            yerror=sigma,
+        )
+        minuit = self.Minuit(least_squares, **initial_guesses)
+        minuit.migrad()
+
+        reduced_chi2 = minuit.fval / (len(t) - self.size)
+        params = np.array(minuit.values)
+
+        self._unscale_parameters(params, t_scaler, m_scaler)
+        if self.with_baseline:
+            self._unscale_baseline_parameters(params, m_scaler)
+
+        return np.r_[params, reduced_chi2]
+
+    # This is abstractmethod, but we could use default implementation while _eval is defined
+    def _eval_and_fill(self, *, t, m, sigma, band, fill_value):
+        return super()._eval_and_fill(t=t, m=m, sigma=sigma, band=band, fill_value=fill_value)
