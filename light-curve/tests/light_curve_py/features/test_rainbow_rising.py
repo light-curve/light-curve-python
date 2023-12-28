@@ -26,7 +26,7 @@ def test_noisy_no_baseline():
     delta_T = 10e3
     k_sig = 4.0
 
-    t = np.sort(rng.uniform(reference_time - 3 * rise_time, reference_time, 1000))
+    t = np.sort(rng.uniform(reference_time - 3 * rise_time, reference_time + rise_time, 1000))
     band = rng.choice(list(band_wave_aa), size=len(t))
     waves = np.array([band_wave_aa[b] for b in band])
 
@@ -35,13 +35,16 @@ def test_noisy_no_baseline():
 
     flux = np.pi * bb_nu(waves, temp) / (5.67e-5 * temp**4) * lum
     # S/N = 5 for minimum flux, scale for Poisson noise
-    flux_err = np.sqrt(flux * np.min(flux) / 5.0)
+    # We make noise a bit smaller because the optimization is not perfect
+    flux_err = 0.1 * np.sqrt(flux * np.min(flux) / 5.0)
     flux += rng.normal(0.0, flux_err)
 
     feature = RainbowRisingFit.from_angstrom(band_wave_aa, with_baseline=False)
-    actual = feature(t, flux, sigma=flux_err, band=band)[-1]
+    actual = feature(t, flux, sigma=flux_err, band=band)
 
-    np.testing.assert_allclose(actual, 1, rtol=0.05)
+    expected = [reference_time, amplitude, rise_time, Tmin, delta_T, k_sig, 1.0]
+
+    np.testing.assert_allclose(actual, expected, rtol=0.05)
 
 
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="iminuit requires Python >= 3.8")
@@ -59,7 +62,7 @@ def test_noisy_with_baseline():
     k_sig = 4.0
     baselines = {b: rng.exponential(scale=3 * amplitude / average_nu) for b in band_wave_aa}
 
-    t = np.sort(rng.uniform(reference_time - 3 * rise_time, reference_time, 1000))
+    t = np.sort(rng.uniform(reference_time - 3 * rise_time, reference_time + rise_time, 1000))
     band = rng.choice(list(band_wave_aa), size=len(t))
     waves = np.array([band_wave_aa[b] for b in band])
 
@@ -73,7 +76,8 @@ def test_noisy_with_baseline():
     flux += rng.normal(0.0, flux_err)
 
     feature = RainbowRisingFit.from_angstrom(band_wave_aa, with_baseline=True)
+    actual = feature(t, flux, sigma=flux_err, band=band)
 
-    actual = feature(t, flux, sigma=flux_err, band=band)[-1]
+    expected = [reference_time, amplitude, rise_time, Tmin, delta_T, k_sig, *baselines.values(), 1.0]
 
-    np.testing.assert_allclose(actual, 1, rtol=0.05)
+    np.testing.assert_allclose(actual, expected, rtol=0.03)
