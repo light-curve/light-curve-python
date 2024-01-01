@@ -18,7 +18,7 @@ jobs:
       with:
         submodules: true
     - name: Set up Python 3.11
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: "3.11"
     - name: Extract build deps from pyproject.toml
@@ -44,7 +44,7 @@ jobs:
       with:
         submodules: true
     - name: Set up Python 3.${{ matrix.python_minor }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: "3.${{ matrix.python_minor }}"
     - name: Install tox
@@ -148,27 +148,27 @@ jobs:
           sudo apt-get install -y libgsl-dev
     - name: Set up Python 3.7
       if: ${{ ! matrix.abi3 }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.7'
     - name: Set up Python 3.8
       if: ${{ ! matrix.abi3 }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.8'
     - name: Set up Python 3.9
       if: ${{ ! matrix.abi3 }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.9'
     - name: Set up Python 3.10
       # No if here, we want to build abi3 wheels on 3.10
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
     - name: Set up Python 3.11
       if: ${{ ! matrix.abi3 }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
     - name: Set up Rust toolchain
@@ -215,7 +215,7 @@ jobs:
           shared-key: "stable-${{ runner.os }}"
           workspaces: "light-curve"
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - name: Install build deps
@@ -245,7 +245,7 @@ jobs:
         with:
           toolchain: stable
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - name: Install system packages
@@ -277,23 +277,23 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python 3.7
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.7'
     - name: Set up Python 3.8
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.8'
     - name: Set up Python 3.9
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.9'
     - name: Set up Python 3.10
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
     - name: Set up Python 3.11
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
     - name: Get minimum supported Rust version
