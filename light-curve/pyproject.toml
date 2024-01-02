@@ -156,7 +156,7 @@ commands =
 # Default is "pip", but it is recommended to use "build"
 build-frontend = "build"
 
-config-settings = { "build-args" = "--locked --no-default-features --features ceres-system,fftw-system,gsl" }
+config-settings = { "build-args" = "--locked --no-default-features --features ceres-system,fftw-system,gsl,mimalloc" }
 
 # We'd like to link system FFTW, because is is usually better optimised
 # We use system Ceres because it is available as a static library in our build environment
@@ -204,13 +204,13 @@ before-all = [
 before-build = ["pip install delvewheel"]
 repair-wheel-command = "delvewheel repair --add-path=%USERPROFILE%\\Downloads\\fftw-dll64 -w {dest_dir} {wheel}"
 # We do not support Ceres and GSL on Windows
-config-settings = { "build-args" = "--locked --no-default-features --features fftw-source" }
+config-settings = { "build-args" = "--locked --no-default-features --features fftw-source,mimalloc" }
 
 # Build with Intel MKL on Linux x86_64
 [[tool.cibuildwheel.overrides]]
 select = "*linux_x86_64"
 # We'd like to use MKL for x86_64
-config-settings = { "build-args" = "--locked --no-default-features --features ceres-system,fftw-mkl,gsl" }
+config-settings = { "build-args" = "--locked --no-default-features --features ceres-system,fftw-mkl,gsl,mimalloc" }
 
 # Test
 # We skip benchmark tests, because it requires feets and its transitive

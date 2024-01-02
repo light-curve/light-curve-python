@@ -18,7 +18,7 @@ lto = true
 codegen-units = 1
 
 [features]
-default = ["ceres-source", "fftw-source", "gsl"]
+default = ["ceres-source", "fftw-source", "gsl", "mimalloc"]
 abi3 = ["abi3-py311"]
 abi3-py311 = ["pyo3/abi3-py311"]
 ceres-source = ["light-curve-feature/ceres-source"]
