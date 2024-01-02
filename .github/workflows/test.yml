@@ -181,7 +181,7 @@ jobs:
         workspaces: "light-curve"
     - name: Build wheels for abi3=${{ matrix.abi3 }} fftw=${{ matrix.fftw }} ceres=${{ matrix.ceres }} gsl=${{ matrix.gsl }}
       run: |
-        maturin build --find-interpreter --manylinux=off --locked --no-default-features --features=fftw-${{ matrix.fftw }}${{ matrix.ceres == 'source' && ',ceres-source' || '' }}${{ matrix.ceres == 'system' && ',ceres-system' || '' }}${{ matrix.gsl && ',gsl' || '' }}${{ matrix.abi3 && ',abi3' || '' }}
+        maturin build --find-interpreter --manylinux=off --locked --no-default-features --features=fftw-${{ matrix.fftw }}${{ matrix.ceres == 'source' && ',ceres-source' || '' }}${{ matrix.ceres == 'system' && ',ceres-system' || '' }}${{ matrix.gsl && ',gsl' || '' }}${{ matrix.abi3 && ',abi3' || '' }},mimalloc
     - name: Install abi3audit
       if: ${{ matrix.abi3 }}
       run: python3 -mpip install abi3audit
@@ -262,7 +262,7 @@ jobs:
             python3 -m venv venv
             . venv/bin/activate
             pip install "${{ needs.py_build_deps.outputs.output }}" pytest-codspeed
-            maturin develop --extras=test-no-bench,test --release --no-default-features --features=ceres-system,fftw-system,gsl
+            maturin develop --extras=test-no-bench,test --release --no-default-features --features=ceres-system,fftw-system,gsl,mimalloc
             python3 -mpytest -m "not (nobs or multi)" --codspeed tests/test_w_bench.py
 
   msrv-build:

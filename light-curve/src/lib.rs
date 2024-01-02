@@ -1,6 +1,8 @@
 use dmdt::DmDt;
 use features as f;
 use ln_prior::*;
+#[cfg(feature = "mimalloc")]
+use mimalloc::MiMalloc;
 use pyo3::prelude::*;
 
 #[macro_use]
@@ -12,6 +14,10 @@ mod errors;
 mod features;
 mod ln_prior;
 mod transform;
+
+#[cfg(feature = "mimalloc")]
+#[global_allocator]
+static GLOBAL_ALLOCATOR: MiMalloc = MiMalloc;
 
 /// High-performance time-series feature extractor
 ///

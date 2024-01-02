@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-—
+- New cargo build-time feature, `mimalloc`, it is default feature now. When activated, it gives up to 2.9x of performance boost for some "fast" features. https://github.com/light-curve/light-curve-python/pull/302
 
 ### Changed
 

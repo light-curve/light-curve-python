@@ -18,7 +18,7 @@ lto = true
 codegen-units = 1
 
 [features]
-default = ["ceres-source", "fftw-source", "gsl"]
+default = ["ceres-source", "fftw-source", "gsl", "mimalloc"]
 abi3 = ["abi3-py311"]
 abi3-py311 = ["pyo3/abi3-py311"]
 ceres-source = ["light-curve-feature/ceres-source"]
@@ -27,6 +27,7 @@ fftw-source = ["light-curve-feature/fftw-source"]
 fftw-system = ["light-curve-feature/fftw-system"]
 fftw-mkl = ["light-curve-feature/fftw-mkl"]
 gsl = ["light-curve-feature/gsl"]
+mimalloc = ["dep:mimalloc"]
 
 [dependencies]
 const_format = "0.2.32"
@@ -35,6 +36,7 @@ enum-iterator = "1.4.1"
 enumflags2 = { version = "0.7.7", features = ["serde"] }
 itertools = "0.12.0"
 macro_const = "0.1.0"
+mimalloc = { version = "0.1.39", features = ["local_dynamic_tls"], optional=true }
 ndarray = { version = "0.15.3", features = ["rayon"] }
 numpy = "0.19.0"
 num_cpus = "1.13.0"
@@ -43,11 +45,11 @@ once_cell = "1"
 pyo3 = {version = "0.19.2", features = ["extension-module", "multiple-pymethods"]}
 rand = "0.8.5"
 rand_xoshiro = "0.6.0"
-thiserror = "1.0.50"
+rayon = "1.8.0"
 serde = { version = "1", features = ["derive"] }
 serde-pickle = "1"
 serde_json = "1"
-rayon = "1.8.0"
+thiserror = "1.0.50"
 unzip3 = "1.0.0"
 
 [dependencies.light-curve-dmdt]
