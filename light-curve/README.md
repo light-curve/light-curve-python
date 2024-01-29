@@ -29,7 +29,7 @@ We also provide binary wheels for stable CPython ABI, so the package is guarante
 | **ppc64le** | wheel       | not tested (no Rust toolchain) | —                                                              | —                                                                    |
 
 - "wheel": binary wheel is available on pypi.org, local building is not required for the platform, the only pre-requirement is a recent `pip` version. For Linux x86-64 we provide binary wheels built with Intel MKL for better periodogram performance, which is not a default build option. For Windows x86-64 we provide wheel with no Ceres and no GSL support, which is not a default build option.
-- "src": the package is confirmed to be built and pass unit tests locally, but testing and package building is not supported by CI. It is required to have the [GNU scientific library (GSL)](https://www.gnu.org/software/gsl/) v2.1+ and the [Rust toolchain](https://rust-lang.org) v1.62+ to install it via `pip install`.
+- "src": the package is confirmed to be built and pass unit tests locally, but testing and package building is not supported by CI. It is required to have the [GNU scientific library (GSL)](https://www.gnu.org/software/gsl/) v2.1+ and the [Rust toolchain](https://rust-lang.org) v1.62+ to install it via `pip install`. `ceres-solver` and `fftw` may be installed locally or built from source, in the later case you would also need C/C++ compiler and `cmake`.
 - "not tested": building from the source code is not tested, please report us building status via issue/PR/email.
 
 We build aarch64 macOS 12.0+ Python 3.8+ wheels locally and submit them running this command in `light-curve` directory:
