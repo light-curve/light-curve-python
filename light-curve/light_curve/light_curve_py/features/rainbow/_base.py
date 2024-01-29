@@ -173,9 +173,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
         """Planck function in frequency units."""
         nu = speed_of_light / wave_cm
         return (
-            (2 * planck_constant / speed_of_light**2)
-            * nu**3
-            / np.expm1(planck_constant * nu / (boltzman_constant * T))
+            (2 * planck_constant / speed_of_light**2) * nu**3 / np.expm1(planck_constant * nu / (boltzman_constant * T))
         )
 
     def _lsq_model_no_baseline(self, x, *params):
