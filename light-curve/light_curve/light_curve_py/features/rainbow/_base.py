@@ -274,15 +274,28 @@ class BaseRainbowFit(BaseMultiBandFeature):
         self.minuit = self.Minuit(least_squares, **initial_guesses)
         # TODO: expose these parameters through function arguments
         self.minuit.print_level = 1
+        self.minuit.strategy = 2
         self.minuit.migrad(ncall=10000, iterate=10)
 
         self.valid = self.minuit.valid
         reduced_chi2 = self.minuit.fval / (len(t) - self.size)
         params = np.array(self.minuit.values)
+        self.errors = np.array(self.minuit.errors)
 
         self._unscale_parameters(params, t_scaler, m_scaler)
         if self.with_baseline:
             self._unscale_baseline_parameters(params, m_scaler)
+
+        # Unscale errors
+        # FIXME: is there any better but generic way to unscale all relevant errors without shifting?..
+        t_scaler.shift *= 0
+        m_scaler.shift *= 0
+        for _ in m_scaler.per_band_shift:
+            m_scaler.per_band_shift[_] = 0
+
+        self._unscale_parameters(self.errors, t_scaler, m_scaler)
+        if self.with_baseline:
+            self._unscale_baseline_parameters(self.errors, m_scaler)
 
         return np.r_[params, reduced_chi2]
 
@@ -292,6 +305,5 @@ class BaseRainbowFit(BaseMultiBandFeature):
 
     def fit_and_get_errors(self, t, m, sigma, band, *, sorted=None, check=True, fill_value=None):
         params = self.__call__(t, m, sigma=sigma, band=band, sorted=sorted, check=check, fill_value=fill_value)
-        errors = np.array(self.minuit.errors)
 
-        return params, errors
+        return params, self.errors
