@@ -3,9 +3,9 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 
+from light_curve.light_curve_py.dataclass_field import dataclass_field
 from light_curve.light_curve_py.features.rainbow._base import BaseRainbowFit
 from light_curve.light_curve_py.features.rainbow._scaler import MultiBandScaler, Scaler
-from light_curve.light_curve_py.dataclass_field import dataclass_field
 
 __all__ = ["RainbowSymmetricFit"]
 
@@ -84,10 +84,10 @@ class RainbowSymmetricFit(BaseRainbowFit):
 
         # To avoid numerical overflows, let's only compute the exponents not too far from t0
         if self.with_rise_only:
-            idx = (dt > -100*rise_time)
+            idx = dt > -100 * rise_time
             result[idx] = amplitude / (np.exp(-dt[idx] / rise_time) + 1)
         else:
-            idx = (dt > -100*rise_time) & (dt < 100*fall_time)
+            idx = (dt > -100 * rise_time) & (dt < 100 * fall_time)
             result[idx] = amplitude / (np.exp(-dt[idx] / rise_time) + np.exp(dt[idx] / fall_time))
 
         return result
@@ -100,9 +100,9 @@ class RainbowSymmetricFit(BaseRainbowFit):
             result = np.zeros_like(dt)
 
             # To avoid numerical overflows, let's only compute the exponent not too far from t0
-            idx1 = dt <= -100*k_sig
-            idx2 = (dt > -100*k_sig) & (dt < 100*k_sig)
-            idx3 = dt >= 100*k_sig
+            idx1 = dt <= -100 * k_sig
+            idx2 = (dt > -100 * k_sig) & (dt < 100 * k_sig)
+            idx3 = dt >= 100 * k_sig
 
             result[idx1] = T_min
             result[idx2] = T_min + (T_max - T_min) / (1.0 + np.exp(dt[idx2] / k_sig))
@@ -168,13 +168,13 @@ class RainbowSymmetricFit(BaseRainbowFit):
         params["rise_time"] = t_rise
 
         if not self.with_rise_only:
-            params['fall_time'] = t_fall
+            params["fall_time"] = t_fall
 
-        params['Tmin'] = 7000.0
+        params["Tmin"] = 7000.0
 
         if self.with_temperature_evolution:
-            params['Tmax'] = 10000.0
-            params['k_sig'] = 1.0
+            params["Tmax"] = 10000.0
+            params["k_sig"] = 1.0
 
         return params
 
@@ -193,13 +193,13 @@ class RainbowSymmetricFit(BaseRainbowFit):
         limits["rise_time"] = (1e-4, 10 * t_amplitude)
 
         if not self.with_rise_only:
-            limits['fall_time'] = (1e-4, 10 * t_amplitude)
+            limits["fall_time"] = (1e-4, 10 * t_amplitude)
 
-        limits['Tmin'] = (1e2, 1e6) # K
+        limits["Tmin"] = (1e2, 1e6)  # K
 
         if self.with_temperature_evolution:
-            limits['Tmax'] = (1e2, 1e6) # K
-            limits['k_sig'] = (1e-4, 10.0 * t_amplitude)
+            limits["Tmax"] = (1e2, 1e6)  # K
+            limits["k_sig"] = (1e-4, 10.0 * t_amplitude)
 
         return limits
 
