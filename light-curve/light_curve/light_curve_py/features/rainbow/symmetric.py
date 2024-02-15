@@ -48,6 +48,9 @@ class RainbowSymmetricFit(BaseRainbowFit):
         Evaluate Rainbow model on the given arrays of times and bands. `*params` are
         fit parameters, basically the output of `__call__` method but without the last
         parameter (reduced Chi^2 of the fit). See parameter names in the `.name` attribute.
+
+    peak_time(*params)
+        Return bolometric peak time for given set of parameters
     """
 
     with_temperature_evolution: bool = dataclass_field(default=True, kw_only=True)
@@ -104,6 +107,8 @@ class RainbowSymmetricFit(BaseRainbowFit):
             result[idx1] = T_min
             result[idx2] = T_min + (T_max - T_min) / (1.0 + np.exp(dt[idx2] / k_sig))
             result[idx3] = T_max
+
+            return result
         else:
             t0, T_min = params[self.p.all_temp_idx]
 
@@ -143,7 +148,10 @@ class RainbowSymmetricFit(BaseRainbowFit):
             params[self.p.temp_idx] = T_min, T_max, k_sig
 
     def _initial_guesses(self, t, m, band) -> Dict[str, float]:
-        t_rise = 0.1
+        if self.with_rise_only:
+            t_rise = 1.0
+        else:
+            t_rise = 0.1
         t_fall = 0.1
 
         # The amplitude here does not actually correspond to the amplitude of m values!
@@ -165,7 +173,7 @@ class RainbowSymmetricFit(BaseRainbowFit):
         params['Tmin'] = 7000.0
 
         if self.with_temperature_evolution:
-            params['Tmax'] = 0.0
+            params['Tmax'] = 10000.0
             params['k_sig'] = 1.0
 
         return params
@@ -198,3 +206,15 @@ class RainbowSymmetricFit(BaseRainbowFit):
     def _baseline_initial_guesses(self, t, m, band) -> Dict[str, float]:
         """Initial guesses for the baseline parameters."""
         return {self.p.baseline_parameter_name(b): np.median(m[band == b]) for b in self.bands.names}
+
+    def peak_time(self, params) -> float:
+        """Returns true bolometric peak position for given parameters"""
+        if self.with_rise_only:
+            t0, amplitude, rise_time = params[self.p.all_bol_idx]
+
+            # It is not, strictly speaking, defined for rising only
+            return t0
+        else:
+            t0, amplitude, rise_time, fall_time = params[self.p.all_bol_idx]
+
+            return t0 + np.log(fall_time / rise_time) * rise_time * fall_time / (rise_time + fall_time)
