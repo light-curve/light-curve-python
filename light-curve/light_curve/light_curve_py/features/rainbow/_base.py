@@ -93,6 +93,8 @@ class BaseRainbowFit(BaseMultiBandFeature):
         else:
             self._lsq_model = self._lsq_model_no_baseline
 
+        self.valid = False
+
     def _initialize_minuit(self) -> None:
         self._check_iminuit()
 
@@ -269,11 +271,14 @@ class BaseRainbowFit(BaseMultiBandFeature):
             y=m,
             yerror=sigma,
         )
-        minuit = self.Minuit(least_squares, **initial_guesses)
-        minuit.migrad()
+        self.minuit = self.Minuit(least_squares, **initial_guesses)
+        # TODO: expose these parameters through function arguments
+        self.minuit.print_level = 1
+        self.minuit.migrad(ncall=10000, iterate=10)
 
-        reduced_chi2 = minuit.fval / (len(t) - self.size)
-        params = np.array(minuit.values)
+        self.valid = self.minuit.valid
+        reduced_chi2 = self.minuit.fval / (len(t) - self.size)
+        params = np.array(self.minuit.values)
 
         self._unscale_parameters(params, t_scaler, m_scaler)
         if self.with_baseline:
@@ -284,3 +289,9 @@ class BaseRainbowFit(BaseMultiBandFeature):
     # This is abstractmethod, but we could use default implementation while _eval is defined
     def _eval_and_fill(self, *, t, m, sigma, band, fill_value):
         return super()._eval_and_fill(t=t, m=m, sigma=sigma, band=band, fill_value=fill_value)
+
+    def fit_and_get_errors(self, t, m, sigma, band, *, sorted=None, check=True, fill_value=None):
+        params = self.__call__(t, m, sigma=sigma, band=band, sorted=sorted, check=check, fill_value=fill_value)
+        errors = np.array(self.minuit.errors)
+
+        return params, errors
