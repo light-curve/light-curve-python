@@ -93,8 +93,6 @@ class BaseRainbowFit(BaseMultiBandFeature):
         else:
             self._lsq_model = self._lsq_model_no_baseline
 
-        self.valid = False
-
     def _initialize_minuit(self) -> None:
         self._check_iminuit()
 
@@ -246,6 +244,14 @@ class BaseRainbowFit(BaseMultiBandFeature):
         return limits
 
     def _eval(self, *, t, m, sigma, band):
+        params, errors = self._eval_and_get_errors(t=t, m=m, sigma=sigma, band=band)
+        return params
+
+    # This is abstractmethod, but we could use default implementation while _eval is defined
+    def _eval_and_fill(self, *, t, m, sigma, band, fill_value):
+        return super()._eval_and_fill(t=t, m=m, sigma=sigma, band=band, fill_value=fill_value)
+
+    def _eval_and_get_errors(self, *, t, m, sigma, band, print_level=None):
         # Initialize data scalers
         t_scaler = Scaler.from_time(t)
         m_scaler = MultiBandScaler.from_flux(m, band, with_baseline=self.with_baseline)
@@ -271,39 +277,36 @@ class BaseRainbowFit(BaseMultiBandFeature):
             y=m,
             yerror=sigma,
         )
-        self.minuit = self.Minuit(least_squares, **initial_guesses)
+        minuit = self.Minuit(least_squares, **initial_guesses)
         # TODO: expose these parameters through function arguments
-        self.minuit.print_level = 1
-        self.minuit.strategy = 2
-        self.minuit.migrad(ncall=10000, iterate=10)
+        if print_level is not None:
+            minuit.print_level = print_level
+        minuit.strategy = 2
+        minuit.migrad(ncall=10000, iterate=10)
 
-        self.valid = self.minuit.valid
-        reduced_chi2 = self.minuit.fval / (len(t) - self.size)
-        params = np.array(self.minuit.values)
-        self.errors = np.array(self.minuit.errors)
+        if not minuit.valid:
+            raise RuntimeError("Fitting failed")
+
+        reduced_chi2 = minuit.fval / (len(t) - self.size)
+        params = np.array(minuit.values)
+        errors = np.array(minuit.errors)
 
         self._unscale_parameters(params, t_scaler, m_scaler)
         if self.with_baseline:
             self._unscale_baseline_parameters(params, m_scaler)
 
         # Unscale errors
-        # FIXME: is there any better but generic way to unscale all relevant errors without shifting?..
-        t_scaler.shift *= 0
-        m_scaler.shift *= 0
-        for _ in m_scaler.per_band_shift:
-            m_scaler.per_band_shift[_] = 0
+        # We need to modify original scalers to only apply the scale, not shifts, to the errors
+        t_scaler.reset_shift()
+        m_scaler.reset_shift()
 
-        self._unscale_parameters(self.errors, t_scaler, m_scaler)
+        self._unscale_parameters(errors, t_scaler, m_scaler)
         if self.with_baseline:
-            self._unscale_baseline_parameters(self.errors, m_scaler)
+            self._unscale_baseline_parameters(errors, m_scaler)
 
-        return np.r_[params, reduced_chi2]
+        return np.r_[params, reduced_chi2], errors
 
-    # This is abstractmethod, but we could use default implementation while _eval is defined
-    def _eval_and_fill(self, *, t, m, sigma, band, fill_value):
-        return super()._eval_and_fill(t=t, m=m, sigma=sigma, band=band, fill_value=fill_value)
+    def fit_and_get_errors(self, t, m, sigma, band, *, sorted=None, check=True, **kwargs):
+        t, m, sigma, band = self._normalize_input(t=t, m=m, sigma=sigma, band=band, sorted=sorted, check=check)
 
-    def fit_and_get_errors(self, t, m, sigma, band, *, sorted=None, check=True, fill_value=None):
-        params = self.__call__(t, m, sigma=sigma, band=band, sorted=sorted, check=check, fill_value=fill_value)
-
-        return params, self.errors
+        return self._eval_and_get_errors(t=t, m=m, sigma=sigma, band=band, **kwargs)

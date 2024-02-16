@@ -37,7 +37,7 @@ class BaseMultiBandFeature(ABC):
             if np.any(~np.isfinite(a)):
                 raise ValueError
             return a
-        except (ValueError, ZeroDivisionError) as e:
+        except (ValueError, ZeroDivisionError, RuntimeError) as e:
             if fill_value is not None:
                 return np.full(self.size, fill_value)
             raise e
@@ -142,7 +142,7 @@ class BaseSingleBandFeature(BaseMultiBandFeature):
             if np.any(~np.isfinite(a)):
                 raise ValueError
             return a
-        except (ValueError, ZeroDivisionError) as e:
+        except (ValueError, ZeroDivisionError, RuntimeError) as e:
             if fill_value is not None:
                 return np.full(self.size_single_band, fill_value)
             raise e

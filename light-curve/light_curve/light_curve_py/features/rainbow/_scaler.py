@@ -47,6 +47,10 @@ class Scaler:
     def undo_scale(self, x):
         return x * self.scale
 
+    def reset_shift(self):
+        """Resets scaler shift to zero, keeping only the scale"""
+        self.shift *= 0
+
 
 @dataclass()
 class MultiBandScaler(Scaler):
@@ -83,3 +87,10 @@ class MultiBandScaler(Scaler):
 
     def undo_shift_scale_band(self, x, band):
         return x * self.per_band_scale[band] + self.per_band_shift[band]
+
+    def reset_shift(self):
+        """Resets scaler shift to zero, keeping only the scale"""
+        for _ in self.per_band_shift:
+            self.per_band_shift[_] = 0
+
+        super().reset_shift()
