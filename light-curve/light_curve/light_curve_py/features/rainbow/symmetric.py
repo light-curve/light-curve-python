@@ -109,10 +109,10 @@ class RainbowSymmetricFit(BaseRainbowFit):
             result[idx3] = T_max
 
             return result
-        else:
-            t0, T_min = params[self.p.all_temp_idx]
 
-            return T_min
+        t0, T_min = params[self.p.all_temp_idx]
+
+        return T_min
 
     def _normalize_bolometric_flux(self, params) -> None:
         # Internally we use amplitude of F_bol / <nu> instead of F_bol.
@@ -214,7 +214,7 @@ class RainbowSymmetricFit(BaseRainbowFit):
 
             # It is not, strictly speaking, defined for rising only
             return t0
-        else:
-            t0, amplitude, rise_time, fall_time = params[self.p.all_bol_idx]
 
-            return t0 + np.log(fall_time / rise_time) * rise_time * fall_time / (rise_time + fall_time)
+        t0, amplitude, rise_time, fall_time = params[self.p.all_bol_idx]
+
+        return t0 + np.log(fall_time / rise_time) * rise_time * fall_time / (rise_time + fall_time)
