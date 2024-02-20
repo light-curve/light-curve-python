@@ -81,6 +81,7 @@ def test_noisy_with_baseline():
 
     np.testing.assert_allclose(actual, expected, rtol=0.1)
 
+
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="iminuit requires Python >= 3.8")
 def test_noisy_without_temperature_evolution():
     rng = np.random.default_rng(0)
@@ -114,6 +115,7 @@ def test_noisy_without_temperature_evolution():
     actual = feature(t, flux, sigma=flux_err, band=band)
 
     np.testing.assert_allclose(actual, expected, rtol=0.1)
+
 
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="iminuit requires Python >= 3.8")
 def test_noisy_with_rise_only():
@@ -150,6 +152,7 @@ def test_noisy_with_rise_only():
 
     np.testing.assert_allclose(actual, expected, rtol=0.1)
 
+
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="iminuit requires Python >= 3.8")
 def test_noisy_with_rise_only_notemp():
     rng = np.random.default_rng(0)
@@ -177,7 +180,9 @@ def test_noisy_with_rise_only_notemp():
     flux_err = 0.1 * np.sqrt(flux * np.min(flux) / 5.0)
     flux += rng.normal(0.0, flux_err)
 
-    feature = RainbowSymmetricFit.from_angstrom(band_wave_aa, with_baseline=True, with_rise_only=True, with_temperature_evolution=False)
+    feature = RainbowSymmetricFit.from_angstrom(
+        band_wave_aa, with_baseline=True, with_rise_only=True, with_temperature_evolution=False
+    )
 
     expected = [reference_time, amplitude, rise_time, Tmin, *baselines.values(), 1.0]
     actual = feature(t, flux, sigma=flux_err, band=band)
