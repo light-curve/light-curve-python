@@ -164,7 +164,6 @@ def test_noisy_with_rise_only_notemp():
     amplitude = 1.0
     rise_time = 10.0
     Tmin = 10e3
-    k_sig = 4.0
     baselines = {b: rng.exponential(scale=3 * amplitude / average_nu) for b in band_wave_aa}
 
     t = np.sort(rng.uniform(reference_time - 3 * rise_time, reference_time + 3 * rise_time, 1000))
