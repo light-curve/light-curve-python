@@ -178,6 +178,7 @@ jobs:
         with:
           path: ./wheelhouse/*.whl
           if-no-files-found: error
+          name: artifact_${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.interpreter }}-${{ matrix.platform }}${{ matrix.abi3 && '-abi3' || '' }}
 
   sdist:
     name: Build source distribution
@@ -206,6 +207,7 @@ jobs:
         with:
           path: ./light-curve/target/wheels/*.tar.gz
           if-no-files-found: error
+          name: artifact_sdist
 
   publish:
     needs: [cibuildwheel, sdist]
@@ -215,6 +217,10 @@ jobs:
 
     steps:
       - uses: actions/download-artifact@v4
+        with:
+          pattern: artifact_*
+          merge-multiple: true
+          path: artifact
 
       - name: Setup Python
         uses: actions/setup-python@v5
