@@ -244,6 +244,14 @@ class BaseRainbowFit(BaseMultiBandFeature):
         return limits
 
     def _eval(self, *, t, m, sigma, band):
+        params, errors = self._eval_and_get_errors(t=t, m=m, sigma=sigma, band=band)
+        return params
+
+    # This is abstractmethod, but we could use default implementation while _eval is defined
+    def _eval_and_fill(self, *, t, m, sigma, band, fill_value):
+        return super()._eval_and_fill(t=t, m=m, sigma=sigma, band=band, fill_value=fill_value)
+
+    def _eval_and_get_errors(self, *, t, m, sigma, band, print_level=None):
         # Initialize data scalers
         t_scaler = Scaler.from_time(t)
         m_scaler = MultiBandScaler.from_flux(m, band, with_baseline=self.with_baseline)
@@ -270,17 +278,35 @@ class BaseRainbowFit(BaseMultiBandFeature):
             yerror=sigma,
         )
         minuit = self.Minuit(least_squares, **initial_guesses)
-        minuit.migrad()
+        # TODO: expose these parameters through function arguments
+        if print_level is not None:
+            minuit.print_level = print_level
+        minuit.strategy = 2
+        minuit.migrad(ncall=10000, iterate=10)
+
+        if not minuit.valid:
+            raise RuntimeError("Fitting failed")
 
         reduced_chi2 = minuit.fval / (len(t) - self.size)
         params = np.array(minuit.values)
+        errors = np.array(minuit.errors)
 
         self._unscale_parameters(params, t_scaler, m_scaler)
         if self.with_baseline:
             self._unscale_baseline_parameters(params, m_scaler)
 
-        return np.r_[params, reduced_chi2]
+        # Unscale errors
+        # We need to modify original scalers to only apply the scale, not shifts, to the errors
+        t_scaler.reset_shift()
+        m_scaler.reset_shift()
 
-    # This is abstractmethod, but we could use default implementation while _eval is defined
-    def _eval_and_fill(self, *, t, m, sigma, band, fill_value):
-        return super()._eval_and_fill(t=t, m=m, sigma=sigma, band=band, fill_value=fill_value)
+        self._unscale_parameters(errors, t_scaler, m_scaler)
+        if self.with_baseline:
+            self._unscale_baseline_parameters(errors, m_scaler)
+
+        return np.r_[params, reduced_chi2], errors
+
+    def fit_and_get_errors(self, t, m, sigma, band, *, sorted=None, check=True, **kwargs):
+        t, m, sigma, band = self._normalize_input(t=t, m=m, sigma=sigma, band=band, sorted=sorted, check=check)
+
+        return self._eval_and_get_errors(t=t, m=m, sigma=sigma, band=band, **kwargs)
