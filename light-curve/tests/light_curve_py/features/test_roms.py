@@ -13,6 +13,7 @@ def test_roms_1():
     desired = 0.0
     assert_allclose(actual, desired)
 
+
 def test_roms_2():
     feature = Roms()
     n = 100
