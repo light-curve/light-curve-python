@@ -94,26 +94,32 @@ class RainbowGenericFit(BaseRainbowFit):
         if hasattr(self.p, "amplitude"):
             params[self.p.amplitude] *= self.average_nu
 
-    def _unscale_parameters(self, params, t_scaler: Scaler, m_scaler: MultiBandScaler) -> None:
-
+    def _unscale_parameters(self, params, t_scaler: Scaler, m_scaler: MultiBandScaler, scale_errors=False) -> None:
         self._denormalize_bolometric_flux(params)
 
-        # For sure there should be a denser way to write this
+        already_unscaled = {}
+        for term in [self.bolometric, self.temperature]:
+            for name,scaling in zip(term.parameter_names(), term.parameter_scalings()):
+                if name in already_unscaled:
+                    # Avoid un-scaling common parametres twice
+                    continue
 
-        if hasattr(self.p, "reference_time"):
-            params[self.p.reference_time] = t_scaler.undo_shift_scale(params[self.p.reference_time])
+                if scaling == "time":
+                    if scale_errors:
+                        params[self.p[name]] = t_scaler.undo_scale(params[self.p[name]])
+                    else:
+                        params[self.p[name]] = t_scaler.undo_shift_scale(params[self.p[name]])
 
-        if hasattr(self.p, "rise_time"):
-            params[self.p.rise_time] = t_scaler.undo_scale(params[self.p.rise_time])
+                elif scaling == "timescale":
+                    params[self.p[name]] = t_scaler.undo_scale(params[self.p[name]])
 
-        if hasattr(self.p, "fall_time"):
-            params[self.p.fall_time] = t_scaler.undo_scale(params[self.p.fall_time])
+                elif scaling == "flux":
+                    params[self.p[name]] = m_scaler.undo_scale(params[self.p[name]])
 
-        if hasattr(self.p, "k_sig"):
-            params[self.p.k_sig] = t_scaler.undo_scale(params[self.p.k_sig])
+                already_unscaled[name] = True
 
-        if hasattr(self.p, "amplitude"):
-            params[self.p.amplitude] = m_scaler.undo_scale(params[self.p.amplitude])
+    def _unscale_errors(self, errors, t_scaler: Scaler, m_scaler: MultiBandScaler) -> None:
+        self._unscale_parameters(errors, t_scaler, m_scaler, scale_errors=True)
 
     def _initial_guesses(self, t, m, band) -> Dict[str, float]:
         initial_bolo = self.bolometric.initial_guesses(t, m, band, with_baseline=self.with_baseline)

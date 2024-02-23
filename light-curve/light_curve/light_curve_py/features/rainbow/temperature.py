@@ -18,6 +18,12 @@ class BaseTemperatureTerm:
 
     @staticmethod
     @abstractmethod
+    def parameter_scalings() -> List[str]:
+        """Describes how to unscale the parameters - like time, timescale, flux or do not scale"""
+        return NotImplementedError
+
+    @staticmethod
+    @abstractmethod
     def value(self, t, params) -> float:
         return NotImplementedError
 
@@ -41,9 +47,11 @@ class ConstantTemperatureTerm(BaseTemperatureTerm):
         return ["T"]
 
     @staticmethod
-    def value(t, T):
-        # T = params["T"];
+    def parameter_scalings():
+        return [None]
 
+    @staticmethod
+    def value(t, T):
         return T
 
     @staticmethod
@@ -70,12 +78,11 @@ class SigmoidTemperatureTerm(BaseTemperatureTerm):
         return ["reference_time", "Tmin", "Tmax", "k_sig"]
 
     @staticmethod
-    def value(t, t0, Tmin, Tmax, k_sig):
-        # t0 = params["reference_time"]
-        # Tmin = params["Tmin"]
-        # Tmax = params["Tmax"]
-        # k_sig = params["k_sig"]
+    def parameter_scalings():
+        return ["time", None, None, "timescale"]
 
+    @staticmethod
+    def value(t, t0, Tmin, Tmax, k_sig):
         dt = t - t0
         result = np.zeros_like(dt)
 

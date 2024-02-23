@@ -161,6 +161,19 @@ class BaseRainbowFit(BaseMultiBandFeature):
         """
         return NotImplementedError
 
+    def _unscale_errors(self, errors, t_scaler: Scaler, m_scaler: MultiBandScaler) -> None:
+        """Unscale parameter errors from internal units, in-place.
+
+        No baseline parameters are needed to be unscaled.
+        """
+
+        # We need to modify original scalers to only apply the scale, not shifts, to the errors
+        # It should be re-implemented in subclasses for a cleaner way to unscale the errors
+        t_scaler.reset_shift()
+        m_scaler.reset_shift()
+
+        return self._unscale_parameters(errors, t_scaler, m_scaler)
+
     def _unscale_baseline_parameters(self, params, m_scaler: MultiBandScaler) -> None:
         """Unscale baseline parameters from internal units, in-place.
 
@@ -170,6 +183,16 @@ class BaseRainbowFit(BaseMultiBandFeature):
             baseline_name = self.p.baseline_parameter_name(band_name)
             baseline = params[self.p[baseline_name]]
             params[self.p[baseline_name]] = m_scaler.undo_shift_scale_band(baseline, band_name)
+
+    def _unscale_baseline_errors(self, errors, m_scaler: MultiBandScaler) -> None:
+        """Unscale baseline parameters from internal units, in-place.
+
+        Must be used only if `with_baseline` is True.
+        """
+        for band_name in self.bands.names:
+            baseline_name = self.p.baseline_parameter_name(band_name)
+            baseline = errors[self.p[baseline_name]]
+            errors[self.p[baseline_name]] = m_scaler.undo_scale_band(baseline, band_name)
 
     @staticmethod
     def planck_nu(wave_cm, T):
@@ -299,13 +322,9 @@ class BaseRainbowFit(BaseMultiBandFeature):
             self._unscale_baseline_parameters(params, m_scaler)
 
         # Unscale errors
-        # We need to modify original scalers to only apply the scale, not shifts, to the errors
-        t_scaler.reset_shift()
-        m_scaler.reset_shift()
-
-        self._unscale_parameters(errors, t_scaler, m_scaler)
+        self._unscale_errors(errors, t_scaler, m_scaler)
         if self.with_baseline:
-            self._unscale_baseline_parameters(errors, m_scaler)
+            self._unscale_baseline_errors(errors, m_scaler)
 
         return np.r_[params, reduced_chi2], errors
 

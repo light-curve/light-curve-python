@@ -18,6 +18,12 @@ class BaseBolometricTerm:
 
     @staticmethod
     @abstractmethod
+    def parameter_scalings() -> List[str]:
+        """Describes how to unscale the parameters - like time, timescale, flux or do not scale"""
+        return NotImplementedError
+
+    @staticmethod
+    @abstractmethod
     def value(self, t, params) -> float:
         return NotImplementedError
 
@@ -46,11 +52,11 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
         return ["reference_time", "amplitude", "rise_time"]
 
     @staticmethod
-    def value(t, t0, amplitude, rise_time):
-        # t0 = params['reference_time']
-        # rise_time = params['rise_time']
-        # amplitude = params['amplitude']
+    def parameter_scalings():
+        return ["time", "flux", "timescale"]
 
+    @staticmethod
+    def value(t, t0, amplitude, rise_time):
         dt = t - t0
 
         result = np.zeros_like(dt)
@@ -99,12 +105,11 @@ class BazinBolometricTerm(BaseBolometricTerm):
         return ["reference_time", "amplitude", "rise_time", "fall_time"]
 
     @staticmethod
-    def value(t, t0, amplitude, rise_time, fall_time):
-        # t0 = params['reference_time']
-        # rise_time = params['rise_time']
-        # fall_time = params['fall_time']
-        # amplitude = params['amplitude']
+    def parameter_scalings():
+        return ["time", "flux", "timescale", "timescale"]
 
+    @staticmethod
+    def value(t, t0, amplitude, rise_time, fall_time):
         dt = t - t0
 
         result = np.zeros_like(dt)
