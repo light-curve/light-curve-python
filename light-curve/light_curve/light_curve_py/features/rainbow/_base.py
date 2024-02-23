@@ -35,6 +35,9 @@ class BaseRainbowFit(BaseMultiBandFeature):
     with_baseline: bool = dataclass_field(default=True, kw_only=True)
     """Whether to include a baseline in the fit, one per band."""
 
+    fail_on_divergence: bool = dataclass_field(default=True, kw_only=True)
+    """Fail (or return [fill_value]*n) if optimization hasn't converged"""
+
     @property
     def is_band_required(self) -> bool:
         return True
@@ -284,7 +287,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
         minuit.strategy = 2
         minuit.migrad(ncall=10000, iterate=10)
 
-        if not minuit.valid:
+        if not minuit.valid and self.fail_on_divergence:
             raise RuntimeError("Fitting failed")
 
         reduced_chi2 = minuit.fval / (len(t) - self.size)
