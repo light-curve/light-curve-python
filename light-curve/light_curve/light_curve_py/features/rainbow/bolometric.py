@@ -95,6 +95,10 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
 
         return limits
 
+    @staticmethod
+    def peak_time(t0, amplitude, rise_time):
+        return t0
+
 
 @dataclass()
 class BazinBolometricTerm(BaseBolometricTerm):
@@ -150,6 +154,9 @@ class BazinBolometricTerm(BaseBolometricTerm):
 
         return limits
 
+    @staticmethod
+    def peak_time(t0, amplitude, rise_time, fall_time):
+        return t0 + np.log(fall_time / rise_time) * rise_time * fall_time / (rise_time + fall_time)
 
 bolometric_terms = {
     "sigmoid": SigmoidBolometricTerm,

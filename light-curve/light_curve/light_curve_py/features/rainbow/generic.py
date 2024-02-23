@@ -139,5 +139,4 @@ class RainbowGenericFit(BaseRainbowFit):
 
     def peak_time(self, params) -> float:
         """Returns true bolometric peak position for given parameters"""
-        # Not correct, should be computed in a different way for each function
-        return params[self.p.reference_time]
+        return self.bolometric.peak_time(*params[self.p.all_bol_idx])
