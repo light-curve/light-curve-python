@@ -22,7 +22,7 @@ def test_noisy_no_baseline():
     rise_time = 5.0
     fall_time = 30.0
     Tmin = 5e3
-    delta_T = 10e3
+    delta_T = 5e3
     k_sig = 4.0
 
     t = np.sort(rng.uniform(reference_time - 3 * rise_time, reference_time + 3 * fall_time, 1000))
