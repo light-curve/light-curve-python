@@ -10,7 +10,7 @@ from light_curve.light_curve_py.features.rainbow._scaler import MultiBandScaler,
 from .bolometric import BaseBolometricTerm, bolometric_terms
 from .temperature import BaseTemperatureTerm, temperature_terms
 
-__all__ = ["RainbowGenericFit"]
+__all__ = ["RainbowFit"]
 
 # CODATA 2018, grab from astropy
 planck_constant = 6.62607004e-27  # erg s
@@ -20,7 +20,7 @@ sigma_sb = 5.6703744191844314e-05  # erg/(cm^2 s K^4)
 
 
 @dataclass()
-class RainbowGenericFit(BaseRainbowFit):
+class RainbowFit(BaseRainbowFit):
     """Multiband blackbody fit to the light curve using functions to be chosen by the user
     Note, that `m` and corresponded `sigma` are assumed to be flux densities.
     Based on Russeil et al. 2023, arXiv:2310.02916.
@@ -83,20 +83,7 @@ class RainbowGenericFit(BaseRainbowFit):
     def temp_func(self, t, params):
         return self.temperature.value(t, *params[self.p.all_temp_idx])
 
-    def _normalize_bolometric_flux(self, params) -> None:
-        if hasattr(self.p, "amplitude"):
-            # Internally we use amplitude of F_bol / <nu> instead of F_bol.
-            # It makes amplitude to be in the same units and the same order as
-            # the baselines and input fluxes.
-            params[self.p.amplitude] /= self.average_nu
-
-    def _denormalize_bolometric_flux(self, params) -> None:
-        if hasattr(self.p, "amplitude"):
-            params[self.p.amplitude] *= self.average_nu
-
     def _unscale_parameters(self, params, t_scaler: Scaler, m_scaler: MultiBandScaler, scale_errors=False) -> None:
-        self._denormalize_bolometric_flux(params)
-
         already_unscaled = {}
         for term in [self.bolometric, self.temperature]:
             for name,scaling in zip(term.parameter_names(), term.parameter_scalings()):
@@ -122,20 +109,16 @@ class RainbowGenericFit(BaseRainbowFit):
         self._unscale_parameters(errors, t_scaler, m_scaler, scale_errors=True)
 
     def _initial_guesses(self, t, m, band) -> Dict[str, float]:
-        initial_bolo = self.bolometric.initial_guesses(t, m, band, with_baseline=self.with_baseline)
+        initial_bolometric = self.bolometric.initial_guesses(t, m, band, with_baseline=self.with_baseline)
         initial_temp = self.temperature.initial_guesses(t, m, band)
 
-        return initial_bolo | initial_temp
+        return initial_bolometric | initial_temp
 
     def _limits(self, t, m, band) -> Dict[str, Tuple[float, float]]:
-        limits_bolo = self.bolometric.limits(t, m, band, with_baseline=self.with_baseline)
+        limits_bolometric = self.bolometric.limits(t, m, band, with_baseline=self.with_baseline)
         limits_temp = self.temperature.limits(t, m, band)
 
-        return limits_bolo | limits_temp
-
-    def _baseline_initial_guesses(self, t, m, band) -> Dict[str, float]:
-        """Initial guesses for the baseline parameters."""
-        return {self.p.baseline_parameter_name(b): np.median(m[band == b]) for b in self.bands.names}
+        return limits_bolometric | limits_temp
 
     def peak_time(self, params) -> float:
         """Returns true bolometric peak position for given parameters"""
