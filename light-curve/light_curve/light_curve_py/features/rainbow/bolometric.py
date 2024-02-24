@@ -67,11 +67,8 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
         return result
 
     @staticmethod
-    def initial_guesses(t, m, band, with_baseline=False):
-        if with_baseline:
-            A = np.ptp(m)
-        else:
-            A = np.max(m)
+    def initial_guesses(t, m, band):
+        A = np.max(m)
 
         initial = {}
         initial["reference_time"] = t[np.argmax(m)]
