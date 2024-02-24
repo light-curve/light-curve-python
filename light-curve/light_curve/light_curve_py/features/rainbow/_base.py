@@ -144,16 +144,6 @@ class BaseRainbowFit(BaseMultiBandFeature):
         return NotImplementedError
 
     @abstractmethod
-    def _normalize_bolometric_flux(self, params) -> None:
-        """Normalize bolometric flux parameters to internal units in-place."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def _denormalize_bolometric_flux(self, params) -> None:
-        """Denormalize boloemtric flux parameters from internal units in-place."""
-        raise NotImplementedError
-
-    @abstractmethod
     def _unscale_parameters(self, params, t_scaler: Scaler, m_scaler: MultiBandScaler) -> None:
         """Unscale parameters from internal units, in-place.
 
@@ -207,11 +197,18 @@ class BaseRainbowFit(BaseMultiBandFeature):
         t, _band_idx, wave_cm = x
         params = np.array(params)
 
-        self._denormalize_bolometric_flux(params)
-
         bol = self.bol_func(t, params)
         temp = self.temp_func(t, params)
-        flux = np.pi * self.planck_nu(wave_cm, temp) / (sigma_sb * temp**4) * bol
+
+        # Normalize the Planck function so that the result is of order unity
+        peak_nu =  2.821 * boltzman_constant * temp / planck_constant # Wien displacement law
+        # norm = (sigma_sb * temp**4) / self.average_nu # Original normalization
+        norm = self.planck_nu(speed_of_light / peak_nu, temp) # Peak = 1 normalization
+
+        planck = self.planck_nu(wave_cm, temp) / norm
+
+        flux = planck * bol
+
         return flux
 
     def _lsq_model_with_baseline(self, x, *params):
@@ -229,7 +226,6 @@ class BaseRainbowFit(BaseMultiBandFeature):
         band_idx = self.bands.get_index(band)
         wave_cm = self.bands.index_to_wave_cm(band_idx)
         params = np.array(params)
-        self._normalize_bolometric_flux(params)
         return self._lsq_model((t, band_idx, wave_cm), *params)
 
     @property
@@ -248,7 +244,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
     def _baseline_initial_guesses(self, t, m, band) -> Dict[str, float]:
         """Initial guesses for the baseline parameters."""
         del t
-        return {self.p.baseline_parameter_name(b): np.min(m[band == b]) for b in self.bands.names}
+        return {self.p.baseline_parameter_name(b): np.median(m[band == b]) for b in self.bands.names}
 
     @abstractmethod
     def _limits(self, t, m, band) -> Dict[str, Tuple[float, float]]:
@@ -303,7 +299,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
             y=m,
             yerror=sigma,
         )
-        minuit = self.Minuit(least_squares, **initial_guesses)
+        minuit = self.Minuit(least_squares, name=self.names, **initial_guesses)
         # TODO: expose these parameters through function arguments
         if print_level is not None:
             minuit.print_level = print_level
