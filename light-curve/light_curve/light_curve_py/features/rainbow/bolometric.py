@@ -29,12 +29,12 @@ class BaseBolometricTerm:
 
     @staticmethod
     @abstractmethod
-    def initial_guesses(t, m, band, with_baseline=False) -> Dict[str, float]:
+    def initial_guesses(t, m, band) -> Dict[str, float]:
         return NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def limits(t, m, band, with_baseline=False) -> Dict[str, float]:
+    def limits(t, m, band) -> Dict[str, float]:
         return NotImplementedError
 
     @staticmethod
@@ -81,12 +81,9 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
         return initial
 
     @staticmethod
-    def limits(t, m, band, with_baseline=False):
+    def limits(t, m, band):
         t_amplitude = np.ptp(t)
-        if with_baseline:
-            m_amplitude = np.ptp(m)
-        else:
-            m_amplitude = np.max(m)
+        m_amplitude = np.max(m)
 
         limits = {}
         limits["reference_time"] = (np.min(t) - 10 * t_amplitude, np.max(t) + 10 * t_amplitude)
@@ -124,27 +121,27 @@ class BazinBolometricTerm(BaseBolometricTerm):
         return result
 
     @staticmethod
-    def initial_guesses(t, m, band, with_baseline=False):
-        if with_baseline:
-            A = np.ptp(m)
-        else:
-            A = np.max(m)
+    def initial_guesses(t, m, band):
+        A = np.max(m)
+
+        rise_time = 0.1
+        fall_time = 0.1
+
+        t0 = t[np.argmax(m)]
+        t0 -= np.log(fall_time / rise_time) * rise_time * fall_time / (rise_time + fall_time)
 
         initial = {}
-        initial["reference_time"] = t[np.argmax(m)]
+        initial["reference_time"] = t0
         initial["amplitude"] = A
-        initial["rise_time"] = 0.1
-        initial["fall_time"] = 0.1
+        initial["rise_time"] = rise_time
+        initial["fall_time"] = fall_time
 
         return initial
 
     @staticmethod
-    def limits(t, m, band, with_baseline=False):
+    def limits(t, m, band):
         t_amplitude = np.ptp(t)
-        if with_baseline:
-            m_amplitude = np.ptp(m)
-        else:
-            m_amplitude = np.max(m)
+        m_amplitude = np.max(m)
 
         limits = {}
         limits["reference_time"] = (np.min(t) - 10 * t_amplitude, np.max(t) + 10 * t_amplitude)

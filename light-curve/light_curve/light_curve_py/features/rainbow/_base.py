@@ -286,11 +286,20 @@ class BaseRainbowFit(BaseMultiBandFeature):
         band_idx = self.bands.get_index(band)
         wave_cm = self.bands.index_to_wave_cm(band_idx)
 
-        initial_guesses = self._initial_guesses(t, m, band)
-        limits = self._limits(t, m, band)
         if self.with_baseline:
-            initial_guesses.update(self._baseline_initial_guesses(t, m, band))
+            initial_baselines = self._baseline_initial_guesses(t, m, band)
+            m_corr = m - np.array([initial_baselines[self.p.baseline_parameter_name(_)] for _ in band])
+
+            # Compute initial guesses for the parameters on baseline-subtracted data
+            initial_guesses = self._initial_guesses(t, m_corr, band)
+            limits = self._limits(t, m_corr, band)
+
+            initial_guesses.update(initial_baselines)
             limits.update(self._baseline_limits(t, m, band))
+        else:
+            # Compute initial guesses for the parameters on original data
+            initial_guesses = self._initial_guesses(t, m, band)
+            limits = self._limits(t, m, band)
 
         least_squares = LeastSquares(
             model=self._lsq_model,
