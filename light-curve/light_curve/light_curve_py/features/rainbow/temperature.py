@@ -118,7 +118,59 @@ class SigmoidTemperatureTerm(BaseTemperatureTerm):
         return limits
 
 
+@dataclass
+class DelayedSigmoidTemperatureTerm(BaseTemperatureTerm):
+    """Sigmoid temperature with delay w.r.t. bolometric peak"""
+
+    @staticmethod
+    def parameter_names():
+        return ["reference_time", "Tmin", "Tmax", "k_sig", "t_delay"]
+
+    @staticmethod
+    def parameter_scalings():
+        return ["time", None, None, "timescale", "timescale"]
+
+    @staticmethod
+    def value(t, t0, Tmin, Tmax, k_sig, t_delay):
+        dt = t - t0 - t_delay
+        result = np.zeros_like(dt)
+
+        # To avoid numerical overflows, let's only compute the exponent not too far from t0
+        idx1 = dt <= -100 * k_sig
+        idx2 = (dt > -100 * k_sig) & (dt < 100 * k_sig)
+        idx3 = dt >= 100 * k_sig
+
+        result[idx1] = Tmax
+        result[idx2] = Tmin + (Tmax - Tmin) / (1.0 + np.exp(dt[idx2] / k_sig))
+        result[idx3] = Tmin
+
+        return result
+
+    @staticmethod
+    def initial_guesses(t, m, sigma, band):
+        initial = {}
+        initial["Tmin"] = 7000.0
+        initial["Tmax"] = 10000.0
+        initial["k_sig"] = 1.0
+        initial["t_delay"] = 0.0
+
+        return initial
+
+    @staticmethod
+    def limits(t, m, sigma, band):
+        t_amplitude = np.ptp(t)
+
+        limits = {}
+        limits["Tmin"] = (1e3, 2e6)  # K
+        limits["Tmax"] = (1e3, 2e6)  # K
+        limits["k_sig"] = (1e-4, 10 * t_amplitude)
+        limits["t_delay"] = (-t_amplitude, t_amplitude)
+
+        return limits
+
+
 temperature_terms = {
     "constant": ConstantTemperatureTerm,
     "sigmoid": SigmoidTemperatureTerm,
+    "delayed_sigmoid": DelayedSigmoidTemperatureTerm,
 }

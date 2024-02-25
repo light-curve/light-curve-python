@@ -38,7 +38,7 @@ class RainbowFit(BaseRainbowFit):
         Other options are: 'sigmoid'
     temperature : str or BaseTemperatureTerm subclass, optional
         The shape of temperature term. Default is 'sigmoid'.
-        Other options are: 'constant'
+        Other options are: 'constant', 'delayed_sigmoid'
 
     Methods
     -------
