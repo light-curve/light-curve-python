@@ -108,15 +108,15 @@ class RainbowFit(BaseRainbowFit):
     def _unscale_errors(self, errors, t_scaler: Scaler, m_scaler: MultiBandScaler) -> None:
         self._unscale_parameters(errors, t_scaler, m_scaler, scale_errors=True)
 
-    def _initial_guesses(self, t, m, band) -> Dict[str, float]:
-        initial_bolometric = self.bolometric.initial_guesses(t, m, band)
-        initial_temp = self.temperature.initial_guesses(t, m, band)
+    def _initial_guesses(self, t, m, sigma, band) -> Dict[str, float]:
+        initial_bolometric = self.bolometric.initial_guesses(t, m, sigma, band)
+        initial_temp = self.temperature.initial_guesses(t, m, sigma, band)
 
         return initial_bolometric | initial_temp
 
-    def _limits(self, t, m, band) -> Dict[str, Tuple[float, float]]:
-        limits_bolometric = self.bolometric.limits(t, m, band)
-        limits_temp = self.temperature.limits(t, m, band)
+    def _limits(self, t, m, sigma, band) -> Dict[str, Tuple[float, float]]:
+        limits_bolometric = self.bolometric.limits(t, m, sigma, band)
+        limits_temp = self.temperature.limits(t, m, sigma, band)
 
         return limits_bolometric | limits_temp
 

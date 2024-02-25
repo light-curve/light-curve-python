@@ -29,12 +29,12 @@ class BaseTemperatureTerm:
 
     @staticmethod
     @abstractmethod
-    def initial_guesses(t, m, band) -> Dict[str, float]:
+    def initial_guesses(t, m, sigma, band) -> Dict[str, float]:
         return NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def limits(t, m, band) -> Dict[str, float]:
+    def limits(t, m, sigma, band) -> Dict[str, float]:
         return NotImplementedError
 
 
@@ -52,17 +52,17 @@ class ConstantTemperatureTerm(BaseTemperatureTerm):
 
     @staticmethod
     def value(t, T):
-        return T
+        return T * np.ones_like(t)
 
     @staticmethod
-    def initial_guesses(t, m, band):
+    def initial_guesses(t, m, sigma, band):
         initial = {}
         initial["T"] = 8000.0
 
         return initial
 
     @staticmethod
-    def limits(t, m, band):
+    def limits(t, m, sigma, band):
         limits = {}
         limits["T"] = (1e2, 2e6)  # K
 
@@ -98,21 +98,21 @@ class SigmoidTemperatureTerm(BaseTemperatureTerm):
         return result
 
     @staticmethod
-    def initial_guesses(t, m, band):
+    def initial_guesses(t, m, sigma, band):
         initial = {}
-        initial["Tmin"] = 4000.0
+        initial["Tmin"] = 7000.0
         initial["Tmax"] = 10000.0
         initial["k_sig"] = 1.0
 
         return initial
 
     @staticmethod
-    def limits(t, m, band):
+    def limits(t, m, sigma, band):
         t_amplitude = np.ptp(t)
 
         limits = {}
-        limits["Tmin"] = (1e2, 2e6)  # K
-        limits["Tmax"] = (1e2, 2e6)  # K
+        limits["Tmin"] = (1e3, 2e6)  # K
+        limits["Tmax"] = (1e3, 2e6)  # K
         limits["k_sig"] = (1e-4, 10 * t_amplitude)
 
         return limits

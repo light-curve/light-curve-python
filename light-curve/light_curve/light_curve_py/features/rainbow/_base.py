@@ -234,27 +234,27 @@ class BaseRainbowFit(BaseMultiBandFeature):
         return list(self.p.__members__)
 
     @abstractmethod
-    def _initial_guesses(self, t, m, band) -> Dict[str, float]:
+    def _initial_guesses(self, t, m, sigma, band) -> Dict[str, float]:
         """Initial guesses for the fit parameters.
 
         t and m are *scaled* arrays. No baseline parameters are included.
         """
         return NotImplementedError
 
-    def _baseline_initial_guesses(self, t, m, band) -> Dict[str, float]:
+    def _baseline_initial_guesses(self, t, m, sigma, band) -> Dict[str, float]:
         """Initial guesses for the baseline parameters."""
         del t
         return {self.p.baseline_parameter_name(b): (np.median(m[band == b]) if np.sum(band == b) else 0) for b in self.bands.names}
 
     @abstractmethod
-    def _limits(self, t, m, band) -> Dict[str, Tuple[float, float]]:
+    def _limits(self, t, m, sigma, band) -> Dict[str, Tuple[float, float]]:
         """Limits for the fit parameters.
 
         t and m are *scaled* arrays. No baseline parameters are included.
         """
         return NotImplementedError
 
-    def _baseline_limits(self, t, m, band) -> Dict[str, Tuple[float, float]]:
+    def _baseline_limits(self, t, m, sigma, band) -> Dict[str, Tuple[float, float]]:
         """Limits for the baseline parameters."""
         del t
         limits = {}
@@ -277,7 +277,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
     def _eval_and_fill(self, *, t, m, sigma, band, fill_value):
         return super()._eval_and_fill(t=t, m=m, sigma=sigma, band=band, fill_value=fill_value)
 
-    def _eval_and_get_errors(self, *, t, m, sigma, band, print_level=None):
+    def _eval_and_get_errors(self, *, t, m, sigma, band, print_level=None, get_initial=False):
         # Initialize data scalers
         t_scaler = Scaler.from_time(t)
         m_scaler = MultiBandScaler.from_flux(m, band, with_baseline=self.with_baseline)
@@ -291,19 +291,19 @@ class BaseRainbowFit(BaseMultiBandFeature):
         wave_cm = self.bands.index_to_wave_cm(band_idx)
 
         if self.with_baseline:
-            initial_baselines = self._baseline_initial_guesses(t, m, band)
+            initial_baselines = self._baseline_initial_guesses(t, m, sigma, band)
             m_corr = m - np.array([initial_baselines[self.p.baseline_parameter_name(_)] for _ in band])
 
             # Compute initial guesses for the parameters on baseline-subtracted data
-            initial_guesses = self._initial_guesses(t, m_corr, band)
-            limits = self._limits(t, m_corr, band)
+            initial_guesses = self._initial_guesses(t, m_corr, sigma, band)
+            limits = self._limits(t, m_corr, sigma, band)
 
             initial_guesses.update(initial_baselines)
-            limits.update(self._baseline_limits(t, m, band))
+            limits.update(self._baseline_limits(t, m, sigma, band))
         else:
             # Compute initial guesses for the parameters on original data
-            initial_guesses = self._initial_guesses(t, m, band)
-            limits = self._limits(t, m, band)
+            initial_guesses = self._initial_guesses(t, m, sigma, band)
+            limits = self._limits(t, m, sigma, band)
 
         least_squares = LeastSquares(
             model=self._lsq_model,
@@ -323,6 +323,11 @@ class BaseRainbowFit(BaseMultiBandFeature):
             raise RuntimeError("Fitting failed")
 
         reduced_chi2 = minuit.fval / (len(t) - self.size)
+
+        if get_initial:
+            # Reset the fitter so that it returns initial values instead of final ones
+            minuit.reset()
+
         params = np.array(minuit.values)
         errors = np.array(minuit.errors)
 

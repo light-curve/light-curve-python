@@ -29,12 +29,12 @@ class BaseBolometricTerm:
 
     @staticmethod
     @abstractmethod
-    def initial_guesses(t, m, band) -> Dict[str, float]:
+    def initial_guesses(t, m, sigma, band) -> Dict[str, float]:
         return NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def limits(t, m, band) -> Dict[str, float]:
+    def limits(t, m, sigma, band) -> Dict[str, float]:
         return NotImplementedError
 
     @staticmethod
@@ -67,7 +67,7 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
         return result
 
     @staticmethod
-    def initial_guesses(t, m, band):
+    def initial_guesses(t, m, sigma, band):
         A = np.max(m)
 
         initial = {}
@@ -78,7 +78,7 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
         return initial
 
     @staticmethod
-    def limits(t, m, band):
+    def limits(t, m, sigma, band):
         t_amplitude = np.ptp(t)
         m_amplitude = np.max(m)
 
@@ -121,13 +121,22 @@ class BazinBolometricTerm(BaseBolometricTerm):
         return result
 
     @staticmethod
-    def initial_guesses(t, m, band):
+    def initial_guesses(t, m, sigma, band):
         A = np.max(m)
 
-        rise_time = 0.1
-        fall_time = 0.1
-
+        # Naive peak position from the highest point
         t0 = t[np.argmax(m)]
+        # Peak position as weighted centroid of everything above zero
+        idx = m > 0
+        # t0 = np.sum(t[idx] * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx])
+        # Weighted centroid sigma
+        dt = np.sqrt(np.sum((t[idx] - t0)**2 * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx]))
+
+        # Empirical conversion of sigma to rise/fall times
+        rise_time = dt / 2
+        fall_time = dt / 2
+
+        # Compensate for the difference between reference_time and peak position
         t0 -= np.log(fall_time / rise_time) * rise_time * fall_time / (rise_time + fall_time)
 
         initial = {}
@@ -139,7 +148,7 @@ class BazinBolometricTerm(BaseBolometricTerm):
         return initial
 
     @staticmethod
-    def limits(t, m, band):
+    def limits(t, m, sigma, band):
         t_amplitude = np.ptp(t)
         m_amplitude = np.max(m)
 
