@@ -26,15 +26,23 @@ def test_noisy_no_baseline():
 
     t = np.sort(rng.uniform(reference_time - 3 * rise_time, reference_time + 3 * fall_time, 1000))
     band = rng.choice(list(band_wave_aa), size=len(t))
-    waves = np.array([band_wave_aa[b] for b in band])
 
     flux = feature.model(t, band, *expected)
-    # S/N = 5 for minimum flux, scale for Poisson noise
-    flux_err = np.sqrt(flux * np.min(flux) / 5.0)
+    # S/N = 10 for minimum flux, scale for Poisson noise
+    flux_err = np.sqrt(flux * np.min(flux)) / 10.0
     flux += rng.normal(0.0, flux_err)
 
     actual = feature(t, flux, sigma=flux_err, band=band)
 
+    # import matplotlib.pyplot as plt
+    # plt.scatter(t, flux, s=5, label="data")
+    # plt.errorbar(t, flux, yerr=flux_err, ls="none", capsize=1)
+    # plt.plot(t, feature.model(t, band, *expected), "x", label="expected")
+    # plt.plot(t, feature.model(t, band, *actual), "*", label="actual")
+    # plt.legend()
+    # plt.show()
+
+    np.testing.assert_allclose(actual, expected, rtol=0.1)
 
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="iminuit requires Python >= 3.8")
 def test_noisy_with_baseline():
@@ -57,14 +65,23 @@ def test_noisy_with_baseline():
 
     t = np.sort(rng.uniform(reference_time - 3 * rise_time, reference_time + 3 * fall_time, 1000))
     band = rng.choice(list(band_wave_aa), size=len(t))
-    waves = np.array([band_wave_aa[b] for b in band])
 
     flux = feature.model(t, band, *expected)
-    # S/N = 5 for minimum flux, scale for Poisson noise
-    flux_err = np.sqrt(flux * np.min(flux) / 5.0)
+    # S/N = 10 for minimum flux, scale for Poisson noise
+    flux_err = np.sqrt(flux * np.min(flux)) / 10.0
     flux += rng.normal(0.0, flux_err)
 
     actual = feature(t, flux, sigma=flux_err, band=band)
+
+    # import matplotlib.pyplot as plt
+    # plt.scatter(t, flux, s=5, label="data")
+    # plt.errorbar(t, flux, yerr=flux_err, ls="none", capsize=1)
+    # plt.plot(t, feature.model(t, band, *expected), "x", label="expected")
+    # plt.plot(t, feature.model(t, band, *actual), "*", label="actual")
+    # plt.legend()
+    # plt.show()
+
+    np.testing.assert_allclose(actual, expected, rtol=0.1)
 
 
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="iminuit requires Python >= 3.8")
@@ -86,14 +103,23 @@ def test_noisy_constant_temperature():
 
     t = np.sort(rng.uniform(reference_time - 3 * rise_time, reference_time + 3 * fall_time, 1000))
     band = rng.choice(list(band_wave_aa), size=len(t))
-    waves = np.array([band_wave_aa[b] for b in band])
 
     flux = feature.model(t, band, *expected)
-    # S/N = 5 for minimum flux, scale for Poisson noise
-    flux_err = np.sqrt(flux * np.min(flux) / 5.0)
+    # S/N = 10 for minimum flux, scale for Poisson noise
+    flux_err = np.sqrt(flux * np.min(flux)) / 10.0
     flux += rng.normal(0.0, flux_err)
 
     actual = feature(t, flux, sigma=flux_err, band=band)
+
+    # import matplotlib.pyplot as plt
+    # plt.scatter(t, flux, s=5, label="data")
+    # plt.errorbar(t, flux, yerr=flux_err, ls="none", capsize=1)
+    # plt.plot(t, feature.model(t, band, *expected), "x", label="expected")
+    # plt.plot(t, feature.model(t, band, *actual), "*", label="actual")
+    # plt.legend()
+    # plt.show()
+
+    np.testing.assert_allclose(actual, expected, rtol=0.1)
 
 
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="iminuit requires Python >= 3.8")
@@ -114,7 +140,6 @@ def test_noisy_constant_temperature_rising_only():
 
     t = np.sort(rng.uniform(reference_time - 3 * rise_time, reference_time + 3 * rise_time, 1000))
     band = rng.choice(list(band_wave_aa), size=len(t))
-    waves = np.array([band_wave_aa[b] for b in band])
 
     flux = feature.model(t, band, *expected)
     # S/N = 5 for minimum flux, scale for Poisson noise
@@ -122,3 +147,13 @@ def test_noisy_constant_temperature_rising_only():
     flux += rng.normal(0.0, flux_err)
 
     actual = feature(t, flux, sigma=flux_err, band=band)
+
+    # import matplotlib.pyplot as plt
+    # plt.scatter(t, flux, s=5, label="data")
+    # plt.errorbar(t, flux, yerr=flux_err, ls="none", capsize=1)
+    # plt.plot(t, feature.model(t, band, *expected), "x", label="expected")
+    # plt.plot(t, feature.model(t, band, *actual), "*", label="actual")
+    # plt.legend()
+    # plt.show()
+
+    np.testing.assert_allclose(actual, expected, rtol=0.1)
