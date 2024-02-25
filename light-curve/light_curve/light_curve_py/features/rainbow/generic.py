@@ -33,6 +33,12 @@ class RainbowFit(BaseRainbowFit):
         Whether to include an offset in the fit, individual for each band.
         If it is true, one more fit paramter per passband is added -
         the additive constant with the same units as input flux.
+    bolometric : str or BaseBolometricTerm subclass, optional
+        The shape of bolometric term. Default is 'bazin'.
+        Other options are: 'sigmoid'
+    temperature : str or BaseTemperatureTerm subclass, optional
+        The shape of temperature term. Default is 'sigmoid'.
+        Other options are: 'constant'
 
     Methods
     -------
@@ -48,6 +54,10 @@ class RainbowFit(BaseRainbowFit):
         parameter (reduced Chi^2 of the fit). See parameter names in the `.name` attribute.
     peak_time(*params)
         Return bolometric peak time for given set of parameters
+    fit_and_get_errors(t, m, sigma, band, sorted=False, check=True, print_level=None, get_initial=False)
+        The same as `__call__` but also returns the parameter errors. Optionally sets the `print_level`
+        (verbosity) for Minuit fitter. If `get_initial` is True, returns the initial parameters instead
+        of fitted ones (useful for debugging)
     """
 
     bolometric: Union[str, BaseBolometricTerm] = dataclass_field(default="bazin", kw_only=True)
