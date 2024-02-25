@@ -319,7 +319,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
         minuit.strategy = 2
         minuit.migrad(ncall=10000, iterate=10)
 
-        if not minuit.valid and self.fail_on_divergence:
+        if not minuit.valid and self.fail_on_divergence and not get_initial:
             raise RuntimeError("Fitting failed")
 
         reduced_chi2 = minuit.fval / (len(t) - self.size)
