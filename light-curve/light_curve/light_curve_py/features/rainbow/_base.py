@@ -201,9 +201,9 @@ class BaseRainbowFit(BaseMultiBandFeature):
         temp = self.temp_func(t, params)
 
         # Normalize the Planck function so that the result is of order unity
-        peak_nu =  2.821 * boltzman_constant * temp / planck_constant # Wien displacement law
-        # norm = (sigma_sb * temp**4) / self.average_nu # Original normalization
-        norm = self.planck_nu(speed_of_light / peak_nu, temp) # Peak = 1 normalization
+        norm = (sigma_sb * temp**4) / np.pi / self.average_nu # Original "bolometric" normalization
+        # peak_nu =  2.821 * boltzman_constant * temp / planck_constant # Wien displacement law
+        # norm = self.planck_nu(speed_of_light / peak_nu, temp) # Peak = 1 normalization
 
         planck = self.planck_nu(wave_cm, temp) / norm
 
