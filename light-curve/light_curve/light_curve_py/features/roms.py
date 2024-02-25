@@ -5,10 +5,11 @@ from ._base import BaseSingleBandFeature
 
 class Roms(BaseSingleBandFeature):
     r"""Robust median statistic
-
-    RoMS = $\[ (N-1)^{-1} \sum_{i=1}^{N} \frac{|m_i - median(m_i)|}{\sigma_i} \]$
-    For not variable data it should be less then one.
-    If RoMS greater or equal one, it is indicate about potential variability in the data.
+ 
+    $$
+    \frac1{N-1} \sum_{i=0}^{N-1} \frac{|m_i - \mathrm{median}(m_i)|}{\sigma_i}
+    $$
+    For non-variable data, it should be less than one.
 
     - Depends on: **magnitude**, **errors**
     - Minimum number of observations: **2**
