@@ -244,7 +244,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
     def _baseline_initial_guesses(self, t, m, band) -> Dict[str, float]:
         """Initial guesses for the baseline parameters."""
         del t
-        return {self.p.baseline_parameter_name(b): np.median(m[band == b]) for b in self.bands.names}
+        return {self.p.baseline_parameter_name(b): (np.median(m[band == b]) if np.sum(band == b) else 0) for b in self.bands.names}
 
     @abstractmethod
     def _limits(self, t, m, band) -> Dict[str, Tuple[float, float]]:
@@ -260,8 +260,12 @@ class BaseRainbowFit(BaseMultiBandFeature):
         limits = {}
         for b in self.bands.names:
             m_band = m[band == b]
-            lower = np.min(m_band) - 10 * np.ptp(m_band)
-            upper = np.max(m_band)
+            if len(m_band):
+                lower = np.min(m_band) - 10 * np.ptp(m_band)
+                upper = np.max(m_band)
+            else:
+                lower = 0
+                upper = 0
             limits[self.p.baseline_parameter_name(b)] = (lower, upper)
         return limits
 
