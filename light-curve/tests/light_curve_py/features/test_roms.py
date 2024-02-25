@@ -18,12 +18,13 @@ def test_roms_1():
 def test_roms_2():
     feature = Roms()
     n = 100
-    t = np.linspace(0, 2*np.pi, n)
+    t = np.linspace(0, 2 * np.pi, n)
     m = 2 * np.sin(t)
     sigma = np.ones_like(n)
     actual = feature(t, m, sigma)
     desired = 1.162
-    assert_allclose(actual, desired, rtol=3/np.sqrt(n))
+    assert_allclose(actual, desired, rtol=3 / np.sqrt(n))
+
 
 def test_roms_3():
     rng = np.random.default_rng(0)
@@ -34,7 +35,8 @@ def test_roms_3():
     feature = Roms()
     actual = feature(t, m, sigma)
     desired = 0.797
-    assert_allclose(actual, desired, rtol=3/np.sqrt(n))
+    assert_allclose(actual, desired, rtol=3 / np.sqrt(n))
+
 
 def test_roms_4():
     rng = np.random.default_rng(0)
@@ -45,7 +47,8 @@ def test_roms_4():
     feature = Roms()
     actual = feature(t, m, sigma)
     desired = 0.797
-    assert_allclose(actual, desired, rtol=3/np.sqrt(n))
+    assert_allclose(actual, desired, rtol=3 / np.sqrt(n))
+
 
 def test_roms_5():
     rng = np.random.default_rng(0)
@@ -56,7 +59,8 @@ def test_roms_5():
     feature = Roms()
     actual = feature(t, m, sigma)
     desired = 1.386
-    assert_allclose(actual, desired, rtol=3/np.sqrt(n))
+    assert_allclose(actual, desired, rtol=3 / np.sqrt(n))
+
 
 def test_roms_6():
     rng = np.random.default_rng(0)
@@ -67,7 +71,8 @@ def test_roms_6():
     feature = Roms()
     actual = feature(t, m, sigma)
     desired = 1.386
-    assert_allclose(actual, desired, rtol=3/np.sqrt(n))
+    assert_allclose(actual, desired, rtol=3 / np.sqrt(n))
+
 
 def test_roms_7():
     rng = np.random.default_rng(0)
@@ -78,7 +83,8 @@ def test_roms_7():
     feature = Roms()
     actual = feature(t, m, sigma)
     desired = 1.052
-    assert_allclose(actual, desired, rtol=3/np.sqrt(n))
+    assert_allclose(actual, desired, rtol=3 / np.sqrt(n))
+
 
 def test_roms_8():
     rng = np.random.default_rng(0)
@@ -89,4 +95,4 @@ def test_roms_8():
     feature = Roms()
     actual = feature(t, m, sigma)
     desired = 1.052
-    assert_allclose(actual, desired, rtol=3/np.sqrt(n))
+    assert_allclose(actual, desired, rtol=3 / np.sqrt(n))
