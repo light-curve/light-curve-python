@@ -5,7 +5,7 @@ from ._base import BaseSingleBandFeature
 
 class Roms(BaseSingleBandFeature):
     r"""Robust median statistic
- 
+
     $$
     \frac1{N-1} \sum_{i=0}^{N-1} \frac{|m_i - \mathrm{median}(m_i)|}{\sigma_i}
     $$

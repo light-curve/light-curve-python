@@ -34,7 +34,7 @@ def test_roms_norm_data_1():
     sigma = np.ones_like(t)
     feature = Roms()
     actual = feature(t, m, sigma)
-    desired = 2 / np.sqrt((2*np.pi))
+    desired = 2 / np.sqrt((2 * np.pi))
     assert_allclose(actual, desired, rtol=3 / np.sqrt(n))
 
 
@@ -46,7 +46,7 @@ def test_roms_norm_data_2():
     sigma = np.ones_like(t)
     feature = Roms()
     actual = feature(t, m, sigma)
-    desired = 2 / np.sqrt((2*np.pi))
+    desired = 2 / np.sqrt((2 * np.pi))
     assert_allclose(actual, desired, rtol=3 / np.sqrt(n))
 
 
