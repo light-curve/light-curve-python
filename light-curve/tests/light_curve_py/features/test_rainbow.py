@@ -35,6 +35,7 @@ def test_noisy_no_baseline():
 
     actual = feature(t, flux, sigma=flux_err, band=band)
 
+
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="iminuit requires Python >= 3.8")
 def test_noisy_with_baseline():
     rng = np.random.default_rng(0)

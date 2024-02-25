@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import numpy as np
 
@@ -111,7 +111,9 @@ class BazinBolometricTerm(BaseBolometricTerm):
         dt = t - t0
 
         # Coefficient to make peak amplitude equal to unity
-        scale = (fall_time/rise_time)**(rise_time/(fall_time+rise_time)) + (fall_time/rise_time)**(-fall_time/(fall_time+rise_time))
+        scale = (fall_time / rise_time) ** (rise_time / (fall_time + rise_time)) + (fall_time / rise_time) ** (
+            -fall_time / (fall_time + rise_time)
+        )
 
         result = np.zeros_like(dt)
         # To avoid numerical overflows, let's only compute the exponents not too far from t0
@@ -130,7 +132,7 @@ class BazinBolometricTerm(BaseBolometricTerm):
         idx = m > 0
         # t0 = np.sum(t[idx] * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx])
         # Weighted centroid sigma
-        dt = np.sqrt(np.sum((t[idx] - t0)**2 * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx]))
+        dt = np.sqrt(np.sum((t[idx] - t0) ** 2 * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx]))
 
         # Empirical conversion of sigma to rise/fall times
         rise_time = dt / 2
@@ -163,6 +165,7 @@ class BazinBolometricTerm(BaseBolometricTerm):
     @staticmethod
     def peak_time(t0, amplitude, rise_time, fall_time):
         return t0 + np.log(fall_time / rise_time) * rise_time * fall_time / (rise_time + fall_time)
+
 
 bolometric_terms = {
     "sigmoid": SigmoidBolometricTerm,

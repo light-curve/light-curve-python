@@ -1,8 +1,6 @@
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Union
 
-import numpy as np
-
 from light_curve.light_curve_py.dataclass_field import dataclass_field
 from light_curve.light_curve_py.features.rainbow._base import BaseRainbowFit
 from light_curve.light_curve_py.features.rainbow._scaler import MultiBandScaler, Scaler
@@ -96,7 +94,7 @@ class RainbowFit(BaseRainbowFit):
     def _unscale_parameters(self, params, t_scaler: Scaler, m_scaler: MultiBandScaler, scale_errors=False) -> None:
         already_unscaled = {}
         for term in [self.bolometric, self.temperature]:
-            for name,scaling in zip(term.parameter_names(), term.parameter_scalings()):
+            for name, scaling in zip(term.parameter_names(), term.parameter_scalings()):
                 if name in already_unscaled:
                     # Avoid un-scaling common parametres twice
                     continue

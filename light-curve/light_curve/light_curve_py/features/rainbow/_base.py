@@ -201,7 +201,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
         temp = self.temp_func(t, params)
 
         # Normalize the Planck function so that the result is of order unity
-        norm = (sigma_sb * temp**4) / np.pi / self.average_nu # Original "bolometric" normalization
+        norm = (sigma_sb * temp**4) / np.pi / self.average_nu  # Original "bolometric" normalization
         # peak_nu =  2.821 * boltzman_constant * temp / planck_constant # Wien displacement law
         # norm = self.planck_nu(speed_of_light / peak_nu, temp) # Peak = 1 normalization
 
@@ -244,7 +244,10 @@ class BaseRainbowFit(BaseMultiBandFeature):
     def _baseline_initial_guesses(self, t, m, sigma, band) -> Dict[str, float]:
         """Initial guesses for the baseline parameters."""
         del t
-        return {self.p.baseline_parameter_name(b): (np.median(m[band == b]) if np.sum(band == b) else 0) for b in self.bands.names}
+        return {
+            self.p.baseline_parameter_name(b): (np.median(m[band == b]) if np.sum(band == b) else 0)
+            for b in self.bands.names
+        }
 
     @abstractmethod
     def _limits(self, t, m, sigma, band) -> Dict[str, Tuple[float, float]]:
