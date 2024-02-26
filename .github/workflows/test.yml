@@ -102,6 +102,9 @@ jobs:
           - os: 'macos-latest'
             ceres: 'system'
             gsl: true
+            # We need ceres 2.2 and it is not in the packages yet
+          - os: 'ubuntu-latest'
+            ceres: 'system'
         # We have very limited support for Windows, fftw-source is the only supported feature
         include:
           - os: 'windows-latest'
@@ -253,8 +256,7 @@ jobs:
       - name: Install system packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y libunwind-dev
-          sudo apt-get install -y libceres-dev libfftw3-dev libgsl-dev
+          sudo apt-get install -y libfftw3-dev libgsl-dev
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v2
         with:
@@ -264,7 +266,7 @@ jobs:
             python3 -m venv venv
             . venv/bin/activate
             pip install "${{ needs.py_build_deps.outputs.output }}" pytest-codspeed
-            maturin develop --extras=test-no-bench,test --release --no-default-features --features=ceres-system,fftw-system,gsl,mimalloc
+            maturin develop --extras=test-no-bench,test --release --no-default-features --features=ceres-source,fftw-system,gsl,mimalloc
             python3 -mpytest -m "not (nobs or multi)" --codspeed tests/test_w_bench.py
 
   msrv-build:

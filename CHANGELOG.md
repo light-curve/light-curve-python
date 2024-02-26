@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Refactoring of rainbow features, it reduces code duplication and makes it easier to add new variants like `RainbowFit` and `RainbowRisingFit` in the future https://github.com/light-curve/light-curve-python/pull/293
 - Another change for `Rainbow` features is changing `minuit` optimization parameters https://github.com/light-curve/light-curve-python/pull/314
+- **Build breaking**: bump `light-curve-feature` to v0.7.0, which requires ceres-solver v2.2 for `ceres-system` Cargo feature.
 
 ### Deprecated
 
