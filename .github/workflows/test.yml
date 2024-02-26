@@ -102,6 +102,9 @@ jobs:
           - os: 'macos-latest'
             ceres: 'system'
             gsl: true
+            # We need ceres 2.2 and it is not in the packages yet
+          - os: 'ubuntu-latest'
+            ceres: 'system'
         # We have very limited support for Windows, fftw-source is the only supported feature
         include:
           - os: 'windows-latest'
