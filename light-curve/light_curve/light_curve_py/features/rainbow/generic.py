@@ -117,16 +117,16 @@ class RainbowFit(BaseRainbowFit):
         self._unscale_parameters(errors, t_scaler, m_scaler, scale_errors=True)
 
     def _initial_guesses(self, t, m, sigma, band) -> Dict[str, float]:
-        initial_bolometric = self.bolometric.initial_guesses(t, m, sigma, band)
-        initial_temp = self.temperature.initial_guesses(t, m, sigma, band)
+        initial = self.bolometric.initial_guesses(t, m, sigma, band)
+        initial.update(self.temperature.initial_guesses(t, m, sigma, band))
 
-        return initial_bolometric | initial_temp
+        return initial
 
     def _limits(self, t, m, sigma, band) -> Dict[str, Tuple[float, float]]:
-        limits_bolometric = self.bolometric.limits(t, m, sigma, band)
-        limits_temp = self.temperature.limits(t, m, sigma, band)
+        limits = self.bolometric.limits(t, m, sigma, band)
+        limits.update(self.temperature.limits(t, m, sigma, band))
 
-        return limits_bolometric | limits_temp
+        return limits
 
     def peak_time(self, params) -> float:
         """Returns true bolometric peak position for given parameters"""
