@@ -111,6 +111,12 @@ class RainbowFit(BaseRainbowFit):
                 elif scaling == "flux":
                     params[self.p[name]] = m_scaler.undo_scale(params[self.p[name]])
 
+                elif scaling is None or scaling.lower() == "none":
+                    pass
+
+                else:
+                    raise ValueError("Unsupported parameter scaling: " + scaling)
+
                 already_unscaled[name] = True
 
     def _unscale_errors(self, errors, t_scaler: Scaler, m_scaler: MultiBandScaler) -> None:

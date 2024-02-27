@@ -19,7 +19,16 @@ class BaseTemperatureTerm:
     @staticmethod
     @abstractmethod
     def parameter_scalings() -> List[str]:
-        """Describes how to unscale the parameters - like time, timescale, flux or do not scale"""
+        """Describes how to unscale the parameters.
+        Should be the list the same shape as returned by `parameter_names()`, and describes
+        how the parameters should be un-scaled from the fit done in scaled coordinates.
+
+        List items should be either None or one of the following strings:
+        - time - the parameter is scaled and shifted like measurement times
+        - timescale - the parameter is scaled like measurement times, but not shifted, thus behaving like a difference between two measurement times
+        - flux - the parameter is scaled like the flux points, without additional shifts applied to them. Suitable for amplitude-like parameters.
+        - None - the parameter is kept as is, without any additional scaling or shifting
+        """
         return NotImplementedError
 
     @staticmethod
