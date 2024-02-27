@@ -34,16 +34,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, macos-11, windows-2019]
+        os: [ubuntu-20.04, macos-12, windows-2019]
         arch: [aarch64, ppc64le, x86_64, amd64]  # amd64 is Windows-only
         interpreter: [cp37, cp38, cp39, cp310, cp311, pp37, pp38, pp39]
         platform: [manylinux, musllinux, macosx, win]
         abi3: [false, true]
         exclude:
           # Build Linux on Linux
-          - os: macos-11
+          - os: macos-12
             platform: manylinux
-          - os: macos-11
+          - os: macos-12
             platform: musllinux
           - os: windows-2019
             platform: manylinux
@@ -57,7 +57,7 @@ jobs:
           # Build Windows on Windows
           - os: ubuntu-20.04
             platform: win
-          - os: macos-11
+          - os: macos-12
             platform: win
           # PyPy doesn't support musllinux
           - interpreter: pp37
@@ -77,14 +77,14 @@ jobs:
           - arch: ppc64le
             platform: musllinux
           # x86_64 is the only supported architecture for macOS
-          - os: macos-11
+          - os: macos-12
             arch: aarch64
-          - os: macos-11
+          - os: macos-12
             arch: ppc64le
           # amd64 is Windows-only
           - os: ubuntu-20.04
             arch: amd64
-          - os: macos-11
+          - os: macos-12
             arch: amd64
           # We only support amd64 on Windows
           - os: windows-2019
@@ -178,6 +178,7 @@ jobs:
         with:
           path: ./wheelhouse/*.whl
           if-no-files-found: error
+          name: artifact_${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.interpreter }}-${{ matrix.platform }}${{ matrix.abi3 && '-abi3' || '' }}
 
   sdist:
     name: Build source distribution
@@ -206,6 +207,7 @@ jobs:
         with:
           path: ./light-curve/target/wheels/*.tar.gz
           if-no-files-found: error
+          name: artifact_sdist
 
   publish:
     needs: [cibuildwheel, sdist]
@@ -215,6 +217,10 @@ jobs:
 
     steps:
       - uses: actions/download-artifact@v4
+        with:
+          pattern: artifact_*
+          merge-multiple: true
+          path: artifact
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -247,7 +253,7 @@ jobs:
           python-version: '3.x'
 
       - name: Install deps
-        run: python3 -mpip install toml twine
+        run: python3 -mpip install setuptools toml twine
 
       - name: Publish light-curve-python
         run: |
