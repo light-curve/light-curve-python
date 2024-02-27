@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
+from copy import deepcopy
 
 import numpy as np
 
@@ -159,6 +160,8 @@ class BaseRainbowFit(BaseMultiBandFeature):
 
         # We need to modify original scalers to only apply the scale, not shifts, to the errors
         # It should be re-implemented in subclasses for a cleaner way to unscale the errors
+        t_scaler = deepcopy(t_scaler)
+        m_scaler = deepcopy(m_scaler)
         t_scaler.reset_shift()
         m_scaler.reset_shift()
 
@@ -263,7 +266,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
         limits = {}
         for b in self.bands.names:
             m_band = m[band == b]
-            if len(m_band):
+            if len(m_band) > 0:
                 lower = np.min(m_band) - 10 * np.ptp(m_band)
                 upper = np.max(m_band)
             else:
@@ -295,7 +298,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
 
         if self.with_baseline:
             initial_baselines = self._baseline_initial_guesses(t, m, sigma, band)
-            m_corr = m - np.array([initial_baselines[self.p.baseline_parameter_name(_)] for _ in band])
+            m_corr = m - np.array([initial_baselines[self.p.baseline_parameter_name(b)] for b in band])
 
             # Compute initial guesses for the parameters on baseline-subtracted data
             initial_guesses = self._initial_guesses(t, m_corr, sigma, band)
