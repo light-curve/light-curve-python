@@ -36,9 +36,10 @@ We build aarch64 macOS 12.0+ Python 3.8+ wheels locally and submit them running 
 ```
 rm -rf ./wheelhouse
 curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y
-brew install gsl
-CIBW_BUILD='cp3*-macosx_arm64' CIBW_ENVIRONMENT="MATURIN_PEP517_ARGS='--locked --no-default-features --features ceres-source,fftw-source,gsl'" CIBW_BEFORE_ALL='' python3 -mcibuildwheel --platform macos
-CIBW_BUILD='cp310-macosx_arm64' CIBW_ENVIRONMENT="MATURIN_PEP517_ARGS='--locked --no-default-features --features ceres-source,fftw-source,gsl,abi3'" CIBW_BEFORE_ALL='' python3 -mcibuildwheel --platform macos
+brew install gsl fftw ceres-solver
+CIBW_BUILD='cp3*-macosx_arm64' CIBW_BEFORE_ALL='' python3 -mcibuildwheel --platform macos
+# ADD abi3 to features in pyproject.toml
+CIBW_BUILD='cp311-macosx_arm64' CIBW_BEFORE_ALL='' python3 -mcibuildwheel --platform macos
 twine upload wheelhouse/*.whl
 ```
 
