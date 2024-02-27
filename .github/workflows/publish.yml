@@ -253,7 +253,7 @@ jobs:
           python-version: '3.x'
 
       - name: Install deps
-        run: python3 -mpip install toml twine
+        run: python3 -mpip install setuptools toml twine
 
       - name: Publish light-curve-python
         run: |
