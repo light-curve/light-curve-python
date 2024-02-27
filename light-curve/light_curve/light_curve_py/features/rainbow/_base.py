@@ -1,7 +1,7 @@
 from abc import abstractmethod
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
-from copy import deepcopy
 
 import numpy as np
 
