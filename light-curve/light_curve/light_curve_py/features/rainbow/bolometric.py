@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import numpy as np
 
@@ -18,7 +18,7 @@ class BaseBolometricTerm:
 
     @staticmethod
     @abstractmethod
-    def parameter_scalings() -> List[str]:
+    def parameter_scalings() -> List[Union[str, None]]:
         """Describes how to unscale the parameters.
 
         Should be the list the same shape as returned by `parameter_names()`, and describes
@@ -34,7 +34,7 @@ class BaseBolometricTerm:
 
     @staticmethod
     @abstractmethod
-    def value(self, t, params) -> float:
+    def value(self, t, *params) -> float:
         return NotImplementedError
 
     @staticmethod
@@ -49,7 +49,7 @@ class BaseBolometricTerm:
 
     @staticmethod
     @abstractmethod
-    def peak_time(params) -> float:
+    def peak_time(*params) -> float:
         return NotImplementedError
 
 

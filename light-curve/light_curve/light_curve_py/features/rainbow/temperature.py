@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import numpy as np
 
@@ -18,7 +18,7 @@ class BaseTemperatureTerm:
 
     @staticmethod
     @abstractmethod
-    def parameter_scalings() -> List[str]:
+    def parameter_scalings() -> List[Union[str, None]]:
         """Describes how to unscale the parameters.
         Should be the list the same shape as returned by `parameter_names()`, and describes
         how the parameters should be un-scaled from the fit done in scaled coordinates.
@@ -33,7 +33,7 @@ class BaseTemperatureTerm:
 
     @staticmethod
     @abstractmethod
-    def value(self, t, params) -> float:
+    def value(self, t, *params) -> float:
         return NotImplementedError
 
     @staticmethod
@@ -60,8 +60,8 @@ class ConstantTemperatureTerm(BaseTemperatureTerm):
         return [None]
 
     @staticmethod
-    def value(t, T):
-        return T * np.ones_like(t)
+    def value(t, temp):
+        return np.full_like(t, temp)
 
     @staticmethod
     def initial_guesses(t, m, sigma, band):
@@ -91,7 +91,7 @@ class SigmoidTemperatureTerm(BaseTemperatureTerm):
         return ["time", None, None, "timescale"]
 
     @staticmethod
-    def value(t, t0, Tmin, Tmax, k_sig):
+    def value(t, t0, temp_min, temp_max, k_sig):
         dt = t - t0
         result = np.zeros_like(dt)
 
@@ -100,9 +100,9 @@ class SigmoidTemperatureTerm(BaseTemperatureTerm):
         idx2 = (dt > -100 * k_sig) & (dt < 100 * k_sig)
         idx3 = dt >= 100 * k_sig
 
-        result[idx1] = Tmax
-        result[idx2] = Tmin + (Tmax - Tmin) / (1.0 + np.exp(dt[idx2] / k_sig))
-        result[idx3] = Tmin
+        result[idx1] = temp_max
+        result[idx2] = temp_min + (temp_max - temp_min) / (1.0 + np.exp(dt[idx2] / k_sig))
+        result[idx3] = temp_min
 
         return result
 

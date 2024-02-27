@@ -92,7 +92,7 @@ class RainbowFit(BaseRainbowFit):
         return self.temperature.value(t, *params[self.p.all_temp_idx])
 
     def _unscale_parameters(self, params, t_scaler: Scaler, m_scaler: MultiBandScaler, scale_errors=False) -> None:
-        already_unscaled = {}
+        already_unscaled = set()
         for term in [self.bolometric, self.temperature]:
             for name, scaling in zip(term.parameter_names(), term.parameter_scalings()):
                 if name in already_unscaled:
@@ -117,7 +117,7 @@ class RainbowFit(BaseRainbowFit):
                 else:
                     raise ValueError("Unsupported parameter scaling: " + scaling)
 
-                already_unscaled[name] = True
+                already_unscaled.add(name)
 
     def _unscale_errors(self, errors, t_scaler: Scaler, m_scaler: MultiBandScaler) -> None:
         self._unscale_parameters(errors, t_scaler, m_scaler, scale_errors=True)
