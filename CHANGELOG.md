@@ -9,14 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- New flavour of `RainbowFit`: `RainbowSymmetricFit` which will replace both `RainbowFit` and `RainbowRisingFit` in the future. https://github.com/light-curve/light-curve-python/pull/314 Thanks @karpov-sv for their first contribution
-- New cargo build-time feature, `mimalloc`, it is default feature now. When activated, it gives up to 2.9x of performance boost for some "fast" features. https://github.com/light-curve/light-curve-python/pull/302
+--
 
 ### Changed
 
-- Refactoring of rainbow features, it reduces code duplication and makes it easier to add new variants like `RainbowFit` and `RainbowRisingFit` in the future https://github.com/light-curve/light-curve-python/pull/293
-- Another change for `Rainbow` features is changing `minuit` optimization parameters https://github.com/light-curve/light-curve-python/pull/314
-- **Build breaking**: bump `light-curve-feature` to v0.7.0, which requires ceres-solver v2.2 for `ceres-system` Cargo feature.
+--
 
 ### Deprecated
 
@@ -28,11 +25,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- `RainbowFit` and `RainbowRisingFit` initial guesses for baseline fluxes are now consistent with limits. We also use band information to make initial guesses and limits more accurate. Note, that this change leads to different results comparing to previous versions. https://github.com/light-curve/light-curve-python/pull/293
+--
 
 ### Security
 
 --
+
+## [0.8.2] 2024-02-27
+
+### Added
+
+- New flavour of `RainbowFit`: `RainbowSymmetricFit` which will replace both `RainbowFit` and `RainbowRisingFit` in the future. https://github.com/light-curve/light-curve-python/pull/314 Thanks @karpov-sv for their first contribution
+- New cargo build-time feature, `mimalloc`, it is default feature now. When activated, it gives up to 2.9x of performance boost for some "fast" features. https://github.com/light-curve/light-curve-python/pull/302
+
+### Changed
+
+- Refactoring of rainbow features, it reduces code duplication and makes it easier to add new variants like `RainbowFit` and `RainbowRisingFit` in the future https://github.com/light-curve/light-curve-python/pull/293
+- Another change for `Rainbow` features is changing `minuit` optimization parameters https://github.com/light-curve/light-curve-python/pull/314
+- **Build breaking**: bump `light-curve-feature` to v0.7.0, which requires ceres-solver v2.2 for `ceres-system` Cargo feature.
+
+### Fixed
+
+- `RainbowFit` and `RainbowRisingFit` initial guesses for baseline fluxes are now consistent with limits. We also use band information to make initial guesses and limits more accurate. Note, that this change leads to different results comparing to previous versions. https://github.com/light-curve/light-curve-python/pull/293
+
 
 ## [0.8.1] 2023-11-30
 
