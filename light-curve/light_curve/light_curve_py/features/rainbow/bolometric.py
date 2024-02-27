@@ -101,6 +101,7 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
 
     @staticmethod
     def peak_time(t0, amplitude, rise_time):
+        """Peak time is not defined for the sigmoid, so it returns mid-time of the rise instead"""
         return t0
 
 
