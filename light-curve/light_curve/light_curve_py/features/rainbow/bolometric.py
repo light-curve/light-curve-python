@@ -26,8 +26,10 @@ class BaseBolometricTerm:
 
         List items should be either None or one of the following strings:
         - time - the parameter is scaled and shifted like measurement times
-        - timescale - the parameter is scaled like measurement times, but not shifted, thus behaving like a difference between two measurement times
-        - flux - the parameter is scaled like the flux points, without additional shifts applied to them. Suitable for amplitude-like parameters.
+        - timescale - the parameter is scaled like measurement times, but not shifted, thus
+            behaving like a difference between two measurement times
+        - flux - the parameter is scaled like the flux points, without additional shifts
+            applied to them. Suitable for amplitude-like parameters.
         - None - the parameter is kept as is, without any additional scaling or shifting
         """
         return NotImplementedError
