@@ -109,6 +109,9 @@ help(lc.BazinFit)
 ### Available features
 
 See the complete list of available feature evaluators and documentation in [`light-curve-feature` Rust crate docs](https://docs.rs/light-curve-feature/latest/light_curve_feature/features/index.html).
+Italic names are experimental features.
+While we usually say "magnitude" and use "m" as a time-series value, some of the features are supposed to be used with flux light-curves.
+The last column indicates whether the feature should be used with flux light curves only, magnitude light curves only, or any kind of light curves.
 
 <table>
   <tr>
@@ -116,12 +119,14 @@ See the complete list of available feature evaluators and documentation in [`lig
     <th>Description</th>
     <th>Min data points</th>
     <th>Features number</th>
+    <th>Flux/magnitude</th>
   </tr>
   <tr>
     <td>Amplitude</td>
     <td>Half amplitude of magnitude: <p align="center">$\displaystyle \frac{\max (m)-\min (m)}{2}$</p></td>
     <td align="center">1</td>
     <td align="center">1</td>
+    <td>Flux or magn</td>
   </tr>
 
   <tr>
@@ -131,6 +136,7 @@ See the complete list of available feature evaluators and documentation in [`lig
 <p align="right">$\times \left( -N-\frac{1}{N}\sum\limits_{i=0}^{N-1} (2i+1)\ln \Phi _{i} +(2(N-i)-1)\ln (1-\Phi _{i} )\right) ,$<p> where $\Phi _{i\ } \equiv \Phi (( m_{i} \ -\ \langle m\rangle ) /\sigma _{m})$ is the commutative distribution function of the standard normal distribution, $N-$ the number of observations, $\langle m\rangle -$ mean magnitude and $\sigma _{m} =\sqrt{\sum\limits_{i=0}^{N-1}( m_{i} -\langle m\rangle )^{2} /( N-1) \ }$ is the magnitude standard deviation</td>
     <td align="center">4</td>
     <td align="center">1</td>
+    <td>Flux or magn</td>
   </tr>
 
   <tr>
@@ -139,6 +145,7 @@ See the complete list of available feature evaluators and documentation in [`lig
 <p align="center">$\displaystyle f(t)=A\frac{\mathrm{e}^{-(t-t_{0} )/\tau _{fall}}}{1+\mathrm{e}^{-(t-t_{0} )/\tau _{rise}}} +B,$</p> where $f(t)-$ flux observation</td>
     <td align="center">6</td>
     <td align="center">1</td>
+    <td>Flux only</td>
   </tr>
 
   <tr>
@@ -147,6 +154,15 @@ See the complete list of available feature evaluators and documentation in [`lig
 <p align="center">$\displaystyle \frac{\sum _{i} I_{|m-\langle m\rangle | >n\sigma _{m}} (m_{i} )}{N},$</p> where $I-$ an indicator function</td>
     <td align="center">2</td>
     <td align="center">1</td>
+    <td>Flux or magn</td>
+  </tr>
+
+  <tr>
+    <td><i>ColorOfMedian</i> <br>(experimental)</td>
+    <td>Magnitude difference between medians of two bands</td>
+    <td align="center">2</td>
+    <td align="center">1</td>
+    <td>Magn only</td>
   </tr>
 
    <tr>
@@ -155,6 +171,7 @@ See the complete list of available feature evaluators and documentation in [`lig
 <p align="center">$\displaystyle \max(S) -\min(S),$</p> where $S_{j} \equiv \frac{1}{N\sigma _{m}}\sum\limits _{i=0}^{j} (m_{i} -\langle m\rangle )$, $j\in \{1..N-1\}$</td>
     <td align="center">2</td>
     <td align="center">1</td>
+    <td>Flux or magn</td>
   </tr>
 
   <tr>
@@ -163,6 +180,7 @@ See the complete list of available feature evaluators and documentation in [`lig
 <p align="center">$\displaystyle \eta \equiv \frac{1}{(N-1)\sigma _{m}^{2}}\sum\limits _{i=0}^{N-2} (m_{i+1} -m_{i} )^{2}$</p></td>
     <td align="center">2</td>
     <td align="center">1</td>
+    <td>Flux or magn</td>
   </tr>
 
   <tr>
@@ -171,6 +189,7 @@ See the complete list of available feature evaluators and documentation in [`lig
 <p align="center">$\displaystyle \eta ^{e} \equiv \frac{(t_{N-1} -t_{0} )^{2}}{(N-1)^{3}}\frac{\sum\limits_{i=0}^{N-2}\left(\frac{m_{i+1} -m_{i}}{t_{i+1} -t_{i}}\right)^{2}}{\sigma _{m}^{2}}$</p></td>
     <td align="center">2</td>
     <td align="center">1</td>
+    <td>Flux or magn</td>
   </tr>
 
   <tr>
@@ -179,6 +198,15 @@ See the complete list of available feature evaluators and documentation in [`lig
 <p align="center">$\displaystyle \frac{\sigma _{m}^{2} -\langle \delta ^{2} \rangle }{\langle m\rangle ^{2}},$</p> where $\langle \delta ^{2} \rangle -$ mean squared error</td>
     <td align="center">2</td>
     <td align="center">1</td>
+    <td>Flux only</td>
+  </tr>
+
+  <tr>
+    <td><i>FluxNNotDetBeforeFd</i><br>(experimental)</td>
+    <td>Number of non-detections before the first detection</td>
+    <td align="center">2</td>
+    <td align="center">1</td>
+    <td>Flux only</td>
   </tr>
 
   <tr>
@@ -186,6 +214,7 @@ See the complete list of available feature evaluators and documentation in [`lig
     <td><p align="center">$\displaystyle Q(1-p)-Q(p),$</p> where $Q(n)$ and $Q(d)-$ $n$-th and $d$-th quantile of magnitude sample</td>
     <td align="center">1</td>
     <td align="center">1</td>
+    <td>Flux or magn</td>
   </tr>
 
   <tr>
@@ -194,6 +223,7 @@ See the complete list of available feature evaluators and documentation in [`lig
 <p align="center">$\displaystyle \frac{N(N+1)}{(N-1)(N-2)(N-3)}\frac{\sum _{i} (m_{i} -\langle m\rangle )^{4}}{\sigma _{m}^{2}} -3\frac{(N+1)^{2}}{(N-2)(N-3)}$</p></td>
     <td align="center">4</td>
     <td align="center">1</td>
+    <td>Flux or magn</td>
   </tr>
 
   <tr>
@@ -202,6 +232,7 @@ See the complete list of available feature evaluators and documentation in [`lig
 <p align="center">$\displaystyle m_{i} \ =\ c\ +\ \text{slope} \ t_{i} \ +\ \delta _{i} \varepsilon _{i} ,$</p> where $c$ is a constant, $\{\varepsilon _{i}\}$ are standard distributed random variables</td>
     <td align="center">3</td>
     <td align="center">3</td>
+    <td>Flux or magn</td>
   </tr>
 
   <tr>
@@ -210,6 +241,15 @@ See the complete list of available feature evaluators and documentation in [`lig
 <p align="center">$\displaystyle m_{i} \ =\ c\ +\ \text{slope} \ t_{i} \ +\ \Sigma \varepsilon _{i} ,$</p> where $c$ and $\Sigma$ are constants, $\{\varepsilon _{i}\}$  are standard distributed random variables.</td>
     <td align="center">2</td>
     <td align="center">2</td>
+    <td>Flux or magn</td>
+  </tr>
+
+  <tr>
+    <td><i>MagnitudeNNotDetBeforeFd</i><br>(experimental)</td>
+    <td>Number of non-detections before the first detection</td>
+    <td align="center">2</td>
+    <td align="center">1</td>
+    <td>Magn only</td>
   </tr>
 
   <tr>
@@ -218,6 +258,7 @@ See the complete list of available feature evaluators and documentation in [`lig
 <p align="center">$\displaystyle \frac{Q(1-n)-Q(n)}{Q(1-d)-Q(d)}$</p></td>
     <td align="center">1</td>
     <td align="center">1</td>
+    <td>Flux or magn</td>
   </tr>
 
   <tr>
@@ -226,6 +267,7 @@ See the complete list of available feature evaluators and documentation in [`lig
 <p align="center">$\displaystyle \max_{i=0\dotsc N-2}\left| \frac{m_{i+1} -m_{i}}{t_{i+1} -t_{i}}\right|$</p></td>
     <td align="center">2</td>
     <td align="center">1</td>
+    <td>Flux or magn</td>
   </tr>
 
   <tr>
@@ -234,6 +276,7 @@ See the complete list of available feature evaluators and documentation in [`lig
 <p align="center">$\displaystyle \langle m\rangle =\frac{1}{N}\sum\limits _{i} m_{i}$</p></td>
     <td align="center">1</td>
     <td align="center">1</td>
+    <td>Flux or magn</td>
   </tr>
 
   <tr>
@@ -242,6 +285,7 @@ See the complete list of available feature evaluators and documentation in [`lig
 <p align="center">$\displaystyle \frac{\sigma _{m}}{\langle m\rangle }$</p></td>
     <td align="center">2</td>
     <td align="center">1</td>
+    <td>Flux only</td>
   </tr>
 
   <tr>
@@ -249,6 +293,7 @@ See the complete list of available feature evaluators and documentation in [`lig
     <td>Median magnitude
     <td align="center">1</td>
     <td align="center">1</td>
+    <td>Flux or magn</td>
   </tr>
 
   <tr>
@@ -257,13 +302,15 @@ See the complete list of available feature evaluators and documentation in [`lig
 <p align="center">$\displaystyle \mathrm{Median} (|m_{i} -\mathrm{Median} (m)|)$</p></td>
     <td align="center">1</td>
     <td align="center">1</td>
+    <td>Flux or magn</td>
   </tr>
 
   <tr>
     <td>MedianBufferRangePercentage</td>
-    <td><p align="center">$\displaystyle \mathrm{Median} (m)\pm q\times (\max (m)-\min (m))/2$</p></td>
+    <td>Fraction of points within <p align="center">$\displaystyle \mathrm{Median} (m)\pm q\times (\max (m)-\min (m))/2$</p></td>
     <td align="center">1</td>
     <td align="center">1</td>
+    <td>Flux or magn</td>
   </tr>
 
   <tr>
@@ -276,6 +323,7 @@ Otsu's method is used to perform automatic thresholding. The algorithm returns a
    </td>
     <td align="center">2</td>
     <td align="center">4</td>
+    <td>Flux or magn</td>
   </tr>
 
   <tr>
@@ -284,6 +332,7 @@ Otsu's method is used to perform automatic thresholding. The algorithm returns a
 <p align="center">$\displaystyle \max_{i} |m_{i} \ -\ \text{Median}( m) |$</p></td>
     <td align="center">1</td>
     <td align="center">1</td>
+    <td>Flux or magn</td>
   </tr>
 
   <tr>
@@ -292,14 +341,16 @@ Otsu's method is used to perform automatic thresholding. The algorithm returns a
 <p align="center">$\displaystyle \frac{Q( 1-p) -Q( p)}{\text{Median}( m)}$</p></td>
     <td align="center">1</td>
     <td align="center">1</td>
+    <td>Flux only</td>
   </tr>
 
   <tr>
-    <td>RainbowFit</td>
+    <td><i>RainbowFit</i><br>(experimental)</td>
     <td>Seven fit parameters and goodness of fit (reduced $\chi ^{2}$). The Rainbow method is developed and detailed here : https://arxiv.org/abs/2310.02916). This implementation is suited for transient objects. It is based on a Bazin bolometric flux and a sigmoid temperature evolution:
 <p align="center">$\displaystyle F_{\nu}(t, \nu) = \frac{\pi\,B\left(T(t),\nu\right)}{\sigma_\mathrm{SB}\,T(t)^{4}} \times F_\mathrm{bol}(t),$</p> where $F_{\nu}(t, \nu)-$ flux observation at a given wavelength</td>
     <td align="center">6</td>
     <td align="center">1</td>
+    <td>Flux only</td>
   </tr>
 
   <tr>
@@ -308,6 +359,7 @@ Otsu's method is used to perform automatic thresholding. The algorithm returns a
 <p align="center">$\displaystyle F_{\nu}(t, \nu) = \frac{\pi\,B\left(T(t),\nu\right)}{\sigma_\mathrm{SB}\,T(t)^{4}} \times F_\mathrm{bol}(t),$</p> where $F_{\nu}(t, \nu)-$ flux observation at a given wavelength</td>
     <td align="center">6</td>
     <td align="center">1</td>
+    <td>Flux only</td>
   </tr>
 
   <tr>
@@ -316,6 +368,7 @@ Otsu's method is used to perform automatic thresholding. The algorithm returns a
 <p align="center">$\displaystyle \frac{1}{N-1}\sum _{i}\left(\frac{m_{i} -\overline{m}}{\delta _{i}}\right)^{2} ,$</p> where $\overline{m} -$ weighted mean magnitude</td>
     <td align="center">2</td>
     <td align="center">1</td>
+    <td>Flux or magn</td>
   </tr>
 
   <tr>
@@ -324,6 +377,7 @@ Otsu's method is used to perform automatic thresholding. The algorithm returns a
 <p align="center">$\displaystyle \frac{N}{(N-1)(N-2)}\frac{\sum _{i} (m_{i} -\langle m\rangle )^{3}}{\sigma _{m}^{3}}$</p></td>
     <td align="center">3</td>
     <td align="center">1</td>
+    <td>Flux or magn</td>
   </tr>
 
   <tr>
@@ -332,6 +386,7 @@ Otsu's method is used to perform automatic thresholding. The algorithm returns a
 <p align="center">$\displaystyle \sigma _{m} \equiv \sqrt{\sum _{i} (m_{i} -\langle m\rangle )^{2} /(N-1)}$</p></td>
     <td align="center">2</td>
     <td align="center">1</td>
+    <td>Flux or magn</td>
   </tr>
 
   <tr>
@@ -340,6 +395,7 @@ Otsu's method is used to perform automatic thresholding. The algorithm returns a
 <p align="center">$\displaystyle \frac{\sum _{i}\left| \frac{m_{i} -\langle m\rangle }{\delta _{i}}\right| }{\sqrt{N\ \chi ^{2}}}$</p></td>
     <td align="center">2</td>
     <td align="center">1</td>
+    <td>Flux or magn</td>
   </tr>
 
   <tr>
@@ -351,6 +407,7 @@ Otsu's method is used to perform automatic thresholding. The algorithm returns a
 where $f(t) -$ flux observation, $A, \gamma , \tau _{rise} , \tau _{fall}  >0$, $\nu \in [0;1)$</p>Here we introduce a new dimensionless parameter $\nu$ instead of the plateau slope $\beta$ from the original paper: $\nu \equiv -\beta \gamma /A$</td>
     <td align="center">8</td>
     <td align="center">8</td>
+    <td>Flux only</td>
   </tr>
 
   <tr>
@@ -359,6 +416,7 @@ where $f(t) -$ flux observation, $A, \gamma , \tau _{rise} , \tau _{fall}  >0$, 
 <p align="center">$\displaystyle \overline{m} \equiv \frac{\sum _{i} m_{i} /\delta _{i}^{2}}{\sum _{i} 1/\delta _{i}^{2}}$</p></td>
     <td align="center">1</td>
     <td align="center">1</td>
+    <td>Flux or magn</td>
   </tr>
 
 </table>
