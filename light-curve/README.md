@@ -354,7 +354,7 @@ Otsu's method is used to perform automatic thresholding. The algorithm returns a
   </tr>
 
   <tr>
-    <td>RainbowRisingFit</td>
+    <td><i>RainbowRisingFit</i><br>(experimental)</td>
     <td>Six fit parameters and goodness of fit (reduced $\chi ^{2}$). The Rainbow method is developed and detailed here : https://arxiv.org/abs/2310.02916). This implementation is suited for rising transient objects. It is based on a rising sigmoid bolometric flux and a sigmoid temperature evolution:
 <p align="center">$\displaystyle F_{\nu}(t, \nu) = \frac{\pi\,B\left(T(t),\nu\right)}{\sigma_\mathrm{SB}\,T(t)^{4}} \times F_\mathrm{bol}(t),$</p> where $F_{\nu}(t, \nu)-$ flux observation at a given wavelength</td>
     <td align="center">6</td>
@@ -366,6 +366,14 @@ Otsu's method is used to perform automatic thresholding. The algorithm returns a
     <td>ReducedChi2</td>
     <td>Reduced $\chi ^{2}$ of magnitude measurements:
 <p align="center">$\displaystyle \frac{1}{N-1}\sum _{i}\left(\frac{m_{i} -\overline{m}}{\delta _{i}}\right)^{2} ,$</p> where $\overline{m} -$ weighted mean magnitude</td>
+    <td align="center">2</td>
+    <td align="center">1</td>
+    <td>Flux or magn</td>
+  </tr>
+
+  <tr>
+    <td><i>Roms</i><br>(Experimental)</td>
+    <td>Robust median statistic: <p align="center">$\displaystyle \frac1{N-1} \sum_{i=0}^{N-1} \frac{|m_i - \mathrm{median}(m_i)|}{\sigma_i}$</p></td>
     <td align="center">2</td>
     <td align="center">1</td>
     <td>Flux or magn</td>
