@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
---
+- `Roms` (robust median statistics) experimental feature, a variability index based on the deviation of observations from the median. https://github.com/light-curve/light-curve-python/pull/315 Thanks @GaluTi for their first contribution
 
 ### Changed
 
