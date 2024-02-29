@@ -346,16 +346,7 @@ Otsu's method is used to perform automatic thresholding. The algorithm returns a
 
   <tr>
     <td><i>RainbowFit</i><br>(experimental)</td>
-    <td>Seven fit parameters and goodness of fit (reduced $\chi ^{2}$). The Rainbow method is developed and detailed here : https://arxiv.org/abs/2310.02916). This implementation is suited for transient objects. It is based on a Bazin bolometric flux and a sigmoid temperature evolution:
-<p align="center">$\displaystyle F_{\nu}(t, \nu) = \frac{\pi\,B\left(T(t),\nu\right)}{\sigma_\mathrm{SB}\,T(t)^{4}} \times F_\mathrm{bol}(t),$</p> where $F_{\nu}(t, \nu)-$ flux observation at a given wavelength</td>
-    <td align="center">6</td>
-    <td align="center">1</td>
-    <td>Flux only</td>
-  </tr>
-
-  <tr>
-    <td><i>RainbowRisingFit</i><br>(experimental)</td>
-    <td>Six fit parameters and goodness of fit (reduced $\chi ^{2}$). The Rainbow method is developed and detailed here : https://arxiv.org/abs/2310.02916). This implementation is suited for rising transient objects. It is based on a rising sigmoid bolometric flux and a sigmoid temperature evolution:
+    <td>Seven fit parameters and goodness of fit (reduced $\chi ^{2}$). The Rainbow method is developed and detailed here : https://arxiv.org/abs/2310.02916). This implementation is suited for transient objects. Bolometric flux and temperature functions are customizable, by default Bazin and logistic functions are used:
 <p align="center">$\displaystyle F_{\nu}(t, \nu) = \frac{\pi\,B\left(T(t),\nu\right)}{\sigma_\mathrm{SB}\,T(t)^{4}} \times F_\mathrm{bol}(t),$</p> where $F_{\nu}(t, \nu)-$ flux observation at a given wavelength</td>
     <td align="center">6</td>
     <td align="center">1</td>
@@ -457,6 +448,7 @@ where $N_j$ is a number of sampling observations and all sums are over observati
 
 As of v0.8, experimental extractors (see below), support multi-band light-curve inputs.
 
+<!-- name: test_multiband_experimental_features -->
 ```python
 import numpy as np
 from light_curve.light_curve_py import LinearFit
@@ -473,9 +465,10 @@ print(values)
 #### Rainbow Fit
 
 Rainbow ([Russeil+23](https://arxiv.org/abs/2310.02916)) is a black-body parametric model for transient light curves.
-It uses Bazin function as a model for bolometric flux evolution and a logistic function for the temperature evolutiion.
-This example demonstrates the reconstruction of a syntetic light curve with this model.
-`RainbowFit` requires `iminuit` package and Python 3.8+.
+By default, it uses Bazin function as a model for bolometric flux evolution and a logistic function for the temperature evolution.
+The user may customize the model by providing their own functions for bolometric flux and temperature evolution.
+This example demonstrates the reconstruction of a synthetic light curve with this model.
+`RainbowFit` requires `iminuit` package.
 
 ```python
 import numpy as np
