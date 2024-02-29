@@ -86,7 +86,10 @@ class MultiBandScaler(Scaler):
         return cls(shift=shift_array, scale=scale, per_band_shift=per_band_shift, per_band_scale=per_band_scale)
 
     def undo_shift_scale_band(self, x, band):
-        return x * self.per_band_scale[band] + self.per_band_shift[band]
+        return x * self.per_band_scale.get(band, 1) + self.per_band_shift.get(band, 0)
+
+    def undo_scale_band(self, x, band):
+        return x * self.per_band_scale.get(band, 1)
 
     def reset_shift(self):
         """Resets scaler shift to zero, keeping only the scale"""

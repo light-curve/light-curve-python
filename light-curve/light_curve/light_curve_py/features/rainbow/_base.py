@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
 
@@ -144,22 +145,27 @@ class BaseRainbowFit(BaseMultiBandFeature):
         return NotImplementedError
 
     @abstractmethod
-    def _normalize_bolometric_flux(self, params) -> None:
-        """Normalize bolometric flux parameters to internal units in-place."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def _denormalize_bolometric_flux(self, params) -> None:
-        """Denormalize boloemtric flux parameters from internal units in-place."""
-        raise NotImplementedError
-
-    @abstractmethod
     def _unscale_parameters(self, params, t_scaler: Scaler, m_scaler: MultiBandScaler) -> None:
         """Unscale parameters from internal units, in-place.
 
         No baseline parameters are needed to be unscaled.
         """
         return NotImplementedError
+
+    def _unscale_errors(self, errors, t_scaler: Scaler, m_scaler: MultiBandScaler) -> None:
+        """Unscale parameter errors from internal units, in-place.
+
+        No baseline parameters are needed to be unscaled.
+        """
+
+        # We need to modify original scalers to only apply the scale, not shifts, to the errors
+        # It should be re-implemented in subclasses for a cleaner way to unscale the errors
+        t_scaler = deepcopy(t_scaler)
+        m_scaler = deepcopy(m_scaler)
+        t_scaler.reset_shift()
+        m_scaler.reset_shift()
+
+        return self._unscale_parameters(errors, t_scaler, m_scaler)
 
     def _unscale_baseline_parameters(self, params, m_scaler: MultiBandScaler) -> None:
         """Unscale baseline parameters from internal units, in-place.
@@ -170,6 +176,16 @@ class BaseRainbowFit(BaseMultiBandFeature):
             baseline_name = self.p.baseline_parameter_name(band_name)
             baseline = params[self.p[baseline_name]]
             params[self.p[baseline_name]] = m_scaler.undo_shift_scale_band(baseline, band_name)
+
+    def _unscale_baseline_errors(self, errors, m_scaler: MultiBandScaler) -> None:
+        """Unscale baseline parameters from internal units, in-place.
+
+        Must be used only if `with_baseline` is True.
+        """
+        for band_name in self.bands.names:
+            baseline_name = self.p.baseline_parameter_name(band_name)
+            baseline = errors[self.p[baseline_name]]
+            errors[self.p[baseline_name]] = m_scaler.undo_scale_band(baseline, band_name)
 
     @staticmethod
     def planck_nu(wave_cm, T):
@@ -184,11 +200,18 @@ class BaseRainbowFit(BaseMultiBandFeature):
         t, _band_idx, wave_cm = x
         params = np.array(params)
 
-        self._denormalize_bolometric_flux(params)
-
         bol = self.bol_func(t, params)
         temp = self.temp_func(t, params)
-        flux = np.pi * self.planck_nu(wave_cm, temp) / (sigma_sb * temp**4) * bol
+
+        # Normalize the Planck function so that the result is of order unity
+        norm = (sigma_sb * temp**4) / np.pi / self.average_nu  # Original "bolometric" normalization
+        # peak_nu =  2.821 * boltzman_constant * temp / planck_constant # Wien displacement law
+        # norm = self.planck_nu(speed_of_light / peak_nu, temp) # Peak = 1 normalization
+
+        planck = self.planck_nu(wave_cm, temp) / norm
+
+        flux = planck * bol
+
         return flux
 
     def _lsq_model_with_baseline(self, x, *params):
@@ -206,7 +229,6 @@ class BaseRainbowFit(BaseMultiBandFeature):
         band_idx = self.bands.get_index(band)
         wave_cm = self.bands.index_to_wave_cm(band_idx)
         params = np.array(params)
-        self._normalize_bolometric_flux(params)
         return self._lsq_model((t, band_idx, wave_cm), *params)
 
     @property
@@ -215,34 +237,41 @@ class BaseRainbowFit(BaseMultiBandFeature):
         return list(self.p.__members__)
 
     @abstractmethod
-    def _initial_guesses(self, t, m, band) -> Dict[str, float]:
+    def _initial_guesses(self, t, m, sigma, band) -> Dict[str, float]:
         """Initial guesses for the fit parameters.
 
         t and m are *scaled* arrays. No baseline parameters are included.
         """
         return NotImplementedError
 
-    def _baseline_initial_guesses(self, t, m, band) -> Dict[str, float]:
+    def _baseline_initial_guesses(self, t, m, sigma, band) -> Dict[str, float]:
         """Initial guesses for the baseline parameters."""
         del t
-        return {self.p.baseline_parameter_name(b): np.min(m[band == b]) for b in self.bands.names}
+        return {
+            self.p.baseline_parameter_name(b): (np.median(m[band == b]) if np.sum(band == b) else 0)
+            for b in self.bands.names
+        }
 
     @abstractmethod
-    def _limits(self, t, m, band) -> Dict[str, Tuple[float, float]]:
+    def _limits(self, t, m, sigma, band) -> Dict[str, Tuple[float, float]]:
         """Limits for the fit parameters.
 
         t and m are *scaled* arrays. No baseline parameters are included.
         """
         return NotImplementedError
 
-    def _baseline_limits(self, t, m, band) -> Dict[str, Tuple[float, float]]:
+    def _baseline_limits(self, t, m, sigma, band) -> Dict[str, Tuple[float, float]]:
         """Limits for the baseline parameters."""
         del t
         limits = {}
         for b in self.bands.names:
             m_band = m[band == b]
-            lower = np.min(m_band) - 10 * np.ptp(m_band)
-            upper = np.max(m_band)
+            if len(m_band) > 0:
+                lower = np.min(m_band) - 10 * np.ptp(m_band)
+                upper = np.max(m_band)
+            else:
+                lower = 0
+                upper = 0
             limits[self.p.baseline_parameter_name(b)] = (lower, upper)
         return limits
 
@@ -254,7 +283,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
     def _eval_and_fill(self, *, t, m, sigma, band, fill_value):
         return super()._eval_and_fill(t=t, m=m, sigma=sigma, band=band, fill_value=fill_value)
 
-    def _eval_and_get_errors(self, *, t, m, sigma, band, print_level=None):
+    def _eval_and_get_errors(self, *, t, m, sigma, band, print_level=None, get_initial=False):
         # Initialize data scalers
         t_scaler = Scaler.from_time(t)
         m_scaler = MultiBandScaler.from_flux(m, band, with_baseline=self.with_baseline)
@@ -267,11 +296,20 @@ class BaseRainbowFit(BaseMultiBandFeature):
         band_idx = self.bands.get_index(band)
         wave_cm = self.bands.index_to_wave_cm(band_idx)
 
-        initial_guesses = self._initial_guesses(t, m, band)
-        limits = self._limits(t, m, band)
         if self.with_baseline:
-            initial_guesses.update(self._baseline_initial_guesses(t, m, band))
-            limits.update(self._baseline_limits(t, m, band))
+            initial_baselines = self._baseline_initial_guesses(t, m, sigma, band)
+            m_corr = m - np.array([initial_baselines[self.p.baseline_parameter_name(b)] for b in band])
+
+            # Compute initial guesses for the parameters on baseline-subtracted data
+            initial_guesses = self._initial_guesses(t, m_corr, sigma, band)
+            limits = self._limits(t, m_corr, sigma, band)
+
+            initial_guesses.update(initial_baselines)
+            limits.update(self._baseline_limits(t, m, sigma, band))
+        else:
+            # Compute initial guesses for the parameters on original data
+            initial_guesses = self._initial_guesses(t, m, sigma, band)
+            limits = self._limits(t, m, sigma, band)
 
         least_squares = LeastSquares(
             model=self._lsq_model,
@@ -280,17 +318,22 @@ class BaseRainbowFit(BaseMultiBandFeature):
             y=m,
             yerror=sigma,
         )
-        minuit = self.Minuit(least_squares, **initial_guesses)
+        minuit = self.Minuit(least_squares, name=self.names, **initial_guesses)
         # TODO: expose these parameters through function arguments
         if print_level is not None:
             minuit.print_level = print_level
         minuit.strategy = 2
         minuit.migrad(ncall=10000, iterate=10)
 
-        if not minuit.valid and self.fail_on_divergence:
+        if not minuit.valid and self.fail_on_divergence and not get_initial:
             raise RuntimeError("Fitting failed")
 
         reduced_chi2 = minuit.fval / (len(t) - self.size)
+
+        if get_initial:
+            # Reset the fitter so that it returns initial values instead of final ones
+            minuit.reset()
+
         params = np.array(minuit.values)
         errors = np.array(minuit.errors)
 
@@ -299,13 +342,9 @@ class BaseRainbowFit(BaseMultiBandFeature):
             self._unscale_baseline_parameters(params, m_scaler)
 
         # Unscale errors
-        # We need to modify original scalers to only apply the scale, not shifts, to the errors
-        t_scaler.reset_shift()
-        m_scaler.reset_shift()
-
-        self._unscale_parameters(errors, t_scaler, m_scaler)
+        self._unscale_errors(errors, t_scaler, m_scaler)
         if self.with_baseline:
-            self._unscale_baseline_parameters(errors, m_scaler)
+            self._unscale_baseline_errors(errors, m_scaler)
 
         return np.r_[params, reduced_chi2], errors
 
