@@ -32,7 +32,7 @@ mimalloc = ["dep:mimalloc"]
 [dependencies]
 const_format = "0.2.32"
 conv = "0.3.3"
-enum-iterator = "1.5.0"
+enum-iterator = "2.0.0"
 enumflags2 = { version = "0.7.7", features = ["serde"] }
 itertools = "0.12.1"
 macro_const = "0.1.0"
