@@ -1023,7 +1023,7 @@ dependencies = [
 
 [[package]]
 name = "light-curve-python"
-version = "0.9.0-alpha.0"
+version = "0.9.0"
 dependencies = [
  "const_format",
  "conv",
