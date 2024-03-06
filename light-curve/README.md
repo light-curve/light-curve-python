@@ -15,7 +15,7 @@ python3 -mpip install 'light-curve[full]'
 `full` extras would install the package with all optional Python dependencies required by experimental features.
 We also provide `light-curve-python` package which is just an "alias" to the main `light-curve[full]` package.
 
-Minimum supported Python version is 3.7.
+Minimum supported Python version is 3.8.
 We provide binary wheels via [PyPi](https://pypi.org/project/light-curve/) for a number of platforms and architectures, both for CPython and PyPy.
 We also provide binary wheels for stable CPython ABI, so the package is guaranteed to work with all future CPython3 versions.
 
@@ -25,23 +25,12 @@ We also provide binary wheels for stable CPython ABI, so the package is guarante
 | ----------- |-------------|--------------------------------|----------------------------------------------------------------|----------------------------------------------------------------------|
 | **x86-64**  | wheel (MKL) | wheel (MKL)                    | wheel                                                          | wheel (no Ceres, no GSL)                                             |
 | **i686**    | src         | src                            | —                                                              | not tested                                                           |
-| **aarch64** | wheel       | wheel                          | src https://github.com/light-curve/light-curve-python/issues/5 | not tested                                                           |
+| **aarch64** | wheel       | wheel                          | wheel                                                          | not tested                                                           |
 | **ppc64le** | wheel       | not tested (no Rust toolchain) | —                                                              | —                                                                    |
 
 - "wheel": binary wheel is available on pypi.org, local building is not required for the platform, the only pre-requirement is a recent `pip` version. For Linux x86-64 we provide binary wheels built with Intel MKL for better periodogram performance, which is not a default build option. For Windows x86-64 we provide wheel with no Ceres and no GSL support, which is not a default build option.
 - "src": the package is confirmed to be built and pass unit tests locally, but testing and package building is not supported by CI. It is required to have the [GNU scientific library (GSL)](https://www.gnu.org/software/gsl/) v2.1+ and the [Rust toolchain](https://rust-lang.org) v1.67+ to install it via `pip install`. `ceres-solver` and `fftw` may be installed locally or built from source, in the later case you would also need C/C++ compiler and `cmake`.
 - "not tested": building from the source code is not tested, please report us building status via issue/PR/email.
-
-We build aarch64 macOS 12.0+ Python 3.8+ wheels locally and submit them running this command in `light-curve` directory:
-```
-rm -rf ./wheelhouse
-curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y
-brew install gsl fftw ceres-solver
-CIBW_BUILD='cp3*-macosx_arm64' CIBW_BEFORE_ALL='' python3 -mcibuildwheel --platform macos
-# ADD abi3 to features in pyproject.toml
-CIBW_BUILD='cp311-macosx_arm64' CIBW_BEFORE_ALL='' python3 -mcibuildwheel --platform macos
-twine upload wheelhouse/*.whl
-```
 
 ## Feature evaluators
 
@@ -470,6 +459,7 @@ The user may customize the model by providing their own functions for bolometric
 This example demonstrates the reconstruction of a synthetic light curve with this model.
 `RainbowFit` requires `iminuit` package.
 
+<!-- name: test_rainbow_fit_example -->
 ```python
 import numpy as np
 from light_curve.light_curve_py import RainbowFit

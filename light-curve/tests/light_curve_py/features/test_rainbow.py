@@ -1,12 +1,8 @@
-import sys
-
 import numpy as np
-import pytest
 
 from light_curve.light_curve_py import RainbowFit
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="iminuit requires Python >= 3.8")
 def test_noisy_no_baseline():
     rng = np.random.default_rng(0)
 
@@ -45,7 +41,6 @@ def test_noisy_no_baseline():
     np.testing.assert_allclose(actual, expected, rtol=0.1)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="iminuit requires Python >= 3.8")
 def test_noisy_with_baseline():
     rng = np.random.default_rng(0)
 
@@ -85,7 +80,6 @@ def test_noisy_with_baseline():
     np.testing.assert_allclose(actual, expected, rtol=0.1)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="iminuit requires Python >= 3.8")
 def test_noisy_constant_temperature():
     rng = np.random.default_rng(0)
 
@@ -123,7 +117,6 @@ def test_noisy_constant_temperature():
     np.testing.assert_allclose(actual, expected, rtol=0.1)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="iminuit requires Python >= 3.8")
 def test_noisy_constant_temperature_rising_only():
     rng = np.random.default_rng(0)
 

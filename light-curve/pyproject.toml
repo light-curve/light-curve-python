@@ -5,17 +5,17 @@ build-backend = "maturin"
 [project]
 name = "light-curve"
 dependencies = ["numpy"]
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Rust",
     "Topic :: Scientific/Engineering :: Astronomy",
 ]
@@ -23,8 +23,8 @@ classifiers = [
 [project.optional-dependencies]
 # Packages required by some experimental features
 full = [
-    "iminuit>=2.21,<3;python_version>='3.8'",
-    "scipy",
+    "iminuit>=2.21,<3",
+    "scipy<2",
 ]
 
 # Testing environment
@@ -33,8 +33,7 @@ test-no-bench = [
     "markdown-pytest",
     "pytest-benchmark",  # We need it here because we use benchmark-specific command line options
     "pytest-subtests>=0.10",
-    # Minimal required version of iminuit does not support Python 3.7
-    "iminuit>=2.21,<3;python_version>='3.8'",
+    "iminuit>=2.21,<3",
     "numpy",
     "scipy",
 ]
@@ -74,7 +73,7 @@ macos-deployment-target = "10.9"
 
 [tool.black]
 line-length = 120
-target-version = ["py37"]
+target-version = ["py38"]
 include = '\.py$'
 exclude = '''
      /(
@@ -116,7 +115,7 @@ exclude = [
     ".tox",
     "_build",
 ]
-target-version = "py37"
+target-version = "py38"
 
 [tool.ruff.per-file-ignores]
 # Unused and star imports
@@ -141,7 +140,7 @@ markers = [
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py37,py38,py39,py310,py311
+envlist = py38,py39,py310,py311,py312
 isolated_build = True
 
 [testenv]
@@ -156,11 +155,9 @@ commands =
 # Default is "pip", but it is recommended to use "build"
 build-frontend = "build"
 
-config-settings = { "build-args" = "--locked --no-default-features --features ceres-system,fftw-system,gsl,mimalloc" }
-
-# We'd like to link system FFTW, because is is usually better optimised
-# We use system Ceres because it is available as a static library in our build environment
-environment = { "PATH" = "$PATH:$HOME/.cargo/bin" }
+# - Set PATH to include Rust.
+# - Set maturin build options, including LICU_ADDITIONAL_FEATURES which may be passed through CIBW_ENVIRONMENT_PASS_LINUX
+environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features=mimalloc,ceres-system,fftw-system,gsl,${LICU_ADDITIONAL_FEATURES}" }
 
 # We use our own images which include Rust, GSL and platform-optimised FFTW
 # Manylinux CPython
@@ -186,6 +183,10 @@ musllinux-aarch64-image = "ghcr.io/light-curve/base-docker-images/musllinux_1_1_
 # musllinux-s390x-image = "ghcr.io/light-curve/base-docker-images/musllinux_1_1_s390x"
 musllinux-x86_64-image = "ghcr.io/light-curve/base-docker-images/musllinux_1_1_x86_64"
 
+[tool.cibuildwheel.linux]
+# We use this variable to set additional Cargo features, such as 'abi3'
+environment-pass = ["LICU_ADDITIONAL_FEATURES"]
+
 [tool.cibuildwheel.macos]
 before-all = [
     # Install Rust
@@ -204,13 +205,13 @@ before-all = [
 before-build = ["pip install delvewheel"]
 repair-wheel-command = "delvewheel repair --add-path=%USERPROFILE%\\Downloads\\fftw-dll64 -w {dest_dir} {wheel}"
 # We do not support Ceres and GSL on Windows
-config-settings = { "build-args" = "--locked --no-default-features --features fftw-source,mimalloc" }
+environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features=mimalloc,fftw-source,${LICU_ADDITIONAL_FEATURES}" }
 
 # Build with Intel MKL on Linux x86_64
 [[tool.cibuildwheel.overrides]]
 select = "*linux_x86_64"
 # We'd like to use MKL for x86_64
-config-settings = { "build-args" = "--locked --no-default-features --features ceres-system,fftw-mkl,gsl,mimalloc" }
+environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features=mimalloc,ceres-system,fftw-mkl,gsl,${LICU_ADDITIONAL_FEATURES}" }
 
 # Test
 # We skip benchmark tests, because it requires feets and its transitive
