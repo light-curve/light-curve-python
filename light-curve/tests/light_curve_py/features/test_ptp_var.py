@@ -12,7 +12,7 @@ def test_ptpvar():
     lmd = 200
     t = np.arange(n)
     flux_list = np.random.poisson(lmd, (m, n))
-    ptp_list = [PeakToPeakVar(t, flux_list[i], np.sqrt(flux_list[i])) for i in range(m)]
+    ptp_list = [feature(t, flux_list[i], np.sqrt(flux_list[i])) for i in range(m)]
     flux = rng.poisson(lmd, n)
     sigma = np.sqrt(flux)
     actual = feature(t, flux, sigma)
