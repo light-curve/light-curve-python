@@ -44,7 +44,7 @@ once_cell = "1"
 pyo3 = {version = "0.19.2", features = ["extension-module", "multiple-pymethods"]}
 rand = "0.8.5"
 rand_xoshiro = "0.6.0"
-rayon = "1.8.1"
+rayon = "1.10.0"
 serde = { version = "1", features = ["derive"] }
 serde-pickle = "1"
 serde_json = "1"
