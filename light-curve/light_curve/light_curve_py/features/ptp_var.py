@@ -12,8 +12,6 @@ class PeakToPeakVar(BaseSingleBandFeature):
     $$
     Input m must be non-negative (e.g. non-differential) flux density.
     This feature is a variability detector, higher values correspond to more variable sources.
-    For example, if observational count is 10^2-10^4 and Signal to Noise > 7,
-    the feature is larger than 0.1-0.15, these value are commonly used as a variability threshold.
 
     - Depends on: **flux density**, **errors**
     - Minimum number of observations: **2**
