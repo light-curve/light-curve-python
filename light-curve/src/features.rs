@@ -820,25 +820,25 @@ macro_rules! fit_evaluator {
                 t.as_array().mapv(|x| <$eval>::f(x, params.as_slice()))
             }
 
-            fn default_lmsder_iterations() -> u16 {
+            fn default_lmsder_iterations() -> Option<u16> {
                 #[cfg(feature = "gsl")]
                 {
-                    lcf::LmsderCurveFit::default_niterations()
+                    lcf::LmsderCurveFit::default_niterations().into()
                 }
                 #[cfg(not(feature = "gsl"))]
                 {
-                    0
+                    None
                 }
             }
 
-            fn default_ceres_iterations() -> u16 {
+            fn default_ceres_iterations() -> Option<u16> {
                 #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
                 {
-                    lcf::CeresCurveFit::default_niterations()
+                    lcf::CeresCurveFit::default_niterations().into()
                 }
                 #[cfg(not(any(feature = "ceres-source", feature = "ceres-system")))]
                 {
-                    0
+                    None
                 }
             }
         }
@@ -862,8 +862,12 @@ macro_rules! fit_evaluator {
             fn __new__(
                 algorithm: &str,
                 mcmc_niter: Option<u32>,
-                lmsder_niter: Option<u16>,
-                ceres_niter: Option<u16>,
+                // The first Option is for Python's None, the second is for compile-time None from
+                // Self::default_lmsder_iterations()
+                lmsder_niter: Option<Option<u16>>,
+                // The first Option is for Python's None, the second is for compile-time None from
+                // Self::default_ceres_iterations()
+                ceres_niter: Option<Option<u16>>,
                 ceres_loss_reg: Option<f64>,
                 init: Option<Vec<Option<f64>>>,
                 bounds: Option<Vec<(Option<f64>, Option<f64>)>>,
@@ -874,11 +878,11 @@ macro_rules! fit_evaluator {
 
                 #[cfg(feature = "gsl")]
                 let lmsder_fit: lcf::CurveFitAlgorithm = lcf::LmsderCurveFit::new(
-                    lmsder_niter.unwrap_or_else(lcf::LmsderCurveFit::default_niterations),
+                    lmsder_niter.unwrap_or_else(Self::default_lmsder_iterations).expect("logical error: default lmsder_niter is None but GSL is enabled"),
                 )
                 .into();
                 #[cfg(not(feature = "gsl"))]
-                if lmsder_niter.is_some() {
+                if lmsder_niter.flatten().is_some() {
                     return Err(PyValueError::new_err(
                         "Compiled without GSL support, lmsder_niter is not supported",
                     ));
@@ -886,11 +890,11 @@ macro_rules! fit_evaluator {
 
                 #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
                 let ceres_fit: lcf::CurveFitAlgorithm = lcf::CeresCurveFit::new(
-                    ceres_niter.unwrap_or_else(lcf::CeresCurveFit::default_niterations),
+                    ceres_niter.unwrap_or_else(Self::default_ceres_iterations).expect("logical error: default ceres_niter is None but Ceres is enabled"),
                     ceres_loss_reg.or_else(lcf::CeresCurveFit::default_loss_factor),
                 ).into();
                 #[cfg(not(any(feature = "ceres-source", feature = "ceres-system")))]
-                if ceres_niter.is_some() || ceres_loss_reg.is_some() {
+                if ceres_niter.flatten().is_some() || ceres_loss_reg.is_some() {
                     return Err(PyValueError::new_err(
                         "Compiled without Ceres support, ceres_niter and ceres_loss_reg are not supported",
                     ));

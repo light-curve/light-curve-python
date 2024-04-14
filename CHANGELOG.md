@@ -25,7 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
---
+- Bug which prevents initialization of Rust's `*Fit` features if compiled without Ceres or GSL (our PyPi Windows
+  wheels) https://github.com/light-curve/light-curve-python/issues/343 https://github.com/light-curve/light-curve-python/pull/344
 
 ### Security
 
@@ -35,13 +36,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `Roms` (robust median statistics) experimental feature, a variability index based on the deviation of observations from the median. https://github.com/light-curve/light-curve-python/pull/315 Thanks @GaluTi for their first contribution
+- `Roms` (robust median statistics) experimental feature, a variability index based on the deviation of observations
+  from the median. https://github.com/light-curve/light-curve-python/pull/315 Thanks @GaluTi for their first
+  contribution
 
 ### Changed
 
-- **Breaking** `RainbowFit` is significantly refactored to make it more flexible for usage of different bolometric and temperature functions. It deletes `RainbowRisingFit` and `RainbowSymmetricFit` in favor of a single `RainbowFit` feature. https://github.com/light-curve/light-curve-python/pull/327
+- **Breaking** `RainbowFit` is significantly refactored to make it more flexible for usage of different bolometric and
+  temperature functions. It deletes `RainbowRisingFit` and `RainbowSymmetricFit` in favor of a single `RainbowFit`
+  feature. https://github.com/light-curve/light-curve-python/pull/327
 - **Breaking**: stop supporting Python 3.7 https://github.com/light-curve/light-curve-python/pull/282
-- We stop distributing CPython wheels for specific Python versions, now we distribute ABI3 wheels which are compatible with all future Python versions
+- We stop distributing CPython wheels for specific Python versions, now we distribute ABI3 wheels which are compatible
+  with all future Python versions
 
 ### Deprecated
 
@@ -49,7 +55,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- **Build breaking**: `abi311` Cargo feature is removed, now we plan to have `abi3` feature only, which would correspond to the minimum supported Python version. Feel free to use `pyo3/abi3..` features directly for newer ABI versions.
+- **Build breaking**: `abi311` Cargo feature is removed, now we plan to have `abi3` feature only, which would correspond
+  to the minimum supported Python version. Feel free to use `pyo3/abi3..` features directly for newer ABI versions.
 
 ### Fixed
 
@@ -63,47 +70,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- New flavour of `RainbowFit`: `RainbowSymmetricFit` which will replace both `RainbowFit` and `RainbowRisingFit` in the future. https://github.com/light-curve/light-curve-python/pull/314 Thanks @karpov-sv for their first contribution
-- New cargo build-time feature, `mimalloc`, it is default feature now. When activated, it gives up to 2.9x of performance boost for some "fast" features. https://github.com/light-curve/light-curve-python/pull/302
+- New flavour of `RainbowFit`: `RainbowSymmetricFit` which will replace both `RainbowFit` and `RainbowRisingFit` in the
+  future. https://github.com/light-curve/light-curve-python/pull/314 Thanks @karpov-sv for their first contribution
+- New cargo build-time feature, `mimalloc`, it is default feature now. When activated, it gives up to 2.9x of
+  performance boost for some "fast" features. https://github.com/light-curve/light-curve-python/pull/302
 
 ### Changed
 
-- Refactoring of rainbow features, it reduces code duplication and makes it easier to add new variants like `RainbowFit` and `RainbowRisingFit` in the future https://github.com/light-curve/light-curve-python/pull/293
-- Another change for `Rainbow` features is changing `minuit` optimization parameters https://github.com/light-curve/light-curve-python/pull/314
-- **Build breaking**: bump `light-curve-feature` to v0.7.0, which requires ceres-solver v2.2 for `ceres-system` Cargo feature.
+- Refactoring of rainbow features, it reduces code duplication and makes it easier to add new variants like `RainbowFit`
+  and `RainbowRisingFit` in the future https://github.com/light-curve/light-curve-python/pull/293
+- Another change for `Rainbow` features is changing `minuit` optimization
+  parameters https://github.com/light-curve/light-curve-python/pull/314
+- **Build breaking**: bump `light-curve-feature` to v0.7.0, which requires ceres-solver v2.2 for `ceres-system` Cargo
+  feature.
 
 ### Fixed
 
-- `RainbowFit` and `RainbowRisingFit` initial guesses for baseline fluxes are now consistent with limits. We also use band information to make initial guesses and limits more accurate. Note, that this change leads to different results comparing to previous versions. https://github.com/light-curve/light-curve-python/pull/293
-
+- `RainbowFit` and `RainbowRisingFit` initial guesses for baseline fluxes are now consistent with limits. We also use
+  band information to make initial guesses and limits more accurate. Note, that this change leads to different results
+  comparing to previous versions. https://github.com/light-curve/light-curve-python/pull/293
 
 ## [0.8.1] 2023-11-30
 
 ### Added
 
-- `RainbowRisingFit` experimental feature, https://github.com/light-curve/light-curve-python/pull/278 by [@erusseil](https://github.com/erusseil)
-
+- `RainbowRisingFit` experimental feature, https://github.com/light-curve/light-curve-python/pull/278
+  by [@erusseil](https://github.com/erusseil)
 
 ## [0.8.0] 2023-09-20
 
 ### Added
 
-- **Breaking change in experimental features**: Multiband support is introduced for features implemented in Python. It changes class inheritance interface in a backward-incompatible way
+- **Breaking change in experimental features**: Multiband support is introduced for features implemented in Python. It
+  changes class inheritance interface in a backward-incompatible way
 - `light-curve[full]` extras which installs all optional Python dependencies required by experimental features
 - New `LinexpFit` feature for parametric model fit comes with `light-curve-feature` v0.6.0
-- Experimental `RainbowFit` feature for fitting multiband light curves with a single model, Russeil+23 in prep. It requires Python 3.8 or later because of `iminuit` dependency
+- Experimental `RainbowFit` feature for fitting multiband light curves with a single model, Russeil+23 in prep. It
+  requires Python 3.8 or later because of `iminuit` dependency
 - Optional `iminuit>=2,<3` Python dependency (included into `[full]`) for `RainbowFit` feature
 - Add `once_cell` v1 dependency
 
 ### Changed
 
-- **Breaking change in experimental features** `scipy` dependency is now optional for experimental features implemented in Python
-- **Breaking change in experimental features**: All experimental features implemented in Python require keyword-only arguments in their constructors. Also, all names of the arguments are changed to be the same as for Rust features
-- **Build breaking**: "abi3-py310" Cargo feature is replaced with "abi3-py311". "abi3" feature is now linked to "abi3-py311" feature. This is because our aim with ABI is to support future versions of Python
+- **Breaking change in experimental features** `scipy` dependency is now optional for experimental features implemented
+  in Python
+- **Breaking change in experimental features**: All experimental features implemented in Python require keyword-only
+  arguments in their constructors. Also, all names of the arguments are changed to be the same as for Rust features
+- **Build breaking**: "abi3-py310" Cargo feature is replaced with "abi3-py311". "abi3" feature is now linked to "
+  abi3-py311" feature. This is because our aim with ABI is to support future versions of Python
 - **Build breaking**: minimum supported Rust version (MSRV) is changed from 1.62 to 1.67 (released 2023-01-26)
 - Update `*Fit` fatures doc-strings to list names of the features they output
 - Bump `light-curve-feature` 0.5.5 -> 0.6.0
-- Bump `pyO3` 0.18.3 -> 0.19.1, it simplified signature generations for classes https://github.com/light-curve/light-curve-python/pull/230
+- Bump `pyO3` 0.18.3 -> 0.19.1, it simplified signature generations for
+  classes https://github.com/light-curve/light-curve-python/pull/230
 - Bump `rust-numpy` 0.18.0 -> 0.19.0 https://github.com/light-curve/light-curve-python/pull/230
 - Bump `enum-iterator` 1.2.0 -> 1.4.1 https://github.com/light-curve/light-curve-python/pull/233
 - Bump `thiserror` 1.0.41 -> 1.0.48 https://github.com/light-curve/light-curve-python/pull/242
@@ -112,49 +131,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- All Rust features got `.to_json()` method to serialize their state to JSON string. https://github.com/light-curve/light-curve-python/pull/226
-- New special Rust feature `JSONDeserializedFeature` and a helper function `feature_from_json()` to deserialize features from JSON string. https://github.com/light-curve/light-curve-python/pull/226
-- Build: "abi3" and "abi3-py310" Cargo features (the least one is enabled by the first one) to build a wheel for CPython 3.10+. This stable ABI wheel is less performant than the regular one, but it is compatible with all future Python versions. See [PEP 384](https://www.python.org/dev/peps/pep-0384/) for details. https://github.com/light-curve/light-curve-python/issues/79
+- All Rust features got `.to_json()` method to serialize their state to JSON
+  string. https://github.com/light-curve/light-curve-python/pull/226
+- New special Rust feature `JSONDeserializedFeature` and a helper function `feature_from_json()` to deserialize features
+  from JSON string. https://github.com/light-curve/light-curve-python/pull/226
+- Build: "abi3" and "abi3-py310" Cargo features (the least one is enabled by the first one) to build a wheel for CPython
+  3.10+. This stable ABI wheel is less performant than the regular one, but it is compatible with all future Python
+  versions. See [PEP 384](https://www.python.org/dev/peps/pep-0384/) for
+  details. https://github.com/light-curve/light-curve-python/issues/79
 
 ### Changed
 
-- **Build breaking**: the only Python build requirement `maturin` updated from v0.14.x to v1.0 https://github.com/light-curve/light-curve-python/pull/216 https://github.com/light-curve/light-curve-python/pull/215
+- **Build breaking**: the only Python build requirement `maturin` updated from v0.14.x to
+  v1.0 https://github.com/light-curve/light-curve-python/pull/216 https://github.com/light-curve/light-curve-python/pull/215
 - CI: bump cibuildwheel to 2.13.1 https://github.com/light-curve/light-curve-python/pull/225
 - Bump `itertools` 0.10.5 -> 0.11.0 https://github.com/light-curve/light-curve-python/pull/224
 - Bump `pyO3` 0.18.2 -> 0.18.3 https://github.com/light-curve/light-curve-python/pull/207
 
 ### Fixed
 
-- Building from sdist on x86-64 macOS required manual setting of `$MACOSX_DEPLOYMENT_TARGET` to 10.9 or higher. Recent `maturin` update allowed us to specify it via `pyproject.toml`
-
+- Building from sdist on x86-64 macOS required manual setting of `$MACOSX_DEPLOYMENT_TARGET` to 10.9 or higher.
+  Recent `maturin` update allowed us to specify it via `pyproject.toml`
 
 ## [0.7.2] 2023-04-12
 
 ### Added
 
-- Feature transformations via `transform` constructor keyword. For most of the features it could accept string with a transformation name such as 'arcsinh' or 'clipped_lg', `True` or 'default' for the default transformation, `None` or `False` for no transformation https://github.com/light-curve/light-curve-python/issues/184 https://github.com/light-curve/light-curve-python/pull/188
-- Binary wheels for x86_64 Windows built with no Ceres nor GSL features https://github.com/light-curve/light-curve-python/issues/12 https://github.com/light-curve/light-curve-python/pull/185
+- Feature transformations via `transform` constructor keyword. For most of the features it could accept string with a
+  transformation name such as 'arcsinh' or 'clipped_lg', `True` or 'default' for the default transformation, `None`
+  or `False` for no
+  transformation https://github.com/light-curve/light-curve-python/issues/184 https://github.com/light-curve/light-curve-python/pull/188
+- Binary wheels for x86_64 Windows built with no Ceres nor GSL
+  features https://github.com/light-curve/light-curve-python/issues/12 https://github.com/light-curve/light-curve-python/pull/185
 - `enum-iterator` crate dependency https://github.com/light-curve/light-curve-python/pull/188
 - CI: code coverage with `codecov` https://github.com/light-curve/light-curve-python/pull/197
-- Development: now project has extras for testing (`test`) and development (`dev`) https://github.com/light-curve/light-curve-python/pull/197
+- Development: now project has extras for testing (`test`) and
+  development (`dev`) https://github.com/light-curve/light-curve-python/pull/197
 
 ### Changed
 
 - **Build breaking**: minimum supported Rust version (MSRV) is bump from 1.60 to 1.62
 - Bump `light-curve-feature` 0.5.4 -> 0.5.5
 - Bump `pyO3` 0.18.1 -> 0.18.2
-- Most of the parametric features have default values for their parameters now, which, due to `pyO3` limitations, are not presented in the signatures, but documented in the docstrings. It also makes Python and Rust implementations more consistent https://github.com/light-curve/light-curve-python/issues/194 https://github.com/light-curve/light-curve-python/pull/195
-- Development: switch from `pytest-markdown` to `markdown-pytest` which allowed us to use up-to-date pytest https://github.com/light-curve/light-curve-python/pull/198
+- Most of the parametric features have default values for their parameters now, which, due to `pyO3` limitations, are
+  not presented in the signatures, but documented in the docstrings. It also makes Python and Rust implementations more
+  consistent https://github.com/light-curve/light-curve-python/issues/194 https://github.com/light-curve/light-curve-python/pull/195
+- Development: switch from `pytest-markdown` to `markdown-pytest` which allowed us to use up-to-date
+  pytest https://github.com/light-curve/light-curve-python/pull/198
 
 ### Deprecated
 
-- `BazinFit` and `VillarFit` constructors will not accept `None` for `mcmc_niter`, `ceres_niter`, and `lmsder_niter` arguments in the future, just do not specify them to use defaults instead. https://github.com/light-curve/light-curve-python/pull/195
-- `Periodogram` constructor will not accept `None` for `peaks`, `resolution`, `max_freq_factor`, `nyquist` and `fast` in the future, just do not specify them to use defaults instead. https://github.com/light-curve/light-curve-python/pull/195
+- `BazinFit` and `VillarFit` constructors will not accept `None` for `mcmc_niter`, `ceres_niter`, and `lmsder_niter`
+  arguments in the future, just do not specify them to use defaults
+  instead. https://github.com/light-curve/light-curve-python/pull/195
+- `Periodogram` constructor will not accept `None` for `peaks`, `resolution`, `max_freq_factor`, `nyquist` and `fast` in
+  the future, just do not specify them to use defaults
+  instead. https://github.com/light-curve/light-curve-python/pull/195
 
 ### Fixed
 
-- `Bins` feature had non-optimal lower boundary check for time series length: it checked if it is at least unity for any underlying features. Now it takes underlying feature requirements into account. It was fixed by updating `light-curve-feature` to v0.5.5.
-
+- `Bins` feature had non-optimal lower boundary check for time series length: it checked if it is at least unity for any
+  underlying features. Now it takes underlying feature requirements into account. It was fixed by
+  updating `light-curve-feature` to v0.5.5.
 
 ## [0.7.1] 2023-03-17
 
@@ -162,31 +200,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Bug introduced in v0.6.5: `*Fit.model(t, params)` wrongly checked `t` and `params` arrays to have the same length
 
-
 ## [0.7.0] 2023-03-16
 
 ### Added
 
-- `BazinFit` and `VillarFit` have got `ceres` and `mcmc-ceres` algorithms using [Ceres Solver](http://ceres-solver.org) as a non-linear least squares optimizer. `ceres` is found to be more robust than `lmsder` algorithm (available via `gsl` Cargo feature) but working roughly twice slower. Ceres can be built from source (`ceres-source` Cargo feature, enabled by default in `Cargo.toml`) or linked to system library (`ceres-system` Cargo feature, enabled for cibuildwheel in `pyproject.toml`)
+- `BazinFit` and `VillarFit` have got `ceres` and `mcmc-ceres` algorithms using [Ceres Solver](http://ceres-solver.org)
+  as a non-linear least squares optimizer. `ceres` is found to be more robust than `lmsder` algorithm (available
+  via `gsl` Cargo feature) but working roughly twice slower. Ceres can be built from source (`ceres-source` Cargo
+  feature, enabled by default in `Cargo.toml`) or linked to system library (`ceres-system` Cargo feature, enabled for
+  cibuildwheel in `pyproject.toml`)
 
 ### Changed
 
-- **API breaking:** Features' `__call__()` signature changed to make `sorted=None`, `check=True` and `fill_value=None` arguments to be keyword-only
+- **API breaking:** Features' `__call__()` signature changed to make `sorted=None`, `check=True` and `fill_value=None`
+  arguments to be keyword-only
 - **API breaking:** Features' `many()` signature changed to make all arguments but the first `lcs` to be keyword-only
-- **API breaking:** `Bins` constructor signature changed to make `offset` and `window` arguments to be keyword-only. For Rust implementation `__getnewargs__` is replaced with `__getnewargs_ex__`. Please note that for the specific case of Python implementation and Python version < 3.10, `Bins` still accepts positional arguments
-- **API breaking:** `BazinFit` and `VillarFit` constructor signatures changed to make everything but the first `lcs` argument to be keyword-only
+- **API breaking:** `Bins` constructor signature changed to make `offset` and `window` arguments to be keyword-only. For
+  Rust implementation `__getnewargs__` is replaced with `__getnewargs_ex__`. Please note that for the specific case of
+  Python implementation and Python version < 3.10, `Bins` still accepts positional arguments
+- **API breaking:** `BazinFit` and `VillarFit` constructor signatures changed to make everything but the first `lcs`
+  argument to be keyword-only
 - **API breaking:** `Periodogram` constructor signature changed to make all arguments to be keyword-only
-- **API breaking:** `DmDt` constructor signature changed to make all arguments but `dt` and `dm` to be keyword-only, `__getnewargs__` is replaced with `__getnewargs_ex__`. `DmDt.from_borders` class-method constructor has all arguments to be keyword-only
-- **API breaking:** `DmDt` methods' signatures changed to make all arguments but data (like `t`, `t, m` or `lcs`) to be keyword-only
-- **Build breaking:** building with Ceres Solver (`ceres-source` Cargo feature) is now a default, and potentially could break a building pipeline in some cases. If you want to build without Ceres Solver, you need to explicitly disable default features with `--no-default-features` maturin flag
+- **API breaking:** `DmDt` constructor signature changed to make all arguments but `dt` and `dm` to be
+  keyword-only, `__getnewargs__` is replaced with `__getnewargs_ex__`. `DmDt.from_borders` class-method constructor has
+  all arguments to be keyword-only
+- **API breaking:** `DmDt` methods' signatures changed to make all arguments but data (like `t`, `t, m` or `lcs`) to be
+  keyword-only
+- **Build breaking:** building with Ceres Solver (`ceres-source` Cargo feature) is now a default, and potentially could
+  break a building pipeline in some cases. If you want to build without Ceres Solver, you need to explicitly disable
+  default features with `--no-default-features` maturin flag
 - CI: switch from `macos-11` to `macos-latest` for testing
 - Bump `pyo3` 0.17.3 -> 0.18.1
 - Bump `rust-numpy` 0.17.2 -> 0.18.0
 
 ### Removed
 
-- **Build breaking:** `fftw-static`, `fftw-dynamic`, `mkl` Cargo features are removed after deprecation in v0.6.2 and replaced with `fftw-source`, `fftw-system` and `fftw-mkl`.
-
+- **Build breaking:** `fftw-static`, `fftw-dynamic`, `mkl` Cargo features are removed after deprecation in v0.6.2 and
+  replaced with `fftw-source`, `fftw-system` and `fftw-mkl`.
 
 ## [0.6.6] 2023-03-17
 
@@ -194,20 +244,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Bug introduced in v0.6.5: `*Fit.model(t, params)` wrongly checked `t` and `params` arrays to have the same length
 
-
 ## [0.6.5] 2023-02-22
 
 ### Fixed
 
-- Reduce Rust-Python inter-op cost for numpy arrays significantly. It dropped from ~4 μs per array to ~100ns. https://github.com/light-curve/light-curve-python/pull/174
-
+- Reduce Rust-Python inter-op cost for numpy arrays significantly. It dropped from ~4 μs per array to ~
+  100ns. https://github.com/light-curve/light-curve-python/pull/174
 
 ## [0.6.4] 2023-01-19
 
 ### Added
 
-- Initial `copy` and `pickle` (minimum protocol version is 2) support for feature extractors and `DmDt` https://github.com/light-curve/light-curve-python/issues/103 https://github.com/light-curve/light-curve-python/pull/145 https://github.com/light-curve/light-curve-python/pull/150
-- `serde` v1 and `serde-pickle` v1 Rust dependencies. `serde-pickle` is an arbitrary choice of a (de)serialization binary format, but it could be useful in the future having a way to inspect Rust structures from Python https://github.com/light-curve/light-curve-python/pull/145
+- Initial `copy` and `pickle` (minimum protocol version is 2) support for feature extractors
+  and `DmDt` https://github.com/light-curve/light-curve-python/issues/103 https://github.com/light-curve/light-curve-python/pull/145 https://github.com/light-curve/light-curve-python/pull/150
+- `serde` v1 and `serde-pickle` v1 Rust dependencies. `serde-pickle` is an arbitrary choice of a (de)serialization
+  binary format, but it could be useful in the future having a way to inspect Rust structures from
+  Python https://github.com/light-curve/light-curve-python/pull/145
 
 ### Changed
 
@@ -216,7 +268,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- `BazinFit` and `VillarFit` docs are clarified for `.model()` and `ln_prior` usage https://github.com/light-curve/light-curve-python/issues/125 https://github.com/light-curve/light-curve-python/pull/146
+- `BazinFit` and `VillarFit` docs are clarified for `.model()` and `ln_prior`
+  usage https://github.com/light-curve/light-curve-python/issues/125 https://github.com/light-curve/light-curve-python/pull/146
 
 ## [0.6.3] 2022-12-23
 
@@ -224,7 +277,8 @@ No changes, it was accidentally released instead of `0.6.2`
 
 ## [0.6.2] 2022-12-27
 
-- `OtsuSplit` implementation in Rust https://github.com/light-curve/light-curve-python/issues/120 https://github.com/light-curve/light-curve-python/pull/123
+- `OtsuSplit` implementation in
+  Rust https://github.com/light-curve/light-curve-python/issues/120 https://github.com/light-curve/light-curve-python/pull/123
 
 ### Changed
 
@@ -232,17 +286,24 @@ No changes, it was accidentally released instead of `0.6.2`
 - `light-curve-dmdt` 0.5.0 -> 0.6.0
 - `pyO3` 0.16.6 -> 0.17.3
 - `rust-numpy` 0.16.2 -> 0.17.2
-- CI: binary wheels are now built using our custom [manylinux/musllinux images](https://github.com/light-curve/base-docker-images), which include FFTW library optimised to use platform-specific SIMD instructions. It should give up to 50% performance gain for `Periodogram` at all Linux platforms but `x86_64` where we use MKL https://github.com/light-curve/light-curve-python/pull/134
-- We don't provide binary wheels for Linux i686 anymore, please contact us if you need them https://github.com/light-curve/light-curve-python/pull/134
-- wheel build dependency: `maturin` 0.13.x -> 0.14.x https://github.com/light-curve/light-curve-python/issues/130 https://github.com/light-curve/light-curve-python/pull/135
+- CI: binary wheels are now built using our
+  custom [manylinux/musllinux images](https://github.com/light-curve/base-docker-images), which include FFTW library
+  optimised to use platform-specific SIMD instructions. It should give up to 50% performance gain for `Periodogram` at
+  all Linux platforms but `x86_64` where we use MKL https://github.com/light-curve/light-curve-python/pull/134
+- We don't provide binary wheels for Linux i686 anymore, please contact us if you need
+  them https://github.com/light-curve/light-curve-python/pull/134
+- wheel build dependency: `maturin` 0.13.x ->
+  0.14.x https://github.com/light-curve/light-curve-python/issues/130 https://github.com/light-curve/light-curve-python/pull/135
 
 ### Deprecated
 
-- cargo features "fftw-dynamic", "fftw-static" and "mkl" are renamed to "fftw-system", "fftw-source" and "fftw-mkl" correspondingly https://github.com/light-curve/light-curve-python/pull/137
+- cargo features "fftw-dynamic", "fftw-static" and "mkl" are renamed to "fftw-system", "fftw-source" and "fftw-mkl"
+  correspondingly https://github.com/light-curve/light-curve-python/pull/137
 
 ### Fixed
 
-— fix `threshold` method in Python according to Rust implementation https://github.com/light-curve/light-curve-python/pull/123
+— fix `threshold` method in Python according to Rust
+implementation https://github.com/light-curve/light-curve-python/pull/123
 
 ## [0.6.1] 2022-11-01
 
@@ -270,7 +331,8 @@ No changes, it was accidentally released instead of `0.6.2`
 
 ### Fixed
 
-- https://github.com/light-curve/light-curve-python/issues/110 Experimental warning message specifies a class name https://github.com/light-curve/light-curve-python/pull/111
+- https://github.com/light-curve/light-curve-python/issues/110 Experimental warning message specifies a class
+  name https://github.com/light-curve/light-curve-python/pull/111
 - Support of `setuptools` v61+
 
 ### Security
@@ -297,7 +359,6 @@ No changes, it was accidentally released instead of `0.6.2`
 
 - docstring for `many` method is added to each Rust feature class
 
-
 ## [0.5.8] 2022-06-14
 
 ### Changed
@@ -307,7 +368,6 @@ No changes, it was accidentally released instead of `0.6.2`
 ### Fixed
 
 - Minimum supported Rust version 1.56 wasn't actually supported, `light-curve-feature` upgrade fixed it
-
 
 ## [0.5.7] 2022-06-10
 
@@ -358,8 +418,10 @@ No changes, it was accidentally released instead of `0.6.2`
 ### Added
 
 - `ln_prior` submodule with `LnPrior1D` class and stand-alone functions to construct its instances
-- `ln_prior` argument for `BazinFit` and `VillarFit` constructors which can be one of: `None`, `str` literals (currently the only useful value is 'hosseinzadeh2020' for `VillarFit`) or `list[LnPrior1D]`
-- `Cargo.lock` is used to build the release packages and it is added to sdist, all these should make builds more reproducible
+- `ln_prior` argument for `BazinFit` and `VillarFit` constructors which can be one of: `None`, `str` literals (currently
+  the only useful value is 'hosseinzadeh2020' for `VillarFit`) or `list[LnPrior1D]`
+- `Cargo.lock` is used to build the release packages and it is added to sdist, all these should make builds more
+  reproducible
 
 ### Changed
 
@@ -383,7 +445,6 @@ No changes, it was accidentally released instead of `0.6.2`
 
 - Fix implementation of `OtsuSplit`, see [issue #150](https://github.com/light-curve/light-curve/issues/150)
 
-
 ## [0.5.1] 2021-12-15
 
 ### Added
@@ -394,12 +455,15 @@ No changes, it was accidentally released instead of `0.6.2`
 
 ### Added
 
-- `check: bool = True` keyword argument for `__call__` and `many` methods of feature classes. It coulb be used to check if input arrays are valid
+- `check: bool = True` keyword argument for `__call__` and `many` methods of feature classes. It coulb be used to check
+  if input arrays are valid
 
 ### Changed
 
-- `gsl` is a default Cargo feature now, which means that GSL must be installed to build this package by standard Python tools like `pip install`
-- `light-curve-feature` 0.3 -> 0.4.1 transition brings MCMC improvements, changing feature names of `BazinFit` and significant changes of `VillarFit` feature set
+- `gsl` is a default Cargo feature now, which means that GSL must be installed to build this package by standard Python
+  tools like `pip install`
+- `light-curve-feature` 0.3 -> 0.4.1 transition brings MCMC improvements, changing feature names of `BazinFit` and
+  significant changes of `VillarFit` feature set
 
 ### Removed
 
@@ -424,10 +488,11 @@ No changes, it was accidentally released instead of `0.6.2`
 ### Changed
 
 - The Python package is renamed to `light-curve`, `light-curve-python` still exists as an alias
-- Pure Python implementation of the most of the features are added, now Rust-implemented features live in `light_curve_ext` sub-package, while the Python implementation is in `light_curve_py`. Python-implemented feature extractors have an experimental status
+- Pure Python implementation of the most of the features are added, now Rust-implemented features live
+  in `light_curve_ext` sub-package, while the Python implementation is in `light_curve_py`. Python-implemented feature
+  extractors have an experimental status
 - Now `dataclasses` (for Python 3.6 only) and `scipy` are required, they are used by the pure-Python implementation
 - `maturin` version 0.12
-
 
 ### Fixed
 
