@@ -16,7 +16,7 @@ python3 -mpip install 'light-curve[full]'
 We also provide `light-curve-python` package which is just an "alias" to the main `light-curve[full]` package.
 
 Minimum supported Python version is 3.8.
-We provide binary wheels via [PyPi](https://pypi.org/project/light-curve/) for a number of platforms and architectures, both for CPython and PyPy.
+We provide binary CPython wheels via [PyPi](https://pypi.org/project/light-curve/) for a number of platforms and architectures.
 We also provide binary wheels for stable CPython ABI, so the package is guaranteed to work with all future CPython3 versions.
 
 ### Support matrix
@@ -31,6 +31,8 @@ We also provide binary wheels for stable CPython ABI, so the package is guarante
 - "wheel": binary wheel is available on pypi.org, local building is not required for the platform, the only pre-requirement is a recent `pip` version. For Linux x86-64 we provide binary wheels built with Intel MKL for better periodogram performance, which is not a default build option. For Windows x86-64 we provide wheel with no Ceres and no GSL support, which is not a default build option.
 - "src": the package is confirmed to be built and pass unit tests locally, but testing and package building is not supported by CI. It is required to have the [GNU scientific library (GSL)](https://www.gnu.org/software/gsl/) v2.1+ and the [Rust toolchain](https://rust-lang.org) v1.67+ to install it via `pip install`. `ceres-solver` and `fftw` may be installed locally or built from source, in the later case you would also need C/C++ compiler and `cmake`.
 - "not tested": building from the source code is not tested, please report us building status via issue/PR/email.
+
+We stopped publishing PyPy wheels (https://github.com/light-curve/light-curve-python/issues/345), please feel free to open an issue if you need them.
 
 ## Feature evaluators
 
