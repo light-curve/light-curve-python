@@ -3,7 +3,8 @@ name: Publish Python packages
 on:
   push:
     tags:
-      - v*
+    push:
+    pull_request:
   workflow_dispatch:
 
 jobs:
@@ -14,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check Cargo.toml version vs Git tag
-        if: ${{ github.event_name == 'push' }}
+        if: startsWith(github.ref, 'refs/tags/v')
         working-directory: ./light-curve
         run: |
           cargo read-manifest | jq -r '.version' > /tmp/.crate_version
@@ -178,12 +179,24 @@ jobs:
     needs: [cibuildwheel, sdist]
 
     name: Publish light-curve
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/download-artifact@v4
+      # We publish sdist and CPython wheels only
+      # We do not publish PyPy anymore
+      # So we do not download these wheels here
+
+      - name: Download sdist
+        uses: actions/download-artifact@v4
         with:
-          pattern: artifact_*
+          pattern: artifact_sdist
+          merge-multiple: true
+          path: artifact
+
+      - name: Download CPython wheels
+        uses: actions/download-artifact@v4
+        with:
+          pattern: artifact_cp*
           merge-multiple: true
           path: artifact
 
@@ -195,7 +208,8 @@ jobs:
       - name: Install twine
         run: pip install twine
 
-      - name: Publish light-curve
+      - name: Publish light-curve for a new version tag
+        if: startsWith(github.ref, 'refs/tags/v')
         working-directory: artifact
         run: twine upload *whl *tar.gz -u __token__ -p ${{ secrets.PYPI_TOKEN_LIGHT_CURVE }} --verbose
 
@@ -220,7 +234,8 @@ jobs:
       - name: Install deps
         run: python3 -mpip install setuptools toml twine
 
-      - name: Publish light-curve-python
+      - name: Publish light-curve-python for a new version tag
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           python3 setup.py sdist
           twine check --strict dist/*
