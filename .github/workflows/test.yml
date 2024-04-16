@@ -66,7 +66,7 @@ jobs:
     - uses: actions/checkout@v4
     - uses: Swatinem/rust-cache@v2
       with:
-        shared-key: "stable-${{ runner.os }}"
+        shared-key: "${{ runner.os }}_stable-rust_cargo-clippy"
         workspaces: "light-curve"
     - run: cargo clippy --manifest-path=light-curve/Cargo.toml --all-targets -- -D warnings
 
@@ -90,7 +90,7 @@ jobs:
         uses: taiki-e/install-action@cargo-llvm-cov
       - uses: Swatinem/rust-cache@v2
         with:
-          shared-key: "stable-${{ runner.os }}"
+          shared-key: "${{ runner.os }}_stable-rust_maturin-develop"
           workspaces: "light-curve"
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -128,10 +128,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install system packages
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libfftw3-dev libgsl-dev
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "${{ runner.os }}_stable-rust_maturin-develop-release"
+          workspaces: "light-curve"
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v2
         with:
@@ -141,7 +141,7 @@ jobs:
             python3 -m venv venv
             . venv/bin/activate
             pip install "${{ needs.py_build_deps.outputs.output }}" pytest-codspeed
-            maturin develop --extras=test-no-bench,test --release --no-default-features --features=ceres-source,fftw-system,gsl,mimalloc
+            maturin develop --extras=test-no-bench,test --release
             python3 -mpytest -m "not (nobs or multi)" --codspeed tests/test_w_bench.py
 
   msrv-build:
@@ -183,7 +183,7 @@ jobs:
         toolchain: ${{ steps.get_msrv.outputs.msrv }}
     - uses: Swatinem/rust-cache@v2
       with:
-        shared-key: "msrv-${{ runner.os }}"
+        shared-key: "${{ runner.os }}_msrv-rust_maturin-build"
         workspaces: "light-curve"
     - name: Install build_deps
       run: pip install "${{ needs.py_build_deps.outputs.output }}"
