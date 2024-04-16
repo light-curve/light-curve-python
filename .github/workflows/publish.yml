@@ -60,39 +60,6 @@ jobs:
             cibw_build: cp38-manylinux_ppc64le
           - os: ubuntu-20.04
             cibw_build: cp38-musllinux_aarch64
-          # PyPy 3.8
-          - os: macos-12
-            cibw_build: pp38-macosx_x86_64
-          - os: macos-14
-            cibw_build: pp38-macosx_arm64
-          - os: windows-2019
-            cibw_build: pp38-win_amd64
-          - os: ubuntu-20.04
-            cibw_build: pp38-manylinux_x86_64
-          - os: ubuntu-20.04
-            cibw_build: pp38-manylinux_aarch64
-          # PyPy 3.9
-          - os: macos-12
-            cibw_build: pp39-macosx_x86_64
-          - os: macos-14
-            cibw_build: pp39-macosx_arm64
-          - os: windows-2019
-            cibw_build: pp39-win_amd64
-          - os: ubuntu-20.04
-            cibw_build: pp39-manylinux_x86_64
-          - os: ubuntu-20.04
-            cibw_build: pp39-manylinux_aarch64
-          # PyPy 3.10
-          - os: macos-12
-            cibw_build: pp310-macosx_x86_64
-          - os: macos-14
-            cibw_build: pp310-macosx_arm64
-          - os: windows-2019
-            cibw_build: pp310-win_amd64
-          - os: ubuntu-20.04
-            cibw_build: pp310-manylinux_x86_64
-          - os: ubuntu-20.04
-            cibw_build: pp310-manylinux_aarch64
 
     steps:
       - uses: actions/checkout@v4
@@ -182,21 +149,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # We publish sdist and CPython wheels only
-      # We do not publish PyPy anymore
-      # So we do not download these wheels here
-
-      - name: Download sdist
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
-          pattern: artifact_sdist
-          merge-multiple: true
-          path: artifact
-
-      - name: Download CPython wheels
-        uses: actions/download-artifact@v4
-        with:
-          pattern: artifact_cp*
+          pattern: artifact_*
           merge-multiple: true
           path: artifact
 
