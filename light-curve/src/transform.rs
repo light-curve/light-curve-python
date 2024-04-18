@@ -105,7 +105,7 @@ impl From<StockTransformer> for (Transformer<f32>, Transformer<f64>) {
 }
 
 pub(crate) fn parse_transform(
-    option: Option<&PyAny>,
+    option: Option<Bound<PyAny>>,
     default: StockTransformer,
 ) -> Res<Option<StockTransformer>> {
     match option {
@@ -132,7 +132,7 @@ pub(crate) fn parse_transform(
             } else {
                 Err(Exception::ValueError(format!(
                     "transform must be None, a bool or a str, not {}",
-                    py_any.get_type().name()?
+                    py_any.get_type().qualname()?
                 )))
             }
         }
