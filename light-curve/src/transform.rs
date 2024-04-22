@@ -118,7 +118,9 @@ pub(crate) fn parse_transform(
                     Ok(None)
                 }
             } else if let Ok(py_str) = py_any.downcast::<PyString>() {
-                let s = py_str.to_str()?;
+                // py_str.to_str() is Python 3.10+ only
+                let cow_string = py_str.to_cow()?;
+                let s = cow_string.as_ref();
                 if let Ok(stock_transformer) = s.try_into() {
                     Ok(Some(stock_transformer))
                 } else if s == "default" {
