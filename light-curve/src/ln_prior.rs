@@ -22,7 +22,7 @@ impl LnPrior1D {
     }
 
     /// Used by pickle.load / pickle.loads
-    fn __setstate__(&mut self, state: &PyBytes) -> Res<()> {
+    fn __setstate__(&mut self, state: Bound<PyBytes>) -> Res<()> {
         *self = serde_pickle::from_slice(state.as_bytes(), serde_pickle::DeOptions::new())
             .map_err(|err| {
                 Exception::UnpicklingError(format!(
@@ -33,14 +33,14 @@ impl LnPrior1D {
     }
 
     /// Used by pickle.dump / pickle.dumps
-    fn __getstate__<'py>(&self, py: Python<'py>) -> Res<&'py PyBytes> {
+    fn __getstate__<'py>(&self, py: Python<'py>) -> Res<Bound<'py, PyBytes>> {
         let vec_bytes =
             serde_pickle::to_vec(&self, serde_pickle::SerOptions::new()).map_err(|err| {
                 Exception::PicklingError(format!(
                     r#"Error happened on the Rust side when serializing LnPrior1D: "{err}""#
                 ))
             })?;
-        Ok(PyBytes::new(py, &vec_bytes))
+        Ok(PyBytes::new_bound(py, &vec_bytes))
     }
 
     /// Used by copy.copy
@@ -49,7 +49,7 @@ impl LnPrior1D {
     }
 
     /// Used by copy.deepcopy
-    fn __deepcopy__(&self, _memo: &PyAny) -> Self {
+    fn __deepcopy__(&self, _memo: Bound<PyAny>) -> Self {
         self.clone()
     }
 }
@@ -148,15 +148,15 @@ fn mix(mix: Vec<(f64, LnPrior1D)>) -> LnPrior1D {
     LnPrior1D(lcf::LnPrior1D::mix(priors))
 }
 
-pub fn register_ln_prior_submodule(py: Python, parent_module: &PyModule) -> PyResult<()> {
-    let m = PyModule::new(py, "ln_prior")?;
+pub fn register_ln_prior_submodule(py: Python, parent_module: Bound<PyModule>) -> PyResult<()> {
+    let m = PyModule::new_bound(py, "ln_prior")?;
     m.add_class::<LnPrior1D>()?;
-    m.add_function(wrap_pyfunction!(none, m)?)?;
-    m.add_function(wrap_pyfunction!(log_normal, m)?)?;
-    m.add_function(wrap_pyfunction!(log_uniform, m)?)?;
-    m.add_function(wrap_pyfunction!(normal, m)?)?;
-    m.add_function(wrap_pyfunction!(uniform, m)?)?;
-    m.add_function(wrap_pyfunction!(mix, m)?)?;
-    parent_module.add_submodule(m)?;
+    m.add_function(wrap_pyfunction!(none, &m)?)?;
+    m.add_function(wrap_pyfunction!(log_normal, &m)?)?;
+    m.add_function(wrap_pyfunction!(log_uniform, &m)?)?;
+    m.add_function(wrap_pyfunction!(normal, &m)?)?;
+    m.add_function(wrap_pyfunction!(uniform, &m)?)?;
+    m.add_function(wrap_pyfunction!(mix, &m)?)?;
+    parent_module.add_submodule(&m)?;
     Ok(())
 }

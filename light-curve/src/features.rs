@@ -11,7 +11,8 @@ use itertools::Itertools;
 use light_curve_feature::{self as lcf, prelude::*, DataSample};
 use macro_const::macro_const;
 use ndarray::IntoNdProducer;
-use numpy::{IntoPyArray, PyArray1};
+use numpy::prelude::*;
+use numpy::{PyArray1, PyUntypedArray};
 use once_cell::sync::OnceCell;
 use pyo3::exceptions::{PyNotImplementedError, PyValueError};
 use pyo3::prelude::*;
@@ -32,6 +33,12 @@ use std::convert::TryInto;
 // __setstate__, which could reduce performance of deserialising. We also make this method static
 // to use it in tests, which is also a bit weird thing to do. We use pickle as a serialization
 // format for it, so all Rust object internals can be inspected from Python.
+
+type PyLcs<'py> = Vec<(
+    Bound<'py, PyAny>,
+    Bound<'py, PyAny>,
+    Option<Bound<'py, PyAny>>,
+)>;
 
 const ATTRIBUTES_DOC: &str = r#"Attributes
 ----------
@@ -179,7 +186,7 @@ impl PyFeatureEvaluator {
     fn with_py_transform(
         fe_f32: lcf::Feature<f32>,
         fe_f64: lcf::Feature<f64>,
-        transform: Option<&PyAny>,
+        transform: Option<Bound<PyAny>>,
         default_transformer: StockTransformer,
     ) -> Res<Self> {
         let transform = parse_transform(transform, default_transformer)?;
@@ -278,17 +285,17 @@ impl PyFeatureEvaluator {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn call_impl<T>(
+    fn call_impl<'py, T>(
         feature_evaluator: &lcf::Feature<T>,
-        py: Python,
-        t: Arr<T>,
-        m: Arr<T>,
-        sigma: Option<Arr<T>>,
+        py: Python<'py>,
+        t: Arr<'py, T>,
+        m: Arr<'py, T>,
+        sigma: Option<Arr<'py, T>>,
         sorted: Option<bool>,
         check: bool,
         is_t_required: bool,
         fill_value: Option<T>,
-    ) -> Res<PyObject>
+    ) -> Res<Bound<'py, PyUntypedArray>>
     where
         T: lcf::Float + numpy::Element,
     {
@@ -308,21 +315,21 @@ impl PyFeatureEvaluator {
                 .eval(&mut ts)
                 .map_err(|e| Exception::ValueError(e.to_string()))?,
         };
-        let array = PyArray1::from_vec(py, result);
-        Ok(array.into_py(py))
+        let array = PyArray1::from_vec_bound(py, result);
+        Ok(array.as_untyped().clone())
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn py_many<'a, T>(
+    fn py_many<'py, T>(
         &self,
         feature_evaluator: &lcf::Feature<T>,
-        py: Python,
-        lcs: Vec<(&'a PyAny, &'a PyAny, Option<&'a PyAny>)>,
+        py: Python<'py>,
+        lcs: PyLcs<'py>,
         sorted: Option<bool>,
         check: bool,
         fill_value: Option<T>,
         n_jobs: i64,
-    ) -> Res<PyObject>
+    ) -> Res<Bound<'py, PyUntypedArray>>
     where
         T: lcf::Float + numpy::Element,
     {
@@ -332,9 +339,10 @@ impl PyFeatureEvaluator {
             .map(|(i, (t, m, sigma))| {
                 let t = t.downcast::<PyArray1<T>>().map(|a| a.readonly());
                 let m = m.downcast::<PyArray1<T>>().map(|a| a.readonly());
-                let sigma = sigma
-                    .map(|a| a.downcast::<PyArray1<T>>().map(|a| a.readonly()))
-                    .transpose();
+                let sigma = match &sigma {
+                    Some(sigma) => sigma.downcast::<PyArray1<T>>().map(|a| Some(a.readonly())),
+                    None => Ok(None),
+                };
 
                 match (t, m, sigma) {
                     (Ok(t), Ok(m), Ok(sigma)) => Ok((t, m, sigma)),
@@ -355,8 +363,9 @@ impl PyFeatureEvaluator {
             fill_value,
             n_jobs,
         )?
-        .into_pyarray(py)
-        .into_py(py))
+        .into_pyarray_bound(py)
+        .as_untyped()
+        .clone())
     }
 
     fn many_impl<T>(
@@ -435,16 +444,16 @@ impl PyFeatureEvaluator {
         check = true,
         fill_value = None
     ))]
-    fn __call__(
+    fn __call__<'py>(
         &self,
-        py: Python,
-        t: &PyAny,
-        m: &PyAny,
-        sigma: Option<&PyAny>,
+        py: Python<'py>,
+        t: Bound<'py, PyAny>,
+        m: Bound<'py, PyAny>,
+        sigma: Option<Bound<'py, PyAny>>,
         sorted: Option<bool>,
         check: bool,
         fill_value: Option<f64>,
-    ) -> Res<PyObject> {
+    ) -> Res<Bound<'py, PyUntypedArray>> {
         if let Some(sigma) = sigma {
             dtype_dispatch!(
                 |t, m, sigma| {
@@ -513,15 +522,15 @@ impl PyFeatureEvaluator {
 
     #[doc = METHOD_MANY_DOC!()]
     #[pyo3(signature = (lcs, *, sorted=None, check=true, fill_value=None, n_jobs=-1))]
-    fn many(
+    fn many<'py>(
         &self,
-        py: Python,
-        lcs: Vec<(&PyAny, &PyAny, Option<&PyAny>)>,
+        py: Python<'py>,
+        lcs: PyLcs<'py>,
         sorted: Option<bool>,
         check: bool,
         fill_value: Option<f64>,
         n_jobs: i64,
-    ) -> Res<PyObject> {
+    ) -> Res<Bound<'py, PyUntypedArray>> {
         if lcs.is_empty() {
             Err(Exception::ValueError("lcs is empty".to_string()))
         } else {
@@ -571,7 +580,7 @@ impl PyFeatureEvaluator {
     }
 
     /// Used by pickle.load / pickle.loads
-    fn __setstate__(&mut self, state: &PyBytes) -> Res<()> {
+    fn __setstate__(&mut self, state: Bound<PyBytes>) -> Res<()> {
         *self = serde_pickle::from_slice(state.as_bytes(), serde_pickle::DeOptions::new())
             .map_err(|err| {
                 Exception::UnpicklingError(format!(
@@ -582,14 +591,14 @@ impl PyFeatureEvaluator {
     }
 
     /// Used by pickle.dump / pickle.dumps
-    fn __getstate__<'py>(&self, py: Python<'py>) -> Res<&'py PyBytes> {
+    fn __getstate__<'py>(&self, py: Python<'py>) -> Res<Bound<'py, PyBytes>> {
         let vec_bytes =
             serde_pickle::to_vec(&self, serde_pickle::SerOptions::new()).map_err(|err| {
                 Exception::PicklingError(format!(
                     r#"Error happened on the Rust side when serializing _FeatureEvaluator: "{err}""#
                 ))
             })?;
-        Ok(PyBytes::new(py, &vec_bytes))
+        Ok(PyBytes::new_bound(py, &vec_bytes))
     }
 
     /// Used by copy.copy
@@ -598,7 +607,7 @@ impl PyFeatureEvaluator {
     }
 
     /// Used by copy.deepcopy
-    fn __deepcopy__(&self, _memo: &PyAny) -> Self {
+    fn __deepcopy__(&self, _memo: Bound<PyAny>) -> Self {
         self.clone()
     }
 }
@@ -611,8 +620,8 @@ impl Extractor {
     #[new]
     #[pyo3(signature = (*features, transform=None))]
     fn __new__(
-        features: &PyTuple,
-        transform: Option<&PyAny>,
+        features: Bound<PyTuple>,
+        transform: Option<Bound<PyAny>>,
     ) -> PyResult<(Self, PyFeatureEvaluator)> {
         if transform.is_some() {
             return Err(Exception::NotImplementedError(
@@ -621,9 +630,8 @@ impl Extractor {
             )
             .into());
         }
-        let evals_iter = features.iter().map(|arg| {
-            arg.downcast::<PyCell<PyFeatureEvaluator>>().map(|fe| {
-                let fe = fe.borrow();
+        let evals_iter = features.iter_borrowed().map(|arg| {
+            arg.extract::<PyFeatureEvaluator>().map(|fe| {
                 (
                     fe.feature_evaluator_f32.clone(),
                     fe.feature_evaluator_f64.clone(),
@@ -694,7 +702,7 @@ macro_rules! evaluator {
         impl $name {
             #[new]
             #[pyo3(signature=(*, transform=None))]
-            fn __new__(transform: Option<&PyAny>) -> Res<PyClassInitializer<Self>> {
+            fn __new__(transform: Option<Bound<PyAny>>) -> Res<PyClassInitializer<Self>> {
                 let base = PyFeatureEvaluator::with_py_transform(
                     <$eval>::new().into(),
                     <$eval>::new().into(),
@@ -872,7 +880,7 @@ macro_rules! fit_evaluator {
                 init: Option<Vec<Option<f64>>>,
                 bounds: Option<Vec<(Option<f64>, Option<f64>)>>,
                 ln_prior: Option<FitLnPrior<'_>>,
-                transform: Option<&PyAny>,
+                transform: Option<Bound<PyAny>>,
             ) -> PyResult<(Self, PyFeatureEvaluator)> {
                 let mcmc_niter = mcmc_niter.unwrap_or_else(lcf::McmcCurveFit::default_niterations);
 
@@ -1007,13 +1015,13 @@ macro_rules! fit_evaluator {
 
             #[doc = FIT_METHOD_MODEL_DOC!()]
             #[staticmethod]
-            fn model(
-                py: Python,
-                t: &PyAny,
-                params: &PyAny,
-            ) -> Res<PyObject> {
+            fn model<'py>(
+                py: Python<'py>,
+                t: Bound<'py, PyAny>,
+                params: Bound<'py, PyAny>,
+            ) -> Res<Bound<'py, PyUntypedArray>> {
                 dtype_dispatch!({
-                    |t, params| Ok(Self::model_impl(t, params).into_pyarray(py).into_py(py))
+                    |t, params| Ok(Self::model_impl(t, params).into_pyarray_bound(py).as_untyped().clone())
                 }(t, !=params))
             }
 
@@ -1146,7 +1154,7 @@ impl_stock_transform!(BeyondNStd, StockTransformer::Identity);
 impl BeyondNStd {
     #[new]
     #[pyo3(signature = (nstd=lcf::BeyondNStd::default_nstd(), *, transform=None))]
-    fn __new__(nstd: f64, transform: Option<&PyAny>) -> Res<PyClassInitializer<Self>> {
+    fn __new__(nstd: f64, transform: Option<Bound<PyAny>>) -> Res<PyClassInitializer<Self>> {
         Ok(
             PyClassInitializer::from(PyFeatureEvaluator::with_py_transform(
                 lcf::BeyondNStd::new(nstd as f32).into(),
@@ -1206,11 +1214,10 @@ impl Bins {
     #[new]
     #[pyo3(signature = (features, *, window, offset, transform = None))]
     fn __new__(
-        py: Python,
-        features: PyObject,
+        features: Bound<PyAny>,
         window: f64,
         offset: f64,
-        transform: Option<&PyAny>,
+        transform: Option<Bound<PyAny>>,
     ) -> PyResult<(Self, PyFeatureEvaluator)> {
         if transform.is_some() {
             return Err(Exception::NotImplementedError(
@@ -1221,8 +1228,8 @@ impl Bins {
         }
         let mut eval_f32 = lcf::Bins::default();
         let mut eval_f64 = lcf::Bins::default();
-        for x in features.extract::<&PyAny>(py)?.iter()? {
-            let py_feature = x?.downcast::<PyCell<PyFeatureEvaluator>>()?.borrow();
+        for x in features.iter()? {
+            let py_feature = x?.downcast::<PyFeatureEvaluator>()?.borrow();
             eval_f32.add_feature(py_feature.feature_evaluator_f32.clone());
             eval_f64.add_feature(py_feature.feature_evaluator_f64.clone());
         }
@@ -1252,9 +1259,9 @@ impl Bins {
 
     /// Required by pickle.load / pickle.loads
     #[staticmethod]
-    fn __getnewargs_ex__(py: Python) -> ((&PyTuple,), HashMap<&'static str, f64>) {
+    fn __getnewargs_ex__(py: Python) -> ((Bound<PyTuple>,), HashMap<&'static str, f64>) {
         (
-            (PyTuple::empty(py),),
+            (PyTuple::empty_bound(py),),
             [
                 ("window", lcf::Bins::<_, Feature<_>>::default_window()),
                 ("offset", lcf::Bins::<_, Feature<_>>::default_offset()),
@@ -1307,7 +1314,7 @@ impl_stock_transform!(InterPercentileRange, StockTransformer::Identity);
 impl InterPercentileRange {
     #[new]
     #[pyo3(signature = (quantile=lcf::InterPercentileRange::default_quantile(), *, transform = None))]
-    fn __new__(quantile: f32, transform: Option<&PyAny>) -> Res<PyClassInitializer<Self>> {
+    fn __new__(quantile: f32, transform: Option<Bound<PyAny>>) -> Res<PyClassInitializer<Self>> {
         Ok(
             PyClassInitializer::from(PyFeatureEvaluator::with_py_transform(
                 lcf::InterPercentileRange::new(quantile).into(),
@@ -1382,7 +1389,7 @@ impl MagnitudePercentageRatio {
     fn __new__(
         quantile_numerator: f32,
         quantile_denominator: f32,
-        transform: Option<&PyAny>,
+        transform: Option<Bound<PyAny>>,
     ) -> Res<PyClassInitializer<Self>> {
         if !(0.0..0.5).contains(&quantile_numerator) {
             return Err(Exception::ValueError(
@@ -1463,7 +1470,7 @@ impl_stock_transform!(MedianBufferRangePercentage, StockTransformer::Identity);
 impl MedianBufferRangePercentage {
     #[new]
     #[pyo3(signature = (quantile=lcf::MedianBufferRangePercentage::<f64>::default_quantile(), *, transform = None))]
-    fn __new__(quantile: f64, transform: Option<&PyAny>) -> Res<PyClassInitializer<Self>> {
+    fn __new__(quantile: f64, transform: Option<Bound<PyAny>>) -> Res<PyClassInitializer<Self>> {
         Ok(
             PyClassInitializer::from(PyFeatureEvaluator::with_py_transform(
                 lcf::MedianBufferRangePercentage::new(quantile as f32).into(),
@@ -1518,7 +1525,7 @@ impl_stock_transform!(
 impl PercentDifferenceMagnitudePercentile {
     #[new]
     #[pyo3(signature = (quantile=lcf::PercentDifferenceMagnitudePercentile::default_quantile(), *, transform = None))]
-    fn __new__(quantile: f32, transform: Option<&PyAny>) -> Res<PyClassInitializer<Self>> {
+    fn __new__(quantile: f32, transform: Option<Bound<PyAny>>) -> Res<PyClassInitializer<Self>> {
         if !(0.0..0.5).contains(&quantile) {
             return Err(Exception::ValueError(
                 "quantile must be between 0.0 and 0.5".to_string(),
@@ -1576,13 +1583,12 @@ pub struct Periodogram {
 
 impl Periodogram {
     fn create_evals(
-        py: Python,
         peaks: Option<usize>,
         resolution: Option<f32>,
         max_freq_factor: Option<f32>,
         nyquist: Option<NyquistArgumentOfPeriodogram>,
         fast: Option<bool>,
-        features: Option<PyObject>,
+        features: Option<Bound<PyAny>>,
     ) -> PyResult<(LcfPeriodogram<f32>, LcfPeriodogram<f64>)> {
         let mut eval_f32 = match peaks {
             Some(peaks) => lcf::Periodogram::new(peaks),
@@ -1628,8 +1634,8 @@ impl Periodogram {
             }
         }
         if let Some(features) = features {
-            for x in features.extract::<&PyAny>(py)?.iter()? {
-                let py_feature = x?.downcast::<PyCell<PyFeatureEvaluator>>()?.borrow();
+            for x in features.iter()? {
+                let py_feature = x?.downcast::<PyFeatureEvaluator>()?.borrow();
                 eval_f32.add_feature(py_feature.feature_evaluator_f32.clone());
                 eval_f64.add_feature(py_feature.feature_evaluator_f64.clone());
             }
@@ -1637,12 +1643,12 @@ impl Periodogram {
         Ok((eval_f32, eval_f64))
     }
 
-    fn freq_power_impl<T>(
+    fn freq_power_impl<'py, T>(
         eval: &lcf::Periodogram<T, lcf::Feature<T>>,
-        py: Python,
+        py: Python<'py>,
         t: Arr<T>,
         m: Arr<T>,
-    ) -> (PyObject, PyObject)
+    ) -> (Bound<'py, PyUntypedArray>, Bound<'py, PyUntypedArray>)
     where
         T: lcf::Float + numpy::Element,
     {
@@ -1650,9 +1656,9 @@ impl Periodogram {
         let m: DataSample<_> = m.as_array().into();
         let mut ts = lcf::TimeSeries::new_without_weight(t, m);
         let (freq, power) = eval.freq_power(&mut ts);
-        let freq = PyArray1::from_vec(py, freq);
-        let power = PyArray1::from_vec(py, power);
-        (freq.into_py(py), power.into_py(py))
+        let freq = PyArray1::from_vec_bound(py, freq);
+        let power = PyArray1::from_vec_bound(py, power);
+        (freq.as_untyped().clone(), power.as_untyped().clone())
     }
 }
 
@@ -1671,29 +1677,21 @@ impl Periodogram {
         transform = None,
     ))]
     fn __new__(
-        py: Python,
         peaks: Option<usize>,
         resolution: Option<f32>,
         max_freq_factor: Option<f32>,
         nyquist: Option<NyquistArgumentOfPeriodogram>,
         fast: Option<bool>,
-        features: Option<PyObject>,
-        transform: Option<&PyAny>,
+        features: Option<Bound<PyAny>>,
+        transform: Option<Bound<PyAny>>,
     ) -> PyResult<(Self, PyFeatureEvaluator)> {
         if transform.is_some() {
             return Err(PyNotImplementedError::new_err(
                 "transform is not supported by Periodogram, peak-related features are not transformed, but you still may apply transformation for the underlying features",
             ));
         }
-        let (eval_f32, eval_f64) = Self::create_evals(
-            py,
-            peaks,
-            resolution,
-            max_freq_factor,
-            nyquist,
-            fast,
-            features,
-        )?;
+        let (eval_f32, eval_f64) =
+            Self::create_evals(peaks, resolution, max_freq_factor, nyquist, fast, features)?;
         Ok((
             Self {
                 eval_f32: eval_f32.clone(),
@@ -1707,7 +1705,12 @@ impl Periodogram {
     }
 
     /// Angular frequencies and periodogram values
-    fn freq_power(&self, py: Python, t: &PyAny, m: &PyAny) -> Res<(PyObject, PyObject)> {
+    fn freq_power<'py>(
+        &self,
+        py: Python<'py>,
+        t: Bound<PyAny>,
+        m: Bound<PyAny>,
+    ) -> Res<(Bound<'py, PyUntypedArray>, Bound<'py, PyUntypedArray>)> {
         dtype_dispatch!(
             |t, m| Ok(Self::freq_power_impl(&self.eval_f32, py, t, m)),
             |t, m| Ok(Self::freq_power_impl(&self.eval_f64, py, t, m)),
@@ -1847,7 +1850,7 @@ pub struct OtsuSplit {}
 impl OtsuSplit {
     #[new]
     #[pyo3(signature = (*, transform=None))]
-    fn __new__(transform: Option<&PyAny>) -> Res<(Self, PyFeatureEvaluator)> {
+    fn __new__(transform: Option<Bound<PyAny>>) -> Res<(Self, PyFeatureEvaluator)> {
         if transform.is_some() {
             return Err(Exception::NotImplementedError(
                 "OtsuSplit does not support transformations yet".to_string(),
@@ -1863,7 +1866,7 @@ impl OtsuSplit {
     }
 
     #[staticmethod]
-    fn threshold(m: &PyAny) -> Res<f64> {
+    fn threshold(m: Bound<PyAny>) -> Res<f64> {
         dtype_dispatch!({ Self::threshold_impl }(m))
     }
 

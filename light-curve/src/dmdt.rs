@@ -8,7 +8,8 @@ use enumflags2::{bitflags, BitFlags};
 use light_curve_dmdt as lcdmdt;
 use light_curve_dmdt::{Grid, GridTrait};
 use ndarray::IntoNdProducer;
-use numpy::{Element, IntoPyArray, PyArray1, ToPyArray};
+use numpy::prelude::*;
+use numpy::{Element, PyArray1, PyUntypedArray, ToPyArray};
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyTuple};
 use rand::SeedableRng;
@@ -54,11 +55,11 @@ where
     n_jobs: usize,
 }
 
-impl<'a, T> GenericDmDt<T>
+impl<'py, T> GenericDmDt<T>
 where
     T: Element + ndarray::NdFloat + lcdmdt::ErfFloat,
 {
-    fn sigma_to_err2(sigma: Arr<'a, T>) -> ContArray<T> {
+    fn sigma_to_err2(sigma: Arr<'py, T>) -> ContArray<T> {
         let mut a: ContArray<_> = sigma.as_array().into();
         a.0.mapv_inplace(|x| x.powi(2));
         a
@@ -84,12 +85,17 @@ where
         }
     }
 
-    fn py_count_dt(&self, py: Python, t: Arr<'a, T>, sorted: Option<bool>) -> Res<PyObject> {
+    fn py_count_dt(
+        &self,
+        py: Python<'py>,
+        t: Arr<'py, T>,
+        sorted: Option<bool>,
+    ) -> Res<Bound<'py, PyUntypedArray>> {
         self.count_dt(
             ContCowArray::from_view(t.as_array(), true).as_slice(),
             sorted,
         )
-        .map(|a| a.into_pyarray(py).into_py(py))
+        .map(|a| a.into_pyarray_bound(py).as_untyped().clone())
     }
 
     fn count_dt(&self, t: &[T], sorted: Option<bool>) -> Res<ndarray::Array1<T>> {
@@ -97,7 +103,12 @@ where
         Ok(self.dmdt.dt_points(t).mapv(|x| x.approx_into().unwrap()))
     }
 
-    fn py_count_dt_many(&self, py: Python, t_: Vec<&PyAny>, sorted: Option<bool>) -> Res<PyObject> {
+    fn py_count_dt_many(
+        &self,
+        py: Python<'py>,
+        t_: Vec<Bound<'py, PyAny>>,
+        sorted: Option<bool>,
+    ) -> Res<Bound<'py, PyUntypedArray>> {
         let wrapped_t_ = t_
             .into_iter()
             .enumerate()
@@ -117,8 +128,9 @@ where
         let typed_t_ = array_t_.iter().map(|t| t.as_slice()).collect();
         Ok(self
             .count_dt_many(typed_t_, sorted)?
-            .into_pyarray(py)
-            .into_py(py))
+            .into_pyarray_bound(py)
+            .as_untyped()
+            .clone())
     }
 
     fn count_dt_many(&self, t_: Vec<&[T]>, sorted: Option<bool>) -> Res<ndarray::Array2<T>> {
@@ -143,19 +155,20 @@ where
 
     fn py_points(
         &self,
-        py: Python,
-        t: Arr<'a, T>,
-        m: Arr<'a, T>,
+        py: Python<'py>,
+        t: Arr<'py, T>,
+        m: Arr<'py, T>,
         sorted: Option<bool>,
-    ) -> Res<PyObject> {
+    ) -> Res<Bound<'py, PyUntypedArray>> {
         Ok(self
             .points(
                 ContCowArray::from_view(t.as_array(), true).as_slice(),
                 ContCowArray::from_view(m.as_array(), true).as_slice(),
                 sorted,
             )?
-            .into_pyarray(py)
-            .into_py(py))
+            .into_pyarray_bound(py)
+            .as_untyped()
+            .clone())
     }
 
     fn points(&self, t: &[T], m: &[T], sorted: Option<bool>) -> Res<ndarray::Array2<T>> {
@@ -168,10 +181,10 @@ where
 
     fn py_points_many(
         &self,
-        py: Python,
-        lcs: Vec<(&PyAny, &PyAny)>,
+        py: Python<'py>,
+        lcs: Vec<(Bound<'py, PyAny>, Bound<'py, PyAny>)>,
         sorted: Option<bool>,
-    ) -> Res<PyObject> {
+    ) -> Res<Bound<'py, PyUntypedArray>> {
         let wrapped_lcs = lcs
             .into_iter()
             .enumerate()
@@ -203,8 +216,9 @@ where
             .collect();
         Ok(self
             .points_many(typed_lcs, sorted)?
-            .into_pyarray(py)
-            .into_py(py))
+            .into_pyarray_bound(py)
+            .as_untyped()
+            .clone())
     }
 
     fn points_many(&self, lcs: Vec<(&[T], &[T])>, sorted: Option<bool>) -> Res<ndarray::Array3<T>> {
@@ -230,7 +244,7 @@ where
     #[allow(clippy::too_many_arguments)]
     fn generic_dmdt_points_batches(
         &self,
-        lcs: Vec<(&'a PyAny, &'a PyAny)>,
+        lcs: Vec<(Bound<'py, PyAny>, Bound<'py, PyAny>)>,
         sorted: Option<bool>,
         batch_size: usize,
         yield_index: bool,
@@ -272,12 +286,12 @@ where
 
     fn py_gausses(
         &self,
-        py: Python,
-        t: Arr<'a, T>,
-        m: Arr<'a, T>,
-        sigma: Arr<'a, T>,
+        py: Python<'py>,
+        t: Arr<'py, T>,
+        m: Arr<'py, T>,
+        sigma: Arr<'py, T>,
         sorted: Option<bool>,
-    ) -> Res<PyObject> {
+    ) -> Res<Bound<'py, PyUntypedArray>> {
         let err2 = Self::sigma_to_err2(sigma);
         Ok(self
             .gausses(
@@ -286,8 +300,9 @@ where
                 err2.as_slice(),
                 sorted,
             )?
-            .into_pyarray(py)
-            .into_py(py))
+            .into_pyarray_bound(py)
+            .as_untyped()
+            .clone())
     }
 
     fn gausses(
@@ -309,10 +324,10 @@ where
 
     fn py_gausses_many(
         &self,
-        py: Python,
-        lcs: Vec<(&'a PyAny, &'a PyAny, &'a PyAny)>,
+        py: Python<'py>,
+        lcs: Vec<(Bound<'py, PyAny>, Bound<'py, PyAny>, Bound<'py, PyAny>)>,
         sorted: Option<bool>,
-    ) -> Res<PyObject> {
+    ) -> Res<Bound<'py, PyUntypedArray>> {
         let wrapped_lcs = lcs
             .into_iter()
             .enumerate()
@@ -347,8 +362,9 @@ where
             .collect();
         Ok(self
             .gausses_many(typed_lcs, sorted)?
-            .into_pyarray(py)
-            .into_py(py))
+            .into_pyarray_bound(py)
+            .as_untyped()
+            .clone())
     }
 
     fn gausses_many(
@@ -378,7 +394,7 @@ where
     #[allow(clippy::too_many_arguments)]
     fn generic_dmdt_gausses_batches(
         &self,
-        lcs: Vec<(&'a PyAny, &'a PyAny, &'a PyAny)>,
+        lcs: Vec<(Bound<PyAny>, Bound<PyAny>, Bound<PyAny>)>,
         sorted: Option<bool>,
         batch_size: usize,
         yield_index: bool,
@@ -600,7 +616,7 @@ macro_rules! dmdt_batches {
                 slf
             }
 
-            fn __next__(mut slf: PyRefMut<Self>) -> Res<Option<PyObject>> {
+            fn __next__(mut slf: PyRefMut<Self>) -> Res<Option<Bound<PyAny>>> {
                 if slf.worker_thread.borrow().is_none() {
                     return Ok(None);
                 }
@@ -627,13 +643,15 @@ macro_rules! dmdt_batches {
                     )));
                 }
 
-                let py_array = array.into_pyarray(slf.py()).into_py(slf.py());
+                let py_array = array.into_pyarray_bound(slf.py()).into_any();
                 match current_range {
                     Some(range) => {
-                        let py_index =
-                            PyArray1::from_slice(slf.py(), &slf.lcs_order[range.start..range.end])
-                                .into_py(slf.py());
-                        let tuple = PyTuple::new(slf.py(), &[py_index, py_array]).into_py(slf.py());
+                        let py_index = PyArray1::from_slice_bound(
+                            slf.py(),
+                            &slf.lcs_order[range.start..range.end],
+                        )
+                        .into_any();
+                        let tuple = PyTuple::new_bound(slf.py(), &[py_index, py_array]).into_any();
                         Ok(Some(tuple))
                     }
                     None => Ok(Some(py_array)),
@@ -976,9 +994,9 @@ impl DmDt {
         n_jobs = -1,
         approx_erf = false
     ))]
-    fn __new__<'a>(
-        dt: Arr<'a, f64>,
-        dm: Arr<'a, f64>,
+    fn __new__<'py>(
+        dt: Arr<'py, f64>,
+        dm: Arr<'py, f64>,
         dt_type: &str,
         dm_type: &str,
         norm: Vec<&str>,
@@ -1060,8 +1078,12 @@ impl DmDt {
     }
 
     #[getter]
-    fn dt_grid<'py>(&self, py: Python<'py>) -> &'py PyArray1<f64> {
-        self.dmdt_f64.dmdt.dt_grid.get_borders().to_pyarray(py)
+    fn dt_grid<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        self.dmdt_f64
+            .dmdt
+            .dt_grid
+            .get_borders()
+            .to_pyarray_bound(py)
     }
 
     #[getter]
@@ -1075,8 +1097,12 @@ impl DmDt {
     }
 
     #[getter]
-    fn dm_grid<'py>(&self, py: Python<'py>) -> &'py PyArray1<f64> {
-        self.dmdt_f64.dmdt.dm_grid.get_borders().to_pyarray(py)
+    fn dm_grid<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        self.dmdt_f64
+            .dmdt
+            .dm_grid
+            .get_borders()
+            .to_pyarray_bound(py)
     }
 
     #[getter]
@@ -1105,7 +1131,12 @@ impl DmDt {
     /// 1d-array of float
     ///
     #[pyo3(signature=(t, *, sorted=None))]
-    fn count_dt(&self, py: Python, t: &PyAny, sorted: Option<bool>) -> Res<PyObject> {
+    fn count_dt<'py>(
+        &self,
+        py: Python<'py>,
+        t: Bound<'py, PyAny>,
+        sorted: Option<bool>,
+    ) -> Res<Bound<'py, PyUntypedArray>> {
         dtype_dispatch!(
             |t| self.dmdt_f32.py_count_dt(py, t, sorted),
             |t| self.dmdt_f64.py_count_dt(py, t, sorted),
@@ -1129,7 +1160,12 @@ impl DmDt {
     /// 1d-array of float
     ///
     #[pyo3(signature = (t_, sorted=None))]
-    fn count_dt_many(&self, py: Python, t_: Vec<&PyAny>, sorted: Option<bool>) -> Res<PyObject> {
+    fn count_dt_many<'py>(
+        &self,
+        py: Python<'py>,
+        t_: Vec<Bound<'py, PyAny>>,
+        sorted: Option<bool>,
+    ) -> Res<Bound<'py, PyUntypedArray>> {
         if t_.is_empty() {
             Err(Exception::ValueError("t_ is empty".to_owned()))
         } else {
@@ -1157,7 +1193,13 @@ impl DmDt {
     /// 2d-ndarray of float
     ///
     #[pyo3(signature = (t, m, *, sorted=None))]
-    fn points(&self, py: Python, t: &PyAny, m: &PyAny, sorted: Option<bool>) -> Res<PyObject> {
+    fn points<'py>(
+        &self,
+        py: Python<'py>,
+        t: Bound<'py, PyAny>,
+        m: Bound<'py, PyAny>,
+        sorted: Option<bool>,
+    ) -> Res<Bound<'py, PyUntypedArray>> {
         dtype_dispatch!(
             |t, m| self.dmdt_f32.py_points(py, t, m, sorted),
             |t, m| self.dmdt_f64.py_points(py, t, m, sorted),
@@ -1183,12 +1225,12 @@ impl DmDt {
     /// 3d-ndarray of float
     ///
     #[pyo3(signature = (lcs, *, sorted=None))]
-    fn points_many(
+    fn points_many<'py>(
         &self,
-        py: Python,
-        lcs: Vec<(&PyAny, &PyAny)>,
+        py: Python<'py>,
+        lcs: Vec<(Bound<'py, PyAny>, Bound<'py, PyAny>)>,
         sorted: Option<bool>,
-    ) -> Res<PyObject> {
+    ) -> Res<Bound<'py, PyUntypedArray>> {
         if lcs.is_empty() {
             Err(Exception::ValueError("lcs is empty".to_owned()))
         } else {
@@ -1252,45 +1294,51 @@ impl DmDt {
         ),
         text_signature = "(lcs, *, sorted=None, batch_size=1, yield_index=False, shuffle=False, drop_nobs=0, random_seed=None)",
     )]
-    fn points_batches(
+    fn points_batches<'py>(
         &self,
-        py: Python,
-        lcs: Vec<(&PyAny, &PyAny)>,
+        py: Python<'py>,
+        lcs: Vec<(Bound<'py, PyAny>, Bound<'py, PyAny>)>,
         sorted: Option<bool>,
         batch_size: usize,
         yield_index: bool,
         shuffle: bool,
         drop_nobs: DropNObsType,
         random_seed: Option<u64>,
-    ) -> Res<PyObject> {
+    ) -> Res<Bound<'py, PyAny>> {
         if lcs.is_empty() {
             Err(Exception::ValueError("lcs is empty".to_owned()))
         } else {
             dtype_dispatch!(
-                |_first_t| Ok(DmDtPointsBatchesF32 {
-                    dmdt_batches: Arc::new(self.dmdt_f32.generic_dmdt_points_batches(
-                        lcs,
-                        sorted,
-                        batch_size,
-                        yield_index,
-                        shuffle,
-                        drop_nobs,
-                        random_seed,
-                    )?),
-                }
-                .into_py(py)),
-                |_first_t| Ok(DmDtPointsBatchesF64 {
-                    dmdt_batches: Arc::new(self.dmdt_f64.generic_dmdt_points_batches(
-                        lcs,
-                        sorted,
-                        batch_size,
-                        yield_index,
-                        shuffle,
-                        drop_nobs,
-                        random_seed,
-                    )?),
-                }
-                .into_py(py)),
+                |_first_t| Ok(Bound::new(
+                    py,
+                    DmDtPointsBatchesF32 {
+                        dmdt_batches: Arc::new(self.dmdt_f32.generic_dmdt_points_batches(
+                            lcs,
+                            sorted,
+                            batch_size,
+                            yield_index,
+                            shuffle,
+                            drop_nobs,
+                            random_seed,
+                        )?),
+                    }
+                )?
+                .into_any()),
+                |_first_t| Ok(Bound::new(
+                    py,
+                    DmDtPointsBatchesF64 {
+                        dmdt_batches: Arc::new(self.dmdt_f64.generic_dmdt_points_batches(
+                            lcs,
+                            sorted,
+                            batch_size,
+                            yield_index,
+                            shuffle,
+                            drop_nobs,
+                            random_seed,
+                        )?),
+                    }
+                )?
+                .into_any()),
                 lcs[0].0
             )
         }
@@ -1314,14 +1362,14 @@ impl DmDt {
     /// 2d-array of float
     ///
     #[pyo3(signature = (t, m, sigma, *, sorted=None))]
-    fn gausses(
+    fn gausses<'py>(
         &self,
-        py: Python,
-        t: &PyAny,
-        m: &PyAny,
-        sigma: &PyAny,
+        py: Python<'py>,
+        t: Bound<'py, PyAny>,
+        m: Bound<'py, PyAny>,
+        sigma: Bound<'py, PyAny>,
         sorted: Option<bool>,
-    ) -> Res<PyObject> {
+    ) -> Res<Bound<'py, PyUntypedArray>> {
         dtype_dispatch!(
             |t, m, sigma| self.dmdt_f32.py_gausses(py, t, m, sigma, sorted),
             |t, m, sigma| self.dmdt_f64.py_gausses(py, t, m, sigma, sorted),
@@ -1348,12 +1396,12 @@ impl DmDt {
     /// 3d-ndarray of float
     ///
     #[pyo3(signature = (lcs, *, sorted=None))]
-    fn gausses_many(
+    fn gausses_many<'py>(
         &self,
-        py: Python,
-        lcs: Vec<(&PyAny, &PyAny, &PyAny)>,
+        py: Python<'py>,
+        lcs: Vec<(Bound<'py, PyAny>, Bound<'py, PyAny>, Bound<'py, PyAny>)>,
         sorted: Option<bool>,
-    ) -> Res<PyObject> {
+    ) -> Res<Bound<'py, PyUntypedArray>> {
         if lcs.is_empty() {
             Err(Exception::ValueError("lcs is empty".to_owned()))
         } else {
@@ -1413,52 +1461,58 @@ impl DmDt {
         ),
         text_signature = "($self, lcs, *, sorted=None, batch_size=1, yield_index=False, shuffle=False, drop_nobs=0, random_seed=None)"
     )]
-    fn gausses_batches(
+    fn gausses_batches<'py>(
         &self,
-        py: Python,
-        lcs: Vec<(&PyAny, &PyAny, &PyAny)>,
+        py: Python<'py>,
+        lcs: Vec<(Bound<'py, PyAny>, Bound<'py, PyAny>, Bound<'py, PyAny>)>,
         sorted: Option<bool>,
         batch_size: usize,
         yield_index: bool,
         shuffle: bool,
         drop_nobs: DropNObsType,
         random_seed: Option<u64>,
-    ) -> Res<PyObject> {
+    ) -> Res<Bound<'py, PyAny>> {
         if lcs.is_empty() {
             Err(Exception::ValueError("lcs is empty".to_owned()))
         } else {
             dtype_dispatch!(
-                |_first_t| Ok(DmDtGaussesBatchesF32 {
-                    dmdt_batches: Arc::new(self.dmdt_f32.generic_dmdt_gausses_batches(
-                        lcs,
-                        sorted,
-                        batch_size,
-                        yield_index,
-                        shuffle,
-                        drop_nobs,
-                        random_seed,
-                    )?),
-                }
-                .into_py(py)),
-                |_first_t| Ok(DmDtGaussesBatchesF64 {
-                    dmdt_batches: Arc::new(self.dmdt_f64.generic_dmdt_gausses_batches(
-                        lcs,
-                        sorted,
-                        batch_size,
-                        yield_index,
-                        shuffle,
-                        drop_nobs,
-                        random_seed,
-                    )?),
-                }
-                .into_py(py)),
+                |_first_t| Ok(Bound::new(
+                    py,
+                    DmDtGaussesBatchesF32 {
+                        dmdt_batches: Arc::new(self.dmdt_f32.generic_dmdt_gausses_batches(
+                            lcs,
+                            sorted,
+                            batch_size,
+                            yield_index,
+                            shuffle,
+                            drop_nobs,
+                            random_seed,
+                        )?),
+                    }
+                )?
+                .into_any()),
+                |_first_t| Ok(Bound::new(
+                    py,
+                    DmDtGaussesBatchesF64 {
+                        dmdt_batches: Arc::new(self.dmdt_f64.generic_dmdt_gausses_batches(
+                            lcs,
+                            sorted,
+                            batch_size,
+                            yield_index,
+                            shuffle,
+                            drop_nobs,
+                            random_seed,
+                        )?),
+                    }
+                )?
+                .into_any()),
                 lcs[0].0
             )
         }
     }
 
     /// Used by pickle.load / pickle.loads
-    fn __setstate__(&mut self, state: &PyBytes) -> Res<()> {
+    fn __setstate__(&mut self, state: Bound<PyBytes>) -> Res<()> {
         *self = serde_pickle::from_slice(state.as_bytes(), serde_pickle::DeOptions::new())
             .map_err(|err| {
                 Exception::UnpicklingError(format!(
@@ -1469,20 +1523,23 @@ impl DmDt {
     }
 
     /// Used by pickle.dump / pickle.dumps
-    fn __getstate__<'py>(&self, py: Python<'py>) -> Res<&'py PyBytes> {
+    fn __getstate__<'py>(&self, py: Python<'py>) -> Res<Bound<'py, PyBytes>> {
         let vec_bytes =
             serde_pickle::to_vec(&self, serde_pickle::SerOptions::new()).map_err(|err| {
                 Exception::PicklingError(format!(
                     r#"Error happened on the Rust side when serializing DmDt: "{err}""#
                 ))
             })?;
-        Ok(PyBytes::new(py, &vec_bytes))
+        Ok(PyBytes::new_bound(py, &vec_bytes))
     }
 
     /// Used by pickle.dump / pickle.dumps
-    fn __getnewargs__<'py>(&self, py: Python<'py>) -> (&'py PyArray1<f64>, &'py PyArray1<f64>) {
-        let a = ndarray::array![1.0, 2.0].to_pyarray(py);
-        (a, a)
+    fn __getnewargs__<'py>(
+        &self,
+        py: Python<'py>,
+    ) -> (Bound<'py, PyArray1<f64>>, Bound<'py, PyArray1<f64>>) {
+        let a = ndarray::array![1.0, 2.0].to_pyarray_bound(py);
+        (a.clone(), a)
     }
 
     /// Used by copy.copy
@@ -1491,7 +1548,7 @@ impl DmDt {
     }
 
     /// Used by copy.deepcopy
-    fn __deepcopy__(&self, _memo: &PyAny) -> Self {
+    fn __deepcopy__(&self, _memo: Bound<PyAny>) -> Self {
         self.clone()
     }
 }

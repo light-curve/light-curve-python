@@ -105,7 +105,7 @@ impl From<StockTransformer> for (Transformer<f32>, Transformer<f64>) {
 }
 
 pub(crate) fn parse_transform(
-    option: Option<&PyAny>,
+    option: Option<Bound<PyAny>>,
     default: StockTransformer,
 ) -> Res<Option<StockTransformer>> {
     match option {
@@ -118,7 +118,9 @@ pub(crate) fn parse_transform(
                     Ok(None)
                 }
             } else if let Ok(py_str) = py_any.downcast::<PyString>() {
-                let s = py_str.to_str()?;
+                // py_str.to_str() is Python 3.10+ only
+                let cow_string = py_str.to_cow()?;
+                let s = cow_string.as_ref();
                 if let Ok(stock_transformer) = s.try_into() {
                     Ok(Some(stock_transformer))
                 } else if s == "default" {
@@ -132,7 +134,7 @@ pub(crate) fn parse_transform(
             } else {
                 Err(Exception::ValueError(format!(
                     "transform must be None, a bool or a str, not {}",
-                    py_any.get_type().name()?
+                    py_any.get_type().qualname()?
                 )))
             }
         }

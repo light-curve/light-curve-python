@@ -1,5 +1,6 @@
 use crate::errors::{Exception, Res};
 
+use numpy::prelude::*;
 use numpy::{Element, PyArray1, PyReadonlyArray1};
 use pyo3::prelude::*;
 
@@ -23,13 +24,13 @@ impl DType for f64 {
 
 pub(crate) fn extract_matched_array<'py, T>(
     y_name: &'static str,
-    y: &'py PyAny,
+    y: Bound<'py, PyAny>,
     x_name: &'static str,
     x: &Arr<'py, T>,
     check_size: bool,
 ) -> Res<Arr<'py, T>>
 where
-    T: Element + DType,
+    T: Element + DType + 'py,
 {
     if let Ok(y) = y.downcast::<PyArray1<T>>() {
         let y = y.readonly();

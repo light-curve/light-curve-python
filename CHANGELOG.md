@@ -13,7 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
---
+- Stop publishing PyPy wheels to PyPI. We still publish all CPython wheels we published previously https://github.com/light-curve/light-curve-python/issues/345 https://github.com/light-curve/light-curve-python/pull/347
+- Bump `pyO3` to 0.21
+- Bump `rust-numpy` to 0.21
 
 ### Deprecated
 
