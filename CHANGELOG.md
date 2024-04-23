@@ -9,15 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `PeakToPeakVar` experimental feature https://github.com/light-curve/light-curve-python/pull/332
+--
 
 ### Changed
 
-- Stop publishing PyPy wheels to PyPI. We still publish all CPython wheels we published
-  previously https://github.com/light-curve/light-curve-python/issues/345 https://github.com/light-curve/light-curve-python/pull/347
-- Bump `pyO3` to 0.21
-- Bump `rust-numpy` to 0.21
-- "abi3" is a default Cargo feature now
+--
 
 ### Deprecated
 
@@ -29,12 +25,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Bug which prevents initialization of Rust's `*Fit` features if compiled without Ceres or GSL (our PyPi Windows
-  wheels) https://github.com/light-curve/light-curve-python/issues/343 https://github.com/light-curve/light-curve-python/pull/344
+--
 
 ### Security
 
 --
+
+## [0.9.1] 2024-04-23
+
+### Added
+
+- `PeakToPeakVar` experimental feature https://github.com/light-curve/light-curve-python/pull/332
+
+### Changed
+
+- Bump `pyO3` to 0.21
+- Bump `rust-numpy` to 0.21
+- "abi3" is a default Cargo feature now
+
+### Removed
+
+- Stop publishing PyPy wheels to PyPI. We still publish all CPython wheels we published
+  previously https://github.com/light-curve/light-curve-python/issues/345 https://github.com/light-curve/light-curve-python/pull/347
+
+### Fixed
+
+- Bug which prevents initialization of Rust's `*Fit` features if compiled without Ceres or GSL (our PyPi Windows
+  wheels) https://github.com/light-curve/light-curve-python/issues/343 https://github.com/light-curve/light-curve-python/pull/344
 
 ## [0.9.0] 2024-03-06
 
