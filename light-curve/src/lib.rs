@@ -95,6 +95,7 @@ fn light_curve(py: Python, m: Bound<PyModule>) -> PyResult<()> {
     m.add_class::<f::PercentDifferenceMagnitudePercentile>()?;
     m.add_class::<f::Periodogram>()?;
     m.add_class::<f::ReducedChi2>()?;
+    m.add_class::<f::Roms>()?;
     m.add_class::<f::Skew>()?;
     m.add_class::<f::StandardDeviation>()?;
     m.add_class::<f::StetsonK>()?;
