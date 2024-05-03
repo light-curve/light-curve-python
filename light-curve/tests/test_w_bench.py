@@ -579,6 +579,10 @@ class TestReducedChi2(_Test):
         return np.sum(np.square(m - np.average(m, weights=w)) * w) / (m.size - 1)
 
 
+class TestRoms(_Test):
+    name = "Roms"
+
+
 class TestSkew(_Test):
     name = "Skew"
 

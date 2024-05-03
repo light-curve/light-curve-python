@@ -1793,6 +1793,8 @@ Examples
 
 evaluator!(ReducedChi2, lcf::ReducedChi2, StockTransformer::Ln1p);
 
+evaluator!(Roms, lcf::Roms, StockTransformer::Identity);
+
 evaluator!(Skew, lcf::Skew, StockTransformer::Arcsinh);
 
 evaluator!(
