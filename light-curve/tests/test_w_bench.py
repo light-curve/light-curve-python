@@ -577,8 +577,8 @@ class TestReducedChi2(_Test):
     def naive(self, t, m, sigma):
         w = 1.0 / np.square(sigma)
         return np.sum(np.square(m - np.average(m, weights=w)) * w) / (m.size - 1)
-    
-    
+
+
 class TestRoms(_Test):
     name = "Roms"
 
