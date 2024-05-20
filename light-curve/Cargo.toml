@@ -35,7 +35,7 @@ enum-iterator = "2.0.0"
 enumflags2 = { version = "0.7.7", features = ["serde"] }
 itertools = "0.12.1"
 macro_const = "0.1.0"
-mimalloc = { version = "0.1.39", features = ["local_dynamic_tls"], optional = true }
+mimalloc = { version = "0.1.42", features = ["local_dynamic_tls"], optional = true }
 ndarray = { version = "0.15.3", features = ["rayon"] }
 numpy = "0.21.0"
 num_cpus = "1.13.0"
