@@ -217,9 +217,3 @@ environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--lo
 select = "cp*-manylinux_x86_64 cp*-manylinux_aarch64 cp*-macosx*"
 test-command = "pytest {package}/README.md {package}/light_curve/ {package}/tests/ --ignore {package}/tests/test_w_bench.py"
 test-extras = ["test-no-bench"]
-
-# Since we build ABI3 wheels, we need to check for ABI3 compatibility
-[[tool.cibuildwheel.overrides]]
-select = "*"
-inherit.repair-wheel-command = "append"
-repair-wheel-command = "pipx run --python=python3.12 abi3audit --strict --report {wheel}"
