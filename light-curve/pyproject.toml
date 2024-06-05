@@ -222,4 +222,4 @@ test-extras = ["test-no-bench"]
 [[tool.cibuildwheel.overrides]]
 select = "*"
 inherit.repair-wheel-command = "append"
-repair-wheel-command = "pipx --python=python3.12 run abi3audit --strict --report {wheel}"
+repair-wheel-command = "pipx run --python=python3.12 abi3audit --strict --report {wheel}"
