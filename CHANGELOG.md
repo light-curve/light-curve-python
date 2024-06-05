@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
---
+- PyPI wheels used to have wrong platform tags, actual minimum macOS versions are what we use in CI: 12.0+ for x86_64 and 14.0+ for arm64. https://github.com/light-curve/light-curve-python/issues/376 https://github.com/light-curve/light-curve-python/pull/378
 
 ### Security
 
