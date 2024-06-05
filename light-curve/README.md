@@ -25,7 +25,7 @@ versions.
 
 ### Support matrix
 
-| Arch \ OS   | Linux glibc 2.17+ | Linux musl 1.2+                | macOS     | Windows https://github.com/light-curve/light-curve-python/issues/186 |
+| Arch \ OS   | Linux glibc 2.17+ | Linux musl 1.1+                | macOS     | Windows https://github.com/light-curve/light-curve-python/issues/186 |
 |-------------|-------------------|--------------------------------|-----------|----------------------------------------------------------------------|
 | **x86-64**  | wheel (MKL)       | wheel (MKL)                    | wheel 12+ | wheel (no Ceres, no GSL)                                             |
 | **i686**    | src               | src                            | —         | not tested                                                           |
