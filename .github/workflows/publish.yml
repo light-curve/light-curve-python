@@ -65,7 +65,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up QEMU on Linux
-        if: ${{ matrix.os == 'ubuntu-20.04' }}
+        if: ${{ runner.os == 'Linux' }}
         uses: docker/setup-qemu-action@v3
         with:
           platforms: all
@@ -77,15 +77,21 @@ jobs:
           echo "CPATH=$(brew --prefix)/include:$(brew --prefix)/include/eigen3:${CPATH}" >> $GITHUB_ENV
           echo "LIBRARY_PATH=$(brew --prefix)/lib:$(brew --prefix)/lib64:${LIBRARY_PATH}" >> $GITHUB_ENV
 
+      - name: Set MACOSX_DEPLOYMENT_TARGET to the current macOS version
+        if: ${{ runner.os == 'macOS' }}
+        run: |
+          export MACOSX_DEPLOYMENT_TARGET=$(sw_vers -productVersion | awk -F '.' '{print $1"."0}')
+          echo "MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET}" >> $GITHUB_ENV
+
       # We only support AMD64 architecture for Windows, so we hard-code it here.
       - name: Set CIBW envs on Windows
-        if: ${{ matrix.os == 'windows-2019' }}
+        if: ${{ runner.os == 'Windows' }}
         run: |
           "CIBW_BUILD=${{ matrix.cibw_build }}" >> $env:GITHUB_ENV
           "CIBW_ARCHS=AMD64" >> $env:GITHUB_ENV
 
       - name: Set CIBW envs on Linux or macOS
-        if: ${{ matrix.os != 'windows-2019' }}
+        if: ${{ runner.os != 'Windows' }}
         run: |
           echo "CIBW_BUILD=${{ matrix.cibw_build }}" >> $GITHUB_ENV
           CIBW_ARCHS=$(echo ${{ matrix.cibw_build }} | cut -d'_' -f2,3)

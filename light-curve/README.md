@@ -1,6 +1,8 @@
 # `light-curve` processing toolbox for Python
 
-The Python wrapper for Rust [`light-curve-feature`](https://github.com/light-curve/light-curve-feature) and [`light-curve-dmdt`](https://github.com/light-curve/light-curve-dmdt) packages which gives a collection of high-performant time-series feature extractors.
+The Python wrapper for Rust [`light-curve-feature`](https://github.com/light-curve/light-curve-feature)
+and [`light-curve-dmdt`](https://github.com/light-curve/light-curve-dmdt) packages which gives a collection of
+high-performant time-series feature extractors.
 
 [![PyPI version](https://badge.fury.io/py/light-curve.svg)](https://pypi.org/project/light-curve/)
 ![testing](https://github.com/light-curve/light-curve-python/actions/workflows/test.yml/badge.svg)
@@ -16,23 +18,35 @@ python3 -mpip install 'light-curve[full]'
 We also provide `light-curve-python` package which is just an "alias" to the main `light-curve[full]` package.
 
 Minimum supported Python version is 3.8.
-We provide binary CPython wheels via [PyPi](https://pypi.org/project/light-curve/) for a number of platforms and architectures.
-We also provide binary wheels for stable CPython ABI, so the package is guaranteed to work with all future CPython3 versions.
+We provide binary CPython wheels via [PyPi](https://pypi.org/project/light-curve/) for a number of platforms and
+architectures.
+We also provide binary wheels for stable CPython ABI, so the package is guaranteed to work with all future CPython3
+versions.
 
 ### Support matrix
 
-| Arch \ OS   | Linux glibc | Linux musl                     | macOS                                                          | Windows https://github.com/light-curve/light-curve-python/issues/186 |
-| ----------- |-------------|--------------------------------|----------------------------------------------------------------|----------------------------------------------------------------------|
-| **x86-64**  | wheel (MKL) | wheel (MKL)                    | wheel                                                          | wheel (no Ceres, no GSL)                                             |
-| **i686**    | src         | src                            | —                                                              | not tested                                                           |
-| **aarch64** | wheel       | wheel                          | wheel                                                          | not tested                                                           |
-| **ppc64le** | wheel       | not tested (no Rust toolchain) | —                                                              | —                                                                    |
+| Arch \ OS   | Linux glibc 2.17+ | Linux musl 1.2+                | macOS     | Windows https://github.com/light-curve/light-curve-python/issues/186 |
+|-------------|-------------------|--------------------------------|-----------|----------------------------------------------------------------------|
+| **x86-64**  | wheel (MKL)       | wheel (MKL)                    | wheel 12+ | wheel (no Ceres, no GSL)                                             |
+| **i686**    | src               | src                            | —         | not tested                                                           |
+| **aarch64** | wheel             | wheel                          | wheel 14+ | not tested                                                           |
+| **ppc64le** | wheel             | not tested (no Rust toolchain) | —         | —                                                                    |
 
-- "wheel": binary wheel is available on pypi.org, local building is not required for the platform, the only pre-requirement is a recent `pip` version. For Linux x86-64 we provide binary wheels built with Intel MKL for better periodogram performance, which is not a default build option. For Windows x86-64 we provide wheel with no Ceres and no GSL support, which is not a default build option.
-- "src": the package is confirmed to be built and pass unit tests locally, but testing and package building is not supported by CI. It is required to have the [GNU scientific library (GSL)](https://www.gnu.org/software/gsl/) v2.1+ and the [Rust toolchain](https://rust-lang.org) v1.67+ to install it via `pip install`. `ceres-solver` and `fftw` may be installed locally or built from source, in the later case you would also need C/C++ compiler and `cmake`.
+- "wheel": binary wheel is available on pypi.org, local building is not required for the platform, the only
+  pre-requirement is a recent `pip` version. For Linux x86-64 we provide binary wheels built with Intel MKL for better
+  periodogram performance, which is not a default build option. For Windows x86-64 we provide wheel with no Ceres and no
+  GSL support, which is not a default build option.
+- "src": the package is confirmed to be built and pass unit tests locally, but testing and package building is not
+  supported by CI. It is required to have the [GNU scientific library (GSL)](https://www.gnu.org/software/gsl/) v2.1+
+  and the [Rust toolchain](https://rust-lang.org) v1.67+ to install it via `pip install`. `ceres-solver` and `fftw` may
+  be installed locally or built from source, in the later case you would also need C/C++ compiler and `cmake`.
 - "not tested": building from the source code is not tested, please report us building status via issue/PR/email.
 
-We stopped publishing PyPy wheels (https://github.com/light-curve/light-curve-python/issues/345), please feel free to open an issue if you need them.
+macOS wheels require relatively new OS versions, please open an issue if you have any problems with them,
+see https://github.com/light-curve/light-curve-python/issues/376 for the details.
+
+We stopped publishing PyPy wheels (https://github.com/light-curve/light-curve-python/issues/345), please feel free to
+open an issue if you need them.
 
 ## Feature evaluators
 
@@ -40,6 +54,7 @@ Most of the classes implement various feature evaluators useful for light-curve 
 astrophysical source classification and characterisation.
 
 <!-- name: test_feature_evaluators_basic -->
+
 ```python
 import light_curve as lc
 import numpy as np
@@ -82,6 +97,7 @@ Note that if your inputs are not valid and are not validated by
 
 Print feature classes list
 <!-- name: test_feature_evaluators_list -->
+
 ```python
 import light_curve as lc
 
@@ -90,19 +106,22 @@ print([x for x in dir(lc) if hasattr(getattr(lc, x), "names")])
 
 Read feature docs
 <!-- name: test_feature_evaluators_help -->
+
 ```python
 import light_curve as lc
 
 help(lc.BazinFit)
 ```
 
-
 ### Available features
 
-See the complete list of available feature evaluators and documentation in [`light-curve-feature` Rust crate docs](https://docs.rs/light-curve-feature/latest/light_curve_feature/features/index.html).
+See the complete list of available feature evaluators and documentation
+in [`light-curve-feature` Rust crate docs](https://docs.rs/light-curve-feature/latest/light_curve_feature/features/index.html).
 Italic names are experimental features.
-While we usually say "magnitude" and use "m" as a time-series value, some of the features are supposed to be used with flux light-curves.
-The last column indicates whether the feature should be used with flux light curves only, magnitude light curves only, or any kind of light curves.
+While we usually say "magnitude" and use "m" as a time-series value, some of the features are supposed to be used with
+flux light-curves.
+The last column indicates whether the feature should be used with flux light curves only, magnitude light curves only,
+or any kind of light curves.
 
 <table>
   <tr>
@@ -412,22 +431,27 @@ where $f(t) -$ flux observation, $A, \gamma , \tau _{rise} , \tau _{fall}  >0$, 
 </table>
 
 ### Meta-features
+
 Meta-features can accept other feature extractors and apply them to pre-processed data.
 
 #### Periodogram
 
-This feature transforms time-series data into the Lomb-Scargle periodogram, providing an estimation of the power spectrum. The peaks argument corresponds to the number of the most significant spectral density peaks to return. For each peak, its period and "signal-to-noise" ratio are returned.
+This feature transforms time-series data into the Lomb-Scargle periodogram, providing an estimation of the power
+spectrum. The peaks argument corresponds to the number of the most significant spectral density peaks to return. For
+each peak, its period and "signal-to-noise" ratio are returned.
 
 $$
 \text{signal to noise of peak} \equiv \frac{P(\omega_\mathrm{peak}) - \langle P(\omega) \rangle}{\sigma\_{P(\omega)}}
 $$
 
-The optional features argument accepts a list of additional feature evaluators, which are applied to the power spectrum: frequency is passed as "time," power spectrum is passed as "magnitude," and no uncertainties are set.
+The optional features argument accepts a list of additional feature evaluators, which are applied to the power spectrum:
+frequency is passed as "time," power spectrum is passed as "magnitude," and no uncertainties are set.
 
 #### Bins
 
 Binning time series to bins with width $\mathrm{window}$ with respect to some $\mathrm{offset}$.
-$j-th$ bin boundaries are $[j \cdot \mathrm{window} + \mathrm{offset}; (j + 1) \cdot \mathrm{window} + \mathrm{offset}]$.
+$j-th$ bin boundaries
+are $[j \cdot \mathrm{window} + \mathrm{offset}; (j + 1) \cdot \mathrm{window} + \mathrm{offset}]$.
 
 Binned time series is defined by
 $$t_j^* = (j + \frac12) \cdot \mathrm{window} + \mathrm{offset},$$
@@ -440,6 +464,7 @@ where $N_j$ is a number of sampling observations and all sums are over observati
 As of v0.8, experimental extractors (see below), support multi-band light-curve inputs.
 
 <!-- name: test_multiband_experimental_features -->
+
 ```python
 import numpy as np
 from light_curve.light_curve_py import LinearFit
@@ -456,20 +481,24 @@ print(values)
 #### Rainbow Fit
 
 Rainbow ([Russeil+23](https://arxiv.org/abs/2310.02916)) is a black-body parametric model for transient light curves.
-By default, it uses Bazin function as a model for bolometric flux evolution and a logistic function for the temperature evolution.
+By default, it uses Bazin function as a model for bolometric flux evolution and a logistic function for the temperature
+evolution.
 The user may customize the model by providing their own functions for bolometric flux and temperature evolution.
 This example demonstrates the reconstruction of a synthetic light curve with this model.
 `RainbowFit` requires `iminuit` package.
 
 <!-- name: test_rainbow_fit_example -->
+
 ```python
 import numpy as np
 from light_curve.light_curve_py import RainbowFit
 
+
 def bb_nu(wave_aa, T):
     """Black-body spectral model"""
     nu = 3e10 / (wave_aa * 1e-8)
-    return 2 * 6.626e-27 * nu**3 / 3e10**2 / np.expm1(6.626e-27 * nu / (1.38e-16 * T))
+    return 2 * 6.626e-27 * nu ** 3 / 3e10 ** 2 / np.expm1(6.626e-27 * nu / (1.38e-16 * T))
+
 
 # Effective wavelengths in Angstrom
 band_wave_aa = {"g": 4770.0, "r": 6231.0, "i": 7625.0, "z": 9134.0}
@@ -496,7 +525,7 @@ temp = Tmin + delta_T / (1.0 + np.exp((t - reference_time) / k_sig))
 lum = amplitude * np.exp(-(t - reference_time) / fall_time) / (1.0 + np.exp(-(t - reference_time) / rise_time))
 
 # Spectral flux density for each given pair of time and passband
-flux = np.pi * bb_nu(waves, temp) / (5.67e-5 * temp**4) * lum
+flux = np.pi * bb_nu(waves, temp) / (5.67e-5 * temp ** 4) * lum
 # S/N = 5 for minimum flux, scale for Poisson noise
 flux_err = np.sqrt(flux * np.min(flux) / 5.0)
 flux += rng.normal(0.0, flux_err)
@@ -507,18 +536,24 @@ print(dict(zip(feature.names, values)))
 print(f"Goodness of fit: {values[-1]}")
 ```
 
-Note, that while we don't use precise physical constant values to generate the data, `RainbowFit` uses CODATA 2018 values.
+Note, that while we don't use precise physical constant values to generate the data, `RainbowFit` uses CODATA 2018
+values.
 
 ### Experimental extractors
 
-From the technical point of view the package consists of two parts: a wrapper for [`light-curve-feature` Rust crate](https://crates.io/crates/light-curve-feature) (`light_curve_ext` sub-package) and pure Python sub-package `light_curve_py`.
-We use the Python implementation of feature extractors to test Rust implementation and to implement new experimental extractors.
-Please note, that the Python implementation is much slower for most of the extractors and doesn't provide the same functionality as the Rust implementation.
+From the technical point of view the package consists of two parts: a wrapper
+for [`light-curve-feature` Rust crate](https://crates.io/crates/light-curve-feature) (`light_curve_ext` sub-package) and
+pure Python sub-package `light_curve_py`.
+We use the Python implementation of feature extractors to test Rust implementation and to implement new experimental
+extractors.
+Please note, that the Python implementation is much slower for most of the extractors and doesn't provide the same
+functionality as the Rust implementation.
 However, the Python implementation provides some new feature extractors you can find useful.
 
 You can manually use extractors from both implementations:
 
 <!-- name: test_experimental_extractors -->
+
 ```python
 import numpy as np
 from numpy.testing import assert_allclose
@@ -540,31 +575,41 @@ This should print a warning about experimental status of the Python class
 
 ### Benchmarks
 
-You can run all benchmarks from the Python project folder with `python3 -mpytest --benchmark-enable tests/test_w_bench.py`, or with slow benchmarks disabled `python3 -mpytest -m "not (nobs or multi)" --benchmark-enable tests/test_w_bench.py`.
+You can run all benchmarks from the Python project folder
+with `python3 -mpytest --benchmark-enable tests/test_w_bench.py`, or with slow benchmarks
+disabled `python3 -mpytest -m "not (nobs or multi)" --benchmark-enable tests/test_w_bench.py`.
 
-Here we benchmark the Rust implementation (`rust`) versus [`feets`](https://feets.readthedocs.io/en/latest/) package and our own Python implementation (`lc_py`) for a light curve having n=1000 observations.
+Here we benchmark the Rust implementation (`rust`) versus [`feets`](https://feets.readthedocs.io/en/latest/) package and
+our own Python implementation (`lc_py`) for a light curve having n=1000 observations.
 
 ![Benchmarks, Rust is much faster](https://github.com/light-curve/light-curve-python/raw/readme-benchs/light-curve/.readme/benchplot_v2.png)
 
 The plot shows that the Rust implementation of the package outperforms other ones by a factor of 1.5—50.
 This allows to extract a large set of "cheap" features well under one ms for n=1000.
-The performance of parametric fits (`BazinFit` and `VillarFit`) and `Periodogram` depend on their parameters, but the typical timescale of feature extraction including these features is 20—50 ms for few hundred observations.
+The performance of parametric fits (`BazinFit` and `VillarFit`) and `Periodogram` depend on their parameters, but the
+typical timescale of feature extraction including these features is 20—50 ms for few hundred observations.
 
 ![Benchmark for different number of observations](https://github.com/light-curve/light-curve-python/raw/readme-benchs/light-curve/.readme/nobs_bench_v2.png)
 
-Benchmark results of several features for both the pure-Python and Rust implementations of the "light-curve" package, as a function of the number of observations in a light curve. Both the x-axis and y-axis are on a logarithmic scale.
+Benchmark results of several features for both the pure-Python and Rust implementations of the "light-curve" package, as
+a function of the number of observations in a light curve. Both the x-axis and y-axis are on a logarithmic scale.
 
 ![Benchmark for multithreading and multiprocessing](https://github.com/light-curve/light-curve-python/raw/readme-benchs/light-curve/.readme/multi_bench_v2.png)
 
-Processing time per a single light curve for extraction of features subset presented in first benchmark versus the number of CPU cores used. The dataset consists of 10,000 light curves with 1,000 observations in each.
+Processing time per a single light curve for extraction of features subset presented in first benchmark versus the
+number of CPU cores used. The dataset consists of 10,000 light curves with 1,000 observations in each.
 
-See benchmarks' descriptions in more details in ["Performant feature extraction for photometric time series"](https://arxiv.org/abs/2302.10837).
+See benchmarks' descriptions in more details
+in ["Performant feature extraction for photometric time series"](https://arxiv.org/abs/2302.10837).
 
 ## dm-dt map
 
-Class `DmDt` provides dm–dt mapper (based on [Mahabal et al. 2011](https://ui.adsabs.harvard.edu/abs/2011BASI...39..387M/abstract), [Soraisam et al. 2020](https://ui.adsabs.harvard.edu/abs/2020ApJ...892..112S/abstract)). It is a Python wrapper for [`light-curve-dmdt` Rust crate](https://crates.io/crates/light-curve-dmdt).
+Class `DmDt` provides dm–dt mapper (based
+on [Mahabal et al. 2011](https://ui.adsabs.harvard.edu/abs/2011BASI...39..387M/abstract), [Soraisam et al. 2020](https://ui.adsabs.harvard.edu/abs/2020ApJ...892..112S/abstract)).
+It is a Python wrapper for [`light-curve-dmdt` Rust crate](https://crates.io/crates/light-curve-dmdt).
 
 <!-- name: test_dmdt -->
+
 ```python
 import numpy as np
 from light_curve import DmDt
@@ -588,7 +633,8 @@ assert_array_equal(actual, desired)
 
 ## Citation
 
-If you found this project useful for your research please cite [Malanchev et al., 2021](https://ui.adsabs.harvard.edu/abs/2021MNRAS.502.5147M/abstract)
+If you found this project useful for your research please
+cite [Malanchev et al., 2021](https://ui.adsabs.harvard.edu/abs/2021MNRAS.502.5147M/abstract)
 
 ```bibtex
 @ARTICLE{2021MNRAS.502.5147M,
