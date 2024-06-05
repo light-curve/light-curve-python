@@ -42,7 +42,7 @@ versions.
   be installed locally or built from source, in the later case you would also need C/C++ compiler and `cmake`.
 - "not tested": building from the source code is not tested, please report us building status via issue/PR/email.
 
-macOS wheels require relatively new OS versions, please open an issue if you have any problems with them,
+macOS wheels require relatively new OS versions, please open an issue if you require support of older Macs,
 see https://github.com/light-curve/light-curve-python/issues/376 for the details.
 
 We stopped publishing PyPy wheels (https://github.com/light-curve/light-curve-python/issues/345), please feel free to
