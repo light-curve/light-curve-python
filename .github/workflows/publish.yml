@@ -39,7 +39,7 @@ jobs:
         # We use the same order as in the table
         # * For Windows we support amd64 only
         # * For Linux we support ARM64, PPC64le, and x86_64
-        # * For CPython we build ABI3 wheels on cp38 only
+        # * We build wheels for CPython only, one per platform, compatible with ABI3.8
         # * We skip PPC64le MUSL Linux, because there is no Rust toolchain for it
         # * macos-12 runner is x86_64, macos-14 runner is arm64
         include:
@@ -91,14 +91,6 @@ jobs:
           CIBW_ARCHS=$(echo ${{ matrix.cibw_build }} | cut -d'_' -f2,3)
           echo "CIBW_ARCHS=${CIBW_ARCHS}" >> $GITHUB_ENV
 
-      - name: Set ABI3 build on Windows
-        if: ${{ contains(matrix.cibw_build, 'cp3') && matrix.os == 'windows-2019' }}
-        run: echo "LICU_ADDITIONAL_FEATURES=abi3" >> $env:GITHUB_ENV
-
-      - name: Set ABI3 build on Linux of macOS
-        if: ${{ contains(matrix.cibw_build, 'cp3') && matrix.os != 'windows-2019' }}
-        run: echo "LICU_ADDITIONAL_FEATURES=abi3" >> $GITHUB_ENV
-
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.17.0
         with:
@@ -143,7 +135,7 @@ jobs:
           name: artifact_sdist
 
   publish:
-    needs: [cibuildwheel, sdist]
+    needs: [ cibuildwheel, sdist ]
 
     name: Publish light-curve
     runs-on: ubuntu-latest

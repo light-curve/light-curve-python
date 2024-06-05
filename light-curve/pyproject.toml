@@ -31,7 +31,7 @@ full = [
 test-no-bench = [
     "pytest",
     "markdown-pytest",
-    "pytest-benchmark",  # We need it here because we use benchmark-specific command line options
+    "pytest-benchmark", # We need it here because we use benchmark-specific command line options
     "pytest-subtests>=0.10",
     "iminuit>=2.21,<3",
     "numpy",
@@ -157,7 +157,7 @@ build-frontend = "build"
 
 # - Set PATH to include Rust.
 # - Set maturin build options, including LICU_ADDITIONAL_FEATURES which may be passed through CIBW_ENVIRONMENT_PASS_LINUX
-environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features=mimalloc,ceres-system,fftw-system,gsl,${LICU_ADDITIONAL_FEATURES}" }
+environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features=abi3,ceres-system,fftw-system,gsl,mimalloc" }
 
 # We use our own images which include Rust, GSL and platform-optimised FFTW
 # Manylinux CPython
@@ -183,10 +183,6 @@ musllinux-aarch64-image = "ghcr.io/light-curve/base-docker-images/musllinux_1_1_
 # musllinux-s390x-image = "ghcr.io/light-curve/base-docker-images/musllinux_1_1_s390x"
 musllinux-x86_64-image = "ghcr.io/light-curve/base-docker-images/musllinux_1_1_x86_64"
 
-[tool.cibuildwheel.linux]
-# We use this variable to set additional Cargo features, such as 'abi3'
-environment-pass = ["LICU_ADDITIONAL_FEATURES"]
-
 [tool.cibuildwheel.macos]
 before-all = [
     # Install Rust
@@ -205,13 +201,13 @@ before-all = [
 before-build = ["pip install delvewheel"]
 repair-wheel-command = "delvewheel repair --add-path=%USERPROFILE%\\Downloads\\fftw-dll64 -w {dest_dir} {wheel}"
 # We do not support Ceres and GSL on Windows
-environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features=mimalloc,fftw-source,${LICU_ADDITIONAL_FEATURES}" }
+environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features=abi3,fftw-source,mimalloc" }
 
 # Build with Intel MKL on Linux x86_64
 [[tool.cibuildwheel.overrides]]
 select = "*linux_x86_64"
 # We'd like to use MKL for x86_64
-environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features=mimalloc,ceres-system,fftw-mkl,gsl,${LICU_ADDITIONAL_FEATURES}" }
+environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features=abi3,ceres-system,fftw-mkl,gsl,mimalloc" }
 
 # Test
 # We skip benchmark tests, because it requires feets and its transitive
@@ -221,3 +217,9 @@ environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--lo
 select = "cp*-manylinux_x86_64 cp*-manylinux_aarch64 cp*-macosx*"
 test-command = "pytest {package}/README.md {package}/light_curve/ {package}/tests/ --ignore {package}/tests/test_w_bench.py"
 test-extras = ["test-no-bench"]
+
+# Since we build ABI3 wheels, we need to check for ABI3 compatibility
+[[tool.cibuildwheel.overrides]]
+select = "*"
+inherit.repair-wheel-command = "append"
+repair-wheel-command = "pipx run abi3audit --strict --report {wheel}"
