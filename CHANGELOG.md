@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `Roms` feature implemented in Rust https://github.com/light-curve/light-curve-python/pull/362 https://github.com/light-curve/light-curve-python/issues/356
+--
 
 ### Changed
 
@@ -25,11 +25,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- PyPI wheels used to have wrong platform tags, actual minimum macOS versions are what we use in CI: 12.0+ for x86_64 and 14.0+ for arm64. https://github.com/light-curve/light-curve-python/issues/376 https://github.com/light-curve/light-curve-python/pull/378
+--
 
 ### Security
 
 --
+
+## [0.9.2] 2024-06-05
+
+### Added
+
+- `Roms` feature implemented in
+  Rust https://github.com/light-curve/light-curve-python/pull/362 https://github.com/light-curve/light-curve-python/issues/356
+
+### Fixed
+
+- PyPI wheels used to have wrong platform tags, actual minimum macOS versions are those used at CI: 12.0+ for x86_64 and
+  14.0+ for
+  arm64. https://github.com/light-curve/light-curve-python/issues/376 https://github.com/light-curve/light-curve-python/pull/378
 
 ## [0.9.1] 2024-04-23
 
