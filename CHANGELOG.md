@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
---
+- Small bug fix in MagnitudeNNotDetBeforeFd for numpy v2.0
 
 ### Security
 
