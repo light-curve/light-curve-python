@@ -108,15 +108,6 @@ exclude = '''
 
 [tool.ruff]
 line-length = 120
-select = [
-    # Pyflakes
-    "F",
-    # Pycodestyle
-    "E",
-    "W",
-    # isort
-    "I001"
-]
 exclude = [
     "docs",
     "dist",
@@ -132,7 +123,20 @@ exclude = [
 ]
 target-version = "py38"
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint]
+select = [
+    # Pyflakes
+    "F",
+    # Pycodestyle
+    "E",
+    "W",
+    # isort
+    "I001",
+    # Numpy v2.0 compatibility
+    "NPY201",
+]
+
+[tool.ruff.lint.per-file-ignores]
 # Unused and star imports
 "light_curve/__init__.py" = ["F401", "F403", "I001"]
 "light_curve/light_curve_ext.py" = ["F403", "F405"]
