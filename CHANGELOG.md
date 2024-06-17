@@ -25,11 +25,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Small bug fix in MagnitudeNNotDetBeforeFd for numpy v2.0
+--
 
 ### Security
 
 --
+
+## [0.9.3] 2024-06-17
+
+### Fixed
+
+- Small bug fix in MagnitudeNNotDetBeforeFd for numpy v2.0 compatibility https://github.com/light-curve/light-curve-python/pull/383
+
 
 ## [0.9.2] 2024-06-05
 
