@@ -29,7 +29,7 @@ class MagnitudeNNotDetBeforeFd(BaseSingleBandFeature):
     P. Sánchez-Sáez et al 2021, [DOI:10.3847/1538-3881/abd5c1](https://doi.org/10.3847/1538-3881/abd5c1)
     """
 
-    sigma_non_detection: float = dataclass_field(default=np.Inf, kw_only=True)
+    sigma_non_detection: float = dataclass_field(default=np.inf, kw_only=True)
     strictly_fainter: bool = dataclass_field(default=False, kw_only=True)
 
     def _eval_single_band(self, t, m, sigma=None):
