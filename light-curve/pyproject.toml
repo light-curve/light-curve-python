@@ -34,17 +34,32 @@ test-no-bench = [
     "pytest-benchmark", # We need it here because we use benchmark-specific command line options
     "pytest-subtests>=0.10",
     "iminuit>=2.21,<3",
-    "numpy",
+    "numpy<2",
     "scipy",
 ]
 test = [
-    "light-curve[test-no-bench]",
+    "pytest",
+    "markdown-pytest",
+    "pytest-benchmark",
+    "pytest-subtests>=0.10",
+    "iminuit>=2.21,<3",
+    "numpy<2",
+    "scipy",
     "feets",
     "joblib",
     "pandas",
 ]
 dev = [
-    "light-curve[test]",
+    "pytest",
+    "markdown-pytest",
+    "pytest-benchmark",
+    "pytest-subtests>=0.10",
+    "iminuit>=2.21,<3",
+    "numpy<2",
+    "scipy",
+    "feets",
+    "joblib",
+    "pandas",
     "black",
     "ruff",
 ]
