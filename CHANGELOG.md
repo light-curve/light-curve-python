@@ -85,7 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Breaking** `RainbowFit` is significantly refactored to make it more flexible for usage of different bolometric and
   temperature functions. It deletes `RainbowRisingFit` and `RainbowSymmetricFit` in favor of a single `RainbowFit`
-  feature. https://github.com/light-curve/light-curve-python/pull/327
+  feature. https://github.com/light-curve/light-curve-python/pull/324
 - **Breaking**: stop supporting Python 3.7 https://github.com/light-curve/light-curve-python/pull/282
 - We stop distributing CPython wheels for specific Python versions, now we distribute ABI3 wheels which are compatible
   with all future Python versions
