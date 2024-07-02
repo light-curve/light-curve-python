@@ -166,7 +166,7 @@ isolated_build = True
 extras = dev
 commands =
     pytest README.md tests/ light_curve/
-    ruff .
+    ruff check .
 """
 
 
