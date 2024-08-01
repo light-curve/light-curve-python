@@ -34,7 +34,7 @@ test-no-bench = [
     "pytest-benchmark", # We need it here because we use benchmark-specific command line options
     "pytest-subtests>=0.10",
     "iminuit>=2.21,<3",
-    "numpy<2",
+    "numpy<3",
     "scipy",
 ]
 test = [
@@ -43,7 +43,7 @@ test = [
     "pytest-benchmark",
     "pytest-subtests>=0.10",
     "iminuit>=2.21,<3",
-    "numpy<2",
+    "numpy<3",
     "scipy",
     "feets",
     "joblib",
@@ -55,7 +55,7 @@ dev = [
     "pytest-benchmark",
     "pytest-subtests>=0.10",
     "iminuit>=2.21,<3",
-    "numpy<2",
+    "numpy<3",
     "scipy",
     "feets",
     "joblib",
