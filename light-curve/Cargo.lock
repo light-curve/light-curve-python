@@ -653,7 +653,7 @@ dependencies = [
  "bitflags 2.5.0",
  "fftw-sys",
  "lazy_static 1.4.0",
- "ndarray",
+ "ndarray 0.15.6",
  "num-complex",
  "num-traits",
  "thiserror",
@@ -1159,7 +1159,7 @@ dependencies = [
  "enum_dispatch",
  "itertools 0.10.5",
  "libm",
- "ndarray",
+ "ndarray 0.15.6",
  "num-traits",
  "serde",
  "thiserror",
@@ -1181,7 +1181,7 @@ dependencies = [
  "lazy_static 1.4.0",
  "libm",
  "macro_const",
- "ndarray",
+ "ndarray 0.15.6",
  "ndarray-stats",
  "num-complex",
  "num-traits",
@@ -1207,7 +1207,7 @@ dependencies = [
  "light-curve-feature",
  "macro_const",
  "mimalloc",
- "ndarray",
+ "ndarray 0.16.1",
  "num-traits",
  "num_cpus",
  "numpy",
@@ -1329,8 +1329,23 @@ dependencies = [
  "num-integer",
  "num-traits",
  "rawpointer",
- "rayon",
  "serde",
+]
+
+[[package]]
+name = "ndarray"
+version = "0.16.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "882ed72dce9365842bf196bdeedf5055305f11fc8c03dee7bb0194a6cad34841"
+dependencies = [
+ "matrixmultiply",
+ "num-complex",
+ "num-integer",
+ "num-traits",
+ "portable-atomic",
+ "portable-atomic-util",
+ "rawpointer",
+ "rayon",
 ]
 
 [[package]]
@@ -1341,7 +1356,7 @@ checksum = "af5a8477ac96877b5bd1fd67e0c28736c12943aba24eda92b127e036b0c8f400"
 dependencies = [
  "indexmap 1.9.3",
  "itertools 0.10.5",
- "ndarray",
+ "ndarray 0.15.6",
  "noisy_float",
  "num-integer",
  "num-traits",
@@ -1439,7 +1454,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec170733ca37175f5d75a5bea5911d6ff45d2cd52849ce98b685394e4f2f37f4"
 dependencies = [
  "libc",
- "ndarray",
+ "ndarray 0.15.6",
  "num-complex",
  "num-integer",
  "num-traits",
@@ -1577,6 +1592,15 @@ name = "portable-atomic"
 version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7170ef9988bc169ba16dd36a7fa041e5c4cbeb6a35b76d4c03daded371eae7c0"
+
+[[package]]
+name = "portable-atomic-util"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fcdd8420072e66d54a407b3316991fe946ce3ab1083a7f575b2463866624704d"
+dependencies = [
+ "portable-atomic",
+]
 
 [[package]]
 name = "powerfmt"
