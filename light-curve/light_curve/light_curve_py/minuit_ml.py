@@ -1,9 +1,10 @@
-"""Re-implementation of iminuit.cost.LeastSquares with an arbitrary data format"""
+"""Maximum-likelihood based cost function"""
 
 from typing import Callable, Dict, Tuple
 
 import numpy as np
 from scipy.stats import norm
+from scipy.special import erf
 
 import numba as nb
 
@@ -16,9 +17,17 @@ def barrier(x):
 
     return res
 
-def logcdf(x, loc=0, scale=1):
+def logcdf(x):
     # TODO: faster (maybe not so accurate, as we do not need it) implementation
-    return norm.logcdf(x, loc=loc, scale=scale)
+    # return norm.logcdf(x)
+
+    result = np.zeros(len(x))
+
+    idx = x < -5
+    result[idx] = -x[idx]**2/2 - 1/x[idx]**2 - 0.9189385336 - np.log(-x[idx])
+    result[~idx] = np.log(0.5) + np.log1p(erf(x[~idx]/np.sqrt(2)))
+
+    return result
 
 try:
     from iminuit import Minuit
@@ -57,7 +66,7 @@ else:
                 # Upper limits, Tobit model
                 # https://stats.stackexchange.com/questions/49443/how-to-model-this-odd-shaped-distribution-almost-a-reverse-j
                 result += -np.sum(
-                    logcdf((self.y[self.upper_mask] - ym[self.upper_mask])/self.yerror[self.upper_mask],  loc=0, scale=1)
+                    logcdf((self.y[self.upper_mask] - ym[self.upper_mask])/self.yerror[self.upper_mask])
                 )
 
             # Barriers around parameter ranges
