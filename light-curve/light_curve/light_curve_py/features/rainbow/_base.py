@@ -11,6 +11,7 @@ from light_curve.light_curve_py.features.rainbow._bands import Bands
 from light_curve.light_curve_py.features.rainbow._parameters import create_parameters_class
 from light_curve.light_curve_py.features.rainbow._scaler import MultiBandScaler, Scaler
 from light_curve.light_curve_py.minuit_lsq import LeastSquares
+from light_curve.light_curve_py.minuit_ml import MaximumLikelihood
 
 __all__ = ["BaseRainbowFit"]
 
@@ -119,6 +120,9 @@ class BaseRainbowFit(BaseMultiBandFeature):
     @staticmethod
     def _check_iminuit():
         if LeastSquares is None:
+            raise ImportError(IMINUIT_IMPORT_ERROR)
+
+        if MaximumLikelihood is None:
             raise ImportError(IMINUIT_IMPORT_ERROR)
 
         try:
@@ -283,7 +287,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
     def _eval_and_fill(self, *, t, m, sigma, band, fill_value):
         return super()._eval_and_fill(t=t, m=m, sigma=sigma, band=band, fill_value=fill_value)
 
-    def _eval_and_get_errors(self, *, t, m, sigma, band, print_level=None, get_initial=False):
+    def _eval_and_get_errors(self, *, t, m, sigma, band, print_level=None, get_initial=False, upper_mask=None, debug=False):
         # Initialize data scalers
         t_scaler = Scaler.from_time(t)
         m_scaler = MultiBandScaler.from_flux(m, band, with_baseline=self.with_baseline)
@@ -311,19 +315,43 @@ class BaseRainbowFit(BaseMultiBandFeature):
             initial_guesses = self._initial_guesses(t, m, sigma, band)
             limits = self._limits(t, m, sigma, band)
 
-        least_squares = LeastSquares(
+        # least_squares = LeastSquares(
+        cost_function = MaximumLikelihood(
             model=self._lsq_model,
             parameters=limits,
             x=(t, band_idx, wave_cm),
             y=m,
             yerror=sigma,
+            upper_mask=upper_mask,
         )
-        minuit = self.Minuit(least_squares, name=self.names, **initial_guesses)
+        minuit = self.Minuit(cost_function, name=self.names, **initial_guesses)
         # TODO: expose these parameters through function arguments
         if print_level is not None:
             minuit.print_level = print_level
-        minuit.strategy = 2
-        minuit.migrad(ncall=10000, iterate=10)
+        minuit.strategy = 0 # We will need to manually call .hesse() on convergence anyway
+
+        # Supposedly it is not the same as just setting iterate=10?..
+        for iter in range(10):
+            minuit.migrad()
+
+            if minuit.valid:
+                minuit.hesse()
+            else:
+                # That's what iterate is supposed to do?..
+                minuit.simplex()
+
+            if minuit.valid:
+                break
+
+        if debug:
+            # Expose everything we have to outside, for easier debugging
+            self.minuit = minuit
+            self.mparams = {
+                't':t, 'band_idx':band_idx, 'wave_cm':wave_cm, 'm':m, 'sigma':sigma,
+                'limits':limits, 'upper_mask':upper_mask,
+                'initial_guesses':initial_guesses, 'values':minuit.values, 'errors':minuit.errors,
+                'covariance':minuit.covariance,
+            }
 
         if not minuit.valid and self.fail_on_divergence and not get_initial:
             raise RuntimeError("Fitting failed")
@@ -336,6 +364,8 @@ class BaseRainbowFit(BaseMultiBandFeature):
 
         params = np.array(minuit.values)
         errors = np.array(minuit.errors)
+
+        # TODO: also return scaled covariance
 
         self._unscale_parameters(params, t_scaler, m_scaler)
         if self.with_baseline:
