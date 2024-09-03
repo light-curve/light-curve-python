@@ -71,7 +71,7 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
     def value(t, t0, amplitude, rise_time):
         dt = t - t0
 
-        result = np.zeros_like(dt)
+        result = np.zeros(len(dt))
         # To avoid numerical overflows, let's only compute the exponents not too far from t0
         idx = dt > -100 * rise_time
         result[idx] = amplitude / (np.exp(-dt[idx] / rise_time) + 1)
@@ -130,7 +130,7 @@ class BazinBolometricTerm(BaseBolometricTerm):
             -fall_time / (fall_time + rise_time)
         )
 
-        result = np.zeros_like(dt)
+        result = np.zeros(len(dt))
         # To avoid numerical overflows, let's only compute the exponents not too far from t0
         idx = (dt > -100 * rise_time) & (dt < 100 * fall_time)
         result[idx] = amplitude * scale / (np.exp(-dt[idx] / rise_time) + np.exp(dt[idx] / fall_time))

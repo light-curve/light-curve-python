@@ -96,13 +96,13 @@ class SigmoidTemperatureTerm(BaseTemperatureTerm):
     @staticmethod
     def value(t, t0, temp_min, temp_max, k_sig):
         dt = t - t0
-        result = np.zeros_like(dt)
 
         # To avoid numerical overflows, let's only compute the exponent not too far from t0
         idx1 = dt <= -100 * k_sig
         idx2 = (dt > -100 * k_sig) & (dt < 100 * k_sig)
         idx3 = dt >= 100 * k_sig
 
+        result = np.zeros(len(dt))
         result[idx1] = temp_max
         result[idx2] = temp_min + (temp_max - temp_min) / (1.0 + np.exp(dt[idx2] / k_sig))
         result[idx3] = temp_min
@@ -145,13 +145,13 @@ class DelayedSigmoidTemperatureTerm(BaseTemperatureTerm):
     @staticmethod
     def value(t, t0, Tmin, Tmax, k_sig, t_delay):
         dt = t - t0 - t_delay
-        result = np.zeros_like(dt)
 
         # To avoid numerical overflows, let's only compute the exponent not too far from t0
         idx1 = dt <= -100 * k_sig
         idx2 = (dt > -100 * k_sig) & (dt < 100 * k_sig)
         idx3 = dt >= 100 * k_sig
 
+        result = np.zeros(len(dt))
         result[idx1] = Tmax
         result[idx2] = Tmin + (Tmax - Tmin) / (1.0 + np.exp(dt[idx2] / k_sig))
         result[idx3] = Tmin

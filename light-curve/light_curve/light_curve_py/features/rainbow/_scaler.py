@@ -71,7 +71,7 @@ class MultiBandScaler(Scaler):
         """
         uniq_bands = np.unique(band)
         per_band_shift = dict.fromkeys(uniq_bands, 0.0)
-        shift_array = np.zeros_like(flux)
+        shift_array = np.zeros(len(flux))
 
         if with_baseline:
             for b in uniq_bands:
