@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from copy import deepcopy
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
 
@@ -155,7 +154,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
         if self.with_baseline:
             for band_name in self.bands.names:
                 baseline_name = self.p.baseline_parameter_name(band_name)
-                rules[baseline_name] = 'baseline'
+                rules[baseline_name] = "baseline"
 
         return rules
 
@@ -171,7 +170,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
 
     def _unscale_parameters(self, params, t_scaler: Scaler, m_scaler: MultiBandScaler) -> None:
         """Unscale parameters from internal units, in-place."""
-        for name,scaling in self._parameter_scalings().items():
+        for name, scaling in self._parameter_scalings().items():
             if scaling == "time":
                 params[self.p[name]] = t_scaler.undo_shift_scale(params[self.p[name]])
 
@@ -305,12 +304,17 @@ class BaseRainbowFit(BaseMultiBandFeature):
         return super()._eval_and_fill(t=t, m=m, sigma=sigma, band=band, fill_value=fill_value)
 
     def _eval_and_get_errors(
-            self, *, t, m, sigma, band,
-            upper_mask=None,
-            get_initial=False,
-            return_covariance=False,
-            print_level=None,
-            debug=False
+        self,
+        *,
+        t,
+        m,
+        sigma,
+        band,
+        upper_mask=None,
+        get_initial=False,
+        return_covariance=False,
+        print_level=None,
+        debug=False,
     ):
         # Initialize data scalers
         t_scaler = Scaler.from_time(t)
@@ -352,7 +356,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
         # TODO: expose these parameters through function arguments
         if print_level is not None:
             minuit.print_level = print_level
-        minuit.strategy = 0 # We will need to manually call .hesse() on convergence anyway
+        minuit.strategy = 0  # We will need to manually call .hesse() on convergence anyway
 
         # Supposedly it is not the same as just setting iterate=10?..
         for i in range(10):
@@ -372,10 +376,17 @@ class BaseRainbowFit(BaseMultiBandFeature):
             # Expose everything we have to outside, unscaled, for easier debugging
             self.minuit = minuit
             self.mparams = {
-                't':t, 'band_idx':band_idx, 'wave_cm':wave_cm, 'm':m, 'sigma':sigma,
-                'limits':limits, 'upper_mask':upper_mask,
-                'initial_guesses':initial_guesses, 'values':minuit.values, 'errors':minuit.errors,
-                'covariance':minuit.covariance,
+                "t": t,
+                "band_idx": band_idx,
+                "wave_cm": wave_cm,
+                "m": m,
+                "sigma": sigma,
+                "limits": limits,
+                "upper_mask": upper_mask,
+                "initial_guesses": initial_guesses,
+                "values": minuit.values,
+                "errors": minuit.errors,
+                "covariance": minuit.covariance,
             }
 
         if not minuit.valid and self.fail_on_divergence and not get_initial:

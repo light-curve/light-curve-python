@@ -99,7 +99,7 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
         limits = {}
         limits["reference_time"] = (np.min(t) - 10 * t_amplitude, np.max(t) + 10 * t_amplitude)
         limits["amplitude"] = (0.0, 20 * m_amplitude)
-        limits["rise_time"] = (0.1*mean_dt, 10*t_amplitude)
+        limits["rise_time"] = (0.1 * mean_dt, 10 * t_amplitude)
 
         return limits
 
@@ -141,7 +141,7 @@ class BazinBolometricTerm(BaseBolometricTerm):
     def initial_guesses(t, m, sigma, band):
         A = np.ptp(m)
 
-        mc = m - np.min(m) # To avoid crashing on all-negative data
+        mc = m - np.min(m)  # To avoid crashing on all-negative data
 
         # Naive peak position from the highest point
         t0 = t[np.argmax(m)]
@@ -176,8 +176,8 @@ class BazinBolometricTerm(BaseBolometricTerm):
         limits = {}
         limits["reference_time"] = (np.min(t) - 10 * t_amplitude, np.max(t) + 10 * t_amplitude)
         limits["amplitude"] = (0.0, 20 * m_amplitude)
-        limits["rise_time"] = (0.1*mean_dt, 10 * t_amplitude)
-        limits["fall_time"] = (0.1*mean_dt, 10 * t_amplitude)
+        limits["rise_time"] = (0.1 * mean_dt, 10 * t_amplitude)
+        limits["fall_time"] = (0.1 * mean_dt, 10 * t_amplitude)
 
         return limits
 
