@@ -49,6 +49,7 @@ class BaseTemperatureTerm:
     def limits(t, m, sigma, band) -> Dict[str, float]:
         return NotImplementedError
 
+
 @dataclass
 class NoTemperatureTerm(BaseTemperatureTerm):
     """Constant temperature"""
@@ -63,7 +64,7 @@ class NoTemperatureTerm(BaseTemperatureTerm):
 
     @staticmethod
     def value(t):
-        return np.full_like(t, 8000) #K
+        return np.full_like(t, 8000)  # K
 
     @staticmethod
     def initial_guesses(t, m, sigma, band):
@@ -74,6 +75,7 @@ class NoTemperatureTerm(BaseTemperatureTerm):
     def limits(t, m, sigma, band):
         limits = {}
         return limits
+
 
 @dataclass
 class ConstantTemperatureTerm(BaseTemperatureTerm):
@@ -143,7 +145,7 @@ class SigmoidTemperatureTerm(BaseTemperatureTerm):
         initial["reference_time"] = t[np.argmax(m)]
 
         return initial
-    
+
     @staticmethod
     def limits(t, m, sigma, band):
         t_amplitude = np.ptp(t)
