@@ -3,7 +3,6 @@ from typing import Dict, List, Tuple, Union
 
 from light_curve.light_curve_py.dataclass_field import dataclass_field
 from light_curve.light_curve_py.features.rainbow._base import BaseRainbowFit
-from light_curve.light_curve_py.features.rainbow._scaler import MultiBandScaler, Scaler
 
 from .bolometric import BaseBolometricTerm, bolometric_terms
 from .temperature import BaseTemperatureTerm, temperature_terms
@@ -91,36 +90,14 @@ class RainbowFit(BaseRainbowFit):
     def temp_func(self, t, params):
         return self.temperature.value(t, *params[self.p.all_temp_idx])
 
-    def _unscale_parameters(self, params, t_scaler: Scaler, m_scaler: MultiBandScaler, scale_errors=False) -> None:
-        already_unscaled = set()
+    def _parameter_scalings(self) -> Dict[str, str]:
+        rules = super()._parameter_scalings()
+
         for term in [self.bolometric, self.temperature]:
             for name, scaling in zip(term.parameter_names(), term.parameter_scalings()):
-                if name in already_unscaled:
-                    # Avoid un-scaling common parametres twice
-                    continue
+                rules[name] = scaling
 
-                if scaling == "time":
-                    if scale_errors:
-                        params[self.p[name]] = t_scaler.undo_scale(params[self.p[name]])
-                    else:
-                        params[self.p[name]] = t_scaler.undo_shift_scale(params[self.p[name]])
-
-                elif scaling == "timescale":
-                    params[self.p[name]] = t_scaler.undo_scale(params[self.p[name]])
-
-                elif scaling == "flux":
-                    params[self.p[name]] = m_scaler.undo_scale(params[self.p[name]])
-
-                elif scaling is None or scaling.lower() == "none":
-                    pass
-
-                else:
-                    raise ValueError("Unsupported parameter scaling: " + scaling)
-
-                already_unscaled.add(name)
-
-    def _unscale_errors(self, errors, t_scaler: Scaler, m_scaler: MultiBandScaler) -> None:
-        self._unscale_parameters(errors, t_scaler, m_scaler, scale_errors=True)
+        return rules
 
     def _initial_guesses(self, t, m, sigma, band) -> Dict[str, float]:
         initial = self.bolometric.initial_guesses(t, m, sigma, band)

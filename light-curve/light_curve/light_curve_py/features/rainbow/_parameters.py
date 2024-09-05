@@ -12,6 +12,13 @@ def baseline_parameter_name(band: str) -> str:
     return f"baseline_{band}"
 
 
+def baseline_band_name(name: str) -> str:
+    if name.startswith("baseline_"):
+        return name[len("baseline_"):]
+
+    return None
+
+
 def create_int_enum(cls_name: str, attributes: Iterable[str]):
     return IntEnum(cls_name, {attr: i for i, attr in enumerate(attributes)})
 
@@ -68,6 +75,7 @@ def create_parameters_class(
         enum.all_baseline = baseline
         enum.baseline_idx = np.array([enum[attr] for attr in enum.all_baseline])
         enum.baseline_parameter_name = staticmethod(baseline_parameter_name)
+        enum.baseline_band_name = staticmethod(baseline_band_name)
 
         band_idx_to_baseline_idx = {
             band_idx: enum[baseline_parameter_name(band_name)] for band_idx, band_name in zip(bands.index, bands.names)
