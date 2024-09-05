@@ -355,17 +355,18 @@ class BaseRainbowFit(BaseMultiBandFeature):
         minuit.strategy = 0 # We will need to manually call .hesse() on convergence anyway
 
         # Supposedly it is not the same as just setting iterate=10?..
-        for iter in range(10):
+        for i in range(10):
             minuit.migrad()
 
             if minuit.valid:
                 minuit.hesse()
+                # hesse() may may drive it invalid
+                if minuit.valid:
+                    break
             else:
                 # That's what iterate is supposed to do?..
                 minuit.simplex()
-
-            if minuit.valid:
-                break
+                # FIXME: it may drive the fit valid, but we will not have Hesse run on last iteration
 
         if debug:
             # Expose everything we have to outside, unscaled, for easier debugging
