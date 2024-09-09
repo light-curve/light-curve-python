@@ -338,7 +338,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
         errors = np.array(minuit.errors)
 
         self._unscale_parameters(params, t_scaler, m_scaler)
-        
+
         if self.with_baseline:
             self._unscale_baseline_parameters(params, m_scaler)
 

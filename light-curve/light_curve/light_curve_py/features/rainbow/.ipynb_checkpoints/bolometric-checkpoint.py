@@ -1,8 +1,9 @@
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Dict, List, Union
-from scipy.special import lambertw
+
 import numpy as np
+from scipy.special import lambertw
 
 __all__ = ["bolometric_terms", "BaseBolometricTerm", "SigmoidBolometricTerm", "BazinBolometricTerm"]
 
@@ -70,7 +71,7 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
     @staticmethod
     def value(t, t0, rise_time, amplitude):
         dt = t - t0
-        
+
         ## To avoid numerical overflows
         maxp = 20
         A = -dt / rise_time
@@ -86,7 +87,7 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
         initial = {}
         initial["reference_time"] = t[np.argmax(m)]
         initial["amplitude"] = A
-        initial["rise_time"] = 1.0 if m[0]<m[-1] else -1
+        initial["rise_time"] = 1.0 if m[0] < m[-1] else -1
 
         return initial
 
@@ -199,7 +200,7 @@ class ExpBolometricTerm(BaseBolometricTerm):
 
     @staticmethod
     def value(t, rise_time, pseudo_amplitude):
-        protected = np.where(t/rise_time>10, 10, t/rise_time)
+        protected = np.where(t / rise_time > 10, 10, t / rise_time)
         return pseudo_amplitude * np.exp(protected)
 
     @staticmethod
@@ -213,11 +214,11 @@ class ExpBolometricTerm(BaseBolometricTerm):
     @staticmethod
     def limits(t, m, sigma, band):
         t_amplitude = np.ptp(t)
-        
+
         limits = {}
         limits["rise_time"] = (-10 * t_amplitude, 10 * t_amplitude)
-        limits["pseudo_amplitude"] = (0.0, 10 * t_amplitude) #
-        
+        limits["pseudo_amplitude"] = (0.0, 10 * t_amplitude)  #
+
         return limits
 
     @staticmethod
@@ -242,26 +243,26 @@ class LinexpBolometricTerm(BaseBolometricTerm):
         dt = t0 - t
 
         # Coefficient to make peak amplitude equal to unity
-        scale = 1/(rise_time*np.exp(-1))
-        sym = amplitude/abs(amplitude)
-        power = -(sym*dt)/rise_time
-        power = np.where(power>100*abs(amplitude), 100*abs(amplitude), power)
+        scale = 1 / (rise_time * np.exp(-1))
+        sym = amplitude / abs(amplitude)
+        power = -(sym * dt) / rise_time
+        power = np.where(power > 100 * abs(amplitude), 100 * abs(amplitude), power)
 
         result = amplitude * scale * dt * np.exp(power)
-        
+
         return result
 
     @staticmethod
     def initial_guesses(t, m, sigma, band):
         A = np.max(m)
-        
+
         # Compute points after or before maximum
         peak_time = t[np.argmax(m)]
         after = t[-1] - peak_time
         before = peak_time - t[0]
-        
-        t0 = t[-1] if before>=after else t[0]
-        
+
+        t0 = t[-1] if before >= after else t[0]
+
         # Peak position as weighted centroid of everything above zero
         idx = m > 0
         # Weighted centroid sigma
@@ -271,7 +272,7 @@ class LinexpBolometricTerm(BaseBolometricTerm):
 
         initial = {}
         initial["reference_time"] = t0
-        initial["amplitude"] = A if before>= after else -A
+        initial["amplitude"] = A if before >= after else -A
         initial["rise_time"] = rise_time
 
         return initial
@@ -291,8 +292,8 @@ class LinexpBolometricTerm(BaseBolometricTerm):
     @staticmethod
     def peak_time(t0, rise_time, amplitude):
         return t0 - rise_time
-    
-    
+
+
 @dataclass()
 class DoublexpBolometricTerm(BaseBolometricTerm):
     """Doublexp function generated using Multi-view Symbolic Regression on ZTF SNIa light curves
@@ -311,12 +312,12 @@ class DoublexpBolometricTerm(BaseBolometricTerm):
         dt = t - t0
 
         result = np.zeros_like(dt)
-        
+
         ## To avoid numerical overflows
         maxp = 20
-        A = -(dt/time1) * (p - np.exp(-(dt/time2)))
+        A = -(dt / time1) * (p - np.exp(-(dt / time2)))
         A = np.where(A > maxp, maxp, A)
-        
+
         result = amplitude * np.exp(A)
 
         return result
@@ -343,7 +344,7 @@ class DoublexpBolometricTerm(BaseBolometricTerm):
         initial["time1"] = time1
         initial["time2"] = time2
         initial["p"] = 1
-        
+
         return initial
 
     @staticmethod
@@ -362,14 +363,13 @@ class DoublexpBolometricTerm(BaseBolometricTerm):
 
     @staticmethod
     def peak_time(t0, p):
-        return t0 + np.real(-lambertw(p*np.exp(1)) + 1)
-
+        return t0 + np.real(-lambertw(p * np.exp(1)) + 1)
 
 
 bolometric_terms = {
     "sigmoid": SigmoidBolometricTerm,
     "bazin": BazinBolometricTerm,
     "exp": ExpBolometricTerm,
-    "linexp":LinexpBolometricTerm,
-    "doublexp":DoublexpBolometricTerm,
+    "linexp": LinexpBolometricTerm,
+    "doublexp": DoublexpBolometricTerm,
 }

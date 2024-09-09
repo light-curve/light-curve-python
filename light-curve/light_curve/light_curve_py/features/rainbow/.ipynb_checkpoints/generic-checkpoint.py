@@ -95,7 +95,7 @@ class RainbowFit(BaseRainbowFit):
             return self.temperature.value(t)
 
     def _unscale_parameters(self, params, t_scaler: Scaler, m_scaler: MultiBandScaler, scale_errors=False) -> None:
-        
+
         already_unscaled = set()
         for term in [self.bolometric, self.temperature]:
             for name, scaling in zip(term.parameter_names(), term.parameter_scalings()):
@@ -122,15 +122,16 @@ class RainbowFit(BaseRainbowFit):
                     raise ValueError("Unsupported parameter scaling: " + scaling)
 
                 already_unscaled.add(name)
-            
-            
+
     def _unscale_errors(self, errors, t_scaler: Scaler, m_scaler: MultiBandScaler) -> None:
         self._unscale_parameters(errors, t_scaler, m_scaler, scale_errors=True)
 
     def _initial_guesses(self, t, m, sigma, band) -> Dict[str, float]:
         initial = self.bolometric.initial_guesses(t, m, sigma, band)
         temp_guess = self.temperature.initial_guesses(t, m, sigma, band)
-        unique_temp_guess = {key: value for key, value in temp_guess.items() if key not in self._common_parameter_names()}
+        unique_temp_guess = {
+            key: value for key, value in temp_guess.items() if key not in self._common_parameter_names()
+        }
         initial.update(unique_temp_guess)
 
         return initial
