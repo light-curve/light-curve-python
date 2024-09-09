@@ -1,9 +1,9 @@
+import math
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Dict, List, Union
 
 import numpy as np
-import math
 from scipy.special import lambertw
 
 __all__ = ["bolometric_terms", "BaseBolometricTerm", "SigmoidBolometricTerm", "BazinBolometricTerm"]
@@ -162,7 +162,7 @@ class BazinBolometricTerm(BaseBolometricTerm):
         initial["amplitude"] = A
         initial["rise_time"] = rise_time
         initial["fall_time"] = fall_time
-        
+
         print(f"Guess: [{rise_time}]")
 
         return initial
@@ -177,7 +177,7 @@ class BazinBolometricTerm(BaseBolometricTerm):
         limits["amplitude"] = (0.0, 10 * m_amplitude)
         limits["rise_time"] = (1e-4, 10 * t_amplitude)
         limits["fall_time"] = (1e-4, 10 * t_amplitude)
-        
+
         print(f"Limits: [{1e-4}, {10 * t_amplitude}]")
 
         return limits
@@ -249,10 +249,10 @@ class LinexpBolometricTerm(BaseBolometricTerm):
         protected_rise = math.copysign(max(1e-5, abs(rise_time)), rise_time)
 
         # Coefficient to make peak amplitude equal to unity
-        scale = 1/(protected_rise*np.exp(-1))
-        
-        power = -(math.copysign(1, amplitude)*dt)/protected_rise
-        power = np.where(power>100, 100, power)
+        scale = 1 / (protected_rise * np.exp(-1))
+
+        power = -(math.copysign(1, amplitude) * dt) / protected_rise
+        power = np.where(power > 100, 100, power)
         result = amplitude * scale * dt * np.exp(power)
 
         return result
@@ -278,9 +278,9 @@ class LinexpBolometricTerm(BaseBolometricTerm):
 
         initial = {}
         initial["reference_time"] = t0
-        initial["rise_time"] = rise_time if before>= after else -rise_time
+        initial["rise_time"] = rise_time if before >= after else -rise_time
         initial["amplitude"] = A
-        
+
         return initial
 
     @staticmethod
