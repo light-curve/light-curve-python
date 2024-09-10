@@ -47,10 +47,6 @@ class Scaler:
     def undo_scale(self, x):
         return x * self.scale
 
-    def reset_shift(self):
-        """Resets scaler shift to zero, keeping only the scale"""
-        self.shift *= 0
-
 
 @dataclass()
 class MultiBandScaler(Scaler):
@@ -58,9 +54,6 @@ class MultiBandScaler(Scaler):
 
     per_band_shift: Dict[str, float]
     """Shift to apply to each band"""
-
-    per_band_scale: Dict[str, float]
-    """Scale to apply to each band"""
 
     @classmethod
     def from_flux(cls, flux, band, *, with_baseline: bool) -> "MultiBandScaler":
@@ -71,7 +64,7 @@ class MultiBandScaler(Scaler):
         """
         uniq_bands = np.unique(band)
         per_band_shift = dict.fromkeys(uniq_bands, 0.0)
-        shift_array = np.zeros_like(flux)
+        shift_array = np.zeros(len(flux))
 
         if with_baseline:
             for b in uniq_bands:
@@ -81,19 +74,8 @@ class MultiBandScaler(Scaler):
         scale = np.std(flux)
         if scale == 0.0:
             scale = 1.0
-        per_band_scale = dict.fromkeys(uniq_bands, scale)
 
-        return cls(shift=shift_array, scale=scale, per_band_shift=per_band_shift, per_band_scale=per_band_scale)
+        return cls(shift=shift_array, scale=scale, per_band_shift=per_band_shift)
 
     def undo_shift_scale_band(self, x, band):
-        return x * self.per_band_scale.get(band, 1) + self.per_band_shift.get(band, 0)
-
-    def undo_scale_band(self, x, band):
-        return x * self.per_band_scale.get(band, 1)
-
-    def reset_shift(self):
-        """Resets scaler shift to zero, keeping only the scale"""
-        for band in self.per_band_shift:
-            self.per_band_shift[band] = 0
-
-        super().reset_shift()
+        return x * self.scale + self.per_band_shift.get(band, 0)
