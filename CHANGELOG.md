@@ -31,6 +31,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 --
 
+## [0.9.4] 2024-09-11
+
+### Changed
+
+- Experimental Rainbow fit features use maximum likelihood cost function instead of least squares https://github.com/light-curve/light-curve-python/pull/407
+
 ## [0.9.3] 2024-06-17
 
 ### Fixed
