@@ -233,7 +233,9 @@ class ExpBolometricTerm(BaseBolometricTerm):
 
 @dataclass()
 class LinexpBolometricTerm(BaseBolometricTerm):
-    """Linexp function, symmetric form"""
+    """Linexp function, symmetric form. Generated using a prototype version of Multi-view 
+    Symbolic Regression (Russeil et al. 2024, https://arxiv.org/abs/2402.04298) on 
+    a SLSN ZTF light curve (https://ztf.snad.space/dr17/view/821207100004043)"""
 
     @staticmethod
     def parameter_names():
