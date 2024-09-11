@@ -92,10 +92,10 @@ class RainbowFit(BaseRainbowFit):
             return self.temperature.value(t, *params[self.p.all_temp_idx])
         else:
             return self.temperature.value(t)
-    
+
     # REMOVE
-    #def _unscale_parameters(self, params, t_scaler: Scaler, m_scaler: MultiBandScaler, scale_errors=False) -> None:
-        #already_unscaled = set()
+    # def _unscale_parameters(self, params, t_scaler: Scaler, m_scaler: MultiBandScaler, scale_errors=False) -> None:
+    # already_unscaled = set()
 
     def _parameter_scalings(self) -> Dict[str, str]:
         rules = super()._parameter_scalings()

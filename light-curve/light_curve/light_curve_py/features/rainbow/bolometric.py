@@ -77,7 +77,6 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
         idx = dt > -100 * rise_time
         result[idx] = amplitude / (np.exp(-dt[idx] / rise_time) + 1)
 
-
         return result
 
     @staticmethod
