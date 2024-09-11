@@ -1,4 +1,3 @@
-import math
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Dict, List, Union
@@ -163,8 +162,6 @@ class BazinBolometricTerm(BaseBolometricTerm):
         initial["rise_time"] = rise_time
         initial["fall_time"] = fall_time
 
-        print(f"Guess: [{rise_time}]")
-
         return initial
 
     @staticmethod
@@ -177,8 +174,6 @@ class BazinBolometricTerm(BaseBolometricTerm):
         limits["amplitude"] = (0.0, 10 * m_amplitude)
         limits["rise_time"] = (1e-4, 10 * t_amplitude)
         limits["fall_time"] = (1e-4, 10 * t_amplitude)
-
-        print(f"Limits: [{1e-4}, {10 * t_amplitude}]")
 
         return limits
 
@@ -233,9 +228,7 @@ class ExpBolometricTerm(BaseBolometricTerm):
 
 @dataclass()
 class LinexpBolometricTerm(BaseBolometricTerm):
-    """Linexp function, symmetric form. Generated using a prototype version of Multi-view
-    Symbolic Regression (Russeil et al. 2024, https://arxiv.org/abs/2402.04298) on
-    a SLSN ZTF light curve (https://ztf.snad.space/dr17/view/821207100004043)"""
+    """Linexp function, symmetric form"""
 
     @staticmethod
     def parameter_names():
@@ -248,20 +241,19 @@ class LinexpBolometricTerm(BaseBolometricTerm):
     @staticmethod
     def value(t, t0, rise_time, amplitude):
         dt = t0 - t
-        protected_rise = math.copysign(max(1e-5, abs(rise_time)), rise_time)
 
         # Coefficient to make peak amplitude equal to unity
-        scale = 1 / (protected_rise * np.exp(-1))
+        scale = 1 / (rise_time * np.exp(-1))
+        sym = amplitude / abs(amplitude)
+        power = -(sym * dt) / rise_time
+        power = np.where(power > 100 * abs(amplitude), 100 * abs(amplitude), power)
 
-        power = -(math.copysign(1, amplitude) * dt) / protected_rise
-        power = np.where(power > 100, 100, power)
         result = amplitude * scale * dt * np.exp(power)
 
         return result
 
     @staticmethod
     def initial_guesses(t, m, sigma, band):
-
         A = np.max(m)
 
         # Compute points after or before maximum
@@ -280,8 +272,8 @@ class LinexpBolometricTerm(BaseBolometricTerm):
 
         initial = {}
         initial["reference_time"] = t0
-        initial["rise_time"] = rise_time if before >= after else -rise_time
-        initial["amplitude"] = A
+        initial["amplitude"] = A if before >= after else -A
+        initial["rise_time"] = rise_time
 
         return initial
 
@@ -292,8 +284,8 @@ class LinexpBolometricTerm(BaseBolometricTerm):
 
         limits = {}
         limits["reference_time"] = (np.min(t) - 10 * t_amplitude, np.max(t) + 10 * t_amplitude)
-        limits["rise_time"] = (-10 * t_amplitude, 10 * t_amplitude)
-        limits["amplitude"] = (0, 10 * m_amplitude)
+        limits["amplitude"] = (-10 * m_amplitude, 10 * m_amplitude)
+        limits["rise_time"] = (1e-4, 10 * t_amplitude)
 
         return limits
 
