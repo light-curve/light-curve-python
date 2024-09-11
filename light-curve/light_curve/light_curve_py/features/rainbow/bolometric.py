@@ -72,18 +72,17 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
     @staticmethod
     def value(t, t0, rise_time, amplitude):
         dt = t - t0
+        result = np.zeros(len(dt))
+        # To avoid numerical overflows, let's only compute the exponents not too far from t0
+        idx = dt > -100 * rise_time
+        result[idx] = amplitude / (np.exp(-dt[idx] / rise_time) + 1)
 
-        ## To avoid numerical overflows
-        maxp = 20
-        A = -dt / rise_time
-        A = np.where(A > maxp, maxp, A)
-        result = amplitude / (np.exp(A) + 1)
 
         return result
 
     @staticmethod
     def initial_guesses(t, m, sigma, band):
-        A = np.max(m)
+        A = np.ptp(m)
 
         initial = {}
         initial["reference_time"] = t[np.argmax(m)]
@@ -95,12 +94,14 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
     @staticmethod
     def limits(t, m, sigma, band):
         t_amplitude = np.ptp(t)
-        m_amplitude = np.max(m)
+        m_amplitude = np.ptp(m)
+
+        mean_dt = np.median(t[1:] - t[:-1])
 
         limits = {}
         limits["reference_time"] = (np.min(t) - 10 * t_amplitude, np.max(t) + 10 * t_amplitude)
-        limits["amplitude"] = (0.0, 10 * m_amplitude)
-        limits["rise_time"] = (-10 * t_amplitude, 10 * t_amplitude)
+        limits["amplitude"] = (0.0, 20 * m_amplitude)
+        limits["rise_time"] = (0.1 * mean_dt, 10 * t_amplitude)
 
         return limits
 
@@ -131,7 +132,7 @@ class BazinBolometricTerm(BaseBolometricTerm):
             -fall_time / (fall_time + rise_time)
         )
 
-        result = np.zeros_like(dt)
+        result = np.zeros(len(dt))
         # To avoid numerical overflows, let's only compute the exponents not too far from t0
         idx = (dt > -100 * rise_time) & (dt < 100 * fall_time)
         result[idx] = amplitude * scale / (np.exp(-dt[idx] / rise_time) + np.exp(dt[idx] / fall_time))
@@ -140,15 +141,17 @@ class BazinBolometricTerm(BaseBolometricTerm):
 
     @staticmethod
     def initial_guesses(t, m, sigma, band):
-        A = np.max(m)
+        A = np.ptp(m)
+
+        mc = m - np.min(m)  # To avoid crashing on all-negative data
 
         # Naive peak position from the highest point
         t0 = t[np.argmax(m)]
-        # Peak position as weighted centroid of everything above zero
-        idx = m > 0
+        # Peak position as weighted centroid of everything above median
+        idx = m > np.median(m)
         # t0 = np.sum(t[idx] * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx])
         # Weighted centroid sigma
-        dt = np.sqrt(np.sum((t[idx] - t0) ** 2 * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx]))
+        dt = np.sqrt(np.sum((t[idx] - t0) ** 2 * (mc[idx]) / sigma[idx]) / np.sum(mc[idx] / sigma[idx]))
 
         # Empirical conversion of sigma to rise/fall times
         rise_time = dt / 2
@@ -170,13 +173,15 @@ class BazinBolometricTerm(BaseBolometricTerm):
     @staticmethod
     def limits(t, m, sigma, band):
         t_amplitude = np.ptp(t)
-        m_amplitude = np.max(m)
+        m_amplitude = np.ptp(m)
+
+        mean_dt = np.median(t[1:] - t[:-1])
 
         limits = {}
         limits["reference_time"] = (np.min(t) - 10 * t_amplitude, np.max(t) + 10 * t_amplitude)
-        limits["amplitude"] = (0.0, 10 * m_amplitude)
-        limits["rise_time"] = (1e-4, 10 * t_amplitude)
-        limits["fall_time"] = (1e-4, 10 * t_amplitude)
+        limits["amplitude"] = (0.0, 20 * m_amplitude)
+        limits["rise_time"] = (0.1 * mean_dt, 10 * t_amplitude)
+        limits["fall_time"] = (0.1 * mean_dt, 10 * t_amplitude)
 
         print(f"Limits: [{1e-4}, {10 * t_amplitude}]")
 
