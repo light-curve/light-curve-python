@@ -163,8 +163,6 @@ class BazinBolometricTerm(BaseBolometricTerm):
         initial["rise_time"] = rise_time
         initial["fall_time"] = fall_time
 
-        print(f"Guess: [{rise_time}]")
-
         return initial
 
     @staticmethod
@@ -177,8 +175,6 @@ class BazinBolometricTerm(BaseBolometricTerm):
         limits["amplitude"] = (0.0, 10 * m_amplitude)
         limits["rise_time"] = (1e-4, 10 * t_amplitude)
         limits["fall_time"] = (1e-4, 10 * t_amplitude)
-
-        print(f"Limits: [{1e-4}, {10 * t_amplitude}]")
 
         return limits
 
