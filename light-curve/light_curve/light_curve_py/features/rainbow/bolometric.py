@@ -2,7 +2,6 @@ import math
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Dict, List, Union
-
 import numpy as np
 from scipy.special import lambertw
 
@@ -70,15 +69,16 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
 
     @staticmethod
     def parameter_names():
-        return ["reference_time", "rise_time", "amplitude"]
+        return ["reference_time", "amplitude", "rise_time"]
 
     @staticmethod
     def parameter_scalings():
-        return ["time", "timescale", "flux"]
+        return ["time", "flux", "timescale"]
 
     @staticmethod
-    def value(t, t0, rise_time, amplitude):
+    def value(t, t0, amplitude, rise_time):
         dt = t - t0
+
         result = np.zeros(len(dt))
         # To avoid numerical overflows, let's only compute the exponents not too far from t0
         idx = dt > -100 * rise_time
@@ -93,9 +93,6 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
         initial = {}
         initial["reference_time"] = t[np.argmax(m)]
         initial["amplitude"] = A
-
-        # In the future allow decaying only ?
-        # initial["rise_time"] = 1.0 if m[0] < m[-1] else -1
         initial["rise_time"] = 1.0
 
         return initial
@@ -105,19 +102,20 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
         t_amplitude = np.ptp(t)
         m_amplitude = np.ptp(m)
 
+        mean_dt = np.median(t[1:] - t[:-1])
+
         limits = {}
         limits["reference_time"] = (np.min(t) - 10 * t_amplitude, np.max(t) + 10 * t_amplitude)
         limits["amplitude"] = (0.0, 20 * m_amplitude)
-        limits["rise_time"] = (0.0, 10 * t_amplitude)
-        # In the future allow decaying only ?
-        # limits["rise_time"] = (-10 * t_amplitude, 10 * t_amplitude)
+        limits["rise_time"] = (0.1 * mean_dt, 10 * t_amplitude)
 
         return limits
 
     @staticmethod
-    def peak_time(t0, rise_time, amplitude):
+    def peak_time(t0, amplitude, rise_time):
         """Peak time is not defined for the sigmoid, so it returns mid-time of the rise instead"""
         return t0
+
 
 
 @dataclass()
@@ -126,14 +124,14 @@ class BazinBolometricTerm(BaseBolometricTerm):
 
     @staticmethod
     def parameter_names():
-        return ["reference_time", "rise_time", "amplitude", "fall_time"]
+        return ["reference_time", "amplitude", "rise_time", "fall_time"]
 
     @staticmethod
     def parameter_scalings():
-        return ["time", "timescale", "flux", "timescale"]
+        return ["time", "flux", "timescale", "timescale"]
 
     @staticmethod
-    def value(t, t0, rise_time, amplitude, fall_time):
+    def value(t, t0, amplitude, rise_time, fall_time):
         dt = t - t0
 
         # Coefficient to make peak amplitude equal to unity
@@ -193,7 +191,7 @@ class BazinBolometricTerm(BaseBolometricTerm):
         return limits
 
     @staticmethod
-    def peak_time(t0, rise_time, amplitude, fall_time):
+    def peak_time(t0, amplitude, rise_time, fall_time):
         return t0 + np.log(fall_time / rise_time) * rise_time * fall_time / (rise_time + fall_time)
 
 
@@ -205,11 +203,11 @@ class LinexpBolometricTerm(BaseBolometricTerm):
 
     @staticmethod
     def parameter_names():
-        return ["reference_time", "rise_time", "amplitude"]
+        return ["reference_time", "amplitude", "rise_time"]
 
     @staticmethod
     def parameter_scalings():
-        return ["time", "timescale", "flux"]
+        return ["time", "flux", "timescale"]
 
     @staticmethod
     def value(t, t0, rise_time, amplitude):
@@ -246,8 +244,8 @@ class LinexpBolometricTerm(BaseBolometricTerm):
 
         initial = {}
         initial["reference_time"] = t0
-        initial["rise_time"] = rise_time if before >= after else -rise_time
         initial["amplitude"] = A
+        initial["rise_time"] = rise_time if before >= after else -rise_time
 
         return initial
 
@@ -258,13 +256,13 @@ class LinexpBolometricTerm(BaseBolometricTerm):
 
         limits = {}
         limits["reference_time"] = (np.min(t) - 10 * t_amplitude, np.max(t) + 10 * t_amplitude)
-        limits["rise_time"] = (-10 * t_amplitude, 10 * t_amplitude)
         limits["amplitude"] = (0, 10 * m_amplitude)
+        limits["rise_time"] = (-10 * t_amplitude, 10 * t_amplitude)
 
         return limits
 
     @staticmethod
-    def peak_time(t0, rise_time, amplitude):
+    def peak_time(t0, amplitude, rise_time):
         return t0 - rise_time
 
 
@@ -275,14 +273,14 @@ class DoublexpBolometricTerm(BaseBolometricTerm):
 
     @staticmethod
     def parameter_names():
-        return ["reference_time", "time1", "amplitude", "time2", "p"]
+        return ["reference_time", "amplitude", "time1", "time2", "p"]
 
     @staticmethod
     def parameter_scalings():
-        return ["time", "timescale", "flux", "timescale", "None"]
+        return ["time", "flux", "timescale", "timescale", "None"]
 
     @staticmethod
-    def value(t, t0, time1, amplitude, time2, p):
+    def value(t, t0, amplitude, time1, time2, p):
         dt = t - t0
 
         result = np.zeros_like(dt)
