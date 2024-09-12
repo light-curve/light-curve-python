@@ -115,7 +115,6 @@ class SigmoidTemperatureTerm(BaseTemperatureTerm):
         initial["Tmin"] = 7000.0
         initial["Tmax"] = 10000.0
         initial["t_color"] = 1.0
-        initial["reference_time"] = t[np.argmax(m)]
 
         return initial
 
@@ -127,7 +126,6 @@ class SigmoidTemperatureTerm(BaseTemperatureTerm):
         limits["Tmin"] = (1e3, 2e6)  # K
         limits["Tmax"] = (1e3, 2e6)  # K
         limits["t_color"] = (1, 10 * t_amplitude)
-        limits["reference_time"] = (np.min(t) - 10 * t_amplitude, np.max(t) + 10 * t_amplitude)
 
         return limits
 
@@ -167,7 +165,6 @@ class DelayedSigmoidTemperatureTerm(BaseTemperatureTerm):
         initial["Tmax"] = 10000.0
         initial["t_color"] = 1.0
         initial["t_delay"] = 0.0
-        initial["reference_time"] = t[np.argmax(m)]
 
         return initial
 
@@ -180,7 +177,6 @@ class DelayedSigmoidTemperatureTerm(BaseTemperatureTerm):
         limits["Tmax"] = (1e3, 2e6)  # K
         limits["t_color"] = (1e-4, 10 * t_amplitude)
         limits["t_delay"] = (-t_amplitude, t_amplitude)
-        limits["reference_time"] = (np.min(t) - 10 * t_amplitude, np.max(t) + 10 * t_amplitude)
 
         return limits
 
