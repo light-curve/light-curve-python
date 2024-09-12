@@ -14,7 +14,7 @@ def baseline_parameter_name(band: str) -> str:
 
 def baseline_band_name(name: str) -> str:
     if name.startswith("baseline_"):
-        return name[len("baseline_"):]
+        return name[len("baseline_") :]
 
     return None
 

@@ -6,7 +6,6 @@ from typing import Dict, List, Union
 import numpy as np
 from scipy.special import lambertw
 
-
 __all__ = [
     "bolometric_terms",
     "BaseBolometricTerm",
