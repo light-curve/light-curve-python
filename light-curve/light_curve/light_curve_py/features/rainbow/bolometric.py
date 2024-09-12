@@ -117,7 +117,6 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
         return t0
 
 
-
 @dataclass()
 class BazinBolometricTerm(BaseBolometricTerm):
     """Bazin function, symmetric form"""
