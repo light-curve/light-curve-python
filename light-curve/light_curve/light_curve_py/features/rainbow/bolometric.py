@@ -2,6 +2,7 @@ import math
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Dict, List, Union
+
 import numpy as np
 from scipy.special import lambertw
 
