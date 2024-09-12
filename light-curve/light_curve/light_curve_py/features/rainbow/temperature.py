@@ -51,33 +51,6 @@ class BaseTemperatureTerm:
 
 
 @dataclass
-class NoTemperatureTerm(BaseTemperatureTerm):
-    """Constant temperature"""
-
-    @staticmethod
-    def parameter_names():
-        return []
-
-    @staticmethod
-    def parameter_scalings():
-        return []
-
-    @staticmethod
-    def value(t):
-        return np.full_like(t, 8000)  # K
-
-    @staticmethod
-    def initial_guesses(t, m, sigma, band):
-        initial = {}
-        return initial
-
-    @staticmethod
-    def limits(t, m, sigma, band):
-        limits = {}
-        return limits
-
-
-@dataclass
 class ConstantTemperatureTerm(BaseTemperatureTerm):
     """Constant temperature"""
 
@@ -213,7 +186,6 @@ class DelayedSigmoidTemperatureTerm(BaseTemperatureTerm):
 
 
 temperature_terms = {
-    "colorless": NoTemperatureTerm,
     "constant": ConstantTemperatureTerm,
     "Tsigmoid": SigmoidTemperatureTerm,
     "delayed_sigmoid": DelayedSigmoidTemperatureTerm,

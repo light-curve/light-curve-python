@@ -88,14 +88,7 @@ class RainbowFit(BaseRainbowFit):
         return self.bolometric.value(t, *params[self.p.all_bol_idx])
 
     def temp_func(self, t, params):
-        if len(self.p.all_temp_idx) != 0:
-            return self.temperature.value(t, *params[self.p.all_temp_idx])
-        else:
-            return self.temperature.value(t)
-
-    # REMOVE
-    # def _unscale_parameters(self, params, t_scaler: Scaler, m_scaler: MultiBandScaler, scale_errors=False) -> None:
-    # already_unscaled = set()
+        return self.temperature.value(t, *params[self.p.all_temp_idx])
 
     def _parameter_scalings(self) -> Dict[str, str]:
         rules = super()._parameter_scalings()
@@ -108,11 +101,7 @@ class RainbowFit(BaseRainbowFit):
 
     def _initial_guesses(self, t, m, sigma, band) -> Dict[str, float]:
         initial = self.bolometric.initial_guesses(t, m, sigma, band)
-        temp_guess = self.temperature.initial_guesses(t, m, sigma, band)
-        unique_temp_guess = {
-            key: value for key, value in temp_guess.items() if key not in self._common_parameter_names()
-        }
-        initial.update(unique_temp_guess)
+        initial.update(self.temperature.initial_guesses(t, m, sigma, band))
 
         return initial
 

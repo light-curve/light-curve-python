@@ -6,7 +6,8 @@ from typing import Dict, List, Union
 import numpy as np
 from scipy.special import lambertw
 
-__all__ = ["bolometric_terms", "BaseBolometricTerm", "SigmoidBolometricTerm", "BazinBolometricTerm"]
+__all__ = ["bolometric_terms", "BaseBolometricTerm", "SigmoidBolometricTerm", "BazinBolometricTerm",
+          "LinexpBolometricTerm", "DoublexpBolometricTerm"]
 
 
 @dataclass()
@@ -73,10 +74,10 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
     def value(t, t0, rise_time, amplitude):
         dt = t - t0
         result = np.zeros(len(dt))
-        # To avoid numerical overflows, let's only compute the exponents not too far from t0
+        #To avoid numerical overflows, let's only compute the exponents not too far from t0
         idx = dt > -100 * rise_time
         result[idx] = amplitude / (np.exp(-dt[idx] / rise_time) + 1)
-
+        
         return result
 
     @staticmethod
@@ -86,7 +87,10 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
         initial = {}
         initial["reference_time"] = t[np.argmax(m)]
         initial["amplitude"] = A
-        initial["rise_time"] = 1.0 if m[0] < m[-1] else -1
+        
+        # In the future allow decaying only ?
+        #initial["rise_time"] = 1.0 if m[0] < m[-1] else -1
+        initial["rise_time"] = 1.0 
 
         return initial
 
@@ -100,7 +104,10 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
         limits = {}
         limits["reference_time"] = (np.min(t) - 10 * t_amplitude, np.max(t) + 10 * t_amplitude)
         limits["amplitude"] = (0.0, 20 * m_amplitude)
-        limits["rise_time"] = (0.1 * mean_dt, 10 * t_amplitude)
+        
+        limits["rise_time"] = (0.0, 10 * t_amplitude)
+        # In the future allow decaying only ?
+        #limits["rise_time"] = (-10 * t_amplitude, 10 * t_amplitude)
 
         return limits
 
@@ -165,8 +172,6 @@ class BazinBolometricTerm(BaseBolometricTerm):
         initial["rise_time"] = rise_time
         initial["fall_time"] = fall_time
 
-        print(f"Guess: [{rise_time}]")
-
         return initial
 
     @staticmethod
@@ -182,57 +187,11 @@ class BazinBolometricTerm(BaseBolometricTerm):
         limits["rise_time"] = (0.1 * mean_dt, 10 * t_amplitude)
         limits["fall_time"] = (0.1 * mean_dt, 10 * t_amplitude)
 
-        print(f"Limits: [{1e-4}, {10 * t_amplitude}]")
-
         return limits
 
     @staticmethod
     def peak_time(t0, rise_time, amplitude, fall_time):
         return t0 + np.log(fall_time / rise_time) * rise_time * fall_time / (rise_time + fall_time)
-
-
-@dataclass()
-class ExpBolometricTerm(BaseBolometricTerm):
-    """Exp function"""
-
-    @staticmethod
-    def parameter_names():
-        return ["pseudo_amplitude", "rise_time"]
-
-    @staticmethod
-    def parameter_scalings():
-        # In reality the fake_pseudo_amplitude parameter here is not in flux unit.
-        # Because without t0 the exponential is not dimentionless
-        # However in the special case were mean(t) = 0, then everything works.
-        # We use this trick for this specific function
-        return ["flux", "timescale"]
-
-    @staticmethod
-    def value(t, rise_time, pseudo_amplitude):
-        protected = np.where(t / rise_time > 10, 10, t / rise_time)
-        return pseudo_amplitude * np.exp(protected)
-
-    @staticmethod
-    def initial_guesses(t, m, sigma, band):
-        initial = {}
-        initial["rise_time"] = 10 if m[0] < m[-1] else -10
-        initial["pseudo_amplitude"] = 1
-
-        return initial
-
-    @staticmethod
-    def limits(t, m, sigma, band):
-        t_amplitude = np.ptp(t)
-
-        limits = {}
-        limits["rise_time"] = (-10 * t_amplitude, 10 * t_amplitude)
-        limits["pseudo_amplitude"] = (0.0, 10 * t_amplitude)  #
-
-        return limits
-
-    @staticmethod
-    def peak_time(A, rise_time):
-        return rise_time * (10 - np.log(A))
 
 
 @dataclass()
@@ -381,7 +340,6 @@ class DoublexpBolometricTerm(BaseBolometricTerm):
 bolometric_terms = {
     "sigmoid": SigmoidBolometricTerm,
     "bazin": BazinBolometricTerm,
-    "exp": ExpBolometricTerm,
     "linexp": LinexpBolometricTerm,
     "doublexp": DoublexpBolometricTerm,
 }

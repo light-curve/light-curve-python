@@ -403,10 +403,6 @@ class BaseRainbowFit(BaseMultiBandFeature):
 
         self._unscale_parameters(params, t_scaler, m_scaler)
 
-        # REMOVE
-        # if self.with_baseline:
-        #    self._unscale_baseline_parameters(params, m_scaler)
-
         # Unscale errors
         self._unscale_errors(errors, t_scaler, m_scaler)
 
