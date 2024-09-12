@@ -11,7 +11,7 @@ __all__ = ["temperature_terms", "BaseTemperatureTerm", "ConstantTemperatureTerm"
 class BaseTemperatureTerm:
     """Bolometric term for the Rainbow"""
 
-    @staticmethod
+    @staticmethodf
     @abstractmethod
     def parameter_names() -> List[str]:
         return NotImplementedError
@@ -187,6 +187,6 @@ class DelayedSigmoidTemperatureTerm(BaseTemperatureTerm):
 
 temperature_terms = {
     "constant": ConstantTemperatureTerm,
-    "Tsigmoid": SigmoidTemperatureTerm,
+    "sigmoid": SigmoidTemperatureTerm,
     "delayed_sigmoid": DelayedSigmoidTemperatureTerm,
 }

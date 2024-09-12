@@ -34,7 +34,7 @@ class RainbowFit(BaseRainbowFit):
         The shape of bolometric term. Default is 'bazin'.
         Other options are: 'sigmoid'
     temperature : str or BaseTemperatureTerm subclass, optional
-        The shape of temperature term. Default is 'Tsigmoid'.
+        The shape of temperature term. Default is 'sigmoid'.
         Other options are: 'constant', 'delayed_sigmoid'
 
     Methods
@@ -59,7 +59,7 @@ class RainbowFit(BaseRainbowFit):
 
     bolometric: Union[str, BaseBolometricTerm] = dataclass_field(default="bazin", kw_only=True)
     """Which parametric bolometric term to use"""
-    temperature: Union[str, BaseTemperatureTerm] = dataclass_field(default="Tsigmoid", kw_only=True)
+    temperature: Union[str, BaseTemperatureTerm] = dataclass_field(default="sigmoid", kw_only=True)
     """Which parametric temperature term to use"""
 
     def __post_init__(self):
