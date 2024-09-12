@@ -6,8 +6,7 @@ from typing import Dict, List, Union
 import numpy as np
 from scipy.special import lambertw
 
-__all__ = ["bolometric_terms", "BaseBolometricTerm", "SigmoidBolometricTerm", "BazinBolometricTerm",
-          "LinexpBolometricTerm", "DoublexpBolometricTerm"]
+__all__ = ["bolometric_terms", "BaseBolometricTerm", "SigmoidBolometricTerm", "BazinBolometricTerm", "LinexpBolometricTerm", "DoublexpBolometricTerm"]
 
 
 @dataclass()
@@ -74,10 +73,10 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
     def value(t, t0, rise_time, amplitude):
         dt = t - t0
         result = np.zeros(len(dt))
-        #To avoid numerical overflows, let's only compute the exponents not too far from t0
+        # To avoid numerical overflows, let's only compute the exponents not too far from t0
         idx = dt > -100 * rise_time
         result[idx] = amplitude / (np.exp(-dt[idx] / rise_time) + 1)
-        
+
         return result
 
     @staticmethod
@@ -87,10 +86,10 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
         initial = {}
         initial["reference_time"] = t[np.argmax(m)]
         initial["amplitude"] = A
-        
+
         # In the future allow decaying only ?
-        #initial["rise_time"] = 1.0 if m[0] < m[-1] else -1
-        initial["rise_time"] = 1.0 
+        # initial["rise_time"] = 1.0 if m[0] < m[-1] else -1
+        initial["rise_time"] = 1.0
 
         return initial
 
@@ -99,15 +98,12 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
         t_amplitude = np.ptp(t)
         m_amplitude = np.ptp(m)
 
-        mean_dt = np.median(t[1:] - t[:-1])
-
         limits = {}
         limits["reference_time"] = (np.min(t) - 10 * t_amplitude, np.max(t) + 10 * t_amplitude)
         limits["amplitude"] = (0.0, 20 * m_amplitude)
-        
         limits["rise_time"] = (0.0, 10 * t_amplitude)
         # In the future allow decaying only ?
-        #limits["rise_time"] = (-10 * t_amplitude, 10 * t_amplitude)
+        # limits["rise_time"] = (-10 * t_amplitude, 10 * t_amplitude)
 
         return limits
 
@@ -284,7 +280,7 @@ class DoublexpBolometricTerm(BaseBolometricTerm):
 
         result = np.zeros_like(dt)
 
-        ## To avoid numerical overflows
+        # To avoid numerical overflows
         maxp = 20
         A = -(dt / time1) * (p - np.exp(-(dt / time2)))
         A = np.where(A > maxp, maxp, A)
