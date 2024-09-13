@@ -67,28 +67,16 @@ def test_noisy_all_functions_combination():
         -20,  # rise_time
     ]
 
-    doublexp_parameters = [
-        60000.0,  # reference_time
-        1,  # amplitude
-        3,  # time1
-        5,  # time2
-        0.02  # p
-    ]
+    doublexp_parameters = [60000.0, 1, 3, 5, 0.02]  # reference_time  # amplitude  # time1  # time2  # p
 
-    bolometric_names = ['bazin', 'sigmoid', 'linexp', 'doublexp']
+    bolometric_names = ["bazin", "sigmoid", "linexp", "doublexp"]
     bolometric_params = [bazin_parameters, sigmoid_parameters, linexp_parameters, doublexp_parameters]
 
-    Tsigmoid_parameters = [
-        5e3,  # Tmin
-        15e3,  # Tmax
-        4.0  # t_color
-    ]
+    Tsigmoid_parameters = [5e3, 15e3, 4.0]  # Tmin  # Tmax  # t_color
 
-    constant_parameters = [
-        1e4  # T
-    ]
+    constant_parameters = [1e4]  # T
 
-    temperature_names = ['constant', 'sigmoid']
+    temperature_names = ["constant", "sigmoid"]
     temperature_params = [constant_parameters, Tsigmoid_parameters]
 
     for idx_b in range(len(bolometric_names)):
@@ -96,9 +84,12 @@ def test_noisy_all_functions_combination():
 
             expected = [*bolometric_params[idx_b], *temperature_params[idx_t], 1.0]
 
-            feature = RainbowFit.from_angstrom(band_wave_aa, with_baseline=False,
-                                               temperature=temperature_names[idx_t],
-                                               bolometric=bolometric_names[idx_b])
+            feature = RainbowFit.from_angstrom(
+                band_wave_aa,
+                with_baseline=False,
+                temperature=temperature_names[idx_t],
+                bolometric=bolometric_names[idx_b],
+            )
 
             flux = feature.model(t, band, *expected)
 

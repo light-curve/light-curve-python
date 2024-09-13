@@ -217,7 +217,7 @@ class LinexpBolometricTerm(BaseBolometricTerm):
         # Coefficient to make peak amplitude equal to unity
         scale = 1 / (protected_rise * np.exp(-1))
 
-        power = -dt/protected_rise
+        power = -dt / protected_rise
         power = np.where(power > 100, 100, power)
         result = amplitude * scale * dt * np.exp(power)
 
@@ -238,7 +238,7 @@ class LinexpBolometricTerm(BaseBolometricTerm):
         # Weighted centroid sigma
         dt = np.sqrt(np.sum((t[idx] - peak_time) ** 2 * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx]))
         # Empirical conversion of sigma to rise/rise times
-        rise_time = dt/2
+        rise_time = dt / 2
         rise_time = rise_time if before >= after else -rise_time
 
         initial = {}
