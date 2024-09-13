@@ -125,7 +125,7 @@ class SigmoidTemperatureTerm(BaseTemperatureTerm):
         limits = {}
         limits["Tmin"] = (1e3, 2e6)  # K
         limits["Tmax"] = (1e3, 2e6)  # K
-        limits["t_color"] = (1, 10 * t_amplitude)
+        limits["t_color"] = (1e-4, 10 * t_amplitude)
 
         return limits
 
