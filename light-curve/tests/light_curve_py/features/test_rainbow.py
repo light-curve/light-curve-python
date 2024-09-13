@@ -48,47 +48,44 @@ def test_noisy_all_functions_combination():
     t = np.sort(rng.uniform(59985.0, 60090.0, 1000))
     band = rng.choice(list(band_wave_aa), size=len(t))
 
-
     bazin_parameters = [
-        60000.0, # reference_time
-        1.0, # amplitude
-        5.0, # rise_time
-        30.0, # fall_time
-    ] 
+        60000.0,  # reference_time
+        1.0,  # amplitude
+        5.0,  # rise_time
+        30.0,  # fall_time
+    ]
 
     sigmoid_parameters = [
-        60000.0, # reference_time
-        1.0, # amplitude
-        5.0, # rise_time
+        60000.0,  # reference_time
+        1.0,  # amplitude
+        5.0,  # rise_time
     ]
 
     linexp_parameters = [
-        60000.0, # reference_time
-        1, # amplitude
-        -20, # rise_time
+        60000.0,  # reference_time
+        1,  # amplitude
+        -20,  # rise_time
     ]
 
     doublexp_parameters = [
-        60000.0, # reference_time
-        1, # amplitude
-        3, # time1
-        5, # time2
-        0.02 # p
+        60000.0,  # reference_time
+        1,  # amplitude
+        3,  # time1
+        5,  # time2
+        0.02  # p
     ]
-
 
     bolometric_names = ['bazin', 'sigmoid', 'linexp', 'doublexp']
     bolometric_params = [bazin_parameters, sigmoid_parameters, linexp_parameters, doublexp_parameters]
 
-
     Tsigmoid_parameters = [
-        5e3, # Tmin
-        15e3, # Tmax
-        4.0 # t_color
+        5e3,  # Tmin
+        15e3,  # Tmax
+        4.0  # t_color
     ]
 
     constant_parameters = [
-        1e4 # T
+        1e4  # T
     ]
 
     temperature_names = ['constant', 'sigmoid']
@@ -106,7 +103,7 @@ def test_noisy_all_functions_combination():
             flux = feature.model(t, band, *expected)
 
             # The linexp function can reach unphysical negative flux values
-            protected_flux = np.where(flux>1e-3, flux, 1e-3)
+            protected_flux = np.where(flux > 1e-3, flux, 1e-3)
 
             # S/N = 10 for minimum flux, scale for Poisson noise
             flux_err = np.sqrt(protected_flux * np.min(protected_flux)) / 10.0
@@ -114,14 +111,14 @@ def test_noisy_all_functions_combination():
 
             actual = feature(t, flux, sigma=flux_err, band=band)
 
-            #import matplotlib.pyplot as plt
-            #plt.figure()
-            #plt.scatter(t, flux, s=5, label="data")
-            #plt.errorbar(t, flux, yerr=flux_err, ls="none", capsize=1)
-            #plt.plot(t, feature.model(t, band, *expected), "x", label="expected")
-            #plt.plot(t, feature.model(t, band, *actual), "*", label="actual")
-            #plt.ylim(-.05, flux.max()+0.1)
-            #plt.legend()
-            #plt.show()
+            # import matplotlib.pyplot as plt
+            # plt.figure()
+            # plt.scatter(t, flux, s=5, label="data")
+            # plt.errorbar(t, flux, yerr=flux_err, ls="none", capsize=1)
+            # plt.plot(t, feature.model(t, band, *expected), "x", label="expected")
+            # plt.plot(t, feature.model(t, band, *actual), "*", label="actual")
+            # plt.ylim(-.05, flux.max()+0.1)
+            # plt.legend()
+            # plt.show()
 
             np.testing.assert_allclose(actual[:-1], expected[:-1], rtol=0.1)
