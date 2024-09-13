@@ -210,14 +210,14 @@ class LinexpBolometricTerm(BaseBolometricTerm):
         return ["time", "flux", "timescale"]
 
     @staticmethod
-    def value(t, t0, rise_time, amplitude):
+    def value(t, t0, amplitude, rise_time):
         dt = t0 - t
         protected_rise = math.copysign(max(1e-5, abs(rise_time)), rise_time)
 
         # Coefficient to make peak amplitude equal to unity
         scale = 1 / (protected_rise * np.exp(-1))
 
-        power = -(math.copysign(1, amplitude) * dt) / protected_rise
+        power = -dt/protected_rise
         power = np.where(power > 100, 100, power)
         result = amplitude * scale * dt * np.exp(power)
 
@@ -226,33 +226,33 @@ class LinexpBolometricTerm(BaseBolometricTerm):
     @staticmethod
     def initial_guesses(t, m, sigma, band):
 
-        A = np.max(m)
+        A = np.ptp(m)
 
         # Compute points after or before maximum
         peak_time = t[np.argmax(m)]
         after = t[-1] - peak_time
         before = peak_time - t[0]
 
-        t0 = t[-1] if before >= after else t[0]
-
         # Peak position as weighted centroid of everything above zero
         idx = m > 0
         # Weighted centroid sigma
-        dt = np.sqrt(np.sum((t[idx] - t0) ** 2 * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx]))
+        dt = np.sqrt(np.sum((t[idx] - peak_time) ** 2 * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx]))
         # Empirical conversion of sigma to rise/rise times
-        rise_time = dt / 2
+        rise_time = dt/2
+        rise_time = rise_time if before >= after else -rise_time
 
         initial = {}
-        initial["reference_time"] = t0
+        # Reference of linexp correspond to the moment where flux == 0
+        initial["reference_time"] = peak_time + rise_time
         initial["amplitude"] = A
-        initial["rise_time"] = rise_time if before >= after else -rise_time
+        initial["rise_time"] = rise_time
 
         return initial
 
     @staticmethod
     def limits(t, m, sigma, band):
         t_amplitude = np.ptp(t)
-        m_amplitude = np.max(m)
+        m_amplitude = np.ptp(m)
 
         limits = {}
         limits["reference_time"] = (np.min(t) - 10 * t_amplitude, np.max(t) + 10 * t_amplitude)
@@ -296,7 +296,7 @@ class DoublexpBolometricTerm(BaseBolometricTerm):
 
     @staticmethod
     def initial_guesses(t, m, sigma, band):
-        A = np.max(m)
+        A = np.ptp(m)
 
         # Naive peak position from the highest point
         t0 = t[np.argmax(m)]
@@ -322,7 +322,7 @@ class DoublexpBolometricTerm(BaseBolometricTerm):
     @staticmethod
     def limits(t, m, sigma, band):
         t_amplitude = np.ptp(t)
-        m_amplitude = np.max(m)
+        m_amplitude = np.ptp(m)
 
         limits = {}
         limits["reference_time"] = (np.min(t) - 10 * t_amplitude, np.max(t) + 10 * t_amplitude)
