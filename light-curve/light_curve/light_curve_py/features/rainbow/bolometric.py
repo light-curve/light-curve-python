@@ -234,7 +234,7 @@ class LinexpBolometricTerm(BaseBolometricTerm):
         before = peak_time - t[0]
 
         # Peak position as weighted centroid of everything above zero
-        idx = m > 0
+        idx = m > np.median(m)
         # Weighted centroid sigma
         dt = np.sqrt(np.sum((t[idx] - peak_time) ** 2 * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx]))
         # Empirical conversion of sigma to rise/rise times
@@ -301,7 +301,7 @@ class DoublexpBolometricTerm(BaseBolometricTerm):
         # Naive peak position from the highest point
         t0 = t[np.argmax(m)]
         # Peak position as weighted centroid of everything above zero
-        idx = m > 0
+        idx = m > np.median(m)
         # t0 = np.sum(t[idx] * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx])
         # Weighted centroid sigma
         dt = np.sqrt(np.sum((t[idx] - t0) ** 2 * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx]))
