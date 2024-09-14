@@ -329,7 +329,7 @@ class DoublexpBolometricTerm(BaseBolometricTerm):
         limits["amplitude"] = (0.0, 10 * m_amplitude)
         limits["time1"] = (1e-1, 2 * t_amplitude)
         limits["time2"] = (1e-1, 2 * t_amplitude)
-        limits["p"] = (1e-2, 100)
+        limits["p"] = (0, 100)
 
         return limits
 
