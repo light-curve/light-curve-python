@@ -67,22 +67,12 @@ def test_noisy_all_functions_combination():
         -20,  # rise_time
     ]
 
-    doublexp_parameters = [
-        60000.0,  # reference_time
-        1,  # amplitude
-        3,  # time1
-        5,  # time2
-        0.1  # p
-    ]
+    doublexp_parameters = [60000.0, 1, 3, 5, 0.1]  # reference_time  # amplitude  # time1  # time2  # p
 
     bolometric_names = ["bazin", "sigmoid", "linexp", "doublexp"]
     bolometric_params = [bazin_parameters, sigmoid_parameters, linexp_parameters, doublexp_parameters]
 
-    Tsigmoid_parameters = [
-        5e3,  # Tmin
-        15e3,  # Tmax
-        4.0  # t_color
-    ]
+    Tsigmoid_parameters = [5e3, 15e3, 4.0]  # Tmin  # Tmax  # t_color
 
     constant_parameters = [1e4]  # T
 
