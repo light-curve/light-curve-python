@@ -87,24 +87,24 @@ class SigmoidTemperatureTerm(BaseTemperatureTerm):
 
     @staticmethod
     def parameter_names():
-        return ["reference_time", "Tmin", "Tmax", "k_sig"]
+        return ["reference_time", "Tmin", "Tmax", "t_color"]
 
     @staticmethod
     def parameter_scalings():
         return ["time", None, None, "timescale"]
 
     @staticmethod
-    def value(t, t0, temp_min, temp_max, k_sig):
+    def value(t, t0, temp_min, temp_max, t_color):
         dt = t - t0
 
         # To avoid numerical overflows, let's only compute the exponent not too far from t0
-        idx1 = dt <= -100 * k_sig
-        idx2 = (dt > -100 * k_sig) & (dt < 100 * k_sig)
-        idx3 = dt >= 100 * k_sig
+        idx1 = dt <= -100 * t_color
+        idx2 = (dt > -100 * t_color) & (dt < 100 * t_color)
+        idx3 = dt >= 100 * t_color
 
         result = np.zeros(len(dt))
         result[idx1] = temp_max
-        result[idx2] = temp_min + (temp_max - temp_min) / (1.0 + np.exp(dt[idx2] / k_sig))
+        result[idx2] = temp_min + (temp_max - temp_min) / (1.0 + np.exp(dt[idx2] / t_color))
         result[idx3] = temp_min
 
         return result
@@ -114,7 +114,7 @@ class SigmoidTemperatureTerm(BaseTemperatureTerm):
         initial = {}
         initial["Tmin"] = 7000.0
         initial["Tmax"] = 10000.0
-        initial["k_sig"] = 1.0
+        initial["t_color"] = 1.0
 
         return initial
 
@@ -125,7 +125,7 @@ class SigmoidTemperatureTerm(BaseTemperatureTerm):
         limits = {}
         limits["Tmin"] = (1e3, 2e6)  # K
         limits["Tmax"] = (1e3, 2e6)  # K
-        limits["k_sig"] = (1e-4, 10 * t_amplitude)
+        limits["t_color"] = (1e-4, 10 * t_amplitude)
 
         return limits
 
@@ -136,24 +136,24 @@ class DelayedSigmoidTemperatureTerm(BaseTemperatureTerm):
 
     @staticmethod
     def parameter_names():
-        return ["reference_time", "Tmin", "Tmax", "k_sig", "t_delay"]
+        return ["reference_time", "Tmin", "Tmax", "t_color", "t_delay"]
 
     @staticmethod
     def parameter_scalings():
         return ["time", None, None, "timescale", "timescale"]
 
     @staticmethod
-    def value(t, t0, Tmin, Tmax, k_sig, t_delay):
+    def value(t, t0, Tmin, Tmax, t_color, t_delay):
         dt = t - t0 - t_delay
 
         # To avoid numerical overflows, let's only compute the exponent not too far from t0
-        idx1 = dt <= -100 * k_sig
-        idx2 = (dt > -100 * k_sig) & (dt < 100 * k_sig)
-        idx3 = dt >= 100 * k_sig
+        idx1 = dt <= -100 * t_color
+        idx2 = (dt > -100 * t_color) & (dt < 100 * t_color)
+        idx3 = dt >= 100 * t_color
 
         result = np.zeros(len(dt))
         result[idx1] = Tmax
-        result[idx2] = Tmin + (Tmax - Tmin) / (1.0 + np.exp(dt[idx2] / k_sig))
+        result[idx2] = Tmin + (Tmax - Tmin) / (1.0 + np.exp(dt[idx2] / t_color))
         result[idx3] = Tmin
 
         return result
@@ -163,7 +163,7 @@ class DelayedSigmoidTemperatureTerm(BaseTemperatureTerm):
         initial = {}
         initial["Tmin"] = 7000.0
         initial["Tmax"] = 10000.0
-        initial["k_sig"] = 1.0
+        initial["t_color"] = 1.0
         initial["t_delay"] = 0.0
 
         return initial
@@ -175,7 +175,7 @@ class DelayedSigmoidTemperatureTerm(BaseTemperatureTerm):
         limits = {}
         limits["Tmin"] = (1e3, 2e6)  # K
         limits["Tmax"] = (1e3, 2e6)  # K
-        limits["k_sig"] = (1e-4, 10 * t_amplitude)
+        limits["t_color"] = (1e-4, 10 * t_amplitude)
         limits["t_delay"] = (-t_amplitude, t_amplitude)
 
         return limits

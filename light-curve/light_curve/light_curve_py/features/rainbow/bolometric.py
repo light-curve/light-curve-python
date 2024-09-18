@@ -1,10 +1,19 @@
+import math
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Dict, List, Union
 
 import numpy as np
+from scipy.special import lambertw
 
-__all__ = ["bolometric_terms", "BaseBolometricTerm", "SigmoidBolometricTerm", "BazinBolometricTerm"]
+__all__ = [
+    "bolometric_terms",
+    "BaseBolometricTerm",
+    "SigmoidBolometricTerm",
+    "BazinBolometricTerm",
+    "LinexpBolometricTerm",
+    "DoublexpBolometricTerm",
+]
 
 
 @dataclass()
@@ -186,7 +195,152 @@ class BazinBolometricTerm(BaseBolometricTerm):
         return t0 + np.log(fall_time / rise_time) * rise_time * fall_time / (rise_time + fall_time)
 
 
+@dataclass()
+class LinexpBolometricTerm(BaseBolometricTerm):
+    """Linexp function, symmetric form. Generated using a prototype version of Multi-view
+    Symbolic Regression (Russeil et al. 2024, https://arxiv.org/abs/2402.04298) on
+    a SLSN ZTF light curve (https://ztf.snad.space/dr17/view/821207100004043)"""
+
+    @staticmethod
+    def parameter_names():
+        return ["reference_time", "amplitude", "rise_time"]
+
+    @staticmethod
+    def parameter_scalings():
+        return ["time", "flux", "timescale"]
+
+    @staticmethod
+    def value(t, t0, amplitude, rise_time):
+        dt = t0 - t
+        protected_rise = math.copysign(max(1e-5, abs(rise_time)), rise_time)
+
+        # Coefficient to make peak amplitude equal to unity
+        scale = 1 / (protected_rise * np.exp(-1))
+
+        power = -dt / protected_rise
+        power = np.where(power > 100, 100, power)
+        result = amplitude * scale * dt * np.exp(power)
+
+        return result
+
+    @staticmethod
+    def initial_guesses(t, m, sigma, band):
+
+        A = np.ptp(m)
+
+        # Compute points after or before maximum
+        peak_time = t[np.argmax(m)]
+        after = t[-1] - peak_time
+        before = peak_time - t[0]
+
+        # Peak position as weighted centroid of everything above zero
+        idx = m > np.median(m)
+        # Weighted centroid sigma
+        dt = np.sqrt(np.sum((t[idx] - peak_time) ** 2 * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx]))
+        # Empirical conversion of sigma to rise/rise times
+        rise_time = dt / 2
+        rise_time = rise_time if before >= after else -rise_time
+
+        initial = {}
+        # Reference of linexp correspond to the moment where flux == 0
+        initial["reference_time"] = peak_time + rise_time
+        initial["amplitude"] = A
+        initial["rise_time"] = rise_time
+
+        return initial
+
+    @staticmethod
+    def limits(t, m, sigma, band):
+        t_amplitude = np.ptp(t)
+        m_amplitude = np.ptp(m)
+
+        limits = {}
+        limits["reference_time"] = (np.min(t) - 10 * t_amplitude, np.max(t) + 10 * t_amplitude)
+        limits["amplitude"] = (0, 10 * m_amplitude)
+        limits["rise_time"] = (-10 * t_amplitude, 10 * t_amplitude)
+
+        return limits
+
+    @staticmethod
+    def peak_time(t0, amplitude, rise_time):
+        return t0 - rise_time
+
+
+@dataclass()
+class DoublexpBolometricTerm(BaseBolometricTerm):
+    """Doublexp function generated using Multi-view Symbolic Regression on ZTF SNIa light curves
+    Russeil et al. 2024, https://arxiv.org/abs/2402.04298"""
+
+    @staticmethod
+    def parameter_names():
+        return ["reference_time", "amplitude", "time1", "time2", "p"]
+
+    @staticmethod
+    def parameter_scalings():
+        return ["time", "flux", "timescale", "timescale", "None"]
+
+    @staticmethod
+    def value(t, t0, amplitude, time1, time2, p):
+        dt = t - t0
+
+        result = np.zeros_like(dt)
+
+        # To avoid numerical overflows
+        maxp = 20
+        A = -(dt / time1) * (p - np.exp(-(dt / time2)))
+        A = np.where(A > maxp, maxp, A)
+
+        result = amplitude * np.exp(A)
+
+        return result
+
+    @staticmethod
+    def initial_guesses(t, m, sigma, band):
+        A = np.ptp(m)
+
+        # Naive peak position from the highest point
+        t0 = t[np.argmax(m)]
+        # Peak position as weighted centroid of everything above zero
+        idx = m > np.median(m)
+        # t0 = np.sum(t[idx] * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx])
+        # Weighted centroid sigma
+        dt = np.sqrt(np.sum((t[idx] - t0) ** 2 * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx]))
+
+        # Empirical conversion of sigma to rise/fall times
+        time1 = 10 * dt
+        time2 = 10 * dt
+
+        initial = {}
+        initial["reference_time"] = t0
+        initial["amplitude"] = A
+        initial["time1"] = time1
+        initial["time2"] = time2
+        initial["p"] = 1
+
+        return initial
+
+    @staticmethod
+    def limits(t, m, sigma, band):
+        t_amplitude = np.ptp(t)
+        m_amplitude = np.ptp(m)
+
+        limits = {}
+        limits["reference_time"] = (np.min(t) - 10 * t_amplitude, np.max(t) + 10 * t_amplitude)
+        limits["amplitude"] = (0.0, 10 * m_amplitude)
+        limits["time1"] = (1e-1, 2 * t_amplitude)
+        limits["time2"] = (1e-1, 2 * t_amplitude)
+        limits["p"] = (0, 100)
+
+        return limits
+
+    @staticmethod
+    def peak_time(t0, p):
+        return t0 + np.real(-lambertw(p * np.exp(1)) + 1)
+
+
 bolometric_terms = {
     "sigmoid": SigmoidBolometricTerm,
     "bazin": BazinBolometricTerm,
+    "linexp": LinexpBolometricTerm,
+    "doublexp": DoublexpBolometricTerm,
 }
