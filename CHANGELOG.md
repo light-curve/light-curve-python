@@ -25,24 +25,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Package import doesn't fail if `scipy` is missed https://github.com/light-curve/light-curve-python/pull/422
+--
 
 ### Security
 
 --
 
+## [0.9.5] 2024-09-19
+
+### Added
+
+- More variants of temperature and bollometric functions for
+  `RainbowFit` https://github.com/light-curve/light-curve-python/pull/411
+
+### Changed
+
+- Change boundary conditions for `RainbowFit` https://github.com/light-curve/light-curve-python/pull/414
+
+### Fixed
+
+- Package import doesn't fail if `scipy` is missed https://github.com/light-curve/light-curve-python/pull/422
+
 ## [0.9.4] 2024-09-11
 
 ### Changed
 
-- Experimental Rainbow fit features use maximum likelihood cost function instead of least squares https://github.com/light-curve/light-curve-python/pull/407
+- Experimental Rainbow fit features use maximum likelihood cost function instead of least
+  squares https://github.com/light-curve/light-curve-python/pull/407
 
 ## [0.9.3] 2024-06-17
 
 ### Fixed
 
-- Small bug fix in MagnitudeNNotDetBeforeFd for numpy v2.0 compatibility https://github.com/light-curve/light-curve-python/pull/383
-
+- Small bug fix in MagnitudeNNotDetBeforeFd for numpy v2.0
+  compatibility https://github.com/light-curve/light-curve-python/pull/383
 
 ## [0.9.2] 2024-06-05
 
@@ -303,7 +319,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial `copy` and `pickle` (minimum protocol version is 2) support for feature extractors
-  and `DmDt` https://github.com/light-curve/light-curve-python/issues/103 https://github.com/light-curve/light-curve-python/pull/145 https://github.com/light-curve/light-curve-python/pull/150
+  and
+  `DmDt` https://github.com/light-curve/light-curve-python/issues/103 https://github.com/light-curve/light-curve-python/pull/145 https://github.com/light-curve/light-curve-python/pull/150
 - `serde` v1 and `serde-pickle` v1 Rust dependencies. `serde-pickle` is an arbitrary choice of a (de)serialization
   binary format, but it could be useful in the future having a way to inspect Rust structures from
   Python https://github.com/light-curve/light-curve-python/pull/145
