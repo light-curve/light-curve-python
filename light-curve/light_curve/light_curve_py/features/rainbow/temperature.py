@@ -111,21 +111,24 @@ class SigmoidTemperatureTerm(BaseTemperatureTerm):
 
     @staticmethod
     def initial_guesses(t, m, sigma, band):
+        med_dt = median_dt(t, band)
+
         initial = {}
         initial["Tmin"] = 7000.0
         initial["Tmax"] = 10000.0
-        initial["t_color"] = 1.0
+        initial["t_color"] = 10 * med_dt
 
         return initial
 
     @staticmethod
     def limits(t, m, sigma, band):
         t_amplitude = np.ptp(t)
+        med_dt = median_dt(t, band)
 
         limits = {}
         limits["Tmin"] = (1e3, 2e6)  # K
         limits["Tmax"] = (1e3, 2e6)  # K
-        limits["t_color"] = (1e-4, 10 * t_amplitude)
+        limits["t_color"] = (2 * med_dt, 10 * t_amplitude)
 
         return limits
 
@@ -160,10 +163,12 @@ class DelayedSigmoidTemperatureTerm(BaseTemperatureTerm):
 
     @staticmethod
     def initial_guesses(t, m, sigma, band):
+        med_dt = median_dt(t, band)
+
         initial = {}
         initial["Tmin"] = 7000.0
         initial["Tmax"] = 10000.0
-        initial["t_color"] = 1.0
+        initial["t_color"] = 20 * med_dt
         initial["t_delay"] = 0.0
 
         return initial
@@ -171,14 +176,24 @@ class DelayedSigmoidTemperatureTerm(BaseTemperatureTerm):
     @staticmethod
     def limits(t, m, sigma, band):
         t_amplitude = np.ptp(t)
+        med_dt = median_dt(t, band)
 
         limits = {}
         limits["Tmin"] = (1e3, 2e6)  # K
         limits["Tmax"] = (1e3, 2e6)  # K
-        limits["t_color"] = (1e-4, 10 * t_amplitude)
+        limits["t_color"] = (2 * med_dt, 10 * t_amplitude)
         limits["t_delay"] = (-t_amplitude, t_amplitude)
 
         return limits
+
+
+def median_dt(t, band):
+    # Compute the median distance between points in each band
+    dt = []
+    for b in np.unique(band):
+        dt += list(t[band == b][1:] - t[band == b][:-1])
+    med_dt = np.median(dt)
+    return med_dt
 
 
 temperature_terms = {
