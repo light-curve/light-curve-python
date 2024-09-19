@@ -227,18 +227,14 @@ class LinexpBolometricTerm(BaseBolometricTerm):
     def initial_guesses(t, m, sigma, band):
 
         A = np.ptp(m)
+        med_dt = median_dt(t, band)
 
         # Compute points after or before maximum
         peak_time = t[np.argmax(m)]
         after = t[-1] - peak_time
         before = peak_time - t[0]
 
-        # Peak position as weighted centroid of everything above zero
-        idx = m > np.median(m)
-        # Weighted centroid sigma
-        dt = np.sqrt(np.sum((t[idx] - peak_time) ** 2 * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx]))
-        # Empirical conversion of sigma to rise/rise times
-        rise_time = dt / 2
+        rise_time = 100 * med_dt
         rise_time = rise_time if before >= after else -rise_time
 
         initial = {}
@@ -297,25 +293,21 @@ class DoublexpBolometricTerm(BaseBolometricTerm):
     @staticmethod
     def initial_guesses(t, m, sigma, band):
         A = np.ptp(m)
+        med_dt = median_dt(t, band)
 
         # Naive peak position from the highest point
         t0 = t[np.argmax(m)]
-        # Peak position as weighted centroid of everything above zero
-        idx = m > np.median(m)
-        # t0 = np.sum(t[idx] * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx])
-        # Weighted centroid sigma
-        dt = np.sqrt(np.sum((t[idx] - t0) ** 2 * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx]))
 
         # Empirical conversion of sigma to rise/fall times
-        time1 = 10 * dt
-        time2 = 10 * dt
+        time1 = 50 * med_dt
+        time2 = 50 * med_dt
 
         initial = {}
         initial["reference_time"] = t0
         initial["amplitude"] = A
         initial["time1"] = time1
         initial["time2"] = time2
-        initial["p"] = 1
+        initial["p"] = 0.1
 
         return initial
 
@@ -323,19 +315,29 @@ class DoublexpBolometricTerm(BaseBolometricTerm):
     def limits(t, m, sigma, band):
         t_amplitude = np.ptp(t)
         m_amplitude = np.ptp(m)
+        med_dt = median_dt(t, band)
 
         limits = {}
         limits["reference_time"] = (np.min(t) - 10 * t_amplitude, np.max(t) + 10 * t_amplitude)
         limits["amplitude"] = (0.0, 10 * m_amplitude)
-        limits["time1"] = (1e-1, 2 * t_amplitude)
-        limits["time2"] = (1e-1, 2 * t_amplitude)
-        limits["p"] = (0, 100)
+        limits["time1"] = (med_dt, 2 * t_amplitude)
+        limits["time2"] = (med_dt, 2 * t_amplitude)
+        limits["p"] = (1e-4, 10)
 
         return limits
 
     @staticmethod
     def peak_time(t0, p):
         return t0 + np.real(-lambertw(p * np.exp(1)) + 1)
+
+
+def median_dt(t, band):
+    # Compute the median distance between points in each band
+    dt = []
+    for b in np.unique(band):
+        dt += list(t[band == b][1:] - t[band == b][:-1])
+    med_dt = np.median(dt)
+    return med_dt
 
 
 bolometric_terms = {
