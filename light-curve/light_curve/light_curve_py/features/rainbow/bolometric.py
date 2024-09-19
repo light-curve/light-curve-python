@@ -236,7 +236,7 @@ class LinexpBolometricTerm(BaseBolometricTerm):
 
         rise_time = 100 * med_dt
         rise_time = rise_time if before >= after else -rise_time
-    
+
         initial = {}
         # Reference of linexp correspond to the moment where flux == 0
         initial["reference_time"] = peak_time + rise_time
