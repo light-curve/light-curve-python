@@ -168,7 +168,7 @@ class DelayedSigmoidTemperatureTerm(BaseTemperatureTerm):
         initial = {}
         initial["Tmin"] = 7000.0
         initial["Tmax"] = 10000.0
-        initial["t_color"] = 20 * med_dt
+        initial["t_color"] = 10 * med_dt
         initial["t_delay"] = 0.0
 
         return initial
