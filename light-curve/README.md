@@ -701,18 +701,19 @@ The following features are available:
 - `abi3` (default) - enables CPython ABI3 compatibility, turn it off for other interpreters or if you believe that code
   would be faster without it (our benchmarks show that it is not the case).
 - `ceres-source` (default) - enables [Ceres solver](http://ceres-solver.org/) support, and builds it from sources. You
-  need C++ compiler and cmake available on your system. Known to not work on Windows.
+  need C++ compiler and cmake available on your system. Known to not work on Windows. It is used as an optional
+  optimization alrotithm for `BazinFit` and `VillarFit`.
 - `ceres-system` - enables Ceres solver support, but links with a dynamic library. You need to have a compatible version
   of Ceres installed on your system.
 - `fftw-source` (default) - enables [FFTW](http://www.fftw.org/) support, and builds it from sources. You need C
-  compiler
-  available on your system. Note that at least one of `fftw-*` features must be activated.
+  compiler available on your system. Note that at least one of `fftw-*` features must be activated.
 - `fftw-system` - enables FFTW support, but links with a dynamic library. You need to have a compatible version of FFTW
   installed on your system.
 - `fftw-mkl` - enables FFTW support with Intel MKL backend. Intel MKL will be downloaded automatically during the build.
   Highly recommended for Intel CPUs to achieve up to 2x faster "fast" periodogram calculation.
 - `gsl` (default) - enables [GNU scientific library](https://www.gnu.org/software/gsl/) support. You need a compatible
-  version of GSL installed on your system.
+  version of GSL installed on your system. It is used as an optional optimization algorithm for `BazinFit` and
+  `VillarFit`.
 - `mimalloc` (default) - enables [mimalloc](https://github.com/microsoft/mimalloc) memory allocator support. Our
   benchmarks show up to 2x speedup for some simple features, but it may lead to larger memory consumption.
 
