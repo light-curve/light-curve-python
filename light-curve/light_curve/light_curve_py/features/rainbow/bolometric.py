@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Dict, List, Union
 
 import numpy as np
-from scipy.special import lambertw
 
 __all__ = [
     "bolometric_terms",
@@ -225,7 +224,6 @@ class LinexpBolometricTerm(BaseBolometricTerm):
 
     @staticmethod
     def initial_guesses(t, m, sigma, band):
-
         A = np.ptp(m)
         med_dt = median_dt(t, band)
 
@@ -328,6 +326,11 @@ class DoublexpBolometricTerm(BaseBolometricTerm):
 
     @staticmethod
     def peak_time(t0, p):
+        try:
+            from scipy.special import lambertw
+        except ImportError:
+            raise ImportError("scipy is required for DoublexpBolometricTerm.peak_time, please install it")
+
         return t0 + np.real(-lambertw(p * np.exp(1)) + 1)
 
 
