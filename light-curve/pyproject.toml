@@ -163,14 +163,12 @@ envlist = py{38,39,310,311,312}-{base,test}
 isolated_build = True
 
 [testenv:py{38,39,310,311,312}-base]
-skip_install = False
 change_dir = {envtmpdir}
+extras =
 commands =
     python -c 'import light_curve'
-extras =
 
 [testenv:py{38,39,310,311,312}-test]
-skip_install = True
 extras = dev
 commands =
     pytest README.md tests/ light_curve/
