@@ -167,12 +167,16 @@ change_dir = {envtmpdir}
 extras =
 commands =
     python -c 'import light_curve'
+set_env =
+    CARGO_TARGET_DIR = {tox_root}/target
 
 [testenv:py{38,39,310,311,312}-test]
 extras = dev
 commands =
     pytest README.md tests/ light_curve/
     ruff check .
+set_env =
+    CARGO_TARGET_DIR = {tox_root}/target
 """
 
 
