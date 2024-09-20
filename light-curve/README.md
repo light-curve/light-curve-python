@@ -37,9 +37,7 @@ versions.
   periodogram performance, which is not a default build option. For Windows x86-64 we provide wheel with no Ceres and no
   GSL support, which is not a default build option.
 - "src": the package is confirmed to be built and pass unit tests locally, but testing and package building is not
-  supported by CI. It is required to have the [GNU scientific library (GSL)](https://www.gnu.org/software/gsl/) v2.1+
-  and the [Rust toolchain](https://rust-lang.org) v1.67+ to install it via `pip install`. `ceres-solver` and `fftw` may
-  be installed locally or built from source, in the later case you would also need C/C++ compiler and `cmake`.
+  supported by CI. See ["Build from source"] section bellow for the details.
 - "not tested": building from the source code is not tested, please report us building status via issue/PR/email.
 
 macOS wheels require relatively new OS versions, please open an issue if you require support of older Macs,
@@ -47,6 +45,8 @@ see https://github.com/light-curve/light-curve-python/issues/376 for the details
 
 We stopped publishing PyPy wheels (https://github.com/light-curve/light-curve-python/issues/345), please feel free to
 open an issue if you need them.
+
+See [bellow](#build-from-source) for the details on how to build the package from the source code.
 
 ## Feature evaluators
 
@@ -116,7 +116,8 @@ help(lc.BazinFit)
 ### Available features
 
 See the complete list of available feature evaluators and documentation
-in [`light-curve-feature` Rust crate docs](https://docs.rs/light-curve-feature/latest/light_curve_feature/features/index.html).
+in [
+`light-curve-feature` Rust crate docs](https://docs.rs/light-curve-feature/latest/light_curve_feature/features/index.html).
 Italic names are experimental features.
 While we usually say "magnitude" and use "m" as a time-series value, some of the features are supposed to be used with
 flux light-curves.
@@ -630,6 +631,143 @@ actual = dmdt.points(t, m)
 
 assert_array_equal(actual, desired)
 ```
+
+## Developer guide
+
+### Prepare environment
+
+Install Rust toolchain and Python 3.8+.
+It is recommended to use [`rustup`](https://rustup.rs/) to install Rust toolchain and update it with `rustup update`
+periodically.
+
+Clone the code, create and activate a virtual environment.
+
+```bash
+git clone https://github.com/light-curve/light-curve-python.git
+cd light-curve-python/light-curve
+python3 -m venv venv
+source venv/bin/activate
+```
+
+Install the package in editable mode (see more details about building from source [bellow](#build-from-source)).
+
+```bash
+python -mpip install maturin
+# --release would take longer, but the package would be faster
+# Put other Cargo flags if needed, e.g. --no-default-features --features=fftw-source,ceres-source
+maturin develop --extras=dev
+```
+
+Next time you can just run `source venv/bin/activate` to activate the environment and `maturin develop` to rebuild
+Rust code if changed.
+You don't need to reinstall the package if you change Python code.
+You also don't need to add `--extras=dev` next time, it is needed only to install development dependencies.
+
+You are also encouraged to install `pre-commit` hooks to keep the codebase clean.
+You can get it with `pip` (see the [documentation](https://pre-commit.com/#install) for other ways), and then install
+the hooks with
+
+```bash
+pre-commit install
+```
+
+### Run tests and benchmarks
+
+All test-related dependencies are installed with `--extras=dev` flag, so you don't need to install anything else.
+You can run tests with `pytest`:
+
+```bash
+python -mpytest
+```
+
+Benchmarks are disabled by default, you can enable them with `--benchmark-enable` flag:
+
+```bash
+python -mpytest --benchmark-enable
+```
+
+See [Benchamrks](#benchmarks) section for more details.
+
+### Build from source
+
+#### Dependencies and Cargo features
+
+The package has a number of compile-time features, mostly to control which C/C++ dependencies are used.
+The list of these Cargo features may be passed to `maturin` with `--features` flag, it is also
+recommended to use `--no-default-features` to avoid building unnecessary dependencies.
+
+The following features are available:
+
+- `abi3` (default) - enables CPython ABI3 compatibility, turn it off for other interpreters or if you believe that code
+  would be faster without it (our benchmarks show that it is not the case).
+- `ceres-source` (default) - enables [Ceres solver](http://ceres-solver.org/) support, and builds it from sources. You
+  need C++ compiler and cmake available on your system. Known to not work on Windows. It is used as an optional
+  optimization alrotithm for `BazinFit` and `VillarFit`.
+- `ceres-system` - enables Ceres solver support, but links with a dynamic library. You need to have a compatible version
+  of Ceres installed on your system.
+- `fftw-source` (default) - enables [FFTW](http://www.fftw.org/) support, and builds it from sources. You need C
+  compiler available on your system. Note that at least one of `fftw-*` features must be activated.
+- `fftw-system` - enables FFTW support, but links with a dynamic library. You need to have a compatible version of FFTW
+  installed on your system.
+- `fftw-mkl` - enables FFTW support with Intel MKL backend. Intel MKL will be downloaded automatically during the build.
+  Highly recommended for Intel CPUs to achieve up to 2x faster "fast" periodogram calculation.
+- `gsl` (default) - enables [GNU scientific library](https://www.gnu.org/software/gsl/) support. You need a compatible
+  version of GSL installed on your system. It is used as an optional optimization algorithm for `BazinFit` and
+  `VillarFit`.
+- `mimalloc` (default) - enables [mimalloc](https://github.com/microsoft/mimalloc) memory allocator support. Our
+  benchmarks show up to 2x speedup for some simple features, but it may lead to larger memory consumption.
+
+#### Build with maturin
+
+You can build the package with `maturin` (a Python package for building and publishing Rust crates as Python packages).
+This example shows how to build the package with minimal dependencies.
+
+```bash
+python -mpip install maturin
+maturin build --release --locked --no-default-features --features=abi3,fftw-source,mimalloc
+````
+
+Here we use `--release` to build the package in release mode (slower build, faster execution), `--locked` to ensure
+reproducible builds, `--no-default-features` to disable default features, and `--features=abi3,fftw-source,mimalloc`
+to enable FFTW (builds from vendored sources), ABI3 compatibility, and mimalloc memory allocator.
+
+#### Build with `build`
+
+You can also build the package with `build` (a Python package for building and installing Python packages from source).
+
+```bash
+python -mpip install build
+MATURIN_PEP517_ARGS="--locked --no-default-features --features=abi3,fftw-source,mimalloc" python -m build
+```
+
+#### Build with cibuildwheel
+
+`ciwbuildwheel` is a project that builds wheels for Python packages on CI servers, we use it to build wheels with
+GitHub Actions.
+You can use it locally to build wheels on your platform (change platform identifier to one
+from [the list of supported](https://cibuildwheel.pypa.io/en/stable/options/#build-skip):
+
+```bash
+python -mpip install cibuildwheel
+python -m cibuildwheel --only=cp38-manylinux_x86_64
+```
+
+Please notice that we use different Cargo feature set for different platforms, which is defined in `pyproject.toml`.
+You can build Windows wheels on Windows, Linux wheels on any platform with Docker installed (Qemu may be needed for
+cross-architecture builds), and macOS wheels on macOS.
+On Windows and macOS some additional dependencies will be installed automatically, please check
+the [cibuildwheel documentation](https://cibuildwheel.pypa.io/) and `pyproject.toml` for details.
+Also, macOS builds require `MACOSX_DEPLOYMENT_TARGET` to be set to the current version of macOS, because dependent
+libraries installed from `homebrew` are built with this target:
+
+```bash
+export MACOSX_DEPLOYMENT_TARGET=$(sw_vers -productVersion | awk -F '.' '{print $1"."0}')
+python -m cibuildwheel --only=cp38-macosx_arm64
+unset MACOSX_DEPLOYMENT_TARGET
+```
+
+Since we use ABI3 compatibility, you can build wheels for a single Python version (currently 3.8+) and they will work
+with any later version of CPython.
 
 ## Citation
 
