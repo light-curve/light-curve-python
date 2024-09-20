@@ -159,10 +159,16 @@ markers = [
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py38,py39,py310,py311,py312
+envlist = py{38,39,310,311,312}-{base,test}
 isolated_build = True
 
-[testenv]
+[testenv:py{38,39,310,311,312}-base]
+change_dir = {envtmpdir}
+extras =
+commands =
+    python -c 'import light_curve'
+
+[testenv:py{38,39,310,311,312}-test]
 extras = dev
 commands =
     pytest README.md tests/ light_curve/

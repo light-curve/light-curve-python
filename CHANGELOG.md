@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
---
+- Package import doesn't fail if `scipy` is missed https://github.com/light-curve/light-curve-python/pull/422
 
 ### Security
 
