@@ -31,6 +31,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 --
 
+## [0.9.6] 2024-10-01
+
+### Changed
+
+- `LinexpBolometricTerm` for `Rainbow` changed to clip negative values to zero https://github.com/light-curve/light-curve-python/pull/430
+
 ## [0.9.5] 2024-09-20
 
 ### Added
