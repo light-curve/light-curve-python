@@ -6,6 +6,7 @@ build:
     python: latest
     rust: latest
   apt_packages:
+    - cmake
     - libceres-dev
     - libfftw3-dev
     - libgsl-dev
