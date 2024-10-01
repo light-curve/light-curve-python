@@ -220,7 +220,7 @@ class LinexpBolometricTerm(BaseBolometricTerm):
         power = np.where(power > 100, 100, power)
         result = amplitude * scale * dt * np.exp(power)
 
-        return result
+        return np.where(result>0, result, 0)
 
     @staticmethod
     def initial_guesses(t, m, sigma, band):
