@@ -53,6 +53,10 @@ jobs:
           workspaces: "light-curve"
       - name: Install tox
         run: pip install tox
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgsl-dev
       - name: Run Python tests
         run: tox -e py3${{ matrix.python_minor }}-base,py3${{ matrix.python_minor }}-test
 
@@ -72,6 +76,10 @@ jobs:
         with:
           shared-key: "${{ runner.os }}_stable-rust_cargo-clippy"
           workspaces: "light-curve"
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgsl-dev
       - run: cargo clippy --manifest-path=light-curve/Cargo.toml --all-targets -- -D warnings
 
   coverage:
@@ -102,6 +110,10 @@ jobs:
           python-version: "3.12"
       - name: Install build deps
         run: pip install "${{ needs.py_build_deps.outputs.output }}"
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgsl-dev
       - name: Generate code coverage
         run: |
           source <(cargo llvm-cov show-env --export-prefix)
@@ -136,6 +148,10 @@ jobs:
         with:
           shared-key: "${{ runner.os }}_stable-rust_maturin-develop-release"
           workspaces: "light-curve"
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgsl-dev
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v3
         with:
@@ -191,6 +207,10 @@ jobs:
           workspaces: "light-curve"
       - name: Install build_deps
         run: pip install "${{ needs.py_build_deps.outputs.output }}"
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgsl-dev
       - name: Build
         run: |
           rustup default ${{ steps.get_msrv.outputs.msrv }}
