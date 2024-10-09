@@ -131,7 +131,8 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   benchmarks:
-    runs-on: ubuntu-latest
+    # latest (24.04) is not supported as of 2024-10-09
+    runs-on: ubuntu-22.04
 
     needs: [ py_build_deps ]
 
@@ -148,10 +149,6 @@ jobs:
         with:
           shared-key: "${{ runner.os }}_stable-rust_maturin-develop-release"
           workspaces: "light-curve"
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgsl-dev
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v3
         with:
