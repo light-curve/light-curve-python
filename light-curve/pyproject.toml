@@ -16,6 +16,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: Rust",
     "Topic :: Scientific/Engineering :: Astronomy",
 ]
@@ -159,10 +160,10 @@ markers = [
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py{38,39,310,311,312}-{base,test}
+envlist = py{38,39,310,311,312,313}-{base,test}
 isolated_build = True
 
-[testenv:py{38,39,310,311,312}-base]
+[testenv:py{38,39,310,311,312,313}-base]
 change_dir = {envtmpdir}
 extras =
 commands =
@@ -170,7 +171,7 @@ commands =
 set_env =
     CARGO_TARGET_DIR = {tox_root}/target
 
-[testenv:py{38,39,310,311,312}-test]
+[testenv:py{38,39,310,311,312,313}-test]
 extras = dev
 commands =
     pytest README.md tests/ light_curve/
