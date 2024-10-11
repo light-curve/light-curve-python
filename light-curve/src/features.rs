@@ -786,9 +786,9 @@ macro_const! {
 }
 
 #[derive(FromPyObject)]
-pub(crate) enum FitLnPrior<'a> {
+pub(crate) enum FitLnPrior {
     #[pyo3(transparent, annotation = "str")]
-    Name(&'a str),
+    Name(String),
     #[pyo3(transparent, annotation = "list[LnPrior]")]
     ListLnPrior1D(Vec<LnPrior1D>),
 }
@@ -879,7 +879,7 @@ macro_rules! fit_evaluator {
                 ceres_loss_reg: Option<f64>,
                 init: Option<Vec<Option<f64>>>,
                 bounds: Option<Vec<(Option<f64>, Option<f64>)>>,
-                ln_prior: Option<FitLnPrior<'_>>,
+                ln_prior: Option<FitLnPrior>,
                 transform: Option<Bound<PyAny>>,
             ) -> PyResult<(Self, PyFeatureEvaluator)> {
                 let mcmc_niter = mcmc_niter.unwrap_or_else(lcf::McmcCurveFit::default_niterations);
@@ -937,7 +937,7 @@ macro_rules! fit_evaluator {
 
                 let ln_prior = match ln_prior {
                     Some(ln_prior) => match ln_prior {
-                        FitLnPrior::Name(s) => match s $ln_prior_by_str,
+                        FitLnPrior::Name(s) => match s.as_str() $ln_prior_by_str,
                         FitLnPrior::ListLnPrior1D(v) => {
                             let v: Vec<_> = v.into_iter().map(|py_ln_prior1d| py_ln_prior1d.0).collect();
                             lcf::LnPrior::ind_components(
@@ -1570,8 +1570,8 @@ quantile : positive float
 type LcfPeriodogram<T> = lcf::Periodogram<T, lcf::Feature<T>>;
 
 #[derive(FromPyObject)]
-enum NyquistArgumentOfPeriodogram<'py> {
-    String(&'py str),
+enum NyquistArgumentOfPeriodogram {
+    String(String),
     Float(f32),
 }
 
@@ -1608,19 +1608,20 @@ impl Periodogram {
             eval_f64.set_max_freq_factor(max_freq_factor);
         }
         if let Some(nyquist) = nyquist {
-            let nyquist_freq: lcf::NyquistFreq =
-                match nyquist {
-                    NyquistArgumentOfPeriodogram::String(nyquist_type) => match nyquist_type {
+            let nyquist_freq: lcf::NyquistFreq = match nyquist {
+                NyquistArgumentOfPeriodogram::String(nyquist_type) => {
+                    match nyquist_type.as_str() {
                         "average" => lcf::AverageNyquistFreq {}.into(),
                         "median" => lcf::MedianNyquistFreq {}.into(),
                         _ => return Err(PyValueError::new_err(
                             "nyquist must be one of: None, 'average', 'median' or quantile value",
                         )),
-                    },
-                    NyquistArgumentOfPeriodogram::Float(quantile) => {
-                        lcf::QuantileNyquistFreq { quantile }.into()
                     }
-                };
+                }
+                NyquistArgumentOfPeriodogram::Float(quantile) => {
+                    lcf::QuantileNyquistFreq { quantile }.into()
+                }
+            };
             eval_f32.set_nyquist(nyquist_freq.clone());
             eval_f64.set_nyquist(nyquist_freq);
         }
@@ -1671,7 +1672,7 @@ impl Periodogram {
         peaks = LcfPeriodogram::<f64>::default_peaks(),
         resolution = LcfPeriodogram::<f64>::default_resolution(),
         max_freq_factor = LcfPeriodogram::<f64>::default_max_freq_factor(),
-        nyquist = NyquistArgumentOfPeriodogram::String("average"),
+        nyquist = NyquistArgumentOfPeriodogram::String(String::from("average")),
         fast = true,
         features = None,
         transform = None,
