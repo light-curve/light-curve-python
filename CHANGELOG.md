@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
---
+- Bump `pyO3` to 0.22
+- Bump `rust-numpy` to 0.22, should potentially bring a better `numpy` v2 support
 
 ### Deprecated
 
