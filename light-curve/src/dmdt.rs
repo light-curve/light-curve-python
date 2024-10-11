@@ -940,13 +940,13 @@ impl DmDt {
     fn from_dmdts(
         dmdt_f32: lcdmdt::DmDt<f32>,
         dmdt_f64: lcdmdt::DmDt<f64>,
-        norm: Vec<&str>,
+        norm: Vec<String>,
         n_jobs: i64,
         approx_erf: bool,
     ) -> Res<Self> {
         let norm = norm
             .iter()
-            .map(|&s| match s {
+            .map(|s| match s.as_str() {
                 "dt" => Ok(NormFlag::Dt),
                 "max" => Ok(NormFlag::Max),
                 _ => Err(Exception::ValueError(format!(
@@ -999,7 +999,7 @@ impl DmDt {
         dm: Arr<'py, f64>,
         dt_type: &str,
         dm_type: &str,
-        norm: Vec<&str>,
+        norm: Vec<String>,
         n_jobs: i64,
         approx_erf: bool,
     ) -> Res<Self> {
@@ -1037,7 +1037,7 @@ impl DmDt {
         max_abs_dm: f64,
         lgdt_size: usize,
         dm_size: usize,
-        norm: Vec<&str>,
+        norm: Vec<String>,
         n_jobs: i64,
         approx_erf: bool,
     ) -> Res<Self> {
