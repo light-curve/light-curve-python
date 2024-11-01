@@ -37,7 +37,7 @@ itertools = "0.13.0"
 macro_const = "0.1.0"
 mimalloc = { version = "0.1.42", features = ["local_dynamic_tls"], optional = true }
 ndarray = { version = "0.15.3", features = ["rayon"] }
-numpy = "0.22.0"
+numpy = "0.22.1"
 num_cpus = "1.13.0"
 num-traits = "0.2"
 once_cell = "1"
