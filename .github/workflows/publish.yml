@@ -41,10 +41,10 @@ jobs:
         # * For Linux we support ARM64, PPC64le, and x86_64
         # * We build wheels for CPython only, one per platform, compatible with ABI3.8
         # * We skip PPC64le MUSL Linux, because there is no Rust toolchain for it
-        # * macos-12 runner is x86_64, macos-14 runner is arm64
+        # * macos-13 runner is x86_64, macos-14 runner is arm64
         include:
           # CPython 3.8
-          - os: macos-12
+          - os: macos-13
             cibw_build: cp38-macosx_x86_64
           - os: macos-14
             cibw_build: cp38-macosx_arm64

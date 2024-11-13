@@ -14,36 +14,44 @@ high-performant time-series feature extractors.
 python3 -mpip install 'light-curve[full]'
 ```
 
-`full` extras would install the package with all optional Python dependencies required by experimental features.
+`full` extras would install the package with all optional Python dependencies required by experimental
+features.
 We also provide `light-curve-python` package which is just an "alias" to the main `light-curve[full]` package.
 
 Minimum supported Python version is 3.8.
-We provide binary CPython wheels via [PyPi](https://pypi.org/project/light-curve/) for a number of platforms and
+We provide binary CPython wheels via [PyPi](https://pypi.org/project/light-curve/) for a number of platforms
+and
 architectures.
-We also provide binary wheels for stable CPython ABI, so the package is guaranteed to work with all future CPython3
+We also provide binary wheels for stable CPython ABI, so the package is guaranteed to work with all future
+CPython3
 versions.
 
 ### Support matrix
 
 | Arch \ OS   | Linux glibc 2.17+ | Linux musl 1.1+                | macOS     | Windows https://github.com/light-curve/light-curve-python/issues/186 |
 |-------------|-------------------|--------------------------------|-----------|----------------------------------------------------------------------|
-| **x86-64**  | wheel (MKL)       | wheel (MKL)                    | wheel 12+ | wheel (no Ceres, no GSL)                                             |
+| **x86-64**  | wheel (MKL)       | wheel (MKL)                    | wheel 13+ | wheel (no Ceres, no GSL)                                             |
 | **i686**    | src               | src                            | —         | not tested                                                           |
 | **aarch64** | wheel             | wheel                          | wheel 14+ | not tested                                                           |
 | **ppc64le** | wheel             | not tested (no Rust toolchain) | —         | —                                                                    |
 
 - "wheel": binary wheel is available on pypi.org, local building is not required for the platform, the only
-  pre-requirement is a recent `pip` version. For Linux x86-64 we provide binary wheels built with Intel MKL for better
-  periodogram performance, which is not a default build option. For Windows x86-64 we provide wheel with no Ceres and no
+  pre-requirement is a recent `pip` version. For Linux x86-64 we provide binary wheels built with Intel MKL
+  for better
+  periodogram performance, which is not a default build option. For Windows x86-64 we provide wheel with no
+  Ceres and no
   GSL support, which is not a default build option.
-- "src": the package is confirmed to be built and pass unit tests locally, but testing and package building is not
+- "src": the package is confirmed to be built and pass unit tests locally, but testing and package building is
+  not
   supported by CI. See ["Build from source"] section bellow for the details.
-- "not tested": building from the source code is not tested, please report us building status via issue/PR/email.
+- "not tested": building from the source code is not tested, please report us building status via
+  issue/PR/email.
 
 macOS wheels require relatively new OS versions, please open an issue if you require support of older Macs,
 see https://github.com/light-curve/light-curve-python/issues/376 for the details.
 
-We stopped publishing PyPy wheels (https://github.com/light-curve/light-curve-python/issues/345), please feel free to
+We stopped publishing PyPy wheels (https://github.com/light-curve/light-curve-python/issues/345), please feel
+free to
 open an issue if you need them.
 
 See [bellow](#build-from-source) for the details on how to build the package from the source code.
@@ -119,9 +127,11 @@ See the complete list of available feature evaluators and documentation
 in [
 `light-curve-feature` Rust crate docs](https://docs.rs/light-curve-feature/latest/light_curve_feature/features/index.html).
 Italic names are experimental features.
-While we usually say "magnitude" and use "m" as a time-series value, some of the features are supposed to be used with
+While we usually say "magnitude" and use "m" as a time-series value, some of the features are supposed to be
+used with
 flux light-curves.
-The last column indicates whether the feature should be used with flux light curves only, magnitude light curves only,
+The last column indicates whether the feature should be used with flux light curves only, magnitude light
+curves only,
 or any kind of light curves.
 
 <table>
@@ -437,15 +447,18 @@ Meta-features can accept other feature extractors and apply them to pre-processe
 
 #### Periodogram
 
-This feature transforms time-series data into the Lomb-Scargle periodogram, providing an estimation of the power
-spectrum. The peaks argument corresponds to the number of the most significant spectral density peaks to return. For
+This feature transforms time-series data into the Lomb-Scargle periodogram, providing an estimation of the
+power
+spectrum. The peaks argument corresponds to the number of the most significant spectral density peaks to
+return. For
 each peak, its period and "signal-to-noise" ratio are returned.
 
 $$
 \text{signal to noise of peak} \equiv \frac{P(\omega_\mathrm{peak}) - \langle P(\omega) \rangle}{\sigma\_{P(\omega)}}
 $$
 
-The optional features argument accepts a list of additional feature evaluators, which are applied to the power spectrum:
+The optional features argument accepts a list of additional feature evaluators, which are applied to the power
+spectrum:
 frequency is passed as "time," power spectrum is passed as "magnitude," and no uncertainties are set.
 
 #### Bins
@@ -481,10 +494,13 @@ print(values)
 
 #### Rainbow Fit
 
-Rainbow ([Russeil+23](https://arxiv.org/abs/2310.02916)) is a black-body parametric model for transient light curves.
-By default, it uses Bazin function as a model for bolometric flux evolution and a logistic function for the temperature
+Rainbow ([Russeil+23](https://arxiv.org/abs/2310.02916)) is a black-body parametric model for transient light
+curves.
+By default, it uses Bazin function as a model for bolometric flux evolution and a logistic function for the
+temperature
 evolution.
-The user may customize the model by providing their own functions for bolometric flux and temperature evolution.
+The user may customize the model by providing their own functions for bolometric flux and temperature
+evolution.
 This example demonstrates the reconstruction of a synthetic light curve with this model.
 `RainbowFit` requires `iminuit` package.
 
@@ -523,7 +539,8 @@ waves = np.array([band_wave_aa[b] for b in band])
 # Temperature evolution is a sigmoid function
 temp = Tmin + delta_T / (1.0 + np.exp((t - reference_time) / k_sig))
 # Bolometric flux evolution is the Bazin function
-lum = amplitude * np.exp(-(t - reference_time) / fall_time) / (1.0 + np.exp(-(t - reference_time) / rise_time))
+lum = amplitude * np.exp(-(t - reference_time) / fall_time) / (
+            1.0 + np.exp(-(t - reference_time) / rise_time))
 
 # Spectral flux density for each given pair of time and passband
 flux = np.pi * bb_nu(waves, temp) / (5.67e-5 * temp ** 4) * lum
@@ -537,17 +554,21 @@ print(dict(zip(feature.names, values)))
 print(f"Goodness of fit: {values[-1]}")
 ```
 
-Note, that while we don't use precise physical constant values to generate the data, `RainbowFit` uses CODATA 2018
+Note, that while we don't use precise physical constant values to generate the data, `RainbowFit` uses CODATA
+2018
 values.
 
 ### Experimental extractors
 
 From the technical point of view the package consists of two parts: a wrapper
-for [`light-curve-feature` Rust crate](https://crates.io/crates/light-curve-feature) (`light_curve_ext` sub-package) and
+for [`light-curve-feature` Rust crate](https://crates.io/crates/light-curve-feature) (`light_curve_ext`
+sub-package) and
 pure Python sub-package `light_curve_py`.
-We use the Python implementation of feature extractors to test Rust implementation and to implement new experimental
+We use the Python implementation of feature extractors to test Rust implementation and to implement new
+experimental
 extractors.
-Please note, that the Python implementation is much slower for most of the extractors and doesn't provide the same
+Please note, that the Python implementation is much slower for most of the extractors and doesn't provide the
+same
 functionality as the Rust implementation.
 However, the Python implementation provides some new feature extractors you can find useful.
 
@@ -580,24 +601,29 @@ You can run all benchmarks from the Python project folder
 with `python3 -mpytest --benchmark-enable tests/test_w_bench.py`, or with slow benchmarks
 disabled `python3 -mpytest -m "not (nobs or multi)" --benchmark-enable tests/test_w_bench.py`.
 
-Here we benchmark the Rust implementation (`rust`) versus [`feets`](https://feets.readthedocs.io/en/latest/) package and
+Here we benchmark the Rust implementation (`rust`) versus [`feets`](https://feets.readthedocs.io/en/latest/)
+package and
 our own Python implementation (`lc_py`) for a light curve having n=1000 observations.
 
 ![Benchmarks, Rust is much faster](https://github.com/light-curve/light-curve-python/raw/readme-benchs/light-curve/.readme/benchplot_v2.png)
 
 The plot shows that the Rust implementation of the package outperforms other ones by a factor of 1.5—50.
 This allows to extract a large set of "cheap" features well under one ms for n=1000.
-The performance of parametric fits (`BazinFit` and `VillarFit`) and `Periodogram` depend on their parameters, but the
+The performance of parametric fits (`BazinFit` and `VillarFit`) and `Periodogram` depend on their parameters,
+but the
 typical timescale of feature extraction including these features is 20—50 ms for few hundred observations.
 
 ![Benchmark for different number of observations](https://github.com/light-curve/light-curve-python/raw/readme-benchs/light-curve/.readme/nobs_bench_v2.png)
 
-Benchmark results of several features for both the pure-Python and Rust implementations of the "light-curve" package, as
-a function of the number of observations in a light curve. Both the x-axis and y-axis are on a logarithmic scale.
+Benchmark results of several features for both the pure-Python and Rust implementations of the "light-curve"
+package, as
+a function of the number of observations in a light curve. Both the x-axis and y-axis are on a logarithmic
+scale.
 
 ![Benchmark for multithreading and multiprocessing](https://github.com/light-curve/light-curve-python/raw/readme-benchs/light-curve/.readme/multi_bench_v2.png)
 
-Processing time per a single light curve for extraction of features subset presented in first benchmark versus the
+Processing time per a single light curve for extraction of features subset presented in first benchmark versus
+the
 number of CPU cores used. The dataset consists of 10,000 light curves with 1,000 observations in each.
 
 See benchmarks' descriptions in more details
@@ -637,7 +663,8 @@ assert_array_equal(actual, desired)
 ### Prepare environment
 
 Install Rust toolchain and Python 3.8+.
-It is recommended to use [`rustup`](https://rustup.rs/) to install Rust toolchain and update it with `rustup update`
+It is recommended to use [`rustup`](https://rustup.rs/) to install Rust toolchain and update it with
+`rustup update`
 periodically.
 
 Clone the code, create and activate a virtual environment.
@@ -649,7 +676,8 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-Install the package in editable mode (see more details about building from source [bellow](#build-from-source)).
+Install the package in editable mode (see more details about building from
+source [bellow](#build-from-source)).
 
 ```bash
 python -mpip install maturin
@@ -658,13 +686,15 @@ python -mpip install maturin
 maturin develop --extras=dev
 ```
 
-Next time you can just run `source venv/bin/activate` to activate the environment and `maturin develop` to rebuild
+Next time you can just run `source venv/bin/activate` to activate the environment and `maturin develop` to
+rebuild
 Rust code if changed.
 You don't need to reinstall the package if you change Python code.
 You also don't need to add `--extras=dev` next time, it is needed only to install development dependencies.
 
 You are also encouraged to install `pre-commit` hooks to keep the codebase clean.
-You can get it with `pip` (see the [documentation](https://pre-commit.com/#install) for other ways), and then install
+You can get it with `pip` (see the [documentation](https://pre-commit.com/#install) for other ways), and then
+install
 the hooks with
 
 ```bash
@@ -673,7 +703,8 @@ pre-commit install
 
 ### Run tests and benchmarks
 
-All test-related dependencies are installed with `--extras=dev` flag, so you don't need to install anything else.
+All test-related dependencies are installed with `--extras=dev` flag, so you don't need to install anything
+else.
 You can run tests with `pytest`:
 
 ```bash
@@ -698,28 +729,38 @@ recommended to use `--no-default-features` to avoid building unnecessary depende
 
 The following features are available:
 
-- `abi3` (default) - enables CPython ABI3 compatibility, turn it off for other interpreters or if you believe that code
+- `abi3` (default) - enables CPython ABI3 compatibility, turn it off for other interpreters or if you believe
+  that code
   would be faster without it (our benchmarks show that it is not the case).
-- `ceres-source` (default) - enables [Ceres solver](http://ceres-solver.org/) support, and builds it from sources. You
-  need C++ compiler and cmake available on your system. Known to not work on Windows. It is used as an optional
+- `ceres-source` (default) - enables [Ceres solver](http://ceres-solver.org/) support, and builds it from
+  sources. You
+  need C++ compiler and cmake available on your system. Known to not work on Windows. It is used as an
+  optional
   optimization alrotithm for `BazinFit` and `VillarFit`.
-- `ceres-system` - enables Ceres solver support, but links with a dynamic library. You need to have a compatible version
+- `ceres-system` - enables Ceres solver support, but links with a dynamic library. You need to have a
+  compatible version
   of Ceres installed on your system.
-- `fftw-source` (default) - enables [FFTW](http://www.fftw.org/) support, and builds it from sources. You need C
+- `fftw-source` (default) - enables [FFTW](http://www.fftw.org/) support, and builds it from sources. You need
+  C
   compiler available on your system. Note that at least one of `fftw-*` features must be activated.
-- `fftw-system` - enables FFTW support, but links with a dynamic library. You need to have a compatible version of FFTW
+- `fftw-system` - enables FFTW support, but links with a dynamic library. You need to have a compatible
+  version of FFTW
   installed on your system.
-- `fftw-mkl` - enables FFTW support with Intel MKL backend. Intel MKL will be downloaded automatically during the build.
+- `fftw-mkl` - enables FFTW support with Intel MKL backend. Intel MKL will be downloaded automatically during
+  the build.
   Highly recommended for Intel CPUs to achieve up to 2x faster "fast" periodogram calculation.
-- `gsl` (default) - enables [GNU scientific library](https://www.gnu.org/software/gsl/) support. You need a compatible
+- `gsl` (default) - enables [GNU scientific library](https://www.gnu.org/software/gsl/) support. You need a
+  compatible
   version of GSL installed on your system. It is used as an optional optimization algorithm for `BazinFit` and
   `VillarFit`.
-- `mimalloc` (default) - enables [mimalloc](https://github.com/microsoft/mimalloc) memory allocator support. Our
+- `mimalloc` (default) - enables [mimalloc](https://github.com/microsoft/mimalloc) memory allocator support.
+  Our
   benchmarks show up to 2x speedup for some simple features, but it may lead to larger memory consumption.
 
 #### Build with maturin
 
-You can build the package with `maturin` (a Python package for building and publishing Rust crates as Python packages).
+You can build the package with `maturin` (a Python package for building and publishing Rust crates as Python
+packages).
 This example shows how to build the package with minimal dependencies.
 
 ```bash
@@ -727,13 +768,16 @@ python -mpip install maturin
 maturin build --release --locked --no-default-features --features=abi3,fftw-source,mimalloc
 ````
 
-Here we use `--release` to build the package in release mode (slower build, faster execution), `--locked` to ensure
-reproducible builds, `--no-default-features` to disable default features, and `--features=abi3,fftw-source,mimalloc`
+Here we use `--release` to build the package in release mode (slower build, faster execution), `--locked` to
+ensure
+reproducible builds, `--no-default-features` to disable default features, and
+`--features=abi3,fftw-source,mimalloc`
 to enable FFTW (builds from vendored sources), ABI3 compatibility, and mimalloc memory allocator.
 
 #### Build with `build`
 
-You can also build the package with `build` (a Python package for building and installing Python packages from source).
+You can also build the package with `build` (a Python package for building and installing Python packages from
+source).
 
 ```bash
 python -mpip install build
@@ -742,7 +786,8 @@ MATURIN_PEP517_ARGS="--locked --no-default-features --features=abi3,fftw-source,
 
 #### Build with cibuildwheel
 
-`ciwbuildwheel` is a project that builds wheels for Python packages on CI servers, we use it to build wheels with
+`ciwbuildwheel` is a project that builds wheels for Python packages on CI servers, we use it to build wheels
+with
 GitHub Actions.
 You can use it locally to build wheels on your platform (change platform identifier to one
 from [the list of supported](https://cibuildwheel.pypa.io/en/stable/options/#build-skip):
@@ -752,12 +797,15 @@ python -mpip install cibuildwheel
 python -m cibuildwheel --only=cp38-manylinux_x86_64
 ```
 
-Please notice that we use different Cargo feature set for different platforms, which is defined in `pyproject.toml`.
-You can build Windows wheels on Windows, Linux wheels on any platform with Docker installed (Qemu may be needed for
+Please notice that we use different Cargo feature set for different platforms, which is defined in
+`pyproject.toml`.
+You can build Windows wheels on Windows, Linux wheels on any platform with Docker installed (Qemu may be
+needed for
 cross-architecture builds), and macOS wheels on macOS.
 On Windows and macOS some additional dependencies will be installed automatically, please check
 the [cibuildwheel documentation](https://cibuildwheel.pypa.io/) and `pyproject.toml` for details.
-Also, macOS builds require `MACOSX_DEPLOYMENT_TARGET` to be set to the current version of macOS, because dependent
+Also, macOS builds require `MACOSX_DEPLOYMENT_TARGET` to be set to the current version of macOS, because
+dependent
 libraries installed from `homebrew` are built with this target:
 
 ```bash
@@ -766,7 +814,8 @@ python -m cibuildwheel --only=cp38-macosx_arm64
 unset MACOSX_DEPLOYMENT_TARGET
 ```
 
-Since we use ABI3 compatibility, you can build wheels for a single Python version (currently 3.8+) and they will work
+Since we use ABI3 compatibility, you can build wheels for a single Python version (currently 3.8+) and they
+will work
 with any later version of CPython.
 
 ## Citation
