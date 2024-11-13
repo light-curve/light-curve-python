@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Bump `pyO3` to 0.22
 - Bump `rust-numpy` to 0.22, should potentially bring a better `numpy` v2 support
+- macOS x86\_64 binary wheel now requires macOS 13 instead of 12 https://github.com/light-curve/light-curve-python/issues/437 https://github.com/light-curve/light-curve-python/pull/446
 
 ### Deprecated
 
