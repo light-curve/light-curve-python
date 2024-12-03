@@ -95,7 +95,7 @@ where
             ContCowArray::from_view(t.as_array(), true).as_slice(),
             sorted,
         )
-        .map(|a| a.into_pyarray_bound(py).as_untyped().clone())
+        .map(|a| a.into_pyarray(py).as_untyped().clone())
     }
 
     fn count_dt(&self, t: &[T], sorted: Option<bool>) -> Res<ndarray::Array1<T>> {
@@ -128,7 +128,7 @@ where
         let typed_t_ = array_t_.iter().map(|t| t.as_slice()).collect();
         Ok(self
             .count_dt_many(typed_t_, sorted)?
-            .into_pyarray_bound(py)
+            .into_pyarray(py)
             .as_untyped()
             .clone())
     }
@@ -166,7 +166,7 @@ where
                 ContCowArray::from_view(m.as_array(), true).as_slice(),
                 sorted,
             )?
-            .into_pyarray_bound(py)
+            .into_pyarray(py)
             .as_untyped()
             .clone())
     }
@@ -216,7 +216,7 @@ where
             .collect();
         Ok(self
             .points_many(typed_lcs, sorted)?
-            .into_pyarray_bound(py)
+            .into_pyarray(py)
             .as_untyped()
             .clone())
     }
@@ -300,7 +300,7 @@ where
                 err2.as_slice(),
                 sorted,
             )?
-            .into_pyarray_bound(py)
+            .into_pyarray(py)
             .as_untyped()
             .clone())
     }
@@ -362,7 +362,7 @@ where
             .collect();
         Ok(self
             .gausses_many(typed_lcs, sorted)?
-            .into_pyarray_bound(py)
+            .into_pyarray(py)
             .as_untyped()
             .clone())
     }
@@ -655,7 +655,8 @@ macro_rules! dmdt_batches {
                 };
                 if !slf.range.is_empty() {
                     let rng = Self::child_rng(slf.rng.as_mut());
-                    std::mem::replace(
+                    // We know that it is None
+                    let _ = std::mem::replace(
                         &mut *slf
                             .worker_thread
                             .write()
@@ -668,15 +669,13 @@ macro_rules! dmdt_batches {
                     );
                 }
 
-                let py_array = array.into_pyarray_bound(slf.py()).into_any();
+                let py_array = array.into_pyarray(slf.py()).into_any();
                 match current_range {
                     Some(range) => {
-                        let py_index = PyArray1::from_slice_bound(
-                            slf.py(),
-                            &slf.lcs_order[range.start..range.end],
-                        )
-                        .into_any();
-                        let tuple = PyTuple::new_bound(slf.py(), &[py_index, py_array]).into_any();
+                        let py_index =
+                            PyArray1::from_slice(slf.py(), &slf.lcs_order[range.start..range.end])
+                                .into_any();
+                        let tuple = PyTuple::new(slf.py(), &[py_index, py_array])?.into_any();
                         Ok(Some(tuple))
                     }
                     None => Ok(Some(py_array)),
@@ -1104,11 +1103,7 @@ impl DmDt {
 
     #[getter]
     fn dt_grid<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
-        self.dmdt_f64
-            .dmdt
-            .dt_grid
-            .get_borders()
-            .to_pyarray_bound(py)
+        self.dmdt_f64.dmdt.dt_grid.get_borders().to_pyarray(py)
     }
 
     #[getter]
@@ -1123,11 +1118,7 @@ impl DmDt {
 
     #[getter]
     fn dm_grid<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
-        self.dmdt_f64
-            .dmdt
-            .dm_grid
-            .get_borders()
-            .to_pyarray_bound(py)
+        self.dmdt_f64.dmdt.dm_grid.get_borders().to_pyarray(py)
     }
 
     #[getter]
@@ -1555,7 +1546,7 @@ impl DmDt {
                     r#"Error happened on the Rust side when serializing DmDt: "{err}""#
                 ))
             })?;
-        Ok(PyBytes::new_bound(py, &vec_bytes))
+        Ok(PyBytes::new(py, &vec_bytes))
     }
 
     /// Used by pickle.dump / pickle.dumps
@@ -1563,7 +1554,7 @@ impl DmDt {
         &self,
         py: Python<'py>,
     ) -> (Bound<'py, PyArray1<f64>>, Bound<'py, PyArray1<f64>>) {
-        let a = ndarray::array![1.0, 2.0].to_pyarray_bound(py);
+        let a = ndarray::array![1.0, 2.0].to_pyarray(py);
         (a.clone(), a)
     }
 

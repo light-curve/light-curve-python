@@ -40,7 +40,7 @@ impl LnPrior1D {
                     r#"Error happened on the Rust side when serializing LnPrior1D: "{err}""#
                 ))
             })?;
-        Ok(PyBytes::new_bound(py, &vec_bytes))
+        Ok(PyBytes::new(py, &vec_bytes))
     }
 
     /// Used by copy.copy
@@ -149,7 +149,7 @@ fn mix(mix: Vec<(f64, LnPrior1D)>) -> LnPrior1D {
 }
 
 pub fn register_ln_prior_submodule(py: Python, parent_module: Bound<PyModule>) -> PyResult<()> {
-    let m = PyModule::new_bound(py, "ln_prior")?;
+    let m = PyModule::new(py, "ln_prior")?;
     m.add_class::<LnPrior1D>()?;
     m.add_function(wrap_pyfunction!(none, &m)?)?;
     m.add_function(wrap_pyfunction!(log_normal, &m)?)?;

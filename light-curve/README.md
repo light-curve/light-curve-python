@@ -18,7 +18,7 @@ python3 -mpip install 'light-curve[full]'
 features.
 We also provide `light-curve-python` package which is just an "alias" to the main `light-curve[full]` package.
 
-Minimum supported Python version is 3.8.
+Minimum supported Python version is 3.9.
 We provide binary CPython wheels via [PyPi](https://pypi.org/project/light-curve/) for a number of platforms
 and
 architectures.
@@ -540,7 +540,7 @@ waves = np.array([band_wave_aa[b] for b in band])
 temp = Tmin + delta_T / (1.0 + np.exp((t - reference_time) / k_sig))
 # Bolometric flux evolution is the Bazin function
 lum = amplitude * np.exp(-(t - reference_time) / fall_time) / (
-            1.0 + np.exp(-(t - reference_time) / rise_time))
+        1.0 + np.exp(-(t - reference_time) / rise_time))
 
 # Spectral flux density for each given pair of time and passband
 flux = np.pi * bb_nu(waves, temp) / (5.67e-5 * temp ** 4) * lum
@@ -662,7 +662,7 @@ assert_array_equal(actual, desired)
 
 ### Prepare environment
 
-Install Rust toolchain and Python 3.8+.
+Install Rust toolchain and Python 3.9+.
 It is recommended to use [`rustup`](https://rustup.rs/) to install Rust toolchain and update it with
 `rustup update`
 periodically.
@@ -814,7 +814,7 @@ python -m cibuildwheel --only=cp38-macosx_arm64
 unset MACOSX_DEPLOYMENT_TARGET
 ```
 
-Since we use ABI3 compatibility, you can build wheels for a single Python version (currently 3.8+) and they
+Since we use ABI3 compatibility, you can build wheels for a single Python version (currently 3.9+) and they
 will work
 with any later version of CPython.
 

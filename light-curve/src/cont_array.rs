@@ -76,7 +76,7 @@ where
     }
 }
 
-impl<'a, T> From<ContArray<T>> for ContCowArray<'a, T> {
+impl<T> From<ContArray<T>> for ContCowArray<'_, T> {
     fn from(a: ContArray<T>) -> Self {
         Self(a.0.into())
     }
