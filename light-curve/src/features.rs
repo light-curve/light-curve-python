@@ -315,7 +315,7 @@ impl PyFeatureEvaluator {
                 .eval(&mut ts)
                 .map_err(|e| Exception::ValueError(e.to_string()))?,
         };
-        let array = PyArray1::from_vec_bound(py, result);
+        let array = PyArray1::from_vec(py, result);
         Ok(array.as_untyped().clone())
     }
 
@@ -363,7 +363,7 @@ impl PyFeatureEvaluator {
             fill_value,
             n_jobs,
         )?
-        .into_pyarray_bound(py)
+        .into_pyarray(py)
         .as_untyped()
         .clone())
     }
@@ -598,7 +598,7 @@ impl PyFeatureEvaluator {
                     r#"Error happened on the Rust side when serializing _FeatureEvaluator: "{err}""#
                 ))
             })?;
-        Ok(PyBytes::new_bound(py, &vec_bytes))
+        Ok(PyBytes::new(py, &vec_bytes))
     }
 
     /// Used by copy.copy
@@ -1021,7 +1021,7 @@ macro_rules! fit_evaluator {
                 params: Bound<'py, PyAny>,
             ) -> Res<Bound<'py, PyUntypedArray>> {
                 dtype_dispatch!({
-                    |t, params| Ok(Self::model_impl(t, params).into_pyarray_bound(py).as_untyped().clone())
+                    |t, params| Ok(Self::model_impl(t, params).into_pyarray(py).as_untyped().clone())
                 }(t, !=params))
             }
 
@@ -1228,7 +1228,7 @@ impl Bins {
         }
         let mut eval_f32 = lcf::Bins::default();
         let mut eval_f64 = lcf::Bins::default();
-        for x in features.iter()? {
+        for x in features.try_iter()? {
             let py_feature = x?.downcast::<PyFeatureEvaluator>()?.borrow();
             eval_f32.add_feature(py_feature.feature_evaluator_f32.clone());
             eval_f64.add_feature(py_feature.feature_evaluator_f64.clone());
@@ -1261,7 +1261,7 @@ impl Bins {
     #[staticmethod]
     fn __getnewargs_ex__(py: Python) -> ((Bound<PyTuple>,), HashMap<&'static str, f64>) {
         (
-            (PyTuple::empty_bound(py),),
+            (PyTuple::empty(py),),
             [
                 ("window", lcf::Bins::<_, Feature<_>>::default_window()),
                 ("offset", lcf::Bins::<_, Feature<_>>::default_offset()),
@@ -1635,7 +1635,7 @@ impl Periodogram {
             }
         }
         if let Some(features) = features {
-            for x in features.iter()? {
+            for x in features.try_iter()? {
                 let py_feature = x?.downcast::<PyFeatureEvaluator>()?.borrow();
                 eval_f32.add_feature(py_feature.feature_evaluator_f32.clone());
                 eval_f64.add_feature(py_feature.feature_evaluator_f64.clone());
@@ -1657,8 +1657,8 @@ impl Periodogram {
         let m: DataSample<_> = m.as_array().into();
         let mut ts = lcf::TimeSeries::new_without_weight(t, m);
         let (freq, power) = eval.freq_power(&mut ts);
-        let freq = PyArray1::from_vec_bound(py, freq);
-        let power = PyArray1::from_vec_bound(py, power);
+        let freq = PyArray1::from_vec(py, freq);
+        let power = PyArray1::from_vec(py, power);
         (freq.as_untyped().clone(), power.as_untyped().clone())
     }
 }

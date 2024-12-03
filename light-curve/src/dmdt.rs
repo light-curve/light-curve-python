@@ -3,6 +3,7 @@ use crate::cont_array::{ContArray, ContCowArray};
 use crate::errors::{Exception, Res};
 use crate::np_array::Arr;
 
+use crate::errors::Exception::ValueError;
 use conv::{ApproxFrom, ApproxInto, ConvAsUtil};
 use enumflags2::{bitflags, BitFlags};
 use light_curve_dmdt as lcdmdt;
@@ -16,9 +17,8 @@ use rand::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::cell::RefCell;
 use std::ops::{DerefMut, Range};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use std::thread::JoinHandle;
 use unzip3::Unzip3;
 
@@ -95,7 +95,7 @@ where
             ContCowArray::from_view(t.as_array(), true).as_slice(),
             sorted,
         )
-        .map(|a| a.into_pyarray_bound(py).as_untyped().clone())
+        .map(|a| a.into_pyarray(py).as_untyped().clone())
     }
 
     fn count_dt(&self, t: &[T], sorted: Option<bool>) -> Res<ndarray::Array1<T>> {
@@ -128,7 +128,7 @@ where
         let typed_t_ = array_t_.iter().map(|t| t.as_slice()).collect();
         Ok(self
             .count_dt_many(typed_t_, sorted)?
-            .into_pyarray_bound(py)
+            .into_pyarray(py)
             .as_untyped()
             .clone())
     }
@@ -166,7 +166,7 @@ where
                 ContCowArray::from_view(m.as_array(), true).as_slice(),
                 sorted,
             )?
-            .into_pyarray_bound(py)
+            .into_pyarray(py)
             .as_untyped()
             .clone())
     }
@@ -216,7 +216,7 @@ where
             .collect();
         Ok(self
             .points_many(typed_lcs, sorted)?
-            .into_pyarray_bound(py)
+            .into_pyarray(py)
             .as_untyped()
             .clone())
     }
@@ -300,7 +300,7 @@ where
                 err2.as_slice(),
                 sorted,
             )?
-            .into_pyarray_bound(py)
+            .into_pyarray(py)
             .as_untyped()
             .clone())
     }
@@ -362,7 +362,7 @@ where
             .collect();
         Ok(self
             .gausses_many(typed_lcs, sorted)?
-            .into_pyarray_bound(py)
+            .into_pyarray(py)
             .as_untyped()
             .clone())
     }
@@ -539,7 +539,7 @@ macro_rules! dmdt_batches {
             dmdt_batches: Arc<$generic>,
             lcs_order: Vec<usize>,
             range: Range<usize>,
-            worker_thread: RefCell<Option<JoinHandle<Res<ndarray::Array3<$t>>>>>,
+            worker_thread: RwLock<Option<JoinHandle<Res<ndarray::Array3<$t>>>>>,
             rng: Option<Xoshiro256PlusPlus>,
         }
 
@@ -569,7 +569,7 @@ macro_rules! dmdt_batches {
                     None => None,
                 };
 
-                let worker_thread = RefCell::new(Some(Self::run_worker_thread(
+                let worker_thread = RwLock::new(Some(Self::run_worker_thread(
                     &dmdt_batches,
                     &lcs_order[range.start..range.end],
                     Self::child_rng(rng.as_mut()),
@@ -605,8 +605,13 @@ macro_rules! dmdt_batches {
 
         impl Drop for $name_iter {
             fn drop(&mut self) {
-                let t = self.worker_thread.replace(None);
-                t.into_iter().for_each(|t| drop(t.join().unwrap()));
+                let mut worker_thread = match self.worker_thread.write() {
+                    Ok(wt) => wt,
+                    Err(_) => return,
+                };
+                std::mem::take(&mut *worker_thread)
+                    .into_iter()
+                    .for_each(|t| drop(t.join()));
             }
         }
 
@@ -617,7 +622,12 @@ macro_rules! dmdt_batches {
             }
 
             fn __next__(mut slf: PyRefMut<Self>) -> Res<Option<Bound<PyAny>>> {
-                if slf.worker_thread.borrow().is_none() {
+                if slf
+                    .worker_thread
+                    .read()
+                    .map_err(|_| ValueError(String::from("Error getting worker_thread")))?
+                    .is_none()
+                {
                     return Ok(None);
                 }
 
@@ -633,25 +643,39 @@ macro_rules! dmdt_batches {
                     );
 
                 // Replace with None temporary to not have two workers running simultaneously
-                let array = slf.worker_thread.replace(None).unwrap().join().unwrap()?;
+                let array = {
+                    let mut worker_thread = slf
+                        .worker_thread
+                        .write()
+                        .map_err(|_| ValueError(String::from("Error getting worker_thread")))?;
+                    std::mem::take(&mut *worker_thread)
+                        .unwrap() // safe to unwrap because we checked that worker_thread is not None
+                        .join()
+                        .map_err(|_| ValueError(String::from("Error joining working_thread")))??
+                };
                 if !slf.range.is_empty() {
                     let rng = Self::child_rng(slf.rng.as_mut());
-                    slf.worker_thread.replace(Some(Self::run_worker_thread(
-                        &slf.dmdt_batches,
-                        &slf.lcs_order[slf.range.start..slf.range.end],
-                        rng,
-                    )));
+                    // We know that it is None
+                    let _ = std::mem::replace(
+                        &mut *slf
+                            .worker_thread
+                            .write()
+                            .map_err(|_| ValueError(String::from("Error getting worker_thread")))?,
+                        Some(Self::run_worker_thread(
+                            &slf.dmdt_batches,
+                            &slf.lcs_order[slf.range.start..slf.range.end],
+                            rng,
+                        )),
+                    );
                 }
 
-                let py_array = array.into_pyarray_bound(slf.py()).into_any();
+                let py_array = array.into_pyarray(slf.py()).into_any();
                 match current_range {
                     Some(range) => {
-                        let py_index = PyArray1::from_slice_bound(
-                            slf.py(),
-                            &slf.lcs_order[range.start..range.end],
-                        )
-                        .into_any();
-                        let tuple = PyTuple::new_bound(slf.py(), &[py_index, py_array]).into_any();
+                        let py_index =
+                            PyArray1::from_slice(slf.py(), &slf.lcs_order[range.start..range.end])
+                                .into_any();
+                        let tuple = PyTuple::new(slf.py(), &[py_index, py_array])?.into_any();
                         Ok(Some(tuple))
                     }
                     None => Ok(Some(py_array)),
@@ -1079,11 +1103,7 @@ impl DmDt {
 
     #[getter]
     fn dt_grid<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
-        self.dmdt_f64
-            .dmdt
-            .dt_grid
-            .get_borders()
-            .to_pyarray_bound(py)
+        self.dmdt_f64.dmdt.dt_grid.get_borders().to_pyarray(py)
     }
 
     #[getter]
@@ -1098,11 +1118,7 @@ impl DmDt {
 
     #[getter]
     fn dm_grid<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
-        self.dmdt_f64
-            .dmdt
-            .dm_grid
-            .get_borders()
-            .to_pyarray_bound(py)
+        self.dmdt_f64.dmdt.dm_grid.get_borders().to_pyarray(py)
     }
 
     #[getter]
@@ -1530,7 +1546,7 @@ impl DmDt {
                     r#"Error happened on the Rust side when serializing DmDt: "{err}""#
                 ))
             })?;
-        Ok(PyBytes::new_bound(py, &vec_bytes))
+        Ok(PyBytes::new(py, &vec_bytes))
     }
 
     /// Used by pickle.dump / pickle.dumps
@@ -1538,7 +1554,7 @@ impl DmDt {
         &self,
         py: Python<'py>,
     ) -> (Bound<'py, PyArray1<f64>>, Bound<'py, PyArray1<f64>>) {
-        let a = ndarray::array![1.0, 2.0].to_pyarray_bound(py);
+        let a = ndarray::array![1.0, 2.0].to_pyarray(py);
         (a.clone(), a)
     }
 

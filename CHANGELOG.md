@@ -13,9 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Bump `pyO3` to 0.22
-- Bump `rust-numpy` to 0.22, should potentially bring a better `numpy` v2 support
-- macOS x86\_64 binary wheel now requires macOS 13 instead of 12 https://github.com/light-curve/light-curve-python/issues/437 https://github.com/light-curve/light-curve-python/pull/446
+- **Breaking** macOS x86\_64 binary wheel now requires macOS 13 instead of
+  12 https://github.com/light-curve/light-curve-python/issues/437 https://github.com/light-curve/light-curve-python/pull/446
+- **Breaking** Minimum supported Python version is 3.9 due to `rust-numpy` 0.23 requirement
+- Default ABI3 version is also bumped to 3.9
+- Bump `pyO3` to 0.23, should potentially support
+  sub-interpreters https://github.com/light-curve/light-curve-python/pull/457
+- Bump `rust-numpy` to 0.23, should potentially bring a better `numpy` v2
+  support https://github.com/light-curve/light-curve-python/pull/457
 
 ### Deprecated
 
@@ -37,7 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `LinexpBolometricTerm` for `Rainbow` changed to clip negative values to zero https://github.com/light-curve/light-curve-python/pull/430
+- `LinexpBolometricTerm` for `Rainbow` changed to clip negative values to
+  zero https://github.com/light-curve/light-curve-python/pull/430
 
 ## [0.9.5] 2024-09-20
 
