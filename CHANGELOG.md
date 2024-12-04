@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   sub-interpreters https://github.com/light-curve/light-curve-python/pull/457
 - Bump `rust-numpy` to 0.23, should potentially bring a better `numpy` v2
   support https://github.com/light-curve/light-curve-python/pull/457
+- Bump `ndarray` to 0.16 https://github.com/light-curve/light-curve-python/pull/458
+- Bump `light-curve-feature` to 0.8.0 https://github.com/light-curve/light-curve-python/pull/458
+- Bump `light-curve-dmdt` to 0.8.0 https://github.com/light-curve/light-curve-python/pull/458
 
 ### Deprecated
 
