@@ -75,7 +75,7 @@ where
                     x.approx_into().unwrap()
                 }
             });
-            *a /= &dt_no_zeros.into_shape((a.nrows(), 1)).unwrap();
+            *a /= &dt_no_zeros.to_shape((a.nrows(), 1)).unwrap();
         }
         if self.norm.contains(NormFlag::Max) {
             let max = *a.iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
