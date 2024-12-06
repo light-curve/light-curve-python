@@ -4,7 +4,7 @@ from itertools import count
 from pathlib import Path
 from typing import Generator, Iterator, List, Optional, Union
 
-import feets
+import cesium.featurize
 import numpy as np
 import pandas as pd
 import pytest
@@ -112,11 +112,10 @@ class _Test:
     # Specify method for a naive implementation
     naive = None
 
-    # Specify `feets` feature name
-    feets_feature = None
-    feets_extractor = None
+    # Specify `cesium` feature name
+    cesium_feature = None
     # Specify a `str` with a reason why skip this test
-    feets_skip_test = False
+    cesium_skip_test = False
 
     # Which types of pre-generated light-curves to use
     phot_types = Data.phot_type_choices
@@ -132,9 +131,6 @@ class _Test:
             if len(self.args) > 0:
                 raise ValueError("Py features must be called with keyword arguments only")
             self.py_feature = self.py_feature_cls(**self.kwargs)
-
-        if self.feets_feature is not None:
-            self.feets_extractor = feets.FeatureSpace(only=[self.feets_feature], data=["time", "magnitude", "error"])
 
     # Default values of `assert_allclose`
     rtol = np.finfo(np.float32).resolution  # 1e-6
@@ -253,32 +249,42 @@ class _Test:
         benchmark.name = f"{str(type(self).__name__)}_naive"
         benchmark(self.naive, t, m, sigma)
 
-    def feets(self, t, m, sigma):
-        _, result = self.feets_extractor.extract(t, m, sigma)
-        return result
+    def cesium(self, t, m, sigma):
+        features = self.cesium_feature
+        if isinstance(self.cesium_feature, str):
+            features = [self.cesium_feature]
+        df = cesium.featurize.featurize_time_series(
+            values=m,
+            errors=sigma,
+            times=t,
+            features_to_use=features,
+        )
+        return df.iloc[0].to_numpy()
 
-    def test_close_to_feets(self, subtests):
-        if self.feets_extractor is None:
-            pytest.skip("No feets feature provided")
-        if self.feets_skip_test:
-            pytest.skip("feets is expected to be different from light_curve, reason: " + self.feets_skip_test)
+    def test_close_to_cesium(self, subtests):
+        if self.cesium_feature is None:
+            pytest.skip("No cesium feature provided")
+        if self.cesium_skip_test:
+            pytest.skip(f"cesium is expected to be different from light_curve, reason: {self.cesium_skip_test}")
 
         for data in self.data_gen():
             with subtests.test(data=data):
-                assert_allclose(self.rust(*data)[:1], self.feets(*data)[:1], rtol=self.rtol, atol=self.atol)
+                assert_allclose(self.rust(*data)[:1], self.cesium(*data)[:1], rtol=self.rtol, atol=self.atol)
 
-    def test_benchmark_feets(self, benchmark):
-        if self.feets_extractor is None:
-            pytest.skip("No feets feature provided")
+    def test_benchmark_cesium(self, benchmark):
+        if self.cesium_feature is None:
+            pytest.skip("No cesium feature provided")
 
         t, m, sigma = self.random_data()
 
         benchmark.group = type(self).__name__
-        benchmark(self.feets, t, m, sigma)
+        benchmark(self.cesium, t, m, sigma)
 
 
 class TestAmplitude(_Test):
     name = "Amplitude"
+
+    cesium_feature = "amplitude"
 
     def naive(self, t, m, sigma):
         return 0.5 * (np.max(m) - np.min(m))
@@ -287,8 +293,8 @@ class TestAmplitude(_Test):
 class TestAndersonDarlingNormal(_Test):
     name = "AndersonDarlingNormal"
 
-    feets_feature = "AndersonDarling"
-    feets_skip_test = "feets uses biased statistics"
+    cesium_feature = "anderson_darling"
+    cesium_skip_test = "cesium uses errors for the test"
 
     def naive(self, t, m, sigma):
         return stats.anderson(m).statistic * (1.0 + 4.0 / m.size - 25.0 / m.size**2)
@@ -381,8 +387,8 @@ class TestBeyond1Std(_Test):
     name = "BeyondNStd"
     kwargs = dict(nstd=nstd)
 
-    feets_feature = "Beyond1Std"
-    feets_skip_test = "feets uses biased statistics"
+    cesium_feature = "percent_beyond_1_std"
+    cesium_skip_test = "cesium uses distance from weighted mean"
 
     def naive(self, t, m, sigma):
         mean = np.mean(m)
@@ -392,9 +398,6 @@ class TestBeyond1Std(_Test):
 
 class TestCusum(_Test):
     name = "Cusum"
-
-    feets_feature = "Rcs"
-    feets_skip_test = "feets uses biased statistics"
 
 
 class TestEta(_Test):
@@ -406,9 +409,6 @@ class TestEta(_Test):
 
 class TestEtaE(_Test):
     name = "EtaE"
-
-    feets_feature = "Eta_e"
-    feets_skip_test = "feets fixed EtaE from the original paper in different way"
 
     def naive(self, t, m, sigma):
         return (
@@ -426,13 +426,10 @@ class TestExcessVariance(_Test):
 
 
 class TestInterPercentileRange(_Test):
-    quantile = 0.25
+    quantile = 0.20
 
     name = "InterPercentileRange"
     kwargs = dict(quantile=quantile)
-
-    feets_feature = "Q31"
-    feets_skip_test = "feets uses different quantile type"
 
 
 class TestOtsuSplit(_Test):
@@ -460,9 +457,6 @@ class TestOtsuSplitThreshold(_Test):
 class TestKurtosis(_Test):
     name = "Kurtosis"
 
-    feets_feature = "SmallKurtosis"
-    feets_skip_test = "feets uses equation for unbiased kurtosis, but put biased standard deviation there"
-
     def naive(self, t, m, sigma):
         return stats.kurtosis(m, fisher=True, bias=False)
 
@@ -470,15 +464,15 @@ class TestKurtosis(_Test):
 class TestLinearTrend(_Test):
     name = "LinearTrend"
 
-    feets_feature = "LinearTrend"
-
     def naive(self, t, m, sigma):
         (slope, _), ((slope_sigma2, _), _) = np.polyfit(t, m, deg=1, cov=True)
         sigma_noise = np.sqrt(np.polyfit(t, m, deg=1, full=True)[1][0] / (t.size - 2))
         return np.array([slope, np.sqrt(slope_sigma2), sigma_noise])
 
 
-def generate_test_magnitude_percentile_ratio(quantile_numerator, quantile_denominator, feets_feature):
+def generate_test_magnitude_percentile_ratio(
+    quantile_numerator, quantile_denominator, cesium_feature, cesium_skip_test=None
+):
     return type(
         f"TestMagnitudePercentageRatio{int(quantile_numerator * 100):d}",
         (_Test,),
@@ -487,21 +481,27 @@ def generate_test_magnitude_percentile_ratio(quantile_numerator, quantile_denomi
             quantile_numerator=quantile_numerator,
             quantile_denominator=quantile_denominator,
             name="MagnitudePercentageRatio",
-            feets_feature=feets_feature,
-            feets_skip_test="feets uses different quantile type",
+            cesium_feature=cesium_feature,
+            cesium_skip_test=cesium_skip_test,
         ),
     )
 
 
-FluxPercentileRatioMid20 = generate_test_magnitude_percentile_ratio(0.40, 0.05, "FluxPercentileRatioMid20")
-FluxPercentileRatioMid50 = generate_test_magnitude_percentile_ratio(0.25, 0.05, "FluxPercentileRatioMid50")
-FluxPercentileRatioMid80 = generate_test_magnitude_percentile_ratio(0.10, 0.05, "FluxPercentileRatioMid80")
+TestMagnitudePercentageRatio10 = generate_test_magnitude_percentile_ratio(
+    0.10, 0.05, "flux_percentile_ratio_mid20", "cesium convert mags to fluxes"
+)
+TestMagnitudePercentageRatio25 = generate_test_magnitude_percentile_ratio(
+    0.25, 0.05, "flux_percentile_ratio_mid50", "cesium convert mags to fluxes"
+)
+TestMagnitudePercentageRatio40 = generate_test_magnitude_percentile_ratio(
+    0.40, 0.05, "flux_percentile_ratio_mid80", "cesium convert mags to fluxes"
+)
 
 
 class TestMaximumSlope(_Test):
     name = "MaximumSlope"
 
-    feets_feature = "MaxSlope"
+    cesium_feature = "max_slope"
 
     def naive(self, t, m, sigma):
         return np.max(np.abs((m[1:] - m[:-1]) / (t[1:] - t[:-1])))
@@ -510,7 +510,7 @@ class TestMaximumSlope(_Test):
 class TestMean(_Test):
     name = "Mean"
 
-    feets_feature = "Mean"
+    cesium_feature = "mean"
 
     def naive(self, t, m, sigma):
         return np.mean(m)
@@ -519,15 +519,14 @@ class TestMean(_Test):
 class TestMeanVariance(_Test):
     name = "MeanVariance"
 
-    feets_feature = "Meanvariance"
-    feets_skip_test = "feets uses biased statistics"
-
     def naive(self, t, m, sigma):
         return np.std(m, ddof=1) / np.mean(m)
 
 
 class TestMedian(_Test):
     name = "Median"
+
+    cesium_feature = "median"
 
     def naive(self, t, m, sigma):
         return np.median(m)
@@ -536,7 +535,7 @@ class TestMedian(_Test):
 class TestMedianAbsoluteDeviation(_Test):
     name = "MedianAbsoluteDeviation"
 
-    feets_feature = "MedianAbsDev"
+    cesium_feature = "median_absolute_deviation"
 
 
 class TestMedianBufferRangePercentage(_Test):
@@ -547,14 +546,12 @@ class TestMedianBufferRangePercentage(_Test):
     name = "MedianBufferRangePercentage"
     kwargs = dict(quantile=quantile)
 
-    feets_feature = "MedianBRP"
-
 
 class TestPercentAmplitude(_Test):
     name = "PercentAmplitude"
 
-    feets_feature = "PercentAmplitude"
-    feets_skip_test = "feets divides value by median"
+    cesium_feature = "percent_amplitude"
+    cesium_skip_test = "cesium converts mags to fluxes"
 
     def naive(self, t, m, sigma):
         median = np.median(m)
@@ -567,8 +564,8 @@ class TestPercentDifferenceMagnitudePercentile(_Test):
     name = "PercentDifferenceMagnitudePercentile"
     kwargs = dict(quantile=quantile)
 
-    feets_feature = "PercentDifferenceFluxPercentile"
-    feets_skip_test = "feets uses different quantile type"
+    cesium_feature = "percent_difference_flux_percentile"
+    cesium_skip_test = "cesium converts mags to fluxes"
 
 
 class TestReducedChi2(_Test):
@@ -586,8 +583,8 @@ class TestRoms(_Test):
 class TestSkew(_Test):
     name = "Skew"
 
-    feets_feature = "Skew"
-    feets_skip_test = "feets uses biased statistics"
+    cesium_feature = "skew"
+    cesium_skip_test = "cesium uses biased skewness"
 
     def naive(self, t, m, sigma):
         return stats.skew(m, bias=False)
@@ -596,8 +593,8 @@ class TestSkew(_Test):
 class TestStandardDeviation(_Test):
     name = "StandardDeviation"
 
-    feets_feature = "Std"
-    feets_skip_test = "feets uses biased statistics"
+    cesium_feature = "std"
+    cesium_skip_test = "cesium uses biased standard deviation"
 
     def naive(self, t, m, sigma):
         return np.std(m, ddof=1)
@@ -606,7 +603,8 @@ class TestStandardDeviation(_Test):
 class TestStetsonK(_Test):
     name = "StetsonK"
 
-    feets_feature = "StetsonK"
+    cesium_feature = "stetson_k"
+    cesium_skip_test = "cesium uses different Stetson K definition"
 
     def naive(self, t, m, sigma):
         x = (m - np.average(m, weights=1.0 / sigma**2)) / sigma
@@ -615,6 +613,8 @@ class TestStetsonK(_Test):
 
 class TestWeightedMean(_Test):
     name = "WeightedMean"
+
+    cesium_feature = "weighted_average"
 
     def naive(self, t, m, sigma):
         return np.average(m, weights=1.0 / sigma**2)
@@ -756,23 +756,23 @@ class TestAllNaive(_Test):
         return np.concatenate([np.atleast_1d(f(t, m, sigma)) for f in self.naive_features])
 
 
-class TestAllFeets(_Test):
-    feets_skip_test = "skip for TestAllFeets"
+class TestAllCesium(_Test):
+    cesium_skip_test = "skip for TestAllCesium"
 
     # Most of the features are for mags
     phot_types = frozenset(["mag"])
 
     def setup_method(self):
         features = []
-        feets_features = []
+        cesium_features = []
         for cls in _Test.__subclasses__():
-            if cls.feets_feature is None or cls.name is None:
+            if cls.cesium_feature is None or cls.name is None:
                 continue
             if not cls.add_to_all_features:
                 continue
             if not cls.add_to_all_features:
                 continue
             features.append(getattr(lc_ext, cls.name)(*(cls.args + tuple(cls.kwargs.values()))))
-            feets_features.append(cls.feets_feature)
+            cesium_features.append(cls.cesium_feature)
         self.rust = lc_ext.Extractor(*features)
-        self.feets_extractor = feets.FeatureSpace(only=feets_features, data=["time", "magnitude", "error"])
+        self.cesium_feature = cesium_features

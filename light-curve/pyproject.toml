@@ -28,24 +28,15 @@ full = [
 ]
 
 # Testing environment
-test-no-bench = [
-    "pytest",
-    "markdown-pytest",
-    "pytest-benchmark", # We need it here because we use benchmark-specific command line options
-    "pytest-subtests>=0.10",
-    "iminuit>=2.21,<3",
-    "numpy<2",
-    "scipy",
-]
 test = [
     "pytest",
     "markdown-pytest",
     "pytest-benchmark",
     "pytest-subtests>=0.10",
     "iminuit>=2.21,<3",
-    "numpy<2",
+    "numpy",
     "scipy",
-    "feets",
+    "cesium",
     "joblib",
     "pandas",
 ]
@@ -55,9 +46,9 @@ dev = [
     "pytest-benchmark",
     "pytest-subtests>=0.10",
     "iminuit>=2.21,<3",
-    "numpy<2",
+    "numpy",
     "scipy",
-    "feets",
+    "cesium",
     "joblib",
     "pandas",
     "black",
@@ -239,10 +230,8 @@ select = "*linux_x86_64"
 environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features=abi3,ceres-system,fftw-mkl,gsl,mimalloc" }
 
 # Test
-# We skip benchmark tests, because it requires feets and its transitive
-# dependencies, which are tricky and slow to compile on marginal platforms.
-# For testing we use only platforms for which scipy binary wheels are available
+# We use platforms natively available on GitHub Actions and skip Windows because it doesn't support all the features
 [[tool.cibuildwheel.overrides]]
-select = "cp*-manylinux_x86_64 cp*-manylinux_aarch64 cp*-macosx*"
-test-command = "pytest {package}/README.md {package}/light_curve/ {package}/tests/ --ignore {package}/tests/test_w_bench.py"
-test-extras = ["test-no-bench"]
+select = "cp*-manylinux_x86_64 cp*-macosx*"
+test-command = "pytest {package}/README.md {package}/light_curve/ {package}/tests/"
+test-extras = ["test"]
