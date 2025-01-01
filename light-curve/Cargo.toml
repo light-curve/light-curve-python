@@ -48,7 +48,7 @@ rayon = "1.10.0"
 serde = { version = "1", features = ["derive"] }
 serde-pickle = "1"
 serde_json = "1"
-thiserror = "2.0.3"
+thiserror = "2.0.9"
 unzip3 = "1.0.0"
 
 [dependencies.light-curve-dmdt]
