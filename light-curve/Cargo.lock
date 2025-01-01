@@ -1041,6 +1041,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "itertools"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1128,7 +1137,7 @@ checksum = "b8658032ba2035394cacbaabe73427e6efc7fbf0bce2200ee244179dce5ef06a"
 dependencies = [
  "conv",
  "enum_dispatch",
- "itertools",
+ "itertools 0.13.0",
  "libm",
  "ndarray 0.16.1",
  "num-traits",
@@ -1148,7 +1157,7 @@ dependencies = [
  "emcee",
  "enum_dispatch",
  "fftw",
- "itertools",
+ "itertools 0.13.0",
  "lazy_static 1.5.0",
  "libm",
  "macro_const",
@@ -1173,7 +1182,7 @@ dependencies = [
  "conv",
  "enum-iterator",
  "enumflags2",
- "itertools",
+ "itertools 0.14.0",
  "light-curve-dmdt",
  "light-curve-feature",
  "macro_const",
@@ -1316,7 +1325,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17ebbe97acce52d06aebed4cd4a87c0941f4b2519b59b82b4feb5bd0ce003dfd"
 dependencies = [
  "indexmap",
- "itertools",
+ "itertools 0.13.0",
  "ndarray 0.16.1",
  "noisy_float",
  "num-integer",

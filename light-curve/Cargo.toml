@@ -33,7 +33,7 @@ const_format = "0.2.32"
 conv = "0.3.3"
 enum-iterator = "2.1.0"
 enumflags2 = { version = "0.7.7", features = ["serde"] }
-itertools = "0.13.0"
+itertools = "0.14.0"
 macro_const = "0.1.0"
 mimalloc = { version = "0.1.42", features = ["local_dynamic_tls"], optional = true }
 ndarray = { version = "0.16.1", features = ["rayon"] }
