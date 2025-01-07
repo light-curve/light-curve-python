@@ -19,6 +19,14 @@ classifiers = [
     "Programming Language :: Rust",
     "Topic :: Scientific/Engineering :: Astronomy",
 ]
+# We load these from Cargo.toml
+dynamic = [
+    "authors",
+    "description",
+    "license",
+    "readme",
+    "version",
+]
 
 [project.optional-dependencies]
 # Packages required by some experimental features
@@ -53,16 +61,6 @@ dev = [
     "pandas",
     "black",
     "ruff",
-]
-
-[tool.setuptools]
-# We load these from Cargo.toml
-dynamic = [
-    "authors",
-    "description",
-    "license",
-    "readme",
-    "version",
 ]
 
 [tool.maturin]

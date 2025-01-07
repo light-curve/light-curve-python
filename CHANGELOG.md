@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
---
+- `pyproject.toml`: move `tool.setuptools.dynamic` to `project.dynamic` which fixes build with `maturin` v1.8.x https://github.com/light-curve/light-curve-python/pull/467
 
 ### Security
 
