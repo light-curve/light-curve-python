@@ -13,6 +13,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+--
+
+### Deprecated
+
+--
+
+### Removed
+
+--
+
+### Fixed
+
+--
+
+### Security
+
+--
+
+## [0.10.0] 2025-01-07
+
+### Changed
+
 - **Breaking** macOS x86\_64 binary wheel now requires macOS 13 instead of
   12 https://github.com/light-curve/light-curve-python/issues/437 https://github.com/light-curve/light-curve-python/pull/446
 - **Breaking** Minimum supported Python version is 3.9 due to `rust-numpy` 0.23 requirement
@@ -25,21 +47,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `light-curve-feature` to 0.8.0 https://github.com/light-curve/light-curve-python/pull/458
 - Bump `light-curve-dmdt` to 0.8.0 https://github.com/light-curve/light-curve-python/pull/458
 
-### Deprecated
-
---
-
-### Removed
-
---
-
 ### Fixed
 
-- `pyproject.toml`: move `tool.setuptools.dynamic` to `project.dynamic` which fixes build with `maturin` v1.8.x https://github.com/light-curve/light-curve-python/pull/467
-
-### Security
-
---
+- `pyproject.toml`: move `tool.setuptools.dynamic` to `project.dynamic` which fixes build with `maturin`
+  v1.8.x https://github.com/light-curve/light-curve-python/pull/467
 
 ## [0.9.6] 2024-10-01
 
