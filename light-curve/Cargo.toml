@@ -29,7 +29,7 @@ gsl = ["light-curve-feature/gsl"]
 mimalloc = ["dep:mimalloc"]
 
 [dependencies]
-const_format = "0.2.32"
+const_format = "0.2.34"
 conv = "0.3.3"
 enum-iterator = "2.1.0"
 enumflags2 = { version = "0.7.7", features = ["serde"] }
