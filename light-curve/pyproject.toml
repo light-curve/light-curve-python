@@ -182,7 +182,7 @@ environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--lo
 manylinux-aarch64-image = "ghcr.io/light-curve/base-docker-images/manylinux2014_aarch64"
 # not supported
 #manylinux-i686-image = "ghcr.io/light-curve/base-docker-images/manylinux2014_i686"
-manylinux-ppc64le-image = "ghcr.io/light-curve/base-docker-images/manylinux2014_ppc64le"
+# manylinux-ppc64le-image = "ghcr.io/light-curve/base-docker-images/manylinux2014_ppc64le"
 # not supported
 # manylinux-s390x-image = "ghcr.io/light-curve/base-docker-images/manylinux2014_s390x"
 manylinux-x86_64-image = "ghcr.io/light-curve/base-docker-images/manylinux2014_x86_64"
