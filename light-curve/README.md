@@ -33,7 +33,7 @@ versions.
 | **x86-64**  | wheel (MKL)       | wheel (MKL)                    | wheel 13+ | wheel (no Ceres, no GSL)                                             |
 | **i686**    | src               | src                            | —         | not tested                                                           |
 | **aarch64** | wheel             | wheel                          | wheel 14+ | not tested                                                           |
-| **ppc64le** | wheel             | not tested (no Rust toolchain) | —         | —                                                                    |
+| **ppc64le** | src               | not tested (no Rust toolchain) | —         | —                                                                    |
 
 - "wheel": binary wheel is available on pypi.org, local building is not required for the platform, the only
   pre-requirement is a recent `pip` version. For Linux x86-64 we provide binary wheels built with Intel MKL
@@ -50,9 +50,9 @@ versions.
 macOS wheels require relatively new OS versions, please open an issue if you require support of older Macs,
 see https://github.com/light-curve/light-curve-python/issues/376 for the details.
 
-We stopped publishing PyPy wheels (https://github.com/light-curve/light-curve-python/issues/345), please feel
-free to
-open an issue if you need them.
+We stopped publishing all PyPy wheels (https://github.com/light-curve/light-curve-python/issues/345)
+and the PPC64le CPython glibc wheel (https://github.com/light-curve/light-curve-python/issues/479),
+please feel free to open an issue if you need any of them.
 
 See [bellow](#build-from-source) for the details on how to build the package from the source code.
 

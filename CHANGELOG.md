@@ -21,7 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
---
+- We stop building PPC64le wheels in CI and publishing them to
+  PyPI https://github.com/light-curve/light-curve-python/issues/479 https://github.com/light-curve/light-curve-python/pull/480
 
 ### Fixed
 
