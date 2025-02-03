@@ -48,6 +48,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
       - name: Set up Python 3.${{ matrix.python_minor }}
         uses: actions/setup-python@v5
         with:
@@ -70,6 +74,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
       - run: cargo fmt --manifest-path=light-curve/Cargo.toml -- --check
 
   cargo-clippy:
@@ -77,6 +85,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: "${{ runner.os }}_stable-rust_cargo-clippy"
