@@ -10,7 +10,7 @@ on:
 jobs:
   check-version:
     name: Check the tag corresponds to the crate version
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v4
@@ -50,15 +50,15 @@ jobs:
             cibw_build: cp39-macosx_arm64
           - os: windows-2019
             cibw_build: cp39-win_amd64
-          - os: ubuntu-20.04
+          - os: ubuntu-24.04
             cibw_build: cp39-manylinux_x86_64
-          - os: ubuntu-20.04
+          - os: ubuntu-24.04
             cibw_build: cp39-musllinux_x86_64
-          - os: ubuntu-20.04
+          - os: ubuntu-24.04-arm
             cibw_build: cp39-manylinux_aarch64
-          - os: ubuntu-20.04
+          - os: ubuntu-24.04
             cibw_build: cp39-manylinux_ppc64le
-          - os: ubuntu-20.04
+          - os: ubuntu-24.04-arm
             cibw_build: cp39-musllinux_aarch64
 
     steps:
@@ -115,7 +115,7 @@ jobs:
 
   sdist:
     name: Build source distribution
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     defaults:
       run:
@@ -172,7 +172,7 @@ jobs:
     needs: publish
 
     name: Publish light-curve-python
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     defaults:
       run:
