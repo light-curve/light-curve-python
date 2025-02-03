@@ -28,12 +28,17 @@ jobs:
 
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     strategy:
       fail-fast: false
       matrix:
         python_minor: [ '9', '10', '11', '12', '13' ]
+        os: [ ubuntu-latest ]
+        # Just a single ARM worker to be sure that it works
+        include:
+          - python_minor: '13'
+            os: ubuntu-24.04-arm
 
     defaults:
       run:
@@ -212,19 +217,3 @@ jobs:
         run: |
           rustup default ${{ steps.get_msrv.outputs.msrv }}
           maturin build --find-interpreter
-
-  arm:
-    runs-on: [ self-hosted, linux, ARM64 ]
-
-    needs: [ py_build_deps ]
-
-    defaults:
-      run:
-        working-directory: light-curve
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install build_deps
-        run: pip install "${{ needs.py_build_deps.outputs.output }}"
-      - name: Build
-        run: maturin build
