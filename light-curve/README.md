@@ -12,6 +12,8 @@ high-performant time-series feature extractors.
 
 ```sh
 python3 -mpip install 'light-curve[full]'
+# or
+conda install -c conda-forge light-curve-python
 ```
 
 `full` extras would install the package with all optional Python dependencies required by experimental
@@ -19,31 +21,28 @@ features.
 We also provide `light-curve-python` package which is just an "alias" to the main `light-curve[full]` package.
 
 Minimum supported Python version is 3.9.
-We provide binary CPython wheels via [PyPi](https://pypi.org/project/light-curve/) for a number of platforms
-and
-architectures.
+We provide binary CPython wheels via [PyPi](https://pypi.org/project/light-curve/)
+and [Anaconda](https://anaconda.org) for a number of platforms and architectures.
 We also provide binary wheels for stable CPython ABI, so the package is guaranteed to work with all future
 CPython3
 versions.
 
 ### Support matrix
 
-| Arch \ OS   | Linux glibc 2.17+ | Linux musl 1.1+                | macOS     | Windows https://github.com/light-curve/light-curve-python/issues/186 |
-|-------------|-------------------|--------------------------------|-----------|----------------------------------------------------------------------|
-| **x86-64**  | wheel (MKL)       | wheel (MKL)                    | wheel 13+ | wheel (no Ceres, no GSL)                                             |
-| **i686**    | src               | src                            | —         | not tested                                                           |
-| **aarch64** | wheel             | wheel                          | wheel 14+ | not tested                                                           |
-| **ppc64le** | src               | not tested (no Rust toolchain) | —         | —                                                                    |
+| Arch \ OS   | Linux glibc 2.17+ | Linux musl 1.1+                | macOS                 | Windows https://github.com/light-curve/light-curve-python/issues/186 |
+|-------------|-------------------|--------------------------------|-----------------------|----------------------------------------------------------------------|
+| **x86-64**  | PyPI (MKL), conda | PyPI (MKL), conda              | PyPI macOS 13+, conda | PyPI, conda (both no Ceres, no GSL)                                  |
+| **i686**    | src               | src                            | —                     | not tested                                                           |
+| **aarch64** | wheel             | wheel                          | PyPI macOS 14+        | not tested                                                           |
+| **ppc64le** | src               | not tested (no Rust toolchain) | —                     | —                                                                    |
 
-- "wheel": binary wheel is available on pypi.org, local building is not required for the platform, the only
-  pre-requirement is a recent `pip` version. For Linux x86-64 we provide binary wheels built with Intel MKL
-  for better
-  periodogram performance, which is not a default build option. For Windows x86-64 we provide wheel with no
-  Ceres and no
-  GSL support, which is not a default build option.
-- "src": the package is confirmed to be built and pass unit tests locally, but testing and package building is
-  not
-  supported by CI. See ["Build from source"] section bellow for the details.
+- "PyPI" / "conda": binary wheel/package is available on pypi.org / anaconda.org, local building
+  is not required for the platform, the only pre-requirement is a recent `pip` version or
+  conda. For Linux x86-64 PyPI's wheel we provide binary wheels built with Intel MKL
+  for better periodogram performance, which is not a default build option. For Windows x86-64
+  we provide wheel with no Ceres and no GSL support, which is not a default build option.
+- "src": the package is confirmed to be built and pass unit tests locally, but testing and package
+  building is not supported by CI. See ["Build from source"] section bellow for the details.
 - "not tested": building from the source code is not tested, please report us building status via
   issue/PR/email.
 
