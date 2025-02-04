@@ -466,7 +466,7 @@ where
     ) -> Res<Self> {
         let rng = match random_seed {
             Some(seed) => Xoshiro256PlusPlus::seed_from_u64(seed),
-            None => Xoshiro256PlusPlus::from_rng(&mut rand::thread_rng()).unwrap(),
+            None => Xoshiro256PlusPlus::from_rng(&mut rand::rng()),
         };
         let drop_nobs = match drop_nobs {
             DropNObsType::Int(0) => None,
@@ -545,7 +545,7 @@ macro_rules! dmdt_batches {
 
         impl $name_iter {
             fn child_rng(rng: Option<&mut Xoshiro256PlusPlus>) -> Option<Xoshiro256PlusPlus> {
-                rng.map(|rng| Xoshiro256PlusPlus::from_rng(rng).unwrap())
+                rng.map(|rng| Xoshiro256PlusPlus::from_rng(rng))
             }
 
             fn new(dmdt_batches: Arc<$generic>) -> Self {
