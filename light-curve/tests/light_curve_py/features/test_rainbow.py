@@ -1,6 +1,7 @@
 import numpy as np
 
 from light_curve.light_curve_py import RainbowFit
+from light_curve.light_curve_py.features.rainbow._scaler import MultiBandScaler
 
 
 def test_noisy_with_baseline():
@@ -113,3 +114,14 @@ def test_noisy_all_functions_combination():
             # plt.show()
 
             np.testing.assert_allclose(actual[:-1], expected[:-1], rtol=0.1)
+
+
+def test_scaler_from_flux_list_input():
+    "https://github.com/light-curve/light-curve-python/issues/492"
+    # Was failing
+    scaler1 = MultiBandScaler.from_flux(
+        flux=[1.0, 2.0, 3.0, 4.0], band=np.array(["g", "r", "g", "r"]), with_baseline=True
+    )
+    # Was not failing, but was wrong
+    scaler2 = MultiBandScaler.from_flux(flux=[1.0, 2.0, 3.0, 4.0], band=["g", "r", "g", "r"], with_baseline=True)
+    assert scaler1 == scaler2
