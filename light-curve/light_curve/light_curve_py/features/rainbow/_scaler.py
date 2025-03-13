@@ -23,6 +23,11 @@ class Scaler:
     Either a single value or an array of the same shape as the input array
     """
 
+    def __eq__(self, other):
+        if not isinstance(other, Scaler):
+            return False
+        return np.array_equal(self.shift, other.shift) and np.array_equal(self.scale, other.scale)
+
     @classmethod
     def from_time(cls, t) -> "Scaler":
         """Create a Scaler from a time array
@@ -55,6 +60,11 @@ class MultiBandScaler(Scaler):
     per_band_shift: Dict[str, float]
     """Shift to apply to each band"""
 
+    def __eq__(self, other):
+        if not isinstance(other, MultiBandScaler):
+            return False
+        return super().__eq__(other) and self.per_band_shift == other.per_band_shift
+
     @classmethod
     def from_flux(cls, flux, band, *, with_baseline: bool) -> "MultiBandScaler":
         """Create a Scaler from a flux array.
@@ -62,6 +72,9 @@ class MultiBandScaler(Scaler):
         It uses standard deviation for the scale. For the shift, it is either
         zero (`with_baseline=False`) or the mean of each band otherwise.
         """
+        flux = np.asarray(flux)
+        band = np.asarray(band)
+
         uniq_bands = np.unique(band)
         per_band_shift = dict.fromkeys(uniq_bands, 0.0)
         shift_array = np.zeros(len(flux))
