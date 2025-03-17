@@ -195,17 +195,18 @@ def median_dt(t, band):
     med_dt = np.median(dt)
     return med_dt
 
+
 def t0_and_weighted_centroid_sigma(t, m, sigma):
-        # To avoid crashing on all-negative data
-        mc = m - np.min(m)
+    # To avoid crashing on all-negative data
+    mc = m - np.min(m)
 
-        # Peak position as weighted centroid of everything above median
-        idx = m > np.median(m)
-        t0 = np.sum(t[idx] * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx])
+    # Peak position as weighted centroid of everything above median
+    idx = m > np.median(m)
+    t0 = np.sum(t[idx] * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx])
 
-        # Weighted centroid sigma
-        dt = np.sqrt(np.sum((t[idx] - t0) ** 2 * (mc[idx]) / sigma[idx]) / np.sum(mc[idx] / sigma[idx]))
-        return t0, dt
+    # Weighted centroid sigma
+    dt = np.sqrt(np.sum((t[idx] - t0) ** 2 * (mc[idx]) / sigma[idx]) / np.sum(mc[idx] / sigma[idx]))
+    return t0, dt
 
 
 temperature_terms = {
