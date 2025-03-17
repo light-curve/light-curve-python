@@ -76,7 +76,7 @@ class ConstantTemperatureTerm(BaseTemperatureTerm):
     @staticmethod
     def limits(t, m, sigma, band):
         limits = {}
-        limits["T"] = (1e2, 2e6)  # K
+        limits["T"] = (1e3, 2e6)  # K
 
         return limits
 
@@ -111,24 +111,24 @@ class SigmoidTemperatureTerm(BaseTemperatureTerm):
 
     @staticmethod
     def initial_guesses(t, m, sigma, band):
-        med_dt = median_dt(t, band)
+        _, dt = t0_and_weighted_centroid_sigma(t, m, sigma)
 
         initial = {}
         initial["Tmin"] = 7000.0
         initial["Tmax"] = 10000.0
-        initial["t_color"] = 10 * med_dt
+        initial["t_color"] = 2 * dt
 
         return initial
 
     @staticmethod
     def limits(t, m, sigma, band):
         t_amplitude = np.ptp(t)
-        med_dt = median_dt(t, band)
+        _, dt = t0_and_weighted_centroid_sigma(t, m, sigma)
 
         limits = {}
         limits["Tmin"] = (1e3, 2e6)  # K
         limits["Tmax"] = (1e3, 2e6)  # K
-        limits["t_color"] = (2 * med_dt, 10 * t_amplitude)
+        limits["t_color"] = (dt / 3, 10 * t_amplitude)
 
         return limits
 
@@ -163,12 +163,12 @@ class DelayedSigmoidTemperatureTerm(BaseTemperatureTerm):
 
     @staticmethod
     def initial_guesses(t, m, sigma, band):
-        med_dt = median_dt(t, band)
+        _, dt = t0_and_weighted_centroid_sigma(t, m, sigma)
 
         initial = {}
         initial["Tmin"] = 7000.0
         initial["Tmax"] = 10000.0
-        initial["t_color"] = 10 * med_dt
+        initial["t_color"] = 2 * dt
         initial["t_delay"] = 0.0
 
         return initial
@@ -176,12 +176,12 @@ class DelayedSigmoidTemperatureTerm(BaseTemperatureTerm):
     @staticmethod
     def limits(t, m, sigma, band):
         t_amplitude = np.ptp(t)
-        med_dt = median_dt(t, band)
+        _, dt = t0_and_weighted_centroid_sigma(t, m, sigma)
 
         limits = {}
         limits["Tmin"] = (1e3, 2e6)  # K
         limits["Tmax"] = (1e3, 2e6)  # K
-        limits["t_color"] = (2 * med_dt, 10 * t_amplitude)
+        limits["t_color"] = (dt / 3, 10 * t_amplitude)
         limits["t_delay"] = (-t_amplitude, t_amplitude)
 
         return limits
@@ -194,6 +194,18 @@ def median_dt(t, band):
         dt += list(t[band == b][1:] - t[band == b][:-1])
     med_dt = np.median(dt)
     return med_dt
+
+def t0_and_weighted_centroid_sigma(t, m, sigma):
+        # To avoid crashing on all-negative data
+        mc = m - np.min(m)
+
+        # Peak position as weighted centroid of everything above median
+        idx = m > np.median(m)
+        t0 = np.sum(t[idx] * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx])
+
+        # Weighted centroid sigma
+        dt = np.sqrt(np.sum((t[idx] - t0) ** 2 * (mc[idx]) / sigma[idx]) / np.sum(mc[idx] / sigma[idx]))
+        return t0, dt
 
 
 temperature_terms = {
