@@ -102,12 +102,12 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
         t_amplitude = np.ptp(t)
         m_amplitude = np.ptp(m)
 
-        mean_dt = np.median(t[1:] - t[:-1])
+        _, dt = t0_and_weighted_centroid_sigma(t, m, sigma)
 
         limits = {}
         limits["reference_time"] = (np.min(t) - 10 * t_amplitude, np.max(t) + 10 * t_amplitude)
         limits["amplitude"] = (0.0, 20 * m_amplitude)
-        limits["rise_time"] = (0.1 * mean_dt, 10 * t_amplitude)
+        limits["rise_time"] = (dt / 100, 10 * t_amplitude)
 
         return limits
 
@@ -147,24 +147,13 @@ class BazinBolometricTerm(BaseBolometricTerm):
 
     @staticmethod
     def initial_guesses(t, m, sigma, band):
-        A = np.ptp(m)
+        A = 1.5 * max(np.max(m), np.ptp(m))
 
-        mc = m - np.min(m)  # To avoid crashing on all-negative data
-
-        # Naive peak position from the highest point
-        t0 = t[np.argmax(m)]
-        # Peak position as weighted centroid of everything above median
-        idx = m > np.median(m)
-        # t0 = np.sum(t[idx] * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx])
-        # Weighted centroid sigma
-        dt = np.sqrt(np.sum((t[idx] - t0) ** 2 * (mc[idx]) / sigma[idx]) / np.sum(mc[idx] / sigma[idx]))
+        t0, dt = t0_and_weighted_centroid_sigma(t, m, sigma)
 
         # Empirical conversion of sigma to rise/fall times
-        rise_time = dt / 2
-        fall_time = dt / 2
-
-        # Compensate for the difference between reference_time and peak position
-        t0 -= np.log(fall_time / rise_time) * rise_time * fall_time / (rise_time + fall_time)
+        rise_time = dt
+        fall_time = dt
 
         initial = {}
         initial["reference_time"] = t0
@@ -178,14 +167,13 @@ class BazinBolometricTerm(BaseBolometricTerm):
     def limits(t, m, sigma, band):
         t_amplitude = np.ptp(t)
         m_amplitude = np.ptp(m)
-
-        mean_dt = np.median(t[1:] - t[:-1])
+        _, dt = t0_and_weighted_centroid_sigma(t, m, sigma)
 
         limits = {}
         limits["reference_time"] = (np.min(t) - 10 * t_amplitude, np.max(t) + 10 * t_amplitude)
         limits["amplitude"] = (0.0, 20 * m_amplitude)
-        limits["rise_time"] = (0.1 * mean_dt, 10 * t_amplitude)
-        limits["fall_time"] = (0.1 * mean_dt, 10 * t_amplitude)
+        limits["rise_time"] = (dt / 100, 10 * t_amplitude)
+        limits["fall_time"] = (dt / 100, 10 * t_amplitude)
 
         return limits
 
@@ -198,7 +186,7 @@ class BazinBolometricTerm(BaseBolometricTerm):
 class LinexpBolometricTerm(BaseBolometricTerm):
     """Linexp function, symmetric form. Generated using a prototype version of Multi-view
     Symbolic Regression (Russeil et al. 2024, https://arxiv.org/abs/2402.04298) on
-    a SLSN ZTF light curve (https://ztf.snad.space/dr17/view/821207100004043)"""
+    a SLSN ZTF light curve (https://ztf.snad.space/dr17/view/821207100004043). Careful not very stable guesses/limits"""
 
     @staticmethod
     def parameter_names():
@@ -226,6 +214,7 @@ class LinexpBolometricTerm(BaseBolometricTerm):
     def initial_guesses(t, m, sigma, band):
         A = np.ptp(m)
         med_dt = median_dt(t, band)
+        t0, dt = t0_and_weighted_centroid_sigma(t, m, sigma)
 
         # Compute points after or before maximum
         peak_time = t[np.argmax(m)]
@@ -276,7 +265,6 @@ class DoublexpBolometricTerm(BaseBolometricTerm):
     @staticmethod
     def value(t, t0, amplitude, time1, time2, p):
         dt = t - t0
-
         result = np.zeros_like(dt)
 
         # To avoid numerical overflows
@@ -290,22 +278,19 @@ class DoublexpBolometricTerm(BaseBolometricTerm):
 
     @staticmethod
     def initial_guesses(t, m, sigma, band):
-        A = np.ptp(m)
-        med_dt = median_dt(t, band)
+        A = max(np.max(m), np.ptp(m))
+        t0, dt = t0_and_weighted_centroid_sigma(t, m, sigma)
 
-        # Naive peak position from the highest point
-        t0 = t[np.argmax(m)]
-
-        # Empirical conversion of sigma to rise/fall times
-        time1 = 50 * med_dt
-        time2 = 50 * med_dt
+        # Empirical conversion of sigma to times
+        time1 = 2 * dt
+        time2 = 2 * dt
 
         initial = {}
         initial["reference_time"] = t0
         initial["amplitude"] = A
         initial["time1"] = time1
         initial["time2"] = time2
-        initial["p"] = 0.1
+        initial["p"] = 1
 
         return initial
 
@@ -313,14 +298,14 @@ class DoublexpBolometricTerm(BaseBolometricTerm):
     def limits(t, m, sigma, band):
         t_amplitude = np.ptp(t)
         m_amplitude = np.ptp(m)
-        med_dt = median_dt(t, band)
+        _, dt = t0_and_weighted_centroid_sigma(t, m, sigma)
 
         limits = {}
         limits["reference_time"] = (np.min(t) - 10 * t_amplitude, np.max(t) + 10 * t_amplitude)
         limits["amplitude"] = (0.0, 10 * m_amplitude)
-        limits["time1"] = (med_dt, 2 * t_amplitude)
-        limits["time2"] = (med_dt, 2 * t_amplitude)
-        limits["p"] = (1e-4, 10)
+        limits["time1"] = (dt / 10, 2 * t_amplitude)
+        limits["time2"] = (dt / 10, 2 * t_amplitude)
+        limits["p"] = (1e-2, 100)
 
         return limits
 
@@ -336,11 +321,25 @@ class DoublexpBolometricTerm(BaseBolometricTerm):
 
 def median_dt(t, band):
     # Compute the median distance between points in each band
+    # Caution when using this method as it might be strongly biaised because of ZTF high cadence a given day.
     dt = []
     for b in np.unique(band):
         dt += list(t[band == b][1:] - t[band == b][:-1])
     med_dt = np.median(dt)
     return med_dt
+
+
+def t0_and_weighted_centroid_sigma(t, m, sigma):
+    # To avoid crashing on all-negative data
+    mc = m - np.min(m)
+
+    # Peak position as weighted centroid of everything above median
+    idx = m > np.median(m)
+    t0 = np.sum(t[idx] * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx])
+
+    # Weighted centroid sigma
+    dt = np.sqrt(np.sum((t[idx] - t0) ** 2 * (mc[idx]) / sigma[idx]) / np.sum(mc[idx] / sigma[idx]))
+    return t0, dt
 
 
 bolometric_terms = {
