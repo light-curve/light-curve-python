@@ -31,6 +31,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 --
 
+## [0.10.2] 2025-03-25
+
+### Fixed
+
+- Restored minimum supported Rust version (MSRV) compatibility for v1.67+
+
 ## [0.10.1] 2025-03-25
 
 ### Changed
