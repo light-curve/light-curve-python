@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
---
+- Bump both `PyO3` and `rust-numpy` to v0.24 https://github.com/light-curve/light-curve-python/pull/499
 
 ### Deprecated
 
@@ -41,7 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Experimental Feature Breaking**: change parameter limits for Rainbow https://github.com/light-curve/light-curve-python/pull/494
+- **Experimental Feature Breaking**: change parameter limits for
+  Rainbow https://github.com/light-curve/light-curve-python/pull/494
 
 ### Removed
 
@@ -50,7 +51,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Rainbow multi-band scaler didn't work with list inputs https://github.com/light-curve/light-curve-python/issues/492 https://github.com/light-curve/light-curve-python/pull/493
+- Rainbow multi-band scaler didn't work with list
+  inputs https://github.com/light-curve/light-curve-python/issues/492 https://github.com/light-curve/light-curve-python/pull/493
 
 ## [0.10.0] 2025-01-07
 
