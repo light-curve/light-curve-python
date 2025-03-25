@@ -13,11 +13,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Breaking experimental feature**: change parameter limits for Rainbow https://github.com/light-curve/light-curve-python/pull/494
+--
 
 ### Deprecated
 
 --
+
+### Removed
+
+--
+
+### Fixed
+
+--
+
+### Security
+
+--
+
+## [0.10.1] 2025-03-25
+
+### Changed
+
+- **Experimental Feature Breaking**: change parameter limits for Rainbow https://github.com/light-curve/light-curve-python/pull/494
 
 ### Removed
 
@@ -27,10 +45,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Rainbow multi-band scaler didn't work with list inputs https://github.com/light-curve/light-curve-python/issues/492 https://github.com/light-curve/light-curve-python/pull/493
-
-### Security
-
---
 
 ## [0.10.0] 2025-01-07
 
