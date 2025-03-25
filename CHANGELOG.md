@@ -37,7 +37,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Restored minimum supported Rust version (MSRV) compatibility for v1.67+
 
-## [0.10.1] 2025-03-25
+## [0.10.1] 2025-03-25 (DELETED)
+
+Release is deleted from PyPI and has never been released on conda-forge.
+The reason is a bug fixed in 0.10.2.
 
 ### Changed
 
