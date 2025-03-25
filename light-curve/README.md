@@ -53,6 +53,9 @@ We stopped publishing all PyPy wheels (https://github.com/light-curve/light-curv
 and the PPC64le CPython glibc wheel (https://github.com/light-curve/light-curve-python/issues/479),
 please feel free to open an issue if you need any of them.
 
+[Free-threading Python](https://docs.python.org/3.13/whatsnew/3.13.html#free-threaded-cpython) is supported when built from source.
+No pre-built distributions are provided so far, please comment on these issues if you need them: [PyPI binary wheel issue](https://github.com/light-curve/light-curve-python/issues/500), [conda-forge package issue](https://github.com/conda-forge/light-curve-python-feedstock/issues/11).
+
 See [bellow](#build-from-source) for the details on how to build the package from the source code.
 
 ## Feature evaluators
