@@ -32,13 +32,13 @@ def test_noisy_with_baseline():
 
     actual = feature(t, flux, sigma=flux_err, band=band)
 
-    #import matplotlib.pyplot as plt
-    #plt.scatter(t, flux, s=5, label="data")
-    #plt.errorbar(t, flux, yerr=flux_err, ls="none", capsize=1)
-    #plt.plot(t, feature.model(t, band, *expected), "x", label="expected")
-    #plt.plot(t, feature.model(t, band, *actual), "*", label="actual")
-    #plt.legend()
-    #plt.show()
+    # import matplotlib.pyplot as plt
+    # plt.scatter(t, flux, s=5, label="data")
+    # plt.errorbar(t, flux, yerr=flux_err, ls="none", capsize=1)
+    # plt.plot(t, feature.model(t, band, *expected), "x", label="expected")
+    # plt.plot(t, feature.model(t, band, *actual), "*", label="actual")
+    # plt.legend()
+    # plt.show()
 
     np.testing.assert_allclose(feature.model(t, band, *expected), feature.model(t, band, *actual), rtol=0.1)
 
@@ -103,21 +103,23 @@ def test_noisy_all_functions_combination():
 
             actual = feature(t, flux, sigma=flux_err, band=band)
 
-            #import matplotlib.pyplot as plt
-            #plt.figure()
-            #plt.scatter(t, flux, s=5, label="data")
-            #plt.errorbar(t, flux, yerr=flux_err, ls="none", capsize=1)
-            #plt.plot(t, feature.model(t, band, *expected), "x", label="expected")
-            #plt.plot(t, feature.model(t, band, *actual), "*", label="actual")
-            #plt.ylim(-.05, flux.max()+0.1)
-            #plt.legend()
-            #plt.show()
+            # import matplotlib.pyplot as plt
+            # plt.figure()
+            # plt.scatter(t, flux, s=5, label="data")
+            # plt.errorbar(t, flux, yerr=flux_err, ls="none", capsize=1)
+            # plt.plot(t, feature.model(t, band, *expected), "x", label="expected")
+            # plt.plot(t, feature.model(t, band, *actual), "*", label="actual")
+            # plt.ylim(-.05, flux.max()+0.1)
+            # plt.legend()
+            # plt.show()
 
-            #The first test might be too rigid. The second test allow for good local minima to be accepted
+            # The first test might be too rigid. The second test allow for good local minima to be accepted
             np.testing.assert_allclose(actual[:-1], expected[:-1], rtol=0.1)
-            
+
             # If either the absolute or the relative test passes, it is accepted. It prevents linexp, which include a flat exactly 0 baseline to not pass the test because of very minor parameter differences that lead to a major relative difference.
-            np.testing.assert_allclose(feature.model(t, band, *expected), feature.model(t, band, *actual), rtol=0.1, atol=0.1, strict=False)
+            np.testing.assert_allclose(
+                feature.model(t, band, *expected), feature.model(t, band, *actual), rtol=0.1, atol=0.1, strict=False
+            )
 
 
 def test_scaler_from_flux_list_input():
