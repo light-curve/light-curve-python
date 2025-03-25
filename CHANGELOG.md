@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
---
+- **Breaking experimental feature**: change parameter limits for Rainbow https://github.com/light-curve/light-curve-python/pull/494
 
 ### Deprecated
 
