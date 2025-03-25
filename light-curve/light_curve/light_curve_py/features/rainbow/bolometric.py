@@ -107,7 +107,7 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
         limits = {}
         limits["reference_time"] = (np.min(t) - 10 * t_amplitude, np.max(t) + 10 * t_amplitude)
         limits["amplitude"] = (0.0, 20 * m_amplitude)
-        limits["rise_time"] = (dt/100, 10 * t_amplitude)
+        limits["rise_time"] = (dt / 100, 10 * t_amplitude)
 
         return limits
 
@@ -169,12 +169,11 @@ class BazinBolometricTerm(BaseBolometricTerm):
         m_amplitude = np.ptp(m)
         _, dt = t0_and_weighted_centroid_sigma(t, m, sigma)
 
-
         limits = {}
         limits["reference_time"] = (np.min(t) - 10 * t_amplitude, np.max(t) + 10 * t_amplitude)
         limits["amplitude"] = (0.0, 20 * m_amplitude)
-        limits["rise_time"] = (dt/100, 10 * t_amplitude)
-        limits["fall_time"] = (dt/100, 10 * t_amplitude)
+        limits["rise_time"] = (dt / 100, 10 * t_amplitude)
+        limits["fall_time"] = (dt / 100, 10 * t_amplitude)
 
         return limits
 
@@ -304,8 +303,8 @@ class DoublexpBolometricTerm(BaseBolometricTerm):
         limits = {}
         limits["reference_time"] = (np.min(t) - 10 * t_amplitude, np.max(t) + 10 * t_amplitude)
         limits["amplitude"] = (0.0, 10 * m_amplitude)
-        limits["time1"] = (dt/10, 2 * t_amplitude)
-        limits["time2"] = (dt/10, 2 * t_amplitude)
+        limits["time1"] = (dt / 10, 2 * t_amplitude)
+        limits["time2"] = (dt / 10, 2 * t_amplitude)
         limits["p"] = (1e-2, 100)
 
         return limits
@@ -329,17 +328,19 @@ def median_dt(t, band):
     med_dt = np.median(dt)
     return med_dt
 
+
 def t0_and_weighted_centroid_sigma(t, m, sigma):
-        # To avoid crashing on all-negative data
-        mc = m - np.min(m)
+    # To avoid crashing on all-negative data
+    mc = m - np.min(m)
 
-        # Peak position as weighted centroid of everything above median
-        idx = m > np.median(m)
-        t0 = np.sum(t[idx] * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx])
+    # Peak position as weighted centroid of everything above median
+    idx = m > np.median(m)
+    t0 = np.sum(t[idx] * m[idx] / sigma[idx]) / np.sum(m[idx] / sigma[idx])
 
-        # Weighted centroid sigma
-        dt = np.sqrt(np.sum((t[idx] - t0) ** 2 * (mc[idx]) / sigma[idx]) / np.sum(mc[idx] / sigma[idx]))
-        return t0, dt
+    # Weighted centroid sigma
+    dt = np.sqrt(np.sum((t[idx] - t0) ** 2 * (mc[idx]) / sigma[idx]) / np.sum(mc[idx] / sigma[idx]))
+    return t0, dt
+
 
 bolometric_terms = {
     "sigmoid": SigmoidBolometricTerm,
