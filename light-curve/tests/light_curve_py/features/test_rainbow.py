@@ -15,10 +15,10 @@ def test_noisy_with_baseline():
     fall_time = 30.0
     Tmin = 5e3
     Tmax = 15e3
-    k_sig = 4.0
+    t_color = 10
     baselines = {b: 0.3 * amplitude + rng.exponential(scale=0.3 * amplitude) for b in band_wave_aa}
 
-    expected = [reference_time, amplitude, rise_time, fall_time, Tmin, Tmax, k_sig, *baselines.values(), 1.0]
+    expected = [reference_time, amplitude, rise_time, fall_time, Tmin, Tmax, t_color, *baselines.values(), 1.0]
 
     feature = RainbowFit.from_angstrom(band_wave_aa, with_baseline=True, temperature="sigmoid", bolometric="bazin")
 
@@ -32,15 +32,15 @@ def test_noisy_with_baseline():
 
     actual = feature(t, flux, sigma=flux_err, band=band)
 
-    # import matplotlib.pyplot as plt
-    # plt.scatter(t, flux, s=5, label="data")
-    # plt.errorbar(t, flux, yerr=flux_err, ls="none", capsize=1)
-    # plt.plot(t, feature.model(t, band, *expected), "x", label="expected")
-    # plt.plot(t, feature.model(t, band, *actual), "*", label="actual")
-    # plt.legend()
-    # plt.show()
+    #import matplotlib.pyplot as plt
+    #plt.scatter(t, flux, s=5, label="data")
+    #plt.errorbar(t, flux, yerr=flux_err, ls="none", capsize=1)
+    #plt.plot(t, feature.model(t, band, *expected), "x", label="expected")
+    #plt.plot(t, feature.model(t, band, *actual), "*", label="actual")
+    #plt.legend()
+    #plt.show()
 
-    np.testing.assert_allclose(actual[:-1], expected[:-1], rtol=0.1)
+    np.testing.assert_allclose(feature.model(t, band, *expected), feature.model(t, band, *actual), rtol=0.1)
 
 
 def test_noisy_all_functions_combination():
@@ -103,17 +103,21 @@ def test_noisy_all_functions_combination():
 
             actual = feature(t, flux, sigma=flux_err, band=band)
 
-            # import matplotlib.pyplot as plt
-            # plt.figure()
-            # plt.scatter(t, flux, s=5, label="data")
-            # plt.errorbar(t, flux, yerr=flux_err, ls="none", capsize=1)
-            # plt.plot(t, feature.model(t, band, *expected), "x", label="expected")
-            # plt.plot(t, feature.model(t, band, *actual), "*", label="actual")
-            # plt.ylim(-.05, flux.max()+0.1)
-            # plt.legend()
-            # plt.show()
+            #import matplotlib.pyplot as plt
+            #plt.figure()
+            #plt.scatter(t, flux, s=5, label="data")
+            #plt.errorbar(t, flux, yerr=flux_err, ls="none", capsize=1)
+            #plt.plot(t, feature.model(t, band, *expected), "x", label="expected")
+            #plt.plot(t, feature.model(t, band, *actual), "*", label="actual")
+            #plt.ylim(-.05, flux.max()+0.1)
+            #plt.legend()
+            #plt.show()
 
+            #The first test might be too rigid. The second test allow for good local minima to be accepted
             np.testing.assert_allclose(actual[:-1], expected[:-1], rtol=0.1)
+            
+            # If either the absolute or the relative test passes, it is accepted. It prevents linexp, which include a flat exactly 0 baseline to not pass the test because of very minor parameter differences that lead to a major relative difference.
+            np.testing.assert_allclose(feature.model(t, band, *expected), feature.model(t, band, *actual), rtol=0.1, atol=0.1, strict=False)
 
 
 def test_scaler_from_flux_list_input():
