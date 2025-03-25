@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_minor: [ '9', '10', '11', '12', '13' ]
+        python_minor: [ '9', '10', '11', '12', '13', '13t' ]
         os: [ ubuntu-latest ]
         # Just a single ARM worker to be sure that it works
         include:
@@ -193,22 +193,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'
-      - name: Set up Python 3.10
+      - name: Set up Python 3.13t
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Set up Python 3.13
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
+          python-version: '3.13t'
       - name: Get minimum supported Rust version
         run: echo "::set-output name=msrv::$(grep '^rust-version = ' Cargo.toml | grep -o '[0-9.]\+')"
         id: get_msrv
@@ -228,4 +216,5 @@ jobs:
       - name: Build
         run: |
           rustup default ${{ steps.get_msrv.outputs.msrv }}
-          maturin build --find-interpreter
+          maturin build -i python3.9
+          maturin build -i python3.13t
