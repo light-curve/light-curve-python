@@ -1,6 +1,7 @@
 import copy
 import inspect
 import pickle
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import pytest
@@ -174,7 +175,24 @@ def test_many_vs_call(feature):
 
     call = np.stack([feature(*lc, sorted=True) for lc in lcs])
     many = feature.many(lcs, sorted=True, n_jobs=2)
-    assert_array_equal(many, call)
+    assert_array_equal(call, many)
+
+    # Test with Python threads to ensure we have no problems on the free-threading CPython
+    with ThreadPoolExecutor(2) as pool:
+        futures = [pool.submit(feature, *lc, sorted=True) for lc in lcs]
+        call_threads = np.stack([f.result() for f in futures])
+        del futures
+    assert_array_equal(call, call_threads)
+
+    n_lcs_per_job = 4
+    with ThreadPoolExecutor(2) as pool:
+        futures = [
+            pool.submit(feature.many, lcs[i : i + n_lcs_per_job], sorted=True, n_jobs=2)
+            for i in range(0, n_lc, n_lcs_per_job)
+        ]
+        many_threads = np.concatenate([f.result() for f in futures])
+        del futures
+    assert_array_equal(call, many_threads)
 
 
 def test_fill_value_not_enough_observations():
