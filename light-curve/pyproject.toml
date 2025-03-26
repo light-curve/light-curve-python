@@ -62,6 +62,19 @@ dev = [
     "black",
     "ruff",
 ]
+# cesium and iminuit don't support free-threading yet
+dev-free-threading = [
+    "pytest",
+    "markdown-pytest",
+    "pytest-benchmark",
+    "pytest-subtests>=0.10",
+    "numpy",
+    "scipy",
+    "joblib",
+    "pandas",
+    "black",
+    "ruff",
+]
 
 [tool.maturin]
 # It asks to use Cargo.lock to make the build reproducible
@@ -148,10 +161,10 @@ markers = [
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py{39,310,311,312,313}-{base,test}
+envlist = py{39,310,311,312,313,313t}-{base,test}
 isolated_build = True
 
-[testenv:py{39,310,311,312,313}-base]
+[testenv:py{39,310,311,312,313,313t}-base]
 change_dir = {envtmpdir}
 extras =
 commands =
@@ -163,6 +176,17 @@ set_env =
 extras = dev
 commands =
     pytest README.md tests/ light_curve/
+    ruff check .
+set_env =
+    CARGO_TARGET_DIR = {tox_root}/target
+
+[testenv:py313t-test]
+extras = dev-free-threading
+commands =
+    pytest README.md tests/ light_curve/ \
+        --ignore tests/test_w_bench.py \
+        --ignore=tests/light_curve_py/features/test_rainbow.py \
+        --deselect=README.md::test_rainbow_fit_example
     ruff check .
 set_env =
     CARGO_TARGET_DIR = {tox_root}/target

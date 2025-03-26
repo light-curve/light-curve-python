@@ -26,7 +26,7 @@ static GLOBAL_ALLOCATOR: MiMalloc = MiMalloc;
 ///
 /// dm-lg(dt) maps generator is represented by `DmDt` class, while all other classes are
 /// feature extractors
-#[pymodule]
+#[pymodule(gil_used = false)]
 fn light_curve(py: Python, m: Bound<PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
 
