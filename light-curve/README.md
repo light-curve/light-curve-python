@@ -53,8 +53,10 @@ We stopped publishing all PyPy wheels (https://github.com/light-curve/light-curv
 and the PPC64le CPython glibc wheel (https://github.com/light-curve/light-curve-python/issues/479),
 please feel free to open an issue if you need any of them.
 
-[Free-threading Python](https://docs.python.org/3.13/whatsnew/3.13.html#free-threaded-cpython) is supported when built from source.
+[Free-threaded Python](https://docs.python.org/3.13/whatsnew/3.13.html#free-threaded-cpython) is supported when built from source.
 No pre-built distributions are provided so far, please comment on these issues if you need them: [PyPI binary wheel issue](https://github.com/light-curve/light-curve-python/issues/500), [conda-forge package issue](https://github.com/conda-forge/light-curve-python-feedstock/issues/11).
+Notably, for expensive features, the performance with the GIL-enabled interpreter and the `.many()` method provided by the package is on par with the free-threaded interpreter and Python threads for parallelism.
+However, for inexpensive computations, `.many()` still significantly reduces the overhead caused by the Rust–Python interaction and shows better performance.
 
 See [bellow](#build-from-source) for the details on how to build the package from the source code.
 
