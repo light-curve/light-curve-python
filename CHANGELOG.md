@@ -9,10 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Mark the module as no-GIL, which enables free-threaded Python (can be built from source, not provided so far) https://github.com/light-curve/light-curve-python/pull/499
+- Mark the module as no-GIL, which enables free-threaded Python (can be built from source, not provided so far via PyPI/conda) https://github.com/light-curve/light-curve-python/pull/499
 
 ### Changed
 
+- **PyPI wheels change**: bump Musl PyPI wheels compatibility from musllinux 1.1 to 1.2 https://github.com/light-curve/light-curve-python/pull/503
 - Bump both `PyO3` and `rust-numpy` to v0.24 https://github.com/light-curve/light-curve-python/pull/499
 
 ### Deprecated
