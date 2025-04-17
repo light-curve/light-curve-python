@@ -20,12 +20,11 @@ conda install -c conda-forge light-curve-python
 features.
 We also provide `light-curve-python` package which is just an "alias" to the main `light-curve[full]` package.
 
-Minimum supported Python version is 3.9.
-We provide binary CPython wheels via [PyPi](https://pypi.org/project/light-curve/)
-and [Anaconda](https://anaconda.org) for a number of platforms and architectures.
-We also provide binary wheels for stable CPython ABI, so the package is guaranteed to work with all future
-CPython3
-versions.
+The minimum supported Python version is 3.9.  
+We provide binary CPython distributions via [PyPI](https://pypi.org/project/light-curve/)  
+and [Anaconda](https://anaconda.org/conda-forge/light-curve-python) for various platforms and architectures.  
+On PyPI, we provide binary wheels for the stable CPython ABI, ensuring compatibility with future  
+CPython 3 versions.
 
 ### Support matrix
 
@@ -33,18 +32,21 @@ versions.
 |-------------|-------------------|--------------------------------|-----------------------|----------------------------------------------------------------------|
 | **x86-64**  | PyPI (MKL), conda | PyPI (MKL)                     | PyPI macOS 13+, conda | PyPI, conda (both no Ceres, no GSL)                                  |
 | **i686**    | src               | src                            | —                     | not tested                                                           |
-| **aarch64** | wheel             | wheel                          | PyPI macOS 14+, conda | not tested                                                           |
+| **aarch64** | PyPI              | PyPI                           | PyPI macOS 14+, conda | not tested                                                           |
 | **ppc64le** | src               | not tested (no Rust toolchain) | —                     | —                                                                    |
 
-- "PyPI" / "conda": binary wheel/package is available on pypi.org / anaconda.org, local building
-  is not required for the platform, the only pre-requirement is a recent `pip` version or
-  conda. For Linux x86-64 PyPI's wheel we provide binary wheels built with Intel MKL
-  for better periodogram performance, which is not a default build option. For Windows x86-64
-  we provide wheel with no Ceres and no GSL support, which is not a default build option.
-- "src": the package is confirmed to be built and pass unit tests locally, but testing and package
-  building is not supported by CI. See ["Build from source"] section bellow for the details.
-- "not tested": building from the source code is not tested, please report us building status via
-  issue/PR/email.
+- **PyPI / conda**: A binary wheel or package is available on pypi.org or anaconda.org.  
+  Local building is not required for the platform; the only prerequisite is a recent version of  
+  `pip` or `conda`. For Linux x86-64, PyPI binary wheels are built with Intel MKL  
+  for improved periodogram performance, which is not a default build option.  
+  For Windows x86-64, all distributions exclude Ceres and GSL support, which is also not a default build option.
+- **src**: The package has been confirmed to build and pass unit tests locally,  
+  but testing and package building are not supported by CI.  
+  See the ["Build from source"] section below for details.
+  Please open an issue or pull request if you encounter any problems building
+  the package or would like us to distribute it for these platforms.
+- **not tested**: Building from source has not been tested.  
+  Please report build status via issue, PR, or email.
 
 macOS wheels require relatively new OS versions, please open an issue if you require support of older Macs,
 see https://github.com/light-curve/light-curve-python/issues/376 for the details.
@@ -55,8 +57,8 @@ please feel free to open an issue if you need any of them.
 
 [Free-threaded Python](https://docs.python.org/3.13/whatsnew/3.13.html#free-threaded-cpython) is supported when built from source.
 No pre-built distributions are provided so far, please comment on these issues if you need them: [PyPI binary wheel issue](https://github.com/light-curve/light-curve-python/issues/500), [conda-forge package issue](https://github.com/conda-forge/light-curve-python-feedstock/issues/11).
-Notably, for expensive features, the performance with the GIL-enabled interpreter and the `.many()` method provided by the package is on par with the free-threaded interpreter and Python threads for parallelism.
-However, for inexpensive computations, `.many()` still significantly reduces the overhead caused by the Rust–Python interaction and shows better performance.
+Notably, for expensive features, the performance with the GIL-enabled interpreter and the `.many()` method provided by the feature extractors is on par with the free-threaded interpreter and Python threads for parallelism.
+However, for inexpensive feature extractors, `.many()` still significantly reduces the overhead caused by the Rust–Python interaction and shows better performance.
 
 See [bellow](#build-from-source) for the details on how to build the package from the source code.
 
@@ -666,10 +668,9 @@ assert_array_equal(actual, desired)
 
 ### Prepare environment
 
-Install Rust toolchain and Python 3.9+.
+Install a recent Rust toolchain and Python 3.9 or higher.
 It is recommended to use [`rustup`](https://rustup.rs/) to install Rust toolchain and update it with
-`rustup update`
-periodically.
+`rustup update` periodically.
 
 Clone the code, create and activate a virtual environment.
 
@@ -680,7 +681,7 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-Install the package in editable mode (see more details about building from
+Install the package in the editable mode (see more details about building from
 source [bellow](#build-from-source)).
 
 ```bash
@@ -691,15 +692,13 @@ maturin develop --extras=dev
 ```
 
 Next time you can just run `source venv/bin/activate` to activate the environment and `maturin develop` to
-rebuild
-Rust code if changed.
-You don't need to reinstall the package if you change Python code.
-You also don't need to add `--extras=dev` next time, it is needed only to install development dependencies.
+rebuild Rust code if changed.
+You don't need to re-run `maturin develop` the package if you change Python code only.
+You also don't need to add `--extras=dev` next time, it is needed only to install the development dependencies.
 
 You are also encouraged to install `pre-commit` hooks to keep the codebase clean.
 You can get it with `pip` (see the [documentation](https://pre-commit.com/#install) for other ways), and then
-install
-the hooks with
+install the hooks with
 
 ```bash
 pre-commit install
@@ -733,39 +732,32 @@ recommended to use `--no-default-features` to avoid building unnecessary depende
 
 The following features are available:
 
-- `abi3` (default) - enables CPython ABI3 compatibility, turn it off for other interpreters or if you believe
-  that code
-  would be faster without it (our benchmarks show that it is not the case).
-- `ceres-source` (default) - enables [Ceres solver](http://ceres-solver.org/) support, and builds it from
-  sources. You
-  need C++ compiler and cmake available on your system. Known to not work on Windows. It is used as an
-  optional
-  optimization alrotithm for `BazinFit` and `VillarFit`.
-- `ceres-system` - enables Ceres solver support, but links with a dynamic library. You need to have a
-  compatible version
-  of Ceres installed on your system.
-- `fftw-source` (default) - enables [FFTW](http://www.fftw.org/) support, and builds it from sources. You need
-  C
-  compiler available on your system. Note that at least one of `fftw-*` features must be activated.
-- `fftw-system` - enables FFTW support, but links with a dynamic library. You need to have a compatible
-  version of FFTW
-  installed on your system.
-- `fftw-mkl` - enables FFTW support with Intel MKL backend. Intel MKL will be downloaded automatically during
-  the build.
-  Highly recommended for Intel CPUs to achieve up to 2x faster "fast" periodogram calculation.
-- `gsl` (default) - enables [GNU scientific library](https://www.gnu.org/software/gsl/) support. You need a
-  compatible
-  version of GSL installed on your system. It is used as an optional optimization algorithm for `BazinFit` and
-  `VillarFit`.
+- `abi3` (default) - enables CPython ABI3 compatibility. Turn it off for other interpreters or if you believe
+  the code would be faster without it (our benchmarks show that is not the case). ABI3 is not supported
+  by free-threaded CPython or PyPy.
+- `ceres-source` (default) - enables [Ceres solver](http://ceres-solver.org/) support and builds it from
+  source. You need a C++ compiler and CMake available on your system. Known to not work on Windows.
+  It is used as an optional optimization algorithm for `BazinFit` and `VillarFit`.
+- `ceres-system` - enables Ceres solver support but links with a dynamic library. You need to have a
+  compatible version of Ceres installed on your system.
+- `fftw-source` (default) - enables [FFTW](http://www.fftw.org/) support and builds it from source. You need
+  a C compiler available on your system. Note that at least one of the `fftw-*` features must be activated.
+- `fftw-system` - enables FFTW support but links with a dynamic library. You need to have a compatible
+  version of FFTW installed on your system.
+- `fftw-mkl` - enables FFTW support with the Intel MKL backend. Intel MKL will be downloaded automatically
+  during the build. Highly recommended for Intel CPUs to achieve up to 2× faster "fast" periodogram
+  calculations.
+- `gsl` (default) - enables [GNU Scientific Library](https://www.gnu.org/software/gsl/) support. You need a
+  compatible version of GSL installed on your system. It is used as an optional optimization algorithm
+  for `BazinFit` and `VillarFit`.
 - `mimalloc` (default) - enables [mimalloc](https://github.com/microsoft/mimalloc) memory allocator support.
-  Our
-  benchmarks show up to 2x speedup for some simple features, but it may lead to larger memory consumption.
+  Our benchmarks show up to a 2× speedup for some cheap features, but it may lead to larger memory usage.
 
 #### Build with maturin
 
 You can build the package with `maturin` (a Python package for building and publishing Rust crates as Python
 packages).
-This example shows how to build the package with minimal dependencies.
+This example shows how to build the package with the minimal system dependencies.
 
 ```bash
 python -mpip install maturin
@@ -780,8 +772,8 @@ to enable FFTW (builds from vendored sources), ABI3 compatibility, and mimalloc 
 
 #### Build with `build`
 
-You can also build the package with `build` (a Python package for building and installing Python packages from
-source).
+You can also build the package with `build`, a Python package for building and installing Python packages from
+source.
 
 ```bash
 python -mpip install build
@@ -791,8 +783,7 @@ MATURIN_PEP517_ARGS="--locked --no-default-features --features=abi3,fftw-source,
 #### Build with cibuildwheel
 
 `ciwbuildwheel` is a project that builds wheels for Python packages on CI servers, we use it to build wheels
-with
-GitHub Actions.
+with GitHub Actions.
 You can use it locally to build wheels on your platform (change platform identifier to one
 from [the list of supported](https://cibuildwheel.pypa.io/en/stable/options/#build-skip):
 
@@ -804,13 +795,11 @@ python -m cibuildwheel --only=cp38-manylinux_x86_64
 Please notice that we use different Cargo feature set for different platforms, which is defined in
 `pyproject.toml`.
 You can build Windows wheels on Windows, Linux wheels on any platform with Docker installed (Qemu may be
-needed for
-cross-architecture builds), and macOS wheels on macOS.
+needed for cross-architecture builds), and macOS wheels on macOS.
 On Windows and macOS some additional dependencies will be installed automatically, please check
 the [cibuildwheel documentation](https://cibuildwheel.pypa.io/) and `pyproject.toml` for details.
 Also, macOS builds require `MACOSX_DEPLOYMENT_TARGET` to be set to the current version of macOS, because
-dependent
-libraries installed from `homebrew` are built with this target:
+dependent libraries installed from `homebrew` are built with this target:
 
 ```bash
 export MACOSX_DEPLOYMENT_TARGET=$(sw_vers -productVersion | awk -F '.' '{print $1"."0}')
@@ -819,8 +808,7 @@ unset MACOSX_DEPLOYMENT_TARGET
 ```
 
 Since we use ABI3 compatibility, you can build wheels for a single Python version (currently 3.9+) and they
-will work
-with any later version of CPython.
+will work with any later version of CPython.
 
 ## Citation
 
