@@ -20,10 +20,10 @@ conda install -c conda-forge light-curve-python
 features.
 We also provide `light-curve-python` package which is just an "alias" to the main `light-curve[full]` package.
 
-The minimum supported Python version is 3.9.  
-We provide binary CPython distributions via [PyPI](https://pypi.org/project/light-curve/)  
-and [Anaconda](https://anaconda.org/conda-forge/light-curve-python) for various platforms and architectures.  
-On PyPI, we provide binary wheels for the stable CPython ABI, ensuring compatibility with future  
+The minimum supported Python version is 3.9.
+We provide binary CPython distributions via [PyPI](https://pypi.org/project/light-curve/)
+and [Anaconda](https://anaconda.org/conda-forge/light-curve-python) for various platforms and architectures.
+On PyPI, we provide binary wheels for the stable CPython ABI, ensuring compatibility with future
 CPython 3 versions.
 
 ### Support matrix
@@ -35,17 +35,17 @@ CPython 3 versions.
 | **aarch64** | PyPI              | PyPI                           | PyPI macOS 14+, conda | not tested                                                           |
 | **ppc64le** | src               | not tested (no Rust toolchain) | —                     | —                                                                    |
 
-- **PyPI / conda**: A binary wheel or package is available on pypi.org or anaconda.org.  
-  Local building is not required for the platform; the only prerequisite is a recent version of  
-  `pip` or `conda`. For Linux x86-64, PyPI binary wheels are built with Intel MKL  
-  for improved periodogram performance, which is not a default build option.  
+- **PyPI / conda**: A binary wheel or package is available on pypi.org or anaconda.org.
+  Local building is not required for the platform; the only prerequisite is a recent version of
+  `pip` or `conda`. For Linux x86-64, PyPI binary wheels are built with Intel MKL
+  for improved periodogram performance, which is not a default build option.
   For Windows x86-64, all distributions exclude Ceres and GSL support, which is also not a default build option.
-- **src**: The package has been confirmed to build and pass unit tests locally,  
-  but testing and package building are not supported by CI.  
+- **src**: The package has been confirmed to build and pass unit tests locally,
+  but testing and package building are not supported by CI.
   See the ["Build from source"] section below for details.
   Please open an issue or pull request if you encounter any problems building
   the package or would like us to distribute it for these platforms.
-- **not tested**: Building from source has not been tested.  
+- **not tested**: Building from source has not been tested.
   Please report build status via issue, PR, or email.
 
 macOS wheels require relatively new OS versions, please open an issue if you require support of older Macs,
