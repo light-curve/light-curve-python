@@ -789,7 +789,7 @@ from [the list of supported](https://cibuildwheel.pypa.io/en/stable/options/#bui
 
 ```bash
 python -mpip install cibuildwheel
-python -m cibuildwheel --only=cp38-manylinux_x86_64
+python -m cibuildwheel --only=cp39-manylinux_x86_64
 ```
 
 Please notice that we use different Cargo feature set for different platforms, which is defined in
@@ -803,11 +803,11 @@ dependent libraries installed from `homebrew` are built with this target:
 
 ```bash
 export MACOSX_DEPLOYMENT_TARGET=$(sw_vers -productVersion | awk -F '.' '{print $1"."0}')
-python -m cibuildwheel --only=cp38-macosx_arm64
+python -m cibuildwheel --only=cp39-macosx_arm64
 unset MACOSX_DEPLOYMENT_TARGET
 ```
 
-Since we use ABI3 compatibility, you can build wheels for a single Python version (currently 3.9+) and they
+Since we use ABI3 compatibility, you can build wheels for a single CPython version (currently 3.9+) and they
 will work with any later version of CPython.
 
 ## Citation
