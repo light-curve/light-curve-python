@@ -352,3 +352,26 @@ def test_json_deserialization():
     from_json = lc.feature_from_json(json)
     assert isinstance(from_json, lc._FeatureEvaluator)
     from_json(*gen_lc(128))
+
+
+def test_raises_for_wrong_inputs():
+    fe = lc.Amplitude()
+
+    # First argument
+    with pytest.raises(TypeError, match="'t' has type 'list'"):
+        fe([1.0, 2.0, 3.0], [1.0, 2.0, 3.0])
+    with pytest.raises(TypeError, match="'t' is a 2-d array"):
+        fe(np.array([[1.0, 2.0, 3.0]]), np.array([1.0, 2.0, 3.0]))
+    with pytest.raises(TypeError, match="'t' has dtype int64"):
+        fe(np.array([1, 2, 3], dtype=np.int64), np.array([[1.0, 2.0, 3.0]]))
+
+    # Second and third arguments
+    t = np.arange(10, dtype=np.float64)
+    with pytest.raises(ValueError, match="Mismatched lengths:"):
+        fe(t, np.arange(11, dtype=np.float64))
+    with pytest.raises(TypeError, match="'m' must be a numpy array"):
+        fe(t, list(t))
+    with pytest.raises(TypeError, match="'sigma' is a 0-d array"):
+        fe(t, t, np.array(1.0))
+    with pytest.raises(TypeError, match="Mismatched dtypes:"):
+        fe(t, t.astype(np.float32))
