@@ -547,6 +547,13 @@ class TestMedianBufferRangePercentage(_Test):
     kwargs = dict(quantile=quantile)
 
 
+class TestObservationCount(_Test):
+    name = "ObservationCount"
+
+    def naive(self, t, m, sigma):
+        return len(t)
+
+
 class TestPercentAmplitude(_Test):
     name = "PercentAmplitude"
 
