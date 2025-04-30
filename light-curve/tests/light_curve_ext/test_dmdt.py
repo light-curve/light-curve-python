@@ -282,12 +282,8 @@ def test_dmdt_points_dtype(t_dtype, m_dtype):
     t = np.linspace(0, 1, 11, dtype=t_dtype)
     m = np.asarray(t, dtype=m_dtype)
     dmdt = DmDt.from_borders(min_lgdt=0, max_lgdt=1, max_abs_dm=1, lgdt_size=2, dm_size=2, norm=[])
-    if t_dtype is m_dtype:
-        context = nullcontext()
-    else:
-        context = pytest.raises(TypeError)
-    with context:
-        dmdt.points(t, m)
+    values = dmdt.points(t, m)
+    assert values.dtype == np.result_type(t, m)
 
 
 @pytest.mark.parametrize("t_dtype,m_dtype,sigma_dtype", product(*[[np.float32, np.float64]] * 3))
@@ -296,12 +292,8 @@ def test_dmdt_gausses_dtype(t_dtype, m_dtype, sigma_dtype):
     m = np.asarray(t, dtype=m_dtype)
     sigma = np.asarray(t, dtype=sigma_dtype)
     dmdt = DmDt.from_borders(min_lgdt=0, max_lgdt=1, max_abs_dm=1, lgdt_size=2, dm_size=2, norm=[])
-    if t_dtype is m_dtype is sigma_dtype:
-        context = nullcontext()
-    else:
-        context = pytest.raises(TypeError)
-    with context:
-        dmdt.gausses(t, m, sigma)
+    values = dmdt.gausses(t, m, sigma)
+    assert values.dtype == np.result_type(t, m, sigma)
 
 
 @pytest.mark.parametrize("t1_dtype,m1_dtype,t2_dtype,m2_dtype", product(*[[np.float32, np.float64]] * 4))
