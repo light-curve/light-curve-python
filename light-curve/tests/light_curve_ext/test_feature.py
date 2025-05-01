@@ -364,6 +364,10 @@ def test_raises_for_wrong_inputs():
         fe(np.array([[1.0, 2.0, 3.0]]), np.array([1.0, 2.0, 3.0]))
     with pytest.raises(TypeError, match="'t' has dtype <U1"):
         fe(np.array(["a", "b", "c"]), np.array([1.0, 2.0, 3.0]))
+    with pytest.raises(TypeError, match="'t' has type 'list'"):
+        fe([1.0, 2.0, 3.0], [1.0, 2.0, 3.0], cast=False)
+    # No failure of the last test with cast=True
+    _ = fe([1.0, 2.0, 3.0], [1.0, 2.0, 3.0], cast=True)
 
     # Second and third arguments
     t = np.arange(10, dtype=np.float64)
@@ -375,3 +379,7 @@ def test_raises_for_wrong_inputs():
         fe(t, t, np.array(1.0))
     with pytest.raises(TypeError, match="Mismatched dtypes:"):
         fe(t, t.astype(str) + "x")
+    with pytest.raises(TypeError, match="Mismatched dtypes:"):
+        fe(t, t.astype(np.float32), cast=False)
+    # No failure of the last test with cast=True
+    _ = fe(t, t.astype(np.float32), cast=True)

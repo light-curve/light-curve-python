@@ -77,7 +77,7 @@ fn cast_fail_reason<const N: usize>(
     let fail_name = names.get(idx).expect("idx is out of bounds of names slice");
     let fail_obj = objects
         .get(idx)
-        .expect("idx is out of bounds of names slice");
+        .expect("idx is out of bounds of objects slice");
 
     let error_message = if let Ok(fail_arr) = fail_obj.downcast::<PyUntypedArray>() {
         if fail_arr.ndim() != 1 {
@@ -212,12 +212,13 @@ fn downcast_objects_no_cast<'py, const N: usize>(
             })
             .ok_or_else(|| {
                 let valid_f32_count = f32_arrays.iter().filter(|arr| arr.is_some()).count();
-                cast_fail_reason(
-                    usize::max(valid_f32_count, valid_f64_count),
-                    names,
-                    objects,
-                    false,
-                )
+                let max_count = usize::max(valid_f32_count, valid_f64_count);
+                if max_count == 0 {
+                    unknown_type_exception(names[0], objects[0])
+                } else {
+                    let idx = max_count - 1;
+                    cast_fail_reason(idx, names, objects, false)
+                }
             })?;
         Ok(GenericPyReadonlyArrays::F64(f64_arrays))
     }

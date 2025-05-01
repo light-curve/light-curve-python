@@ -1142,21 +1142,27 @@ impl DmDt {
     ///     Time moments, must be sorted
     /// sorted : bool or None, optional
     ///     `True` guarantees that `t` is sorted
+    /// cast : bool
+    ///     If `False` allow np.ndarray input only, `True` allows casting.
+    ///     Casting provides more flexibility with input types at the cost of
+    //      performance.
     ///
     /// Returns
     /// 1d-array of float
     ///
-    #[pyo3(signature=(t, *, sorted=None))]
+    #[pyo3(signature=(t, *, sorted=None, cast=false))]
     fn count_dt<'py>(
         &self,
         py: Python<'py>,
         t: Bound<'py, PyAny>,
         sorted: Option<bool>,
+        cast: bool,
     ) -> Res<Bound<'py, PyUntypedArray>> {
         dtype_dispatch!(
             |t| self.dmdt_f32.py_count_dt(py, t, sorted),
             |t| self.dmdt_f64.py_count_dt(py, t, sorted),
-            t
+            t;
+            cast=cast
         )
     }
 
@@ -1203,24 +1209,30 @@ impl DmDt {
     ///     Magnitudes
     /// sorted : bool or None, optional
     ///     `True` guarantees that the light curve is sorted
+    /// cast : bool
+    ///     If `False` allow np.ndarray input only, `True` allows casting.
+    ///     Casting provides more flexibility with input types at the cost of
+    //      performance.
     ///
     /// Returns
     /// -------
     /// 2d-ndarray of float
     ///
-    #[pyo3(signature = (t, m, *, sorted=None))]
+    #[pyo3(signature = (t, m, *, sorted=None, cast=false))]
     fn points<'py>(
         &self,
         py: Python<'py>,
         t: Bound<'py, PyAny>,
         m: Bound<'py, PyAny>,
         sorted: Option<bool>,
+        cast: bool,
     ) -> Res<Bound<'py, PyUntypedArray>> {
         dtype_dispatch!(
             |t, m| self.dmdt_f32.py_points(py, t, m, sorted),
             |t, m| self.dmdt_f64.py_points(py, t, m, sorted),
             t,
-            =m
+            =m;
+            cast=cast
         )
     }
 
@@ -1372,12 +1384,15 @@ impl DmDt {
     ///     Uncertainties
     /// sorted : bool or None, optional
     ///     `True` guarantees that the light curve is sorted
-    ///
+    /// cast : bool
+    ///     If `False` allow np.ndarray input only, `True` allows casting.
+    ///     Casting provides more flexibility with input types at the cost of
+    //      performance.
     /// Returns
     /// -------
     /// 2d-array of float
     ///
-    #[pyo3(signature = (t, m, sigma, *, sorted=None))]
+    #[pyo3(signature = (t, m, sigma, *, sorted=None, cast=false))]
     fn gausses<'py>(
         &self,
         py: Python<'py>,
@@ -1385,13 +1400,15 @@ impl DmDt {
         m: Bound<'py, PyAny>,
         sigma: Bound<'py, PyAny>,
         sorted: Option<bool>,
+        cast: bool,
     ) -> Res<Bound<'py, PyUntypedArray>> {
         dtype_dispatch!(
             |t, m, sigma| self.dmdt_f32.py_gausses(py, t, m, sigma, sorted),
             |t, m, sigma| self.dmdt_f64.py_gausses(py, t, m, sigma, sorted),
             t,
             =m,
-            =sigma
+            =sigma;
+            cast=cast
         )
     }
 

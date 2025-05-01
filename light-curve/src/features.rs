@@ -73,6 +73,8 @@ const METHOD_CALL_DOC: &str = r#"__call__(self, t, m, sigma=None, *, fill_value=
     cast : bool, optional
         Allows non-numpy input and casting of arrays to a common dtype.
         If `False`, inputs must be `np.ndarray` instances with matched dtypes.
+        Casting provides more flexibility with input types at the cost of
+        performance.
     Returns
     -------
     ndarray of np.float32 or np.float64

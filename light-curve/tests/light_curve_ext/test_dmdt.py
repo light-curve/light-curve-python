@@ -282,7 +282,14 @@ def test_dmdt_points_dtype(t_dtype, m_dtype):
     t = np.linspace(0, 1, 11, dtype=t_dtype)
     m = np.asarray(t, dtype=m_dtype)
     dmdt = DmDt.from_borders(min_lgdt=0, max_lgdt=1, max_abs_dm=1, lgdt_size=2, dm_size=2, norm=[])
-    values = dmdt.points(t, m)
+
+    if t_dtype is m_dtype:
+        context = nullcontext()
+    else:
+        context = pytest.raises(TypeError)
+    with context:
+        dmdt.points(t, m, cast=False)
+    values = dmdt.points(t, m, cast=True)
     assert values.dtype == np.result_type(t, m)
 
 
@@ -292,7 +299,14 @@ def test_dmdt_gausses_dtype(t_dtype, m_dtype, sigma_dtype):
     m = np.asarray(t, dtype=m_dtype)
     sigma = np.asarray(t, dtype=sigma_dtype)
     dmdt = DmDt.from_borders(min_lgdt=0, max_lgdt=1, max_abs_dm=1, lgdt_size=2, dm_size=2, norm=[])
-    values = dmdt.gausses(t, m, sigma)
+
+    if t_dtype is m_dtype is sigma_dtype:
+        context = nullcontext()
+    else:
+        context = pytest.raises(TypeError)
+    with context:
+        dmdt.gausses(t, m, sigma, cast=False)
+    values = dmdt.gausses(t, m, sigma, cast=True)
     assert values.dtype == np.result_type(t, m, sigma)
 
 
