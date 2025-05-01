@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
---
+- Fix error messages for invalid inputs https://github.com/light-curve/light-curve-python/issues/505 https://github.com/light-curve/light-curve-python/pull/510
 
 ### Security
 
