@@ -3,12 +3,12 @@ use crate::cont_array::ContCowArray;
 use crate::errors::{Exception, Res};
 use crate::ln_prior::LnPrior1D;
 use crate::np_array::Arr;
-use crate::transform::{parse_transform, StockTransformer};
+use crate::transform::{StockTransformer, parse_transform};
 
 use const_format::formatcp;
 use conv::ConvUtil;
 use itertools::Itertools;
-use light_curve_feature::{self as lcf, prelude::*, DataSample};
+use light_curve_feature::{self as lcf, DataSample, prelude::*};
 use macro_const::macro_const;
 use ndarray::IntoNdProducer;
 use numpy::prelude::*;
@@ -216,7 +216,7 @@ impl PyFeatureEvaluator {
                 "t and m must have the same size".to_string(),
             ));
         }
-        if let Some(ref sigma) = sigma {
+        if let Some(sigma) = sigma {
             if t.len() != sigma.len() {
                 return Err(Exception::ValueError(
                     "t and sigma must have the same size".to_string(),
@@ -238,7 +238,7 @@ impl PyFeatureEvaluator {
             Some(false) => {
                 return Err(Exception::NotImplementedError(
                     "sorting is not implemented, please provide time-sorted arrays".to_string(),
-                ))
+                ));
             }
             None => {
                 if feature_evaluator.is_sorting_required() & !is_sorted(t.as_slice()) {
@@ -1609,15 +1609,15 @@ impl Periodogram {
         }
         if let Some(nyquist) = nyquist {
             let nyquist_freq: lcf::NyquistFreq = match nyquist {
-                NyquistArgumentOfPeriodogram::String(nyquist_type) => {
-                    match nyquist_type.as_str() {
-                        "average" => lcf::AverageNyquistFreq {}.into(),
-                        "median" => lcf::MedianNyquistFreq {}.into(),
-                        _ => return Err(PyValueError::new_err(
+                NyquistArgumentOfPeriodogram::String(nyquist_type) => match nyquist_type.as_str() {
+                    "average" => lcf::AverageNyquistFreq {}.into(),
+                    "median" => lcf::MedianNyquistFreq {}.into(),
+                    _ => {
+                        return Err(PyValueError::new_err(
                             "nyquist must be one of: None, 'average', 'median' or quantile value",
-                        )),
+                        ));
                     }
-                }
+                },
                 NyquistArgumentOfPeriodogram::Float(quantile) => {
                     lcf::QuantileNyquistFreq { quantile }.into()
                 }

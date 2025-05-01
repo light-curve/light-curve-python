@@ -9,12 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Mark the module as no-GIL, which enables free-threaded Python (can be built from source, not provided so far via PyPI/conda) https://github.com/light-curve/light-curve-python/pull/499
+- Mark the module as no-GIL, which enables free-threaded Python (can be built from source, not provided so far via
+  PyPI/conda) https://github.com/light-curve/light-curve-python/pull/499
 
 ### Changed
 
-- **PyPI wheels change**: bump Musl PyPI wheels compatibility from musllinux 1.1 to 1.2 https://github.com/light-curve/light-curve-python/pull/503
+- **PyPI wheels change**: bump Musl PyPI wheels compatibility from musllinux 1.1 to
+  1.2 https://github.com/light-curve/light-curve-python/pull/503
 - **Build breaking**: minimum supported Rust version (MSRV) is changed from 1.67 to 1.85
+- We also migrated from Rust edition 2021 to 2025
 - Bump both `PyO3` and `rust-numpy` to v0.24 https://github.com/light-curve/light-curve-python/pull/499
 
 ### Deprecated
@@ -27,7 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix error messages for invalid inputs https://github.com/light-curve/light-curve-python/issues/505 https://github.com/light-curve/light-curve-python/pull/510
+- Fix error messages for invalid
+  inputs https://github.com/light-curve/light-curve-python/issues/505 https://github.com/light-curve/light-curve-python/pull/510
 
 ### Security
 

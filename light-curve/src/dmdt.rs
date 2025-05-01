@@ -5,7 +5,7 @@ use crate::np_array::Arr;
 
 use crate::errors::Exception::ValueError;
 use conv::{ApproxFrom, ApproxInto, ConvAsUtil};
-use enumflags2::{bitflags, BitFlags};
+use enumflags2::{BitFlags, bitflags};
 use light_curve_dmdt as lcdmdt;
 use light_curve_dmdt::{Grid, GridTrait};
 use ndarray::IntoNdProducer;
@@ -477,7 +477,7 @@ where
                 _ => {
                     return Err(Exception::ValueError(String::from(
                         "if drop_nobs is float, it must be in [0.0, 1.0)",
-                    )))
+                    )));
                 }
             },
         };
@@ -498,7 +498,7 @@ where
             None => {
                 return Err(Exception::RuntimeError(String::from(
                     "dropping is not required: drop_nobs = 0",
-                )))
+                )));
             }
         };
         let drop_nobs = match drop_nobs {
@@ -945,7 +945,7 @@ impl DmDt {
             _ => {
                 return Err(Exception::ValueError(
                     "dt_type must be 'auto', 'linear', 'log' or 'asis'".to_owned(),
-                ))
+                ));
             }
         };
         let grid_f32: Grid<f32> = match grid_f64 {
@@ -955,7 +955,7 @@ impl DmDt {
             _ => {
                 return Err(Exception::NotImplementedError(
                     "this type of grid is not implemented".into(),
-                ))
+                ));
             }
         };
         Ok((grid_f32, grid_f64))

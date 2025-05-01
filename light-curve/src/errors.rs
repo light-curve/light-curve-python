@@ -1,8 +1,8 @@
+use pyo3::PyErr;
 use pyo3::exceptions::{
     PyIndexError, PyNotImplementedError, PyRuntimeError, PyTypeError, PyValueError,
 };
 use pyo3::import_exception;
-use pyo3::PyErr;
 use std::fmt::Debug;
 use std::result::Result;
 use thiserror::Error;

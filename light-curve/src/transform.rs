@@ -2,8 +2,8 @@ use crate::errors::{Exception, Res};
 
 use enum_iterator::Sequence;
 use light_curve_feature::transformers::{
-    arcsinh::ArcsinhTransformer, clipped_lg::ClippedLgTransformer, identity::IdentityTransformer,
-    lg::LgTransformer, ln1p::Ln1pTransformer, sqrt::SqrtTransformer, Transformer,
+    Transformer, arcsinh::ArcsinhTransformer, clipped_lg::ClippedLgTransformer,
+    identity::IdentityTransformer, lg::LgTransformer, ln1p::Ln1pTransformer, sqrt::SqrtTransformer,
 };
 use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyString};
@@ -54,7 +54,7 @@ impl TryFrom<&str> for StockTransformer {
                 return Err(Exception::ValueError(format!(
                     "Unknown stock transformer: {}",
                     s
-                )))
+                )));
             }
         })
     }
@@ -121,15 +121,18 @@ pub(crate) fn parse_transform(
                 // py_str.to_str() is Python 3.10+ only
                 let cow_string = py_str.to_cow()?;
                 let s = cow_string.as_ref();
-                if let Ok(stock_transformer) = s.try_into() {
-                    Ok(Some(stock_transformer))
-                } else if s == "default" {
-                    Ok(Some(default))
-                } else {
-                    Err(Exception::ValueError(format!(
-                        "Unknown transformation: {}",
-                        s
-                    )))
+                match s.try_into() {
+                    Ok(stock_transformer) => Ok(Some(stock_transformer)),
+                    _ => {
+                        if s == "default" {
+                            Ok(Some(default))
+                        } else {
+                            Err(Exception::ValueError(format!(
+                                "Unknown transformation: {}",
+                                s
+                            )))
+                        }
+                    }
                 }
             } else {
                 Err(Exception::ValueError(format!(

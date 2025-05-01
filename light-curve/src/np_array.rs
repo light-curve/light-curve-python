@@ -91,7 +91,11 @@ where
                 )
             }
         } else {
-            format!("'{y_name}' must be a numpy array of the same shape and dtype as '{x_name}', '{x_name}' has type 'np.ndarray[{x_dtype}]', '{y_name}' has type '{y_type}')", y_type=y.get_type().name()?, x_dtype=T::dtype_name())
+            format!(
+                "'{y_name}' must be a numpy array of the same shape and dtype as '{x_name}', '{x_name}' has type 'np.ndarray[{x_dtype}]', '{y_name}' has type '{y_type}')",
+                y_type = y.get_type().name()?,
+                x_dtype = T::dtype_name()
+            )
         };
         Err(Exception::TypeError(error_message))
     }
