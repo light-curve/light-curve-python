@@ -1,12 +1,12 @@
 use crate::errors::{Exception, Res};
 
-use itertools::{izip, Either};
 use numpy::prelude::*;
 use numpy::{
     AllowTypeChange, PyArray1, PyArrayLike1, PyReadonlyArray1, PyUntypedArray,
     PyUntypedArrayMethods,
 };
 use pyo3::prelude::*;
+use unarray::UnarrayArrayExt;
 
 pub(crate) type Arr<'a, T> = PyReadonlyArray1<'a, T>;
 
@@ -50,12 +50,11 @@ pub(crate) fn unknown_type_exception(name: &str, obj: &Bound<PyAny>) -> Exceptio
     Exception::TypeError(message)
 }
 
-fn cast_fail_reason(
+fn cast_fail_reason<const N: usize>(
     idx: usize,
-    names: &'static [&'static str],
-    objects: &[&Bound<PyAny>],
-    good_f32_arrays: &[PyReadonlyArray1<f32>],
-    good_f64_arrays: &[PyReadonlyArray1<f64>],
+    names: &'static [&'static str; N],
+    objects: &[&Bound<PyAny>; N],
+    cast: bool,
 ) -> Exception {
     let first_name = names.first().expect("Empty names slice");
     let fist_obj = objects.first().expect("Empty objects slice");
@@ -65,22 +64,14 @@ fn cast_fail_reason(
         return unknown_type_exception(first_name, fist_obj);
     }
 
-    let (first_arr, first_dtype_name) = if good_f32_arrays.is_empty() {
-        (
-            good_f64_arrays
-                .first()
-                .expect("Empty good_f64_arrays slice")
-                .as_untyped(),
-            f64::dtype_name(),
-        )
+    let maybe_first_f32_array = try_downcast_to_f32_array(objects[0]);
+    let maybe_first_f64_array = try_downcast_to_f64_array(objects[0], cast);
+    let (first_arr, first_dtype_name) = if let Some(f32_array) = maybe_first_f32_array.as_ref() {
+        (f32_array.as_untyped(), f32::dtype_name())
+    } else if let Some(f64_array) = maybe_first_f64_array.as_ref() {
+        (f64_array.as_untyped(), f64::dtype_name())
     } else {
-        (
-            good_f32_arrays
-                .first()
-                .expect("Empty good_f32_arrays slice")
-                .as_untyped(),
-            f32::dtype_name(),
-        )
+        return unknown_type_exception(first_name, fist_obj);
     };
 
     let fail_name = names.get(idx).expect("idx is out of bounds of names slice");
@@ -120,92 +111,151 @@ fn cast_fail_reason(
     Exception::TypeError(error_message)
 }
 
-pub(crate) enum GenericVecOfArrays<'py> {
-    F32(Vec<PyReadonlyArray1<'py, f32>>),
-    F64(Vec<PyReadonlyArray1<'py, f64>>),
+pub(crate) enum GenericPyReadonlyArrays<'py, const N: usize> {
+    F32([PyReadonlyArray1<'py, f32>; N]),
+    F64([PyReadonlyArray1<'py, f64>; N]),
 }
 
-impl<'py> GenericVecOfArrays<'py> {
-    fn first_len(&self) -> Option<usize> {
+impl<const N: usize> GenericPyReadonlyArrays<'_, N> {
+    fn array_len(&self, i: usize) -> usize {
         match self {
-            Self::F32(v) => v.first().map(|arr| arr.len()),
-            Self::F64(v) => v.first().map(|arr| arr.len()),
-        }
-    }
-
-    fn iter_len(&'py self) -> impl Iterator<Item = usize> + 'py {
-        match self {
-            Self::F32(v) => Either::Left(v.iter().map(|arr| arr.len())),
-            Self::F64(v) => Either::Right(v.iter().map(|arr| arr.len())),
+            Self::F32(v) => v[i].len(),
+            Self::F64(v) => v[i].len(),
         }
     }
 }
 
-fn try_downcast_objects_to_f32_arrays<'py>(
-    objects: &[&Bound<'py, PyAny>],
-) -> Vec<PyReadonlyArray1<'py, f32>> {
-    objects
-        .iter()
-        .map(|&obj| obj.downcast::<PyArray1<f32>>())
-        .take_while(|result| result.is_ok())
-        // It is safe to unwrap, because we have just checked that it is Ok
-        .map(|result| result.unwrap().readonly())
-        .collect()
+fn try_downcast_objects_to_f32_arrays<'py, const N: usize>(
+    objects: &[&Bound<'py, PyAny>; N],
+) -> [Option<PyReadonlyArray1<'py, f32>>; N] {
+    let mut arrays = [const { None }; N];
+    for (&obj, arr) in objects.iter().zip(arrays.iter_mut()) {
+        *arr = try_downcast_to_f32_array(obj);
+        // If we cannot cast an array, we stop trying for future arguments
+        if arr.is_none() {
+            break;
+        }
+    }
+    arrays
 }
 
-fn try_downcast_to_f64_array<'py>(obj: &Bound<'py, PyAny>) -> Option<PyReadonlyArray1<'py, f64>> {
-    if let Ok(py_array) = obj.downcast::<PyArray1<f64>>() {
-        Some(py_array.readonly())
-    } else if let Ok(as_array) = PyArrayLike1::<f64, AllowTypeChange>::extract_bound(obj) {
-        Some(as_array.readonly())
-    } else {
-        None
+fn try_downcast_to_f32_array<'py>(obj: &Bound<'py, PyAny>) -> Option<PyReadonlyArray1<'py, f32>> {
+    let py_array = obj.downcast::<PyArray1<f32>>().ok()?;
+    Some(py_array.readonly())
+}
+
+fn try_downcast_to_f64_array<'py>(
+    obj: &Bound<'py, PyAny>,
+    cast: bool,
+) -> Option<PyReadonlyArray1<'py, f64>> {
+    match (obj.downcast::<PyArray1<f64>>(), cast) {
+        (Ok(py_array), _) => Some(py_array.readonly()),
+        (Err(_), true) => match PyArrayLike1::<f64, AllowTypeChange>::extract_bound(obj) {
+            Ok(py_array) => Some(py_array.readonly()),
+            Err(_) => None,
+        },
+        (Err(_), false) => None,
     }
 }
 
-fn downcast_objects<'py>(
-    names: &'static [&'static str],
-    objects: &[&Bound<'py, PyAny>],
-) -> Res<GenericVecOfArrays<'py>> {
+const fn index<const N: usize>() -> [usize; N] {
+    let mut arr = [0; N];
+    let mut i = 0;
+    while i < N {
+        arr[i] = i;
+        i += 1;
+    }
+    arr
+}
+
+fn downcast_objects_cast<'py, const N: usize>(
+    names: &'static [&'static str; N],
+    objects: &[&Bound<'py, PyAny>; N],
+) -> Res<GenericPyReadonlyArrays<'py, N>> {
     let f32_arrays = try_downcast_objects_to_f32_arrays(objects);
-    if f32_arrays.len() == names.len() {
-        Ok(GenericVecOfArrays::F32(f32_arrays))
+
+    if f32_arrays.iter().all(|arr| arr.is_some()) {
+        Ok(GenericPyReadonlyArrays::F32(
+            f32_arrays.map(|arr| arr.unwrap()),
+        ))
     } else {
-        let mut result = Vec::with_capacity(names.len());
-        for f32_arr in f32_arrays.iter() {
-            let f64_arr = f32_arr.cast::<f64>(false)?;
-            result.push(f64_arr.readonly());
-        }
-        for (idx, &obj) in objects.iter().enumerate().skip(result.len()) {
-            let py_ro_array = try_downcast_to_f64_array(obj)
-                .ok_or_else(|| cast_fail_reason(idx, names, objects, &f32_arrays, &result))?;
-            result.push(py_ro_array);
-        }
-        Ok(GenericVecOfArrays::F64(result))
+        let result = index::<N>().map_result::<_, Exception>(|i| {
+            let f64_arr = if let Some(f32_arr) = &f32_arrays[i] {
+                f32_arr.cast::<f64>(false)?.readonly()
+            } else {
+                try_downcast_to_f64_array(objects[i], true)
+                    .ok_or_else(|| cast_fail_reason(i, names, objects, true))?
+            };
+            Ok(f64_arr)
+        })?;
+
+        Ok(GenericPyReadonlyArrays::F64(result))
     }
 }
 
-pub(crate) fn downcast_and_validate<'py>(
-    names: &'static [&'static str],
-    objects: &[&Bound<'py, PyAny>],
-    check_size: &[bool],
-) -> Res<GenericVecOfArrays<'py>> {
+fn downcast_objects_no_cast<'py, const N: usize>(
+    names: &'static [&'static str; N],
+    objects: &[&Bound<'py, PyAny>; N],
+) -> Res<GenericPyReadonlyArrays<'py, N>> {
+    let f32_arrays = try_downcast_objects_to_f32_arrays(objects);
+
+    if f32_arrays.iter().all(|arr| arr.is_some()) {
+        Ok(GenericPyReadonlyArrays::F32(
+            f32_arrays.map(|arr| arr.unwrap()),
+        ))
+    } else {
+        let mut valid_f64_count = 0;
+        let f64_arrays = objects
+            .map_option(|obj| {
+                valid_f64_count += 1;
+                try_downcast_to_f64_array(obj, false)
+            })
+            .ok_or_else(|| {
+                let valid_f32_count = f32_arrays.iter().filter(|arr| arr.is_some()).count();
+                cast_fail_reason(
+                    usize::max(valid_f32_count, valid_f64_count),
+                    names,
+                    objects,
+                    false,
+                )
+            })?;
+        Ok(GenericPyReadonlyArrays::F64(f64_arrays))
+    }
+}
+
+pub(crate) fn downcast_and_validate<'py, const N: usize>(
+    names: &'static [&'static str; N],
+    objects: &[&Bound<'py, PyAny>; N],
+    check_size: &[bool; N],
+    cast: bool,
+) -> Res<GenericPyReadonlyArrays<'py, N>> {
     assert_eq!(names.len(), objects.len());
 
-    let arrays = downcast_objects(names, objects)?;
-    let first_array_len = match arrays.first_len() {
-        Some(len) => len,
-        None => return Ok(arrays),
+    let arrays = if cast {
+        downcast_objects_cast(names, objects)?
+    } else {
+        downcast_objects_no_cast(names, objects)?
     };
+    let mut first_array_len = None;
     // We checked that 1) names size matches objects size, 2) objects is not empty
     let first_name = names[0];
 
-    for (&name, length, &check) in izip!(&names[1..], arrays.iter_len().skip(1), check_size) {
-        if check && length != first_array_len {
-            return Err(Exception::ValueError(format!(
-                "Mismatched lengths: '{}': {}, '{}': {}",
-                first_name, first_array_len, name, length,
-            )));
+    for i in 1..N {
+        if check_size[i] {
+            let length0 = if let Some(length0) = first_array_len {
+                length0
+            } else {
+                let length0 = arrays.array_len(0);
+                first_array_len = Some(length0);
+                length0
+            };
+            let length = arrays.array_len(i);
+            if length != length0 {
+                return Err(Exception::ValueError(format!(
+                    "Mismatched lengths: '{}': {}, '{}': {}",
+                    first_name, length0, names[i], length,
+                )));
+            }
         }
     }
     Ok(arrays)
@@ -222,33 +272,41 @@ macro_rules! _distinguish_eq_symbol {
 
 macro_rules! dtype_dispatch {
     // @call variants are for the internal usage only
-    (@call $func:expr, $arrays:ident, $_arg1:expr,) => {{
-        let func = $func;
-        func($arrays[0].clone())
+    (@call $func:ident, $arrays:ident, $_arg1:expr,) => {{
+        let [x1] = $arrays;
+        $func(x1)
     }};
-    (@call $func:expr, $arrays:ident, $_arg1:expr, $_arg2:expr,) => {{
-        let func = $func;
-        func($arrays[0].clone(), $arrays[1].clone())
+    (@call $func:ident, $arrays:ident, $_arg1:expr, $_arg2:expr,) => {{
+        let [x1, x2] = $arrays;
+        $func(x1, x2)
     }};
-    (@call $func:expr, $arrays:ident, $_arg1:expr, $_arg2:expr, $_arg3:expr,) => {{
-        let func = $func;
-        func($arrays[0].clone(), $arrays[1].clone(), $arrays[2].clone())
+    (@call $func:ident, $arrays:ident, $_arg1:expr, $_arg2:expr, $_arg3:expr,) => {{
+        let [x1, x2, x3] = $arrays;
+        $func(x1, x2, x3)
     }};
     ($func:tt ($first_arg:expr $(,$eq:tt $arg:expr)* $(,)?)) => {
         dtype_dispatch!($func, $func, $first_arg $(,$eq $arg)*)
     };
-    ($f32:expr, $f64:expr, $first_arg:expr $(,$eq:tt $arg:expr)* $(,)?) => {{
+    ($func:tt ($first_arg:expr $(,$eq:tt $arg:expr)*, cast=$cast:expr $(,)?)) => {
+        dtype_dispatch!($func, $func, $first_arg $(,$eq $arg)*; cast=$cast)
+    };
+    ($f32:expr, $f64:expr, $first_arg:expr $(,$eq:tt $arg:expr)* $(,)?) => {
+        dtype_dispatch!($f32, $f64, $first_arg $(,$eq $arg)*; cast=false)
+    };
+    ($f32:expr, $f64:expr, $first_arg:expr $(,$eq:tt $arg:expr)*; cast=$cast:expr $(,)?) => {{
         let names = &[stringify!($first_arg), $(stringify!($arg), )*];
         let objects = &[&$first_arg, $(&$arg, )*];
-        let check_size = &[ $(_distinguish_eq_symbol!($eq), )* ];
+        let check_size = &[ false, $(_distinguish_eq_symbol!($eq), )* ];
 
-        let generic_arrays = crate::np_array::downcast_and_validate(names, objects, check_size)?;
+        let generic_arrays = crate::np_array::downcast_and_validate(names, objects, check_size, $cast)?;
         match generic_arrays {
-            crate::np_array::GenericVecOfArrays::F32(arrays) => {
-                dtype_dispatch!(@call $f32, arrays, $first_arg, $($arg,)*)
+            crate::np_array::GenericPyReadonlyArrays::F32(arrays) => {
+                let func = $f32;
+                dtype_dispatch!(@call func, arrays, $first_arg, $($arg,)*)
             }
-            crate::np_array::GenericVecOfArrays::F64(arrays) => {
-                dtype_dispatch!(@call $f64, arrays, $first_arg, $($arg,)*)
+            crate::np_array::GenericPyReadonlyArrays::F64(arrays) => {
+                let func = $f64;
+                dtype_dispatch!(@call func, arrays, $first_arg, $($arg,)*)
             }
         }
     }};
