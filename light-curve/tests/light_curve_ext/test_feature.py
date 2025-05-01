@@ -358,20 +358,28 @@ def test_raises_for_wrong_inputs():
     fe = lc.Amplitude()
 
     # First argument
-    with pytest.raises(TypeError, match="'t' has type 'list'"):
-        fe([1.0, 2.0, 3.0], [1.0, 2.0, 3.0])
+    with pytest.raises(TypeError, match="'t' has type 'int'"):
+        fe(5, [1.0, 2.0, 3.0])
     with pytest.raises(TypeError, match="'t' is a 2-d array"):
         fe(np.array([[1.0, 2.0, 3.0]]), np.array([1.0, 2.0, 3.0]))
-    with pytest.raises(TypeError, match="'t' has dtype int64"):
-        fe(np.array([1, 2, 3], dtype=np.int64), np.array([[1.0, 2.0, 3.0]]))
+    with pytest.raises(TypeError, match="'t' has dtype <U1"):
+        fe(np.array(["a", "b", "c"]), np.array([1.0, 2.0, 3.0]))
+    with pytest.raises(TypeError, match="'t' has type 'list'"):
+        fe([1.0, 2.0, 3.0], [1.0, 2.0, 3.0], cast=False)
+    # No failure of the last test with cast=True
+    _ = fe([1.0, 2.0, 3.0], [1.0, 2.0, 3.0], cast=True)
 
     # Second and third arguments
     t = np.arange(10, dtype=np.float64)
     with pytest.raises(ValueError, match="Mismatched lengths:"):
         fe(t, np.arange(11, dtype=np.float64))
     with pytest.raises(TypeError, match="'m' must be a numpy array"):
-        fe(t, list(t))
+        fe(t, set(t))
     with pytest.raises(TypeError, match="'sigma' is a 0-d array"):
         fe(t, t, np.array(1.0))
     with pytest.raises(TypeError, match="Mismatched dtypes:"):
-        fe(t, t.astype(np.float32))
+        fe(t, t.astype(str) + "x")
+    with pytest.raises(TypeError, match="Mismatched dtypes:"):
+        fe(t, t.astype(np.float32), cast=False)
+    # No failure of the last test with cast=True
+    _ = fe(t, t.astype(np.float32), cast=True)
