@@ -293,7 +293,7 @@ macro_rules! dtype_dispatch {
     ($f32:expr, $f64:expr, $first_arg:expr $(,$eq:tt $arg:expr)* $(,)?) => {
         dtype_dispatch!($f32, $f64, $first_arg $(,$eq $arg)*; cast=false)
     };
-    ($f32:expr, $f64:expr, $first_arg:expr $(,$eq:tt $arg:expr)*; cast=$cast:expr $(,)?) => {{
+    ($f32:expr, $f64:expr, $first_arg:expr $(,$eq:tt $arg:expr)*; cast=$cast:expr) => {{
         let names = &[stringify!($first_arg), $(stringify!($arg), )*];
         let objects = &[&$first_arg, $(&$arg, )*];
         let check_size = &[ false, $(_distinguish_eq_symbol!($eq), )* ];

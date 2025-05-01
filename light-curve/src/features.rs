@@ -47,18 +47,22 @@ names : list of str
 descriptions : list of str
     Feature descriptions"#;
 
-const METHOD_CALL_DOC: &str = r#"__call__(self, t, m, sigma=None, *, sorted=None, check=True, fill_value=None)
+const METHOD_CALL_DOC: &str = r#"__call__(self, t, m, sigma=None, *, fill_value=None, sorted=None, check=True, cast=False)
     Extract features and return them as a numpy array
 
     Parameters
     ----------
     t : numpy.ndarray of np.float32 or np.float64 dtype
         Time moments
-    m : numpy.ndarray of the same dtype and size as t
+    m : numpy.ndarray
         Signal in magnitude or fluxes. Refer to the feature description to
         decide which would work better in your case
-    sigma : numpy.ndarray of the same dtype and size as t, optional
+    sigma : numpy.ndarray, optional
         Observation error, if None it is assumed to be unity
+    fill_value : float or None, optional
+        Value to fill invalid feature values, for example if count of
+        observations is not enough to find a proper value.
+        None causes exception for invalid features
     sorted : bool or None, optional
         Specifies if input array are sorted by time moments.
         True is for certainly sorted, False is for unsorted.
@@ -66,11 +70,9 @@ const METHOD_CALL_DOC: &str = r#"__call__(self, t, m, sigma=None, *, sorted=None
         raised for unsorted `t`
     check : bool, optional
         Check all input arrays for NaNs, `t` and `m` for infinite values
-    fill_value : float or None, optional
-        Value to fill invalid feature values, for example if count of
-        observations is not enough to find a proper value.
-        None causes exception for invalid features
-
+    cast : bool, optional
+        Allows non-numpy input and casting of arrays to a common dtype.
+        If `False`, inputs must be `np.ndarray` instances with matched dtypes.
     Returns
     -------
     ndarray of np.float32 or np.float64
@@ -78,18 +80,19 @@ const METHOD_CALL_DOC: &str = r#"__call__(self, t, m, sigma=None, *, sorted=None
 
 macro_const! {
     const METHOD_MANY_DOC: &str = r#"
-many(self, lcs, *, sorted=None, check=True, fill_value=None, n_jobs=-1)
+many(self, lcs, *, fill_value=None, sorted=None, check=True, cast=False, n_jobs=-1)
     Parallel light curve feature extraction
 
     It is a parallel executed equivalent of
-    >>> def many(self, lcs, *, sorted=None, check=True, fill_value=None):
+    >>> def many(self, lcs, *, fill_value=None, sorted=None, check=True):
     ...     return np.stack(
     ...         [
     ...             self(
     ...                 *lc,
+    ...                 fill_value=fill_value,
     ...                 sorted=sorted,
     ...                 check=check,
-    ...                 fill_value=fill_value
+    ...                 cast=False,
     ...             )
     ...             for lc in lcs
     ...         ]
@@ -101,13 +104,13 @@ many(self, lcs, *, sorted=None, check=True, fill_value=None, n_jobs=-1)
         A collection of light curves packed into three-tuples, all light curves
         must be represented by numpy.ndarray of the same dtype. See __call__
         documentation for details
+    fill_value : float or None, optional
+        Fill invalid values by this or raise an exception if None
     sorted : bool or None, optional
         Specifies if input array are sorted by time moments, see __call__
         documentation for details
     check : bool, optional
         Check all input arrays for NaNs, `t` and `m` for infinite values
-    fill_value : float or None, optional
-        Fill invalid values by this or raise an exception if None
     n_jobs : int
         Number of tasks to run in paralell. Default is -1 which means run as
         many jobs as CPU count. See rayon rust crate documentation for
@@ -440,9 +443,10 @@ impl PyFeatureEvaluator {
         m,
         sigma = None,
         *,
+        fill_value = None,
         sorted = None,
         check = true,
-        fill_value = None
+        cast = false,
     ))]
     fn __call__<'py>(
         &self,
@@ -450,9 +454,10 @@ impl PyFeatureEvaluator {
         t: Bound<'py, PyAny>,
         m: Bound<'py, PyAny>,
         sigma: Option<Bound<'py, PyAny>>,
+        fill_value: Option<f64>,
         sorted: Option<bool>,
         check: bool,
-        fill_value: Option<f64>,
+        cast: bool,
     ) -> Res<Bound<'py, PyUntypedArray>> {
         if let Some(sigma) = sigma {
             dtype_dispatch!(
@@ -484,7 +489,8 @@ impl PyFeatureEvaluator {
                 },
                 t,
                 =m,
-                =sigma
+                =sigma;
+                cast=cast
             )
         } else {
             dtype_dispatch!(
@@ -515,20 +521,21 @@ impl PyFeatureEvaluator {
                     )
                 },
                 t,
-                =m,
+                =m;
+                cast=cast
             )
         }
     }
 
     #[doc = METHOD_MANY_DOC!()]
-    #[pyo3(signature = (lcs, *, sorted=None, check=true, fill_value=None, n_jobs=-1))]
+    #[pyo3(signature = (lcs, *, fill_value=None, sorted=None, check=true, n_jobs=-1))]
     fn many<'py>(
         &self,
         py: Python<'py>,
         lcs: PyLcs<'py>,
+        fill_value: Option<f64>,
         sorted: Option<bool>,
         check: bool,
-        fill_value: Option<f64>,
         n_jobs: i64,
     ) -> Res<Bound<'py, PyUntypedArray>> {
         if lcs.is_empty() {

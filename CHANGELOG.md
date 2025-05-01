@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Mark the module as no-GIL, which enables free-threaded Python (can be built from source, not provided so far via
   PyPI/conda) https://github.com/light-curve/light-curve-python/pull/499
+- Allow non-numpy inputs and casting mismatched f32 arrays to f64 for the feature extractions with newly added
+  `cast: bool = False` argument. We plan to change the default value to `True` in a future 0.x version.
+  https://github.com/light-curve/light-curve-python/issues/509 https://github.com/light-curve/light-curve-python/pull/512
 
 ### Changed
 
