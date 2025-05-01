@@ -11,8 +11,8 @@ description = "Feature extractor from noisy time series"
 readme = "README.md"
 repository = "https://github.com/light-curve/light-curve-python"
 license = "GPL-3.0-or-later"
-edition = "2021"
-rust-version = "1.67"
+edition = "2024"
+rust-version = "1.85"
 
 [lib]
 name = "light_curve"
@@ -67,4 +67,4 @@ features = ["serde"]
 
 [dependencies.light-curve-feature]
 version = "0.8.1"
-default_features = false
+default-features = false
