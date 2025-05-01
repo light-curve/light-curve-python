@@ -775,7 +775,7 @@ const SUPPORTED_ALGORITHMS_CURVE_FIT: [&str; N_ALGO_CURVE_FIT] = [
 ];
 
 macro_const! {
-    const FIT_METHOD_MODEL_DOC: &str = r#"model(t, params)
+    const FIT_METHOD_MODEL_DOC: &str = r#"model(t, params, *, cast=False)
     Underlying parametric model function
 
     Parameters
@@ -786,6 +786,8 @@ macro_const! {
         Parameters of the model, this array can be longer than actual parameter
         list, the beginning part of the array will be used in this case, see
         Examples section in the class documentation.
+    cast : bool, optional
+        Cast inputs to np.ndarray of the same dtype
 
     Returns
     -------
@@ -1024,14 +1026,16 @@ macro_rules! fit_evaluator {
 
             #[doc = FIT_METHOD_MODEL_DOC!()]
             #[staticmethod]
+            #[pyo3(signature = (t, params, *, cast=false))]
             fn model<'py>(
                 py: Python<'py>,
                 t: Bound<'py, PyAny>,
                 params: Bound<'py, PyAny>,
+                cast: bool
             ) -> Res<Bound<'py, PyUntypedArray>> {
                 dtype_dispatch!({
                     |t, params| Ok(Self::model_impl(t, params).into_pyarray(py).as_untyped().clone())
-                }(t, !=params))
+                }(t, !=params; cast=cast))
             }
 
             #[classattr]
@@ -1715,17 +1719,20 @@ impl Periodogram {
     }
 
     /// Angular frequencies and periodogram values
+    #[pyo3(signature = (t, m, *, cast=false))]
     fn freq_power<'py>(
         &self,
         py: Python<'py>,
         t: Bound<PyAny>,
         m: Bound<PyAny>,
+        cast: bool,
     ) -> Res<(Bound<'py, PyUntypedArray>, Bound<'py, PyUntypedArray>)> {
         dtype_dispatch!(
             |t, m| Ok(Self::freq_power_impl(&self.eval_f32, py, t, m)),
             |t, m| Ok(Self::freq_power_impl(&self.eval_f64, py, t, m)),
             t,
-            =m
+            =m;
+            cast=cast
         )
     }
 
@@ -1762,7 +1769,7 @@ transform : None, optional
     constructors
 
 {common}
-freq_power(t, m)
+freq_power(t, m, *, cast=False)
     Get periodogram
 
     Parameters
@@ -1771,6 +1778,8 @@ freq_power(t, m)
         Time array
     m : np.ndarray of np.float32 or np.float64
         Magnitude (flux) array
+    cast : bool, optional
+        Cast inputs to np.ndarray objects of the same dtype
 
     Returns
     -------

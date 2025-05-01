@@ -288,7 +288,7 @@ macro_rules! dtype_dispatch {
     ($func:tt ($first_arg:expr $(,$eq:tt $arg:expr)* $(,)?)) => {
         dtype_dispatch!($func, $func, $first_arg $(,$eq $arg)*)
     };
-    ($func:tt ($first_arg:expr $(,$eq:tt $arg:expr)*, cast=$cast:expr $(,)?)) => {
+    ($func:tt ($first_arg:expr $(,$eq:tt $arg:expr)*; cast=$cast:expr $(,)?)) => {
         dtype_dispatch!($func, $func, $first_arg $(,$eq $arg)*; cast=$cast)
     };
     ($f32:expr, $f64:expr, $first_arg:expr $(,$eq:tt $arg:expr)* $(,)?) => {
