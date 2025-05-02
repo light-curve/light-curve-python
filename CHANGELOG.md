@@ -19,8 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **PyPI wheels change**: bump Musl PyPI wheels compatibility from musllinux 1.1 to
   1.2 https://github.com/light-curve/light-curve-python/pull/503
-- **Build breaking**: minimum supported Rust version (MSRV) is changed from 1.67 to 1.85
-- We also migrated from Rust edition 2021 to 2025
+- **Build breaking**: minimum supported Rust version (MSRV) is changed from 1.67 to 1.85 https://github.com/light-curve/light-curve-python/pull/516
+- We also migrated from Rust edition 2021 to 2024 https://github.com/light-curve/light-curve-python/pull/516
 - Bump both `PyO3` and `rust-numpy` to v0.24 https://github.com/light-curve/light-curve-python/pull/499
 
 ### Deprecated
