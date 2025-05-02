@@ -5,7 +5,9 @@ and [`light-curve-dmdt`](https://github.com/light-curve/light-curve-dmdt) packag
 high-performant time-series feature extractors.
 
 [![PyPI version](https://badge.fury.io/py/light-curve.svg)](https://pypi.org/project/light-curve/)
-![testing](https://github.com/light-curve/light-curve-python/actions/workflows/test.yml/badge.svg)
+[![Conda Version](https://img.shields.io/conda/vn/conda-forge/light-curve-python.svg)](https://anaconda.org/conda-forge/light-curve-python)
+[![Conda Recipe](https://img.shields.io/badge/recipe-light--curve--python-green.svg)](https://anaconda.org/conda-forge/light-curve-python)
+[![testing](https://github.com/light-curve/light-curve-python/actions/workflows/test.yml/badge.svg)](https://github.com/light-curve/light-curve-python/actions/workflows/test.yml)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/light-curve/light-curve-python/master.svg)](https://results.pre-commit.ci/latest/github/light-curve/light-curve-python/master)
 
 ## Installation
