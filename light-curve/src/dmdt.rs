@@ -656,17 +656,15 @@ macro_rules! dmdt_batches {
                 if !slf.range.is_empty() {
                     let rng = Self::child_rng(slf.rng.as_mut());
                     // We know that it is None
-                    let _ = std::mem::replace(
-                        &mut *slf
-                            .worker_thread
-                            .write()
-                            .map_err(|_| ValueError(String::from("Error getting worker_thread")))?,
-                        Some(Self::run_worker_thread(
-                            &slf.dmdt_batches,
-                            &slf.lcs_order[slf.range.start..slf.range.end],
-                            rng,
-                        )),
-                    );
+                    let mut worker_thread = slf
+                        .worker_thread
+                        .write()
+                        .map_err(|_| ValueError(String::from("Error getting worker_thread")))?;
+                    *worker_thread = Some(Self::run_worker_thread(
+                        &slf.dmdt_batches,
+                        &slf.lcs_order[slf.range.start..slf.range.end],
+                        rng,
+                    ));
                 }
 
                 let py_array = array.into_pyarray(slf.py()).into_any();
