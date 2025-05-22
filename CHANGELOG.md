@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - We also migrated from Rust edition 2021 to 2024 https://github.com/light-curve/light-curve-python/pull/516
 - Bump both `PyO3` and `rust-numpy` to
   v0.25 https://github.com/light-curve/light-curve-python/pull/499 https://github.com/light-curve/light-curve-python/pull/520
+- Bump `light-curve-feature` to v0.9.0
 
 ### Deprecated
 
