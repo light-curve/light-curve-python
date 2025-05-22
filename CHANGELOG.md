@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+--
+
+### Changed
+
+--
+
+### Deprecated
+
+--
+
+### Removed
+
+--
+
+### Fixed
+
+--
+
+### Security
+
+--
+
+## [0.10.3] 2025-05-22
+
+### Added
+
 - Mark the module as no-GIL, which enables free-threaded Python (can be built from source, not provided so far via
   PyPI/conda) https://github.com/light-curve/light-curve-python/pull/499
 - Allow non-numpy inputs and casting mismatched f32 arrays to f64 for the feature extractions with newly added
@@ -26,22 +52,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   v0.25 https://github.com/light-curve/light-curve-python/pull/499 https://github.com/light-curve/light-curve-python/pull/520
 - Bump `light-curve-feature` to v0.9.0
 
-### Deprecated
-
---
-
-### Removed
-
---
-
 ### Fixed
 
 - Fix error messages for invalid
   inputs https://github.com/light-curve/light-curve-python/issues/505 https://github.com/light-curve/light-curve-python/pull/510
-
-### Security
-
---
 
 ## [0.10.2] 2025-03-25
 
