@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Periodogram(freqs: ArrayLike | None = None) is added to set fixed user-defined frequency grids
+- Periodogram(freqs: ArrayLike | None = None) is added to set fixed user-defined frequency
+  grids https://github.com/light-curve/light-curve-python/pull/528
 
 ### Changed
 

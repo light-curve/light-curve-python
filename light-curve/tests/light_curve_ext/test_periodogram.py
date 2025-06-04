@@ -27,6 +27,42 @@ def test_vs_lombscargle():
         assert_allclose(scipy_power, licu_power)
 
 
+@pytest.mark.parametrize(
+    "grid_name, freqs",
+    [("np.linspace", np.linspace(1.0, 100.0, 100_000)), ("np.geomspace", np.geomspace(1.0, 100.0, 100_000))],
+)
+def test_benchmark_periodogram_rust(benchmark, grid_name, freqs):
+    benchmark.group = f"periodogram_freqs={grid_name}"
+    benchmark.name = "rust"
+
+    rng = np.random.default_rng(0)
+    n = 100
+
+    t = np.sort(rng.normal(0, 1, n))
+    m = np.sin(12.3 * t) + 0.2 * rng.normal(0, 1, n)
+
+    fe = Periodogram(freqs=freqs, fast=False)
+    benchmark(fe.freq_power, t, m)
+
+
+@pytest.mark.parametrize(
+    "grid_name, freqs",
+    [("np.linspace", np.linspace(1.0, 100.0, 100_000)), ("np.geomspace", np.geomspace(1.0, 100.0, 100_000))],
+)
+def test_benchmark_periodogram_scipy(benchmark, grid_name, freqs):
+    benchmark.group = f"periodogram_freqs={grid_name}"
+    benchmark.name = "scipy"
+
+    rng = np.random.default_rng(0)
+    n = 100
+
+    t = np.sort(rng.normal(0, 1, n))
+    m = np.sin(12.3 * t) + 0.2 * rng.normal(0, 1, n)
+    y = (m - m.mean()) / m.std(ddof=1)
+
+    benchmark(lombscargle, t, y, freqs, precenter=True, normalize=False)
+
+
 def test_different_freq_grids():
     rng = np.random.default_rng(None)
 
