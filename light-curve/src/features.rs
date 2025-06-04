@@ -1635,7 +1635,7 @@ impl Periodogram {
                     lcf::QuantileNyquistFreq { quantile }.into()
                 }
             };
-            eval_f32.set_nyquist(nyquist_freq.clone());
+            eval_f32.set_nyquist(nyquist_freq);
             eval_f64.set_nyquist(nyquist_freq);
         }
         if let Some(fast) = fast {
@@ -1662,17 +1662,19 @@ impl Periodogram {
         py: Python<'py>,
         t: Arr<T>,
         m: Arr<T>,
-    ) -> (Bound<'py, PyUntypedArray>, Bound<'py, PyUntypedArray>)
+    ) -> Res<(Bound<'py, PyUntypedArray>, Bound<'py, PyUntypedArray>)>
     where
-        T: lcf::Float + numpy::Element,
+        T: Float + numpy::Element,
     {
         let t: DataSample<_> = t.as_array().into();
         let m: DataSample<_> = m.as_array().into();
-        let mut ts = lcf::TimeSeries::new_without_weight(t, m);
-        let (freq, power) = eval.freq_power(&mut ts);
+        let mut ts = TimeSeries::new_without_weight(t, m);
+        let (freq, power) = eval
+            .freq_power(&mut ts)
+            .map_err(lcf::EvaluatorError::from)?;
         let freq = PyArray1::from_vec(py, freq);
         let power = PyArray1::from_vec(py, power);
-        (freq.as_untyped().clone(), power.as_untyped().clone())
+        Ok((freq.as_untyped().clone(), power.as_untyped().clone()))
     }
 }
 
@@ -1728,8 +1730,8 @@ impl Periodogram {
         cast: bool,
     ) -> Res<(Bound<'py, PyUntypedArray>, Bound<'py, PyUntypedArray>)> {
         dtype_dispatch!(
-            |t, m| Ok(Self::freq_power_impl(&self.eval_f32, py, t, m)),
-            |t, m| Ok(Self::freq_power_impl(&self.eval_f64, py, t, m)),
+            |t, m| Self::freq_power_impl(&self.eval_f32, py, t, m),
+            |t, m| Self::freq_power_impl(&self.eval_f64, py, t, m),
             t,
             =m;
             cast=cast

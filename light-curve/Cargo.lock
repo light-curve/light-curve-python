@@ -1131,9 +1131,9 @@ dependencies = [
 
 [[package]]
 name = "light-curve-feature"
-version = "0.9.0"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aff47bce145b90ceb3a6e4d13ca527bcc66e5db610cac5fb57fb48e62edb9e3e"
+checksum = "c7932e576953d1c3c5724c3cba031eaeadde0e348c27f51a4a36748b6b2dc90d"
 dependencies = [
  "GSL",
  "ceres-solver",
