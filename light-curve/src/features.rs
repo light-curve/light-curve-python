@@ -8,11 +8,12 @@ use crate::transform::{StockTransformer, parse_transform};
 use const_format::formatcp;
 use conv::ConvUtil;
 use itertools::Itertools;
-use light_curve_feature::{self as lcf, DataSample, prelude::*};
+use light_curve_feature::{self as lcf, DataSample, periodogram::FreqGrid, prelude::*};
 use macro_const::macro_const;
 use ndarray::IntoNdProducer;
+use num_traits::Zero;
 use numpy::prelude::*;
-use numpy::{PyArray1, PyUntypedArray};
+use numpy::{AllowTypeChange, PyArray1, PyArrayLike1, PyUntypedArray};
 use once_cell::sync::OnceCell;
 use pyo3::exceptions::{PyNotImplementedError, PyValueError};
 use pyo3::prelude::*;
@@ -21,7 +22,6 @@ use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::convert::TryInto;
-
 // Details of pickle support implementation
 // ----------------------------------------
 // [PyFeatureEvaluator] implements __getstate__ and __setstate__ required for pickle serialisation,
@@ -1600,6 +1600,7 @@ impl Periodogram {
         resolution: Option<f32>,
         max_freq_factor: Option<f32>,
         nyquist: Option<NyquistArgumentOfPeriodogram>,
+        freqs: Option<Bound<PyAny>>,
         fast: Option<bool>,
         features: Option<Bound<PyAny>>,
     ) -> PyResult<(LcfPeriodogram<f32>, LcfPeriodogram<f64>)> {
@@ -1635,18 +1636,85 @@ impl Periodogram {
                     lcf::QuantileNyquistFreq { quantile }.into()
                 }
             };
-            eval_f32.set_nyquist(nyquist_freq.clone());
+            eval_f32.set_nyquist(nyquist_freq);
             eval_f64.set_nyquist(nyquist_freq);
         }
-        if let Some(fast) = fast {
-            if fast {
-                eval_f32.set_periodogram_algorithm(lcf::PeriodogramPowerFft::new().into());
-                eval_f64.set_periodogram_algorithm(lcf::PeriodogramPowerFft::new().into());
-            } else {
-                eval_f32.set_periodogram_algorithm(lcf::PeriodogramPowerDirect {}.into());
-                eval_f64.set_periodogram_algorithm(lcf::PeriodogramPowerDirect {}.into());
-            }
+
+        let fast = fast.unwrap_or(false);
+        if fast {
+            eval_f32.set_periodogram_algorithm(lcf::PeriodogramPowerFft::new().into());
+            eval_f64.set_periodogram_algorithm(lcf::PeriodogramPowerFft::new().into());
+        } else {
+            eval_f32.set_periodogram_algorithm(lcf::PeriodogramPowerDirect {}.into());
+            eval_f64.set_periodogram_algorithm(lcf::PeriodogramPowerDirect {}.into());
         }
+
+        if let Some(freqs) = freqs {
+            const STEP_SIZE_TOLLERANCE: f64 = 10.0 * f32::EPSILON as f64;
+
+            // It is more likely for users to give f64 array
+            let freqs_f64 = PyArrayLike1::<f64, AllowTypeChange>::extract_bound(&freqs)?;
+            let freqs_f64 = freqs_f64.readonly();
+            let freqs_f64 = freqs_f64.as_array();
+            let size = freqs_f64.len();
+            if size < 2 {
+                return Err(PyValueError::new_err("freqs must have at least two values"));
+            }
+            let first_zero = freqs_f64[0].is_zero();
+            if fast && !first_zero {
+                return Err(PyValueError::new_err(
+                    "When Periodogram(freqs=[...], fast=True), freqs[0] must equal 0",
+                ));
+            }
+            let len_is_pow2_p1 = (size - 1).is_power_of_two();
+            if fast && !len_is_pow2_p1 {
+                return Err(PyValueError::new_err(
+                    "When Periodogram(freqs=[...], fast=True), len(freqs) must be a power of two plus one, e.g. 2**k + 1",
+                ));
+            }
+            let step_candidate = freqs_f64[1] - freqs_f64[0];
+            // Check if representable as a linear grid
+            let freq_grid_f64 = if freqs_f64.iter().tuple_windows().all(|(x1, x2)| {
+                let dx = x2 - x1;
+                let rel_diff = f64::abs(dx / step_candidate - 1.0);
+                rel_diff < STEP_SIZE_TOLLERANCE
+            }) {
+                if first_zero && len_is_pow2_p1 {
+                    let log2_size_m1 = (size - 1).ilog2();
+                    FreqGrid::zero_based_pow2(step_candidate, log2_size_m1)
+                } else {
+                    FreqGrid::linear(freqs_f64[0], step_candidate, size)
+                }
+            } else if fast {
+                return Err(PyValueError::new_err(
+                    "When Periodogram(freqs=[...], fast=True), freqs must be a linear grid, like np.linspace(0, max_freq, 2**k + 1)",
+                ));
+            } else {
+                FreqGrid::from_array(freqs_f64)
+            };
+
+            let freq_grid_f32 = match &freq_grid_f64 {
+                FreqGrid::Arbitrary(_) => {
+                    let freqs_f32 = PyArrayLike1::<f32, AllowTypeChange>::extract_bound(&freqs)?;
+                    let freqs_f32 = freqs_f32.readonly();
+                    let freqs_f32 = freqs_f32.as_array();
+                    FreqGrid::from_array(freqs_f32)
+                }
+                FreqGrid::Linear(_) => {
+                    FreqGrid::linear(freqs_f64[0] as f32, step_candidate as f32, size)
+                }
+                FreqGrid::ZeroBasedPow2(_) => {
+                    FreqGrid::zero_based_pow2(step_candidate as f32, (size - 1).ilog2())
+                }
+                _ => {
+                    panic!("This FreqGrid is not implemented yet")
+                }
+            };
+
+            eval_f32.set_freq_grid(freq_grid_f32);
+            eval_f64.set_freq_grid(freq_grid_f64);
+        }
+
         if let Some(features) = features {
             for x in features.try_iter()? {
                 let py_feature = x?.downcast::<PyFeatureEvaluator>()?.borrow();
@@ -1654,6 +1722,7 @@ impl Periodogram {
                 eval_f64.add_feature(py_feature.feature_evaluator_f64.clone());
             }
         }
+
         Ok((eval_f32, eval_f64))
     }
 
@@ -1662,17 +1731,19 @@ impl Periodogram {
         py: Python<'py>,
         t: Arr<T>,
         m: Arr<T>,
-    ) -> (Bound<'py, PyUntypedArray>, Bound<'py, PyUntypedArray>)
+    ) -> Res<(Bound<'py, PyUntypedArray>, Bound<'py, PyUntypedArray>)>
     where
-        T: lcf::Float + numpy::Element,
+        T: Float + numpy::Element,
     {
         let t: DataSample<_> = t.as_array().into();
         let m: DataSample<_> = m.as_array().into();
-        let mut ts = lcf::TimeSeries::new_without_weight(t, m);
-        let (freq, power) = eval.freq_power(&mut ts);
+        let mut ts = TimeSeries::new_without_weight(t, m);
+        let (freq, power) = eval
+            .freq_power(&mut ts)
+            .map_err(lcf::EvaluatorError::from)?;
         let freq = PyArray1::from_vec(py, freq);
         let power = PyArray1::from_vec(py, power);
-        (freq.as_untyped().clone(), power.as_untyped().clone())
+        Ok((freq.as_untyped().clone(), power.as_untyped().clone()))
     }
 }
 
@@ -1686,6 +1757,7 @@ impl Periodogram {
         resolution = LcfPeriodogram::<f64>::default_resolution(),
         max_freq_factor = LcfPeriodogram::<f64>::default_max_freq_factor(),
         nyquist = NyquistArgumentOfPeriodogram::String(String::from("average")),
+        freqs = None,
         fast = true,
         features = None,
         transform = None,
@@ -1695,6 +1767,7 @@ impl Periodogram {
         resolution: Option<f32>,
         max_freq_factor: Option<f32>,
         nyquist: Option<NyquistArgumentOfPeriodogram>,
+        freqs: Option<Bound<PyAny>>,
         fast: Option<bool>,
         features: Option<Bound<PyAny>>,
         transform: Option<Bound<PyAny>>,
@@ -1704,8 +1777,15 @@ impl Periodogram {
                 "transform is not supported by Periodogram, peak-related features are not transformed, but you still may apply transformation for the underlying features",
             ));
         }
-        let (eval_f32, eval_f64) =
-            Self::create_evals(peaks, resolution, max_freq_factor, nyquist, fast, features)?;
+        let (eval_f32, eval_f64) = Self::create_evals(
+            peaks,
+            resolution,
+            max_freq_factor,
+            nyquist,
+            freqs,
+            fast,
+            features,
+        )?;
         Ok((
             Self {
                 eval_f32: eval_f32.clone(),
@@ -1728,8 +1808,8 @@ impl Periodogram {
         cast: bool,
     ) -> Res<(Bound<'py, PyUntypedArray>, Bound<'py, PyUntypedArray>)> {
         dtype_dispatch!(
-            |t, m| Ok(Self::freq_power_impl(&self.eval_f32, py, t, m)),
-            |t, m| Ok(Self::freq_power_impl(&self.eval_f64, py, t, m)),
+            |t, m| Self::freq_power_impl(&self.eval_f32, py, t, m),
+            |t, m| Self::freq_power_impl(&self.eval_f64, py, t, m),
             t,
             =m;
             cast=cast
@@ -1756,6 +1836,15 @@ nyquist : str or float or None, optional
      - float: Nyquist frequency is defined by given quantile of time
         intervals between observations
     Default is '{default_nyquist}'
+freqs : array-like or None, optional
+    Explicid and fixed frequency grid (angular frequency, radians/time unit).
+    If given, `resolution`, `max_freq_factor` and `nyquist` are being
+    ignored.
+    For `fast=True` the only supported type of the grid is
+    np.linspace(0.0, max_freq, 2**k+1), where k is an integer.
+    For `fast=False` any grid is accepted, but linear grids, like
+    np.linspace(min_freq, max_freq, n), apply some computational
+    optimisations.
 fast : bool or None, optional
     Use "Fast" (approximate and FFT-based) or direct periodogram algorithm,
     default is {default_fast}

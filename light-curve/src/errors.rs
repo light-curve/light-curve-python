@@ -45,4 +45,10 @@ impl From<Exception> for PyErr {
     }
 }
 
+impl From<light_curve_feature::EvaluatorError> for Exception {
+    fn from(err: light_curve_feature::EvaluatorError) -> Self {
+        Exception::RuntimeError(err.to_string())
+    }
+}
+
 pub(crate) type Res<T> = Result<T, Exception>;
