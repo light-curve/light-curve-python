@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow non-numpy inputs and casting mismatched f32 arrays to f64 for the feature extractions with newly added
   `cast: bool = False` argument. We plan to change the default value to `True` in a future 0.x version.
   https://github.com/light-curve/light-curve-python/issues/509 https://github.com/light-curve/light-curve-python/pull/512
+- `Periodogram.power` method https://github.com/light-curve/light-curve-python/pull/529
 
 ### Changed
 
