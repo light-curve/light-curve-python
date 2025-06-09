@@ -1673,12 +1673,12 @@ impl Periodogram {
                 ));
             }
             let step_candidate = freqs_f64[1] - freqs_f64[0];
-            // Check if representable as a linear grid
-            let freq_grid_f64 = if freqs_f64.iter().tuple_windows().all(|(x1, x2)| {
+            let is_linear = freqs_f64.iter().tuple_windows().all(|(x1, x2)| {
                 let dx = x2 - x1;
                 let rel_diff = f64::abs(dx / step_candidate - 1.0);
                 rel_diff < STEP_SIZE_TOLLERANCE
-            }) {
+            });
+            let freq_grid_f64 = if is_linear {
                 if first_zero && len_is_pow2_p1 {
                     let log2_size_m1 = (size - 1).ilog2();
                     FreqGrid::zero_based_pow2(step_candidate, log2_size_m1)
@@ -1724,6 +1724,23 @@ impl Periodogram {
         }
 
         Ok((eval_f32, eval_f64))
+    }
+
+    fn power_impl<'py, T>(
+        eval: &lcf::Periodogram<T, lcf::Feature<T>>,
+        py: Python<'py>,
+        t: Arr<T>,
+        m: Arr<T>,
+    ) -> Res<Bound<'py, PyUntypedArray>>
+    where
+        T: Float + numpy::Element,
+    {
+        let t: DataSample<_> = t.as_array().into();
+        let m: DataSample<_> = m.as_array().into();
+        let mut ts = TimeSeries::new_without_weight(t, m);
+        let power = eval.power(&mut ts).map_err(lcf::EvaluatorError::from)?;
+        let power = PyArray1::from_vec(py, power);
+        Ok(power.as_untyped().clone())
     }
 
     fn freq_power_impl<'py, T>(
@@ -1798,6 +1815,24 @@ impl Periodogram {
         ))
     }
 
+    /// Periodogram values
+    #[pyo3(signature = (t, m, *, cast=false))]
+    fn power<'py>(
+        &self,
+        py: Python<'py>,
+        t: Bound<PyAny>,
+        m: Bound<PyAny>,
+        cast: bool,
+    ) -> Res<Bound<'py, PyUntypedArray>> {
+        dtype_dispatch!(
+            |t, m| Self::power_impl(&self.eval_f32, py, t, m),
+            |t, m| Self::power_impl(&self.eval_f64, py, t, m),
+            t,
+            =m;
+            cast=cast
+        )
+    }
+
     /// Angular frequencies and periodogram values
     #[pyo3(signature = (t, m, *, cast=false))]
     fn freq_power<'py>(
@@ -1859,7 +1894,7 @@ transform : None, optional
 
 {common}
 freq_power(t, m, *, cast=False)
-    Get periodogram
+    Get periodogram as a pair of frequencies and power values
 
     Parameters
     ----------
@@ -1874,6 +1909,23 @@ freq_power(t, m, *, cast=False)
     -------
     freq : np.ndarray of np.float32 or np.float64
         Frequency grid
+    power : np.ndarray of np.float32 or np.float64
+        Periodogram power
+
+power(t, m, *, cast=False)
+    Get periodogram power
+
+    Parameters
+    ----------
+    t : np.ndarray of np.float32 or np.float64
+        Time array
+    m : np.ndarray of np.float32 or np.float64
+        Magnitude (flux) array
+    cast : bool, optional
+        Cast inputs to np.ndarray objects of the same dtype
+
+    Returns
+    -------
     power : np.ndarray of np.float32 or np.float64
         Periodogram power
 
