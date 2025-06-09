@@ -23,7 +23,7 @@ def test_vs_lombscargle():
     for freqs in freq_grids:
         licu_freqs, licu_power = Periodogram(freqs=freqs, fast=False).freq_power(t, m)
         assert_allclose(licu_freqs, freqs)
-        licu_power2 = Periodogram(freqs=freqs, fast=False).power_power(t, m)
+        licu_power2 = Periodogram(freqs=freqs, fast=False).power(t, m)
         assert_allclose(licu_power2, licu_power)
         scipy_power = lombscargle(t, scipy_y, freqs=freqs, precenter=True, normalize=False)
         assert_allclose(scipy_power, licu_power)
