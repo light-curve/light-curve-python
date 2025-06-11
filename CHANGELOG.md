@@ -9,12 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Periodogram(freqs: ArrayLike | None = None) is added to set fixed user-defined frequency
-  grids https://github.com/light-curve/light-curve-python/pull/528
+--
 
 ### Changed
 
-- Bump `light-curve-feature` to 0.10.0
+--
 
 ### Deprecated
 
@@ -32,6 +31,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 --
 
+## [0.10.4] 2025-06-11
+
+### Added
+
+- Periodogram(freqs: ArrayLike | None = None) is added to set fixed user-defined frequency
+  grids https://github.com/light-curve/light-curve-python/pull/528
+- `Periodogram.power` method https://github.com/light-curve/light-curve-python/pull/529
+
+### Changed
+
+- Bump `light-curve-feature` to 0.10.0
+
 ## [0.10.3] 2025-05-22
 
 ### Added
@@ -41,7 +52,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow non-numpy inputs and casting mismatched f32 arrays to f64 for the feature extractions with newly added
   `cast: bool = False` argument. We plan to change the default value to `True` in a future 0.x version.
   https://github.com/light-curve/light-curve-python/issues/509 https://github.com/light-curve/light-curve-python/pull/512
-- `Periodogram.power` method https://github.com/light-curve/light-curve-python/pull/529
 
 ### Changed
 
