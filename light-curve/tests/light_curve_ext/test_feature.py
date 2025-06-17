@@ -53,10 +53,47 @@ def new_default(cls, **kwargs):
     return cls(*args, **kwargs)
 
 
+def gen_periodogram_variants(*, rng=None):
+    rng = np.random.default_rng(rng)
+
+    peaks = rng.integers(1, 10)
+    resolution = 10 ** rng.uniform(-0.5, 1.5)
+    max_freq_factor = 10 ** rng.uniform(0.0, 2.0)
+    features = [lc.Amplitude(), lc.Mean()]
+
+    for nyquist in ["average", rng.uniform(0.0, 1.0)]:
+        for freq_grid in [False, True]:
+            for fast in [False, True]:
+                if freq_grid:
+                    if fast:
+                        freqs = np.linspace(0.0, 100.0, 257)
+                    else:
+                        freqs = np.linspace(1.0, 100.0, 100)
+                else:
+                    freqs = None
+
+                yield lc.Periodogram(
+                    peaks=peaks,
+                    resolution=resolution,
+                    max_freq_factor=max_freq_factor,
+                    nyquist=nyquist,
+                    freqs=freqs,
+                    fast=fast,
+                    features=features,
+                )
+
+
 def construct_example_objects(cls, *, parametric_variants=1, rng=None):
     # Extractor is special
     if cls is lc.Extractor:
         return [cls(lc.BeyondNStd(1.5), lc.LinearFit())]
+
+    # Periodogram is also special
+    if cls is lc.Periodogram:
+        objects = []
+        for _ in range(parametric_variants):
+            objects.extend(gen_periodogram_variants(rng=rng))
+        return objects
 
     # No mandatory arguments
     if not hasattr(cls, "__getnewargs__"):
@@ -262,6 +299,20 @@ def test_pickling(feature, pickle_protocol):
 
     new_values = new_feature(*data)
     assert_array_equal(values, new_values)
+
+
+@pytest.mark.parametrize("feature", gen_periodogram_variants(rng=None))
+@pytest.mark.parametrize("pickle_protocol", tuple(range(2, pickle.HIGHEST_PROTOCOL + 1)))
+def test_periodogram_pickling(feature, pickle_protocol):
+    n_obs = 128
+    t, m, _sigma = gen_lc(n_obs)
+    powers = feature.power(t, m)
+
+    b = pickle.dumps(feature, protocol=pickle_protocol)
+    new_feature = pickle.loads(b)
+
+    new_powers = new_feature.power(t, m)
+    assert_array_equal(powers, new_powers)
 
 
 @pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=5, rng=None))
