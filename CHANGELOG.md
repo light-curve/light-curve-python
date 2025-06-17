@@ -25,7 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
---
+- A problem with pickling of `Periodogram` which caused wrong results from `.power` and `.freq_power` for a deserialized
+  object https://github.com/light-curve/light-curve-python/pull/532
 
 ### Security
 
