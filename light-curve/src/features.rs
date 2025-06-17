@@ -1051,7 +1051,7 @@ macro_rules! fit_evaluator {
     Number of Ceres iterations, default is {niter}
 ceres_loss_reg : float, optional
     Ceres loss regularization, default is to use square norm as is, if set to
-    a number, the loss function is reqgualized to descriminate outlier
+    a number, the loss function is regularized to descriminate outlier
     residuals larger than this value.
     Default is None which means no regularization.
 "#,
