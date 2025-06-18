@@ -22,6 +22,7 @@ use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::convert::TryInto;
+use std::ops::Deref;
 // Details of pickle support implementation
 // ----------------------------------------
 // [PyFeatureEvaluator] implements __getstate__ and __setstate__ required for pickle serialisation,
@@ -588,28 +589,6 @@ impl PyFeatureEvaluator {
         self.feature_evaluator_f64.get_descriptions()
     }
 
-    /// Used by pickle.load / pickle.loads
-    fn __setstate__(&mut self, state: Bound<PyBytes>) -> Res<()> {
-        *self = serde_pickle::from_slice(state.as_bytes(), serde_pickle::DeOptions::new())
-            .map_err(|err| {
-                Exception::UnpicklingError(format!(
-                    r#"Error happened on the Rust side when deserializing _FeatureEvaluator: "{err}""#
-                ))
-            })?;
-        Ok(())
-    }
-
-    /// Used by pickle.dump / pickle.dumps
-    fn __getstate__<'py>(&self, py: Python<'py>) -> Res<Bound<'py, PyBytes>> {
-        let vec_bytes =
-            serde_pickle::to_vec(&self, serde_pickle::SerOptions::new()).map_err(|err| {
-                Exception::PicklingError(format!(
-                    r#"Error happened on the Rust side when serializing _FeatureEvaluator: "{err}""#
-                ))
-            })?;
-        Ok(PyBytes::new(py, &vec_bytes))
-    }
-
     /// Used by copy.copy
     fn __copy__(&self) -> Self {
         self.clone()
@@ -621,8 +600,42 @@ impl PyFeatureEvaluator {
     }
 }
 
+macro_rules! impl_pickle_serialisation {
+    ($name: ident) => {
+        #[pymethods]
+        impl $name {
+            /// Used by pickle.load / pickle.loads
+            fn __setstate__(mut slf: PyRefMut<'_, Self>, state: Bound<PyBytes>) -> Res<()> {
+                let (super_rust, self_rust): (PyFeatureEvaluator, Self) = serde_pickle::from_slice(state.as_bytes(), serde_pickle::DeOptions::new())
+                    .map_err(|err| {
+                        Exception::UnpicklingError(format!(
+                            r#"Error happened on the Rust side when deserializing _FeatureEvaluator: "{err}""#
+                        ))
+                    })?;
+                *slf.as_mut() = super_rust;
+                *slf = self_rust;
+                Ok(())
+            }
+
+            /// Used by pickle.dump / pickle.dumps
+            fn __getstate__<'py>(slf: PyRef<'py, Self>) -> Res<Bound<'py, PyBytes>> {
+                let supr = slf.as_super();
+                let vec_bytes = serde_pickle::to_vec(&(supr.deref(), slf.deref()), serde_pickle::SerOptions::new()).map_err(|err| {
+                    Exception::PicklingError(format!(
+                        r#"Error happened on the Rust side when serializing _FeatureEvaluator: "{err}""#
+                    ))
+                })?;
+                Ok(PyBytes::new(slf.py(), &vec_bytes))
+            }
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 pub struct Extractor {}
+
+impl_pickle_serialisation!(Extractor);
 
 #[pymethods]
 impl Extractor {
@@ -702,10 +715,13 @@ macro_rules! impl_stock_transform {
 
 macro_rules! evaluator {
     ($name: ident, $eval: ty, $default_transform: expr $(,)?) => {
+        #[derive(Serialize, Deserialize)]
         #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
         pub struct $name {}
 
         impl_stock_transform!($name, $default_transform);
+
+        impl_pickle_serialisation!($name);
 
         #[pymethods]
         impl $name {
@@ -806,8 +822,11 @@ pub(crate) enum FitLnPrior {
 
 macro_rules! fit_evaluator {
     ($name: ident, $eval: ty, $ib: ty, $transform: expr, $nparam: literal, $ln_prior_by_str: tt, $ln_prior_doc: literal $(,)?) => {
+        #[derive(Serialize, Deserialize)]
         #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
         pub struct $name {}
+
+        impl_pickle_serialisation!($name);
 
         impl $name {
             fn supported_algorithms_str() -> String {
@@ -1051,7 +1070,7 @@ macro_rules! fit_evaluator {
     Number of Ceres iterations, default is {niter}
 ceres_loss_reg : float, optional
     Ceres loss regularization, default is to use square norm as is, if set to
-    a number, the loss function is reqgualized to descriminate outlier
+    a number, the loss function is regularized to descriminate outlier
     residuals larger than this value.
     Default is None which means no regularization.
 "#,
@@ -1158,10 +1177,12 @@ evaluator!(
     StockTransformer::Lg
 );
 
+#[derive(Serialize, Deserialize)]
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 pub struct BeyondNStd {}
 
 impl_stock_transform!(BeyondNStd, StockTransformer::Identity);
+impl_pickle_serialisation!(BeyondNStd);
 
 #[pymethods]
 impl BeyondNStd {
@@ -1219,8 +1240,11 @@ fit_evaluator!(
     "'no': no prior",
 );
 
+#[derive(Serialize, Deserialize)]
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 pub struct Bins {}
+
+impl_pickle_serialisation!(Bins);
 
 #[pymethods]
 impl Bins {
@@ -1318,10 +1342,12 @@ evaluator!(
     StockTransformer::Identity
 );
 
+#[derive(Serialize, Deserialize)]
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 pub struct InterPercentileRange {}
 
 impl_stock_transform!(InterPercentileRange, StockTransformer::Identity);
+impl_pickle_serialisation!(InterPercentileRange);
 
 #[pymethods]
 impl InterPercentileRange {
@@ -1385,10 +1411,12 @@ fit_evaluator!(
     "'no': no prior",
 );
 
+#[derive(Serialize, Deserialize)]
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 pub struct MagnitudePercentageRatio {}
 
 impl_stock_transform!(MagnitudePercentageRatio, StockTransformer::Identity);
+impl_pickle_serialisation!(MagnitudePercentageRatio);
 
 #[pymethods]
 impl MagnitudePercentageRatio {
@@ -1474,10 +1502,12 @@ evaluator!(
     StockTransformer::Identity
 );
 
+#[derive(Serialize, Deserialize)]
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 pub struct MedianBufferRangePercentage {}
 
 impl_stock_transform!(MedianBufferRangePercentage, StockTransformer::Identity);
+impl_pickle_serialisation!(MedianBufferRangePercentage);
 
 #[pymethods]
 impl MedianBufferRangePercentage {
@@ -1526,6 +1556,7 @@ evaluator!(
     StockTransformer::Identity
 );
 
+#[derive(Serialize, Deserialize)]
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 pub struct PercentDifferenceMagnitudePercentile {}
 
@@ -1533,6 +1564,7 @@ impl_stock_transform!(
     PercentDifferenceMagnitudePercentile,
     StockTransformer::ClippedLg
 );
+impl_pickle_serialisation!(PercentDifferenceMagnitudePercentile);
 
 #[pymethods]
 impl PercentDifferenceMagnitudePercentile {
@@ -1588,11 +1620,14 @@ enum NyquistArgumentOfPeriodogram {
     Float(f32),
 }
 
+#[derive(Serialize, Deserialize)]
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 pub struct Periodogram {
     eval_f32: LcfPeriodogram<f32>,
     eval_f64: LcfPeriodogram<f64>,
 }
+
+impl_pickle_serialisation!(Periodogram);
 
 impl Periodogram {
     fn create_evals(
@@ -2005,8 +2040,11 @@ evaluator!(
     StockTransformer::Identity
 );
 
+#[derive(Serialize, Deserialize)]
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 pub struct OtsuSplit {}
+
+impl_pickle_serialisation!(OtsuSplit);
 
 #[pymethods]
 impl OtsuSplit {
@@ -2066,8 +2104,11 @@ evaluator!(
 );
 
 /// Feature evaluator deserialized from JSON string
+#[derive(Serialize, Deserialize)]
 #[pyclass(name = "JSONDeserializedFeature", extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 pub struct JsonDeserializedFeature {}
+
+impl_pickle_serialisation!(JsonDeserializedFeature);
 
 #[pymethods]
 impl JsonDeserializedFeature {

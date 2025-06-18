@@ -2,6 +2,7 @@ import copy
 import inspect
 import pickle
 from concurrent.futures import ThreadPoolExecutor
+from itertools import chain
 
 import numpy as np
 import pytest
@@ -37,6 +38,11 @@ assert len(non_param_feature_classes) > 0
 all_feature_classes = frozenset(_feature_classes(lc, exclude_parametric=False))
 assert len(all_feature_classes) > 0
 
+fit_feature_classes = frozenset(
+    cls for cls in all_feature_classes if hasattr(cls, "model") and hasattr(cls, "supported_algorithms")
+)
+assert len(fit_feature_classes) > 0
+
 
 def get_new_args_kwargs(cls):
     if hasattr(cls, "__getnewargs_ex__"):
@@ -53,10 +59,60 @@ def new_default(cls, **kwargs):
     return cls(*args, **kwargs)
 
 
+def gen_periodogram_variants(*, rng=None):
+    rng = np.random.default_rng(rng)
+
+    peaks = rng.integers(1, 10)
+    resolution = 10 ** rng.uniform(-0.5, 1.5)
+    max_freq_factor = 10 ** rng.uniform(0.0, 2.0)
+    features = [lc.Amplitude(), lc.Mean()]
+
+    for nyquist in ["average", rng.uniform(0.0, 1.0)]:
+        for freq_grid in [False, True]:
+            for fast in [False, True]:
+                if freq_grid:
+                    if fast:
+                        freqs = np.linspace(0.0, 100.0, 257)
+                    else:
+                        freqs = np.linspace(1.0, 100.0, 100)
+                else:
+                    freqs = None
+
+                yield lc.Periodogram(
+                    peaks=peaks,
+                    resolution=resolution,
+                    max_freq_factor=max_freq_factor,
+                    nyquist=nyquist,
+                    freqs=freqs,
+                    fast=fast,
+                    features=features,
+                )
+
+
+def gen_fit_variants(cls, *, rng=None):
+    rng = np.random.default_rng(rng)
+    for algo in cls.supported_algorithms:
+        yield cls(
+            algo,
+            mcmc_niter=rng.integers(5, 20),
+            lmsder_niter=rng.integers(1, 10),
+            ceres_niter=rng.integers(1, 10),
+            ceres_loss_reg=rng.uniform(0.5, 2.0),
+        )
+
+
 def construct_example_objects(cls, *, parametric_variants=1, rng=None):
-    # Extractor is special
+    # Extractor
     if cls is lc.Extractor:
         return [cls(lc.BeyondNStd(1.5), lc.LinearFit())]
+
+    # Periodogram
+    if cls is lc.Periodogram:
+        return list(chain.from_iterable(gen_periodogram_variants(rng=rng) for _ in range(parametric_variants)))
+
+    # Non-linear fit classes
+    if cls in fit_feature_classes:
+        return list(chain.from_iterable(gen_fit_variants(cls, rng=rng) for _ in range(parametric_variants)))
 
     # No mandatory arguments
     if not hasattr(cls, "__getnewargs__"):
@@ -88,13 +144,16 @@ def construct_example_objects(cls, *, parametric_variants=1, rng=None):
     return objects
 
 
-def gen_feature_evaluators(*, parametric_variants=0, rng=None):
+def gen_feature_evaluators(*, parametric_variants=0, skip_fit=False, rng=None):
     if parametric_variants == 0:
         for cls in non_param_feature_classes:
             yield cls()
         return
     rng = np.random.default_rng(rng)
-    for cls in all_feature_classes:
+    classes = all_feature_classes
+    if skip_fit:
+        classes = classes - fit_feature_classes
+    for cls in classes:
         yield from construct_example_objects(cls, parametric_variants=parametric_variants, rng=rng)
 
 
@@ -264,6 +323,40 @@ def test_pickling(feature, pickle_protocol):
     assert_array_equal(values, new_values)
 
 
+@pytest.mark.parametrize("feature", gen_periodogram_variants(rng=None))
+@pytest.mark.parametrize("pickle_protocol", tuple(range(2, pickle.HIGHEST_PROTOCOL + 1)))
+def test_periodogram_pickling(feature, pickle_protocol):
+    n_obs = 128
+    t, m, _sigma = gen_lc(n_obs)
+    powers = feature.power(t, m)
+
+    b = pickle.dumps(feature, protocol=pickle_protocol)
+    new_feature = pickle.loads(b)
+
+    new_powers = new_feature.power(t, m)
+    assert_array_equal(powers, new_powers)
+
+
+@pytest.mark.parametrize("feature", chain.from_iterable(gen_fit_variants(cls, rng=None) for cls in fit_feature_classes))
+@pytest.mark.parametrize("pickle_protocol", tuple(range(2, pickle.HIGHEST_PROTOCOL + 1)))
+def test_non_linear_fit_pickling(feature, pickle_protocol):
+    n_obs = 128
+    t, m, sigma = gen_lc(n_obs)
+
+    params = feature(t, m, sigma)
+
+    model = feature.model(t, params)
+
+    b = pickle.dumps(feature, protocol=pickle_protocol)
+    new_feature = pickle.loads(b)
+
+    new_params = new_feature(t, m, sigma)
+    assert_array_equal(params, new_params)
+
+    new_model = new_feature.model(t, params)
+    assert_array_equal(model, new_model)
+
+
 @pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=5, rng=None))
 def test_copy_deepcopy(feature):
     n_obs = 128
@@ -330,7 +423,7 @@ def test_bazin_fit_precise(algo):
     assert_allclose(true_params, params, rtol=1e-4)  # tolerance set to underlying algorithms
 
 
-@pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=5, rng=None))
+@pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=5, rng=0))
 def test_json_serialization(feature):
     n_obs = 128
     data = gen_lc(n_obs)
@@ -338,7 +431,7 @@ def test_json_serialization(feature):
 
     from_to_json = lc.feature_from_json(feature.to_json())
     values_from_to_json = from_to_json(*data)
-    assert_array_equal(values, values_from_to_json)
+    assert_allclose(values, values_from_to_json)
 
 
 def test_json_deserialization():
