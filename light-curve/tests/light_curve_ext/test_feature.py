@@ -144,13 +144,16 @@ def construct_example_objects(cls, *, parametric_variants=1, rng=None):
     return objects
 
 
-def gen_feature_evaluators(*, parametric_variants=0, rng=None):
+def gen_feature_evaluators(*, parametric_variants=0, skip_fit=False, rng=None):
     if parametric_variants == 0:
         for cls in non_param_feature_classes:
             yield cls()
         return
     rng = np.random.default_rng(rng)
-    for cls in all_feature_classes:
+    classes = all_feature_classes
+    if skip_fit:
+        classes = classes - fit_feature_classes
+    for cls in classes:
         yield from construct_example_objects(cls, parametric_variants=parametric_variants, rng=rng)
 
 
