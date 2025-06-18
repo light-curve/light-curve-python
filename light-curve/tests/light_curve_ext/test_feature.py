@@ -420,7 +420,7 @@ def test_bazin_fit_precise(algo):
     assert_allclose(true_params, params, rtol=1e-4)  # tolerance set to underlying algorithms
 
 
-@pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=5, rng=None))
+@pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=5, rng=0))
 def test_json_serialization(feature):
     n_obs = 128
     data = gen_lc(n_obs)
