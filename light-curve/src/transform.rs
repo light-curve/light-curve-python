@@ -52,8 +52,7 @@ impl TryFrom<&str> for StockTransformer {
             "sqrt" => Self::Sqrt,
             _ => {
                 return Err(Exception::ValueError(format!(
-                    "Unknown stock transformer: {}",
-                    s
+                    "Unknown stock transformer: {s}"
                 )));
             }
         })
@@ -128,8 +127,7 @@ pub(crate) fn parse_transform(
                             Ok(Some(default))
                         } else {
                             Err(Exception::ValueError(format!(
-                                "Unknown transformation: {}",
-                                s
+                                "Unknown transformation: {s}"
                             )))
                         }
                     }
