@@ -146,8 +146,6 @@ fn transform_parameter_doc(default: StockTransformer) -> String {
      - {variants}
     If bool, must be True to use default transformer or False to disable.
     If None, no transformation is applied"#,
-        default_name = default_name,
-        variants = variants,
     )
 }
 
@@ -173,16 +171,14 @@ impl PyFeatureEvaluator {
             feature_evaluator_f32: lcf::Transformed::new(fe_f32, tr_f32)
                 .map_err(|err| {
                     Exception::ValueError(format!(
-                        "feature and transformation are incompatible: {:?}",
-                        err
+                        "feature and transformation are incompatible: {err:?}"
                     ))
                 })?
                 .into(),
             feature_evaluator_f64: lcf::Transformed::new(fe_f64, tr_f64)
                 .map_err(|err| {
                     Exception::ValueError(format!(
-                        "feature and transformation are incompatible: {:?}",
-                        err
+                        "feature and transformation are incompatible: {err:?}"
                     ))
                 })?
                 .into(),
