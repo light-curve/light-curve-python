@@ -37,7 +37,7 @@ mimalloc = ["dep:mimalloc"]
 const_format = "0.2.34"
 conv = "0.3.3"
 enum-iterator = "2.1.0"
-enumflags2 = { version = "0.7.11", features = ["serde"] }
+enumflags2 = { version = "0.7.12", features = ["serde"] }
 itertools = "0.14.0"
 macro_const = "0.1.0"
 mimalloc = { version = "0.1.42", features = [
