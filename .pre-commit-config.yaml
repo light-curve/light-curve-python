@@ -2,7 +2,7 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
     -   id: trailing-whitespace # trims trailing whitespace
     -   id: end-of-file-fixer # ensures that a file is either empty, or ends with one newline
@@ -19,7 +19,7 @@ repos:
     -   id: debug-statements # checks for debugger imports and py37+ `breakpoint()` calls in python source
 # Ruff should go before black, because its output is not formatted
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 'v0.11.13'
+    rev: 'v0.12.9'
     hooks:
         -   id: ruff
             args: [--fix, --exit-non-zero-on-fix]
