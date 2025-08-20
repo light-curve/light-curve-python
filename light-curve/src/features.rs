@@ -243,7 +243,7 @@ impl PyFeatureEvaluator {
                 ));
             }
             None => {
-                if feature_evaluator.is_sorting_required() & !is_sorted(t.as_slice()) {
+                if feature_evaluator.is_sorting_required() && !is_sorted(t.as_slice()) {
                     return Err(Exception::ValueError(
                         "t must be in ascending order".to_string(),
                     ));
