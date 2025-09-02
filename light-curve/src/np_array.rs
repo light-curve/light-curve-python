@@ -181,7 +181,7 @@ fn downcast_objects_cast<'py, const N: usize>(
     } else {
         let result = index::<N>().map_result::<_, Exception>(|i| {
             let f64_arr = if let Some(f32_arr) = &f32_arrays[i] {
-                f32_arr.cast::<f64>(false)?.readonly()
+                f32_arr.cast_array::<f64>(false)?.readonly()
             } else {
                 try_downcast_to_f64_array(objects[i], true)
                     .ok_or_else(|| cast_fail_reason(i, names, objects, true))?
