@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_minor: [ '9', '10', '11', '12', '13', '13t' ]
+        python_minor: [ '9', '10', '11', '12', '13', '13t', '14', '14t' ]
         os: [ ubuntu-latest ]
         # Just a single ARM worker to be sure that it works
         include:
@@ -193,10 +193,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'
-      - name: Set up Python 3.13t
+      - name: Set up Python 3.14t
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13t'
+          python-version: '3.14t'
       - name: Get minimum supported Rust version
         run: echo "::set-output name=msrv::$(grep '^rust-version = ' Cargo.toml | grep -o '[0-9.]\+')"
         id: get_msrv
