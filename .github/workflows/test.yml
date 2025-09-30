@@ -79,6 +79,7 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
+          components: rustfmt
       - run: cargo fmt --manifest-path=light-curve/Cargo.toml -- --check
 
   cargo-clippy:
@@ -90,6 +91,7 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
+          components: clippy
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: "${{ runner.os }}_stable-rust_cargo-clippy"
