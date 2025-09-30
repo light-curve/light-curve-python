@@ -79,6 +79,7 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
+          components: rustfmt
       - run: cargo fmt --manifest-path=light-curve/Cargo.toml -- --check
 
   cargo-clippy:
