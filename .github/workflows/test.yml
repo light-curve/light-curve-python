@@ -18,7 +18,7 @@ jobs:
         with:
           submodules: true
       - name: Set up Python 3.13
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.13"
       - name: Extract build deps from pyproject.toml
@@ -53,7 +53,7 @@ jobs:
         with:
           toolchain: stable
       - name: Set up Python 3.${{ matrix.python_minor }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.${{ matrix.python_minor }}"
           allow-prereleases: true
@@ -125,7 +125,7 @@ jobs:
           shared-key: "${{ runner.os }}_stable-rust_maturin-develop"
           workspaces: "light-curve"
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Install build deps
@@ -162,7 +162,7 @@ jobs:
         with:
           toolchain: stable
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.13"
       - uses: Swatinem/rust-cache@v2
@@ -193,15 +193,15 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Set up Python 3.9
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.9'
       - name: Set up Python 3.13t
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.13t'
       - name: Set up Python 3.14t
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.14t'
           allow-prereleases: true
