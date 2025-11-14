@@ -124,12 +124,6 @@ exclude = [
 ]
 target-version = "py39"
 
-[tool.ruff.format]
-# Ruff's formatter is designed to be a drop-in replacement for Black
-line-ending = "auto"
-quote-style = "double"
-indent-style = "space"
-
 [tool.ruff.lint]
 select = [
     # Pyflakes
