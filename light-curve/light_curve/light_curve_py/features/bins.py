@@ -6,7 +6,7 @@ from ..dataclass_field import dataclass_field
 from ._base_meta import BaseMetaSingleBandFeature
 
 
-@dataclass()
+@dataclass(frozen=True)
 class Bins(BaseMetaSingleBandFeature):
     window: float = dataclass_field(default=1.0, kw_only=True)
     offset: float = dataclass_field(default=0.0, kw_only=True)

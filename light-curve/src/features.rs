@@ -594,6 +594,26 @@ impl PyFeatureEvaluator {
     fn __deepcopy__(&self, _memo: Bound<PyAny>) -> Self {
         self.clone()
     }
+
+    /// Equality comparison based on JSON representation
+    fn __eq__(&self, other: &Self) -> bool {
+        self.to_json() == other.to_json()
+    }
+
+    /// Inequality comparison
+    fn __ne__(&self, other: &Self) -> bool {
+        !self.__eq__(other)
+    }
+
+    /// Hash based on JSON representation
+    fn __hash__(&self) -> u64 {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        
+        let mut hasher = DefaultHasher::new();
+        self.to_json().hash(&mut hasher);
+        hasher.finish()
+    }
 }
 
 macro_rules! impl_pickle_serialisation {

@@ -28,7 +28,7 @@ IMINUIT_IMPORT_ERROR = (
 )
 
 
-@dataclass()
+@dataclass(frozen=True)
 class BaseRainbowFit(BaseMultiBandFeature):
     band_wave_cm: Dict[str, float]
     """Mapping of band names and their effective wavelengths in cm."""

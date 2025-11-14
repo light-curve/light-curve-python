@@ -5,7 +5,7 @@ import numpy as np
 from ._base import BaseSingleBandFeature
 
 
-@dataclass()
+@dataclass(frozen=True)
 class BeyondNStd(BaseSingleBandFeature):
     nstd: float = 1.0
 

@@ -16,7 +16,7 @@ boltzman_constant = 1.380649e-16  # erg/K
 sigma_sb = 5.6703744191844314e-05  # erg/(cm^2 s K^4)
 
 
-@dataclass()
+@dataclass(frozen=True)
 class RainbowFit(BaseRainbowFit):
     """Multiband blackbody fit to the light curve using functions to be chosen by the user
     Note, that `m` and corresponded `sigma` are assumed to be flux densities.

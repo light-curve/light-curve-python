@@ -7,7 +7,7 @@ from ..dataclass_field import dataclass_field
 from ._base import BaseSingleBandFeature
 
 
-@dataclass()
+@dataclass(frozen=True)
 class FluxNNotDetBeforeFd(BaseSingleBandFeature):
     """Number of non-detections before the first detection for measurements of the flux.
 

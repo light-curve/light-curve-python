@@ -8,7 +8,7 @@ from light_curve.light_curve_py.dataclass_field import dataclass_field
 from light_curve.light_curve_py.warnings import mark_experimental
 
 
-@dataclass
+@dataclass(frozen=True)
 class BaseMultiBandFeature(ABC):
     @property
     @abstractmethod
@@ -105,9 +105,16 @@ class BaseMultiBandFeature(ABC):
         return np.stack([self(*lc, sorted=sorted, check=check, fill_value=fill_value) for lc in lcs])
 
 
-@dataclass
+@dataclass(frozen=True)
 class BaseSingleBandFeature(BaseMultiBandFeature):
     bands: Optional[Sequence[str]] = dataclass_field(default=None, kw_only=True)
+
+    def __post_init__(self) -> None:
+        """Convert bands list to tuple for hashability."""
+        super().__post_init__()
+        # Convert bands to tuple if it's a list, for frozen dataclass hashability
+        if self.bands is not None and isinstance(self.bands, list):
+            object.__setattr__(self, 'bands', tuple(self.bands))
 
     @property
     @abstractmethod

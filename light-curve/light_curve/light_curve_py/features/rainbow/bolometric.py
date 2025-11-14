@@ -15,7 +15,7 @@ __all__ = [
 ]
 
 
-@dataclass()
+@dataclass(frozen=True)
 class BaseBolometricTerm:
     """Bolometric term for the Rainbow"""
 
@@ -63,7 +63,7 @@ class BaseBolometricTerm:
         return NotImplementedError
 
 
-@dataclass()
+@dataclass(frozen=True)
 class SigmoidBolometricTerm(BaseBolometricTerm):
     """Sigmoid"""
 
@@ -117,7 +117,7 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
         return t0
 
 
-@dataclass()
+@dataclass(frozen=True)
 class BazinBolometricTerm(BaseBolometricTerm):
     """Bazin function, symmetric form"""
 
@@ -182,7 +182,7 @@ class BazinBolometricTerm(BaseBolometricTerm):
         return t0 + np.log(fall_time / rise_time) * rise_time * fall_time / (rise_time + fall_time)
 
 
-@dataclass()
+@dataclass(frozen=True)
 class LinexpBolometricTerm(BaseBolometricTerm):
     """Linexp function, symmetric form. Generated using a prototype version of Multi-view
     Symbolic Regression (Russeil et al. 2024, https://arxiv.org/abs/2402.04298) on
@@ -249,7 +249,7 @@ class LinexpBolometricTerm(BaseBolometricTerm):
         return t0 - rise_time
 
 
-@dataclass()
+@dataclass(frozen=True)
 class DoublexpBolometricTerm(BaseBolometricTerm):
     """Doublexp function generated using Multi-view Symbolic Regression on ZTF SNIa light curves
     Russeil et al. 2024, https://arxiv.org/abs/2402.04298"""

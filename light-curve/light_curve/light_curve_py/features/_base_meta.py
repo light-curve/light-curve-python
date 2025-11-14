@@ -10,7 +10,7 @@ from ._base import BaseSingleBandFeature
 from .extractor import Extractor, _PyExtractor
 
 
-@dataclass
+@dataclass(frozen=True)
 class BaseMetaSingleBandFeature(BaseSingleBandFeature):
     features: Collection[Union[BaseSingleBandFeature, _RustBaseFeature]] = dataclass_field(
         default_factory=list, kw_only=True
@@ -19,7 +19,7 @@ class BaseMetaSingleBandFeature(BaseSingleBandFeature):
 
     def __post_init__(self):
         super().__post_init__()
-        self.extractor = Extractor(*self.features)
+        object.__setattr__(self, 'extractor', Extractor(*self.features))
 
     @abstractmethod
     def transform(self, *, t, m, sigma):
