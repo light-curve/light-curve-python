@@ -64,10 +64,10 @@ class RainbowFit(BaseRainbowFit):
 
     def __post_init__(self):
         if not isinstance(self.bolometric, BaseBolometricTerm):
-            self.bolometric = bolometric_terms[self.bolometric]
+            object.__setattr__(self, 'bolometric', bolometric_terms[self.bolometric])
 
         if not isinstance(self.temperature, BaseTemperatureTerm):
-            self.temperature = temperature_terms[self.temperature]
+            object.__setattr__(self, 'temperature', temperature_terms[self.temperature])
 
         super().__post_init__()
 

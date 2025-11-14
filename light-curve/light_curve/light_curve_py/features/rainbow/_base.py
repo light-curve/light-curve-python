@@ -74,35 +74,35 @@ class BaseRainbowFit(BaseMultiBandFeature):
 
         self._initialize_minuit()
 
-        self.bands = Bands.from_dict(self.band_wave_cm)
+        object.__setattr__(self, 'bands', Bands.from_dict(self.band_wave_cm))
 
-        self.p = create_parameters_class(
+        object.__setattr__(self, 'p', create_parameters_class(
             f"{self.__class__.__name__}Parameters",
             common=self._common_parameter_names(),
             bol=self._bolometric_parameter_names(),
             temp=self._temperature_parameter_names(),
             bands=self.bands,
             with_baseline=self.with_baseline,
-        )
+        ))
 
         if len(self.band_wave_cm) == 0:
             raise ValueError("At least one band must be specified.")
 
         # We are going to use it for the normalization of amplitude,
         # it is normally should be by the order of (\sigma_SB T^4) / (\pi B_\nu)
-        self.average_nu = speed_of_light / self.bands.mean_wave_cm
+        object.__setattr__(self, 'average_nu', speed_of_light / self.bands.mean_wave_cm)
 
         if self.with_baseline:
-            self._lsq_model = self._lsq_model_with_baseline
+            object.__setattr__(self, '_lsq_model', self._lsq_model_with_baseline)
         else:
-            self._lsq_model = self._lsq_model_no_baseline
+            object.__setattr__(self, '_lsq_model', self._lsq_model_no_baseline)
 
     def _initialize_minuit(self) -> None:
         self._check_iminuit()
 
         from iminuit import Minuit
 
-        self.Minuit = Minuit
+        object.__setattr__(self, 'Minuit', Minuit)
 
     @classmethod
     def from_nm(cls, band_wave_nm, **kwargs):
