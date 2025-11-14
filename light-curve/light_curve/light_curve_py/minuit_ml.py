@@ -77,7 +77,7 @@ else:
             result = np.zeros(len(x))
 
             idx = x < -5
-            result[idx] = -x[idx] ** 2 / 2 - 1 / x[idx] ** 2 - 0.9189385336 - np.log(-x[idx])
+            result[idx] = -(x[idx] ** 2) / 2 - 1 / x[idx] ** 2 - 0.9189385336 - np.log(-x[idx])
             result[~idx] = np.log(0.5) + np.log1p(erf(x[~idx] / np.sqrt(2)))
 
             return result

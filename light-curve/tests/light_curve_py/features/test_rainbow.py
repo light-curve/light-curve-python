@@ -82,7 +82,6 @@ def test_noisy_all_functions_combination():
 
     for idx_b in range(len(bolometric_names)):
         for idx_t in range(len(temperature_names)):
-
             expected = [*bolometric_params[idx_b], *temperature_params[idx_t], 1.0]
 
             feature = RainbowFit.from_angstrom(

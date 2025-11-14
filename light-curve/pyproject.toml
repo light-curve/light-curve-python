@@ -60,7 +60,6 @@ dev = [
     "cesium",
     "joblib",
     "pandas",
-    "black",
     "ruff",
 ]
 # cesium and iminuit don't support free-threading yet
@@ -73,7 +72,6 @@ dev-free-threading = [
     "scipy",
     "joblib",
     "pandas",
-    "black",
     "ruff",
 ]
 
@@ -125,6 +123,12 @@ exclude = [
     "_build",
 ]
 target-version = "py39"
+
+[tool.ruff.format]
+# Ruff's formatter is designed to be a drop-in replacement for Black
+line-ending = "auto"
+quote-style = "double"
+indent-style = "space"
 
 [tool.ruff.lint]
 select = [
