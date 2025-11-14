@@ -179,8 +179,9 @@ def test_available_transforms(cls):
         false = new_default(cls, transform=False)
     except NotImplementedError:
         return
-    # Compare the feature objects directly now that __eq__ is implemented
-    assert false == none
+    # It would be better to compare objects themselves, but __eq__ is not implemented yet
+    # https://github.com/light-curve/light-curve-python/issues/148
+    assert false.names == none.names
     true = new_default(cls, transform=True)
     # Check if transform=True is not the same as transform=False
     default_transform = getattr(cls, "default_transform", None)

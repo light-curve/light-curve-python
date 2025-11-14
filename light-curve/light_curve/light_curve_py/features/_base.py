@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import Optional, Sequence
 
 import numpy as np
@@ -51,8 +51,6 @@ class BaseMultiBandFeature(ABC):
         if not isinstance(other, self.__class__):
             return False
         
-        from dataclasses import fields
-        
         for field in fields(self):
             self_value = getattr(self, field.name)
             other_value = getattr(other, field.name)
@@ -71,8 +69,6 @@ class BaseMultiBandFeature(ABC):
         
         Converts unhashable field types (lists, arrays) to tuples for hashing.
         """
-        from dataclasses import fields
-        
         field_values = []
         for field in fields(self):
             value = getattr(self, field.name)
