@@ -38,7 +38,7 @@ light-curve-python/
 1. **Prerequisites**:
    - Rust toolchain (stable, updated via `rustup`)
    - Python 3.9+
-   - System dependencies: `libgsl-dev` (on Ubuntu/Debian)
+   - System dependencies: `libgsl-dev`, FFTW (on Ubuntu/Debian)
    - Optional: CMake and C++ compiler for Ceres solver support
 
 2. **Initial Setup**:
@@ -66,11 +66,11 @@ light-curve-python/
 #### Running Tests
 - **All tests**: `pytest` or `python -m pytest`
 - **With benchmarks**: `pytest --benchmark-enable`
-- **Exclude slow benchmarks**: `pytest -m "not (nobs or multi)" --benchmark-enable`
+- **Exclude slow benchmarks (recommended)**: `pytest -m "not (nobs or multi)" --benchmark-enable`
 - **Specific test file**: `pytest tests/test_w_bench.py`
 
 #### Linting and Formatting
-- **Python**: `black` and `ruff` (configured in pyproject.toml)
+- **Python**: `ruff format` and `ruff` (configured in pyproject.toml)
 - **Rust**: `cargo fmt` and `cargo clippy`
 - **Pre-commit**: Automatically runs on commit or via `pre-commit run --all-files`
 
@@ -79,7 +79,7 @@ light-curve-python/
 #### Python
 - **Line length**: 120 characters
 - **Target version**: Python 3.9+
-- **Formatter**: Black
+- **Formatter**: Ruff format
 - **Linter**: Ruff
 - Follow existing patterns in `light_curve_py/` for experimental features
 
