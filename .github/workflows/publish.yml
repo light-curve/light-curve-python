@@ -64,9 +64,9 @@ jobs:
         with:
           submodules: true
 
-      # ARM macOS runner misses some peaces
-      - name: Set up Homebrew paths on ARM macOS
-        if: ${{ matrix.os == 'macos-14' }}
+      # macOS runners need Homebrew paths set up
+      - name: Set up Homebrew paths on macOS
+        if: ${{ runner.os == 'macOS' }}
         run: |
           echo "CPATH=$(brew --prefix)/include:$(brew --prefix)/include/eigen3:${CPATH}" >> $GITHUB_ENV
           echo "LIBRARY_PATH=$(brew --prefix)/lib:$(brew --prefix)/lib64:${LIBRARY_PATH}" >> $GITHUB_ENV
