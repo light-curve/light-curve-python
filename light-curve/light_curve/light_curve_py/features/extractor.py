@@ -10,7 +10,7 @@ from ..dataclass_field import dataclass_field
 from ._base import BaseSingleBandFeature
 
 
-@dataclass(frozen=True)
+@dataclass()
 class _PyExtractor(BaseSingleBandFeature):
     features: Collection[Union[BaseSingleBandFeature, _RustBaseFeature]] = dataclass_field(
         default_factory=list, kw_only=True

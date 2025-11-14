@@ -4,7 +4,7 @@ from ..dataclass_field import dataclass_field
 from ._base import BaseSingleBandFeature
 
 
-@dataclass(frozen=True)
+@dataclass()
 class MagnitudePercentageRatio(BaseSingleBandFeature):
     quantile_numerator: float = dataclass_field(default=0.4, kw_only=True)
     quantile_denominator: float = dataclass_field(default=0.05, kw_only=True)

@@ -16,7 +16,7 @@ boltzman_constant = 1.380649e-16  # erg/K
 sigma_sb = 5.6703744191844314e-05  # erg/(cm^2 s K^4)
 
 
-@dataclass(frozen=True)
+@dataclass()
 class RainbowFit(BaseRainbowFit):
     """Multiband blackbody fit to the light curve using functions to be chosen by the user
     Note, that `m` and corresponded `sigma` are assumed to be flux densities.
@@ -64,10 +64,10 @@ class RainbowFit(BaseRainbowFit):
 
     def __post_init__(self):
         if not isinstance(self.bolometric, BaseBolometricTerm):
-            object.__setattr__(self, 'bolometric', bolometric_terms[self.bolometric])
+            self.bolometric = bolometric_terms[self.bolometric]
 
         if not isinstance(self.temperature, BaseTemperatureTerm):
-            object.__setattr__(self, 'temperature', temperature_terms[self.temperature])
+            self.temperature = temperature_terms[self.temperature]
 
         super().__post_init__()
 

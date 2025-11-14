@@ -595,7 +595,11 @@ impl PyFeatureEvaluator {
         self.clone()
     }
 
-    /// Equality comparison based on JSON representation
+    /// Equality comparison
+    /// 
+    /// Uses JSON serialization for comparison since the underlying Feature<T> type
+    /// from light-curve-feature crate doesn't implement PartialEq/Eq.
+    /// This could be optimized if Hash/PartialEq/Eq traits are added to Feature<T>.
     fn __eq__(&self, other: &Self) -> bool {
         self.to_json() == other.to_json()
     }
@@ -605,7 +609,11 @@ impl PyFeatureEvaluator {
         !self.__eq__(other)
     }
 
-    /// Hash based on JSON representation
+    /// Hash computation
+    ///
+    /// Uses JSON serialization for hashing since the underlying Feature<T> type  
+    /// from light-curve-feature crate doesn't implement Hash.
+    /// This could be optimized if Hash trait is added to Feature<T>.
     fn __hash__(&self) -> u64 {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};

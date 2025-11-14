@@ -7,7 +7,7 @@ import numpy as np
 __all__ = ["temperature_terms", "BaseTemperatureTerm", "ConstantTemperatureTerm", "SigmoidTemperatureTerm"]
 
 
-@dataclass(frozen=True)
+@dataclass()
 class BaseTemperatureTerm:
     """Bolometric term for the Rainbow"""
 
@@ -50,7 +50,7 @@ class BaseTemperatureTerm:
         return NotImplementedError
 
 
-@dataclass(frozen=True)
+@dataclass
 class ConstantTemperatureTerm(BaseTemperatureTerm):
     """Constant temperature"""
 
@@ -81,7 +81,7 @@ class ConstantTemperatureTerm(BaseTemperatureTerm):
         return limits
 
 
-@dataclass(frozen=True)
+@dataclass
 class SigmoidTemperatureTerm(BaseTemperatureTerm):
     """Sigmoid temperature"""
 
@@ -133,7 +133,7 @@ class SigmoidTemperatureTerm(BaseTemperatureTerm):
         return limits
 
 
-@dataclass(frozen=True)
+@dataclass
 class DelayedSigmoidTemperatureTerm(BaseTemperatureTerm):
     """Sigmoid temperature with delay w.r.t. bolometric peak"""
 

@@ -4,7 +4,7 @@ from ._base import BaseMultiBandFeature
 from .median import Median
 
 
-@dataclass(frozen=True)
+@dataclass()
 class ColorOfMedian(BaseMultiBandFeature):
     """Difference of median magnitudes in two bands."""
 
@@ -25,7 +25,7 @@ class ColorOfMedian(BaseMultiBandFeature):
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        object.__setattr__(self, 'median_feature', Median(bands=[self.blue_band, self.red_band]))
+        self.median_feature = Median(bands=[self.blue_band, self.red_band])
 
     def _eval_and_fill(self, *, t, m, sigma, band, fill_value):
         median = self.median_feature._eval_and_fill(t=t, m=m, sigma=sigma, band=band, fill_value=fill_value)

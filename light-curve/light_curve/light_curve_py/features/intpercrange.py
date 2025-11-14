@@ -4,7 +4,7 @@ from ..dataclass_field import dataclass_field
 from ._base import BaseSingleBandFeature
 
 
-@dataclass(frozen=True)
+@dataclass()
 class InterPercentileRange(BaseSingleBandFeature):
     quantile: float = dataclass_field(default=0.25, kw_only=True)
 

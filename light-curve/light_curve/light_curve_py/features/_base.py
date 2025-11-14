@@ -8,7 +8,7 @@ from light_curve.light_curve_py.dataclass_field import dataclass_field
 from light_curve.light_curve_py.warnings import mark_experimental
 
 
-@dataclass(frozen=True)
+@dataclass(eq=False)
 class BaseMultiBandFeature(ABC):
     @property
     @abstractmethod
@@ -45,6 +45,51 @@ class BaseMultiBandFeature(ABC):
     @mark_experimental
     def __post_init__(self) -> None:
         pass
+
+    def __eq__(self, other) -> bool:
+        """Equality comparison based on class type and all dataclass fields."""
+        if not isinstance(other, self.__class__):
+            return False
+        
+        from dataclasses import fields
+        
+        for field in fields(self):
+            self_value = getattr(self, field.name)
+            other_value = getattr(other, field.name)
+            
+            # Handle numpy arrays specially
+            if isinstance(self_value, np.ndarray) and isinstance(other_value, np.ndarray):
+                if not np.array_equal(self_value, other_value):
+                    return False
+            elif self_value != other_value:
+                return False
+        
+        return True
+
+    def __hash__(self) -> int:
+        """Hash based on class type and all dataclass fields.
+        
+        Converts unhashable field types (lists, arrays) to tuples for hashing.
+        """
+        from dataclasses import fields
+        
+        field_values = []
+        for field in fields(self):
+            value = getattr(self, field.name)
+            # Convert unhashable types to hashable equivalents
+            if isinstance(value, list):
+                value = tuple(value)
+            elif isinstance(value, np.ndarray):
+                value = tuple(value.tolist())
+            elif isinstance(value, Sequence) and not isinstance(value, (str, bytes, tuple)):
+                try:
+                    value = tuple(value)
+                except TypeError:
+                    # If conversion fails, use string representation
+                    value = str(value)
+            field_values.append((field.name, value))
+        
+        return hash((self.__class__.__name__, tuple(field_values)))
 
     def _normalize_input(self, *, t, m, sigma, band, sorted, check):
         t = np.asarray(t)
@@ -105,16 +150,9 @@ class BaseMultiBandFeature(ABC):
         return np.stack([self(*lc, sorted=sorted, check=check, fill_value=fill_value) for lc in lcs])
 
 
-@dataclass(frozen=True)
+@dataclass(eq=False)
 class BaseSingleBandFeature(BaseMultiBandFeature):
     bands: Optional[Sequence[str]] = dataclass_field(default=None, kw_only=True)
-
-    def __post_init__(self) -> None:
-        """Convert bands list to tuple for hashability."""
-        super().__post_init__()
-        # Convert bands to tuple if it's a list, for frozen dataclass hashability
-        if self.bands is not None and isinstance(self.bands, list):
-            object.__setattr__(self, 'bands', tuple(self.bands))
 
     @property
     @abstractmethod
