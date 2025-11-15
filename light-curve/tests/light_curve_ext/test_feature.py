@@ -426,12 +426,12 @@ def test_bazin_fit_precise(algo):
 @pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=5, rng=0))
 def test_json_serialization(feature):
     n_obs = 128
-    data = gen_lc(n_obs)
+    data = gen_lc(n_obs, rng=0)
     values = feature(*data)
 
     from_to_json = lc.feature_from_json(feature.to_json())
     values_from_to_json = from_to_json(*data)
-    assert_allclose(values, values_from_to_json, rtol=1e-6)
+    assert_allclose(values, values_from_to_json)
 
 
 def test_json_deserialization():
