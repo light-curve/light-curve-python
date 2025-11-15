@@ -60,7 +60,6 @@ dev = [
     "cesium",
     "joblib",
     "pandas",
-    "black",
     "ruff",
 ]
 # cesium and iminuit don't support free-threading yet
@@ -73,7 +72,6 @@ dev-free-threading = [
     "scipy",
     "joblib",
     "pandas",
-    "black",
     "ruff",
 ]
 
