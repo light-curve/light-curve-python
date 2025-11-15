@@ -8,4 +8,3 @@ dist/
 .tox/
 *.pyc
 target/
-venv/
