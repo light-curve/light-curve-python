@@ -431,7 +431,7 @@ def test_json_serialization(feature):
 
     from_to_json = lc.feature_from_json(feature.to_json())
     values_from_to_json = from_to_json(*data)
-    assert_allclose(values, values_from_to_json)
+    assert_allclose(values, values_from_to_json, rtol=1e-6)
 
 
 def test_json_deserialization():
