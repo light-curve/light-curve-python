@@ -18,6 +18,9 @@ rust-version = "1.85"
 name = "light_curve"
 crate-type = ["cdylib"]
 
+[lints.rust]
+unexpected_cfgs = "warn"
+
 [profile.release]
 lto = true
 codegen-units = 1
