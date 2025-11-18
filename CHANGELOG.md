@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Bump `pyO3` and `rust-numpy` to 0.26.0: introduce Python build 3.14/3.14t support https://github.com/light-curve/light-curve-python/pull/553
+- **Breaking** macOS x86\_64 binary wheel now requires macOS 15 instead of 13 https://github.com/light-curve/light-curve-python/issues/587
 
 ### Deprecated
 
