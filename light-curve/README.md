@@ -32,7 +32,7 @@ CPython 3 versions.
 
 | Arch \ OS   | Linux glibc 2.17+ | Linux musl 1.2+                | macOS                 | Windows https://github.com/light-curve/light-curve-python/issues/186 |
 |-------------|-------------------|--------------------------------|-----------------------|----------------------------------------------------------------------|
-| **x86-64**  | PyPI (MKL), conda | PyPI (MKL)                     | PyPI macOS 13+, conda | PyPI, conda (both no Ceres, no GSL)                                  |
+| **x86-64**  | PyPI (MKL), conda | PyPI (MKL)                     | PyPI macOS 15+, conda | PyPI, conda (both no Ceres, no GSL)                                  |
 | **i686**    | src               | src                            | —                     | not tested                                                           |
 | **aarch64** | PyPI              | PyPI                           | PyPI macOS 14+, conda | not tested                                                           |
 | **ppc64le** | src               | not tested (no Rust toolchain) | —                     | —                                                                    |
