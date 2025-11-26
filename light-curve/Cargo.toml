@@ -1,6 +1,6 @@
 [package]
 name = "light-curve-python"
-version = "0.10.4"
+version = "0.10.5"
 authors = [
     "Konstantin Malanchev <hombit@gmail.com>",
     "Anastasia Lavrukhina <lavrukhina.ad@gmail.com>",

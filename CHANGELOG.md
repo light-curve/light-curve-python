@@ -13,10 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Bump `pyO3` and `rust-numpy` from 0.25.0 to 0.27.0: introduce Python build 3.14/3.14t
-  support https://github.com/light-curve/light-curve-python/pull/553 https://github.com/light-curve/light-curve-python/pull/590
-- **Breaking** macOS x86\_64 binary wheel now requires macOS 15 instead of
-  13 https://github.com/light-curve/light-curve-python/issues/587
+--
 
 ### Deprecated
 
@@ -28,12 +25,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- A problem with pickling of `Periodogram` which caused wrong results from `.power` and `.freq_power` for a deserialized
-  object https://github.com/light-curve/light-curve-python/pull/532
+--
 
 ### Security
 
 --
+
+## [0.10.5] 2025-11-26
+
+### Changed
+
+- Bump `pyO3` and `rust-numpy` from 0.25.0 to 0.27.0: introduce Python build 3.14/3.14t
+  support https://github.com/light-curve/light-curve-python/pull/553 https://github.com/light-curve/light-curve-python/pull/590
+- **Breaking** macOS x86\_64 binary wheel now requires macOS 15 instead of
+  13 https://github.com/light-curve/light-curve-python/issues/587
+
+### Fixed
+
+- A problem with pickling of `Periodogram` which caused wrong results from `.power` and `.freq_power` for a deserialized
+  object https://github.com/light-curve/light-curve-python/pull/532
 
 ## [0.10.4] 2025-06-11
 
