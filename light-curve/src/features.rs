@@ -1684,7 +1684,7 @@ impl Periodogram {
             const STEP_SIZE_TOLLERANCE: f64 = 10.0 * f32::EPSILON as f64;
 
             // It is more likely for users to give f64 array
-            let freqs_f64 = PyArrayLike1::<f64, AllowTypeChange>::extract_bound(&freqs)?;
+            let freqs_f64 = PyArrayLike1::<f64, AllowTypeChange>::extract(freqs.as_borrowed())?;
             let freqs_f64 = freqs_f64.readonly();
             let freqs_f64 = freqs_f64.as_array();
             let size = freqs_f64.len();
@@ -1726,7 +1726,8 @@ impl Periodogram {
 
             let freq_grid_f32 = match &freq_grid_f64 {
                 FreqGrid::Arbitrary(_) => {
-                    let freqs_f32 = PyArrayLike1::<f32, AllowTypeChange>::extract_bound(&freqs)?;
+                    let freqs_f32 =
+                        PyArrayLike1::<f32, AllowTypeChange>::extract(freqs.as_borrowed())?;
                     let freqs_f32 = freqs_f32.readonly();
                     let freqs_f32 = freqs_f32.as_array();
                     FreqGrid::from_array(freqs_f32)

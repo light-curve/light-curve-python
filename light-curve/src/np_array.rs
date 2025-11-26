@@ -150,7 +150,7 @@ fn try_downcast_to_f64_array<'py>(
 ) -> Option<PyReadonlyArray1<'py, f64>> {
     match (obj.downcast::<PyArray1<f64>>(), cast) {
         (Ok(py_array), _) => Some(py_array.readonly()),
-        (Err(_), true) => match PyArrayLike1::<f64, AllowTypeChange>::extract_bound(obj) {
+        (Err(_), true) => match PyArrayLike1::<f64, AllowTypeChange>::extract(obj.as_borrowed()) {
             Ok(py_array) => Some(py_array.readonly()),
             Err(_) => None,
         },
