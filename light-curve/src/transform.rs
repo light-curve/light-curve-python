@@ -110,13 +110,13 @@ pub(crate) fn parse_transform(
     match option {
         None => Ok(None),
         Some(py_any) => {
-            if let Ok(py_bool) = py_any.downcast::<PyBool>() {
+            if let Ok(py_bool) = py_any.cast::<PyBool>() {
                 if py_bool.is_true() {
                     Ok(Some(default))
                 } else {
                     Ok(None)
                 }
-            } else if let Ok(py_str) = py_any.downcast::<PyString>() {
+            } else if let Ok(py_str) = py_any.cast::<PyString>() {
                 // py_str.to_str() is Python 3.10+ only
                 let cow_string = py_str.to_cow()?;
                 let s = cow_string.as_ref();
