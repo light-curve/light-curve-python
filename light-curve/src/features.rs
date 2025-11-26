@@ -339,10 +339,10 @@ impl PyFeatureEvaluator {
             .into_iter()
             .enumerate()
             .map(|(i, (t, m, sigma))| {
-                let t = t.downcast::<PyArray1<T>>().map(|a| a.readonly());
-                let m = m.downcast::<PyArray1<T>>().map(|a| a.readonly());
+                let t = t.cast::<PyArray1<T>>().map(|a| a.readonly());
+                let m = m.cast::<PyArray1<T>>().map(|a| a.readonly());
                 let sigma = match &sigma {
-                    Some(sigma) => sigma.downcast::<PyArray1<T>>().map(|a| Some(a.readonly())),
+                    Some(sigma) => sigma.cast::<PyArray1<T>>().map(|a| Some(a.readonly())),
                     None => Ok(None),
                 };
 
@@ -1014,7 +1014,7 @@ macro_rules! fit_evaluator {
 
                 let make_transformation = match transform {
                     None => false,
-                    Some(py_transform) => match py_transform.downcast::<PyBool>() {
+                    Some(py_transform) => match py_transform.cast::<PyBool>() {
                         Ok(py_bool) => py_bool.is_true(),
                         Err(_) => return Err(PyValueError::new_err(
                             "transform must be a bool or None, other types are not implemented yet",
@@ -1262,7 +1262,7 @@ impl Bins {
         let mut eval_f32 = lcf::Bins::default();
         let mut eval_f64 = lcf::Bins::default();
         for x in features.try_iter()? {
-            let py_feature = x?.downcast::<PyFeatureEvaluator>()?.borrow();
+            let py_feature = x?.cast::<PyFeatureEvaluator>()?.borrow();
             eval_f32.add_feature(py_feature.feature_evaluator_f32.clone());
             eval_f64.add_feature(py_feature.feature_evaluator_f64.clone());
         }
@@ -1749,7 +1749,7 @@ impl Periodogram {
 
         if let Some(features) = features {
             for x in features.try_iter()? {
-                let py_feature = x?.downcast::<PyFeatureEvaluator>()?.borrow();
+                let py_feature = x?.cast::<PyFeatureEvaluator>()?.borrow();
                 eval_f32.add_feature(py_feature.feature_evaluator_f32.clone());
                 eval_f64.add_feature(py_feature.feature_evaluator_f64.clone());
             }

@@ -112,7 +112,7 @@ where
         let wrapped_t_ = t_
             .into_iter()
             .enumerate()
-            .map(|(i, t)| match t.downcast::<PyArray1<T>>() {
+            .map(|(i, t)| match t.cast::<PyArray1<T>>() {
                 Ok(a) => Ok(a.readonly()),
                 Err(_) => Err(Exception::TypeError(format!(
                     "t_[{}] has mismatched dtype with the t_[0] which is {}",
@@ -189,8 +189,8 @@ where
             .into_iter()
             .enumerate()
             .map(|(i, (t, m))| {
-                let t = t.downcast::<PyArray1<T>>().map(|a| a.readonly());
-                let m = m.downcast::<PyArray1<T>>().map(|a| a.readonly());
+                let t = t.cast::<PyArray1<T>>().map(|a| a.readonly());
+                let m = m.cast::<PyArray1<T>>().map(|a| a.readonly());
                 match (t, m) {
                     (Ok(t), Ok(m)) => Ok((t, m)),
                     _ => Err(Exception::TypeError(format!(
@@ -256,8 +256,8 @@ where
             .into_iter()
             .enumerate()
             .map(|(i, (t, m))| {
-                let t = t.downcast::<PyArray1<T>>().map(|a| a.readonly());
-                let m = m.downcast::<PyArray1<T>>().map(|a| a.readonly());
+                let t = t.cast::<PyArray1<T>>().map(|a| a.readonly());
+                let m = m.cast::<PyArray1<T>>().map(|a| a.readonly());
                 match (t, m) {
                     (Ok(t), Ok(m)) => {
                         let t: ContArray<_> = t.as_array().into();
@@ -332,9 +332,9 @@ where
             .into_iter()
             .enumerate()
             .map(|(i, (t, m, sigma))| {
-                let t = t.downcast::<PyArray1<T>>().map(|a| a.readonly());
-                let m = m.downcast::<PyArray1<T>>().map(|a| a.readonly());
-                let sigma = sigma.downcast::<PyArray1<T>>().map(|a| a.readonly());
+                let t = t.cast::<PyArray1<T>>().map(|a| a.readonly());
+                let m = m.cast::<PyArray1<T>>().map(|a| a.readonly());
+                let sigma = sigma.cast::<PyArray1<T>>().map(|a| a.readonly());
 
                 match (t, m, sigma) {
                     (Ok(t), Ok(m), Ok(sigma)) => Ok((t, m, Self::sigma_to_err2(sigma))),
@@ -406,9 +406,9 @@ where
             .into_iter()
             .enumerate()
             .map(|(i, (t, m, sigma))| {
-                let t = t.downcast::<PyArray1<T>>().map(|a| a.readonly());
-                let m = m.downcast::<PyArray1<T>>().map(|a| a.readonly());
-                let sigma = sigma.downcast::<PyArray1<T>>().map(|a| a.readonly());
+                let t = t.cast::<PyArray1<T>>().map(|a| a.readonly());
+                let m = m.cast::<PyArray1<T>>().map(|a| a.readonly());
+                let sigma = sigma.cast::<PyArray1<T>>().map(|a| a.readonly());
 
                 match (t, m, sigma) {
                     (Ok(t), Ok(m), Ok(sigma)) => {
