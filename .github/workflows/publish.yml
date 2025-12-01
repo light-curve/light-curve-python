@@ -92,7 +92,7 @@ jobs:
           echo "CIBW_ARCHS=${CIBW_ARCHS}" >> $GITHUB_ENV
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.2.1
+        uses: pypa/cibuildwheel@v3.3.0
         with:
           package-dir: ./light-curve
         env:
