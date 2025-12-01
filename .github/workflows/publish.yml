@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Check Cargo.toml version vs Git tag
         if: startsWith(github.ref, 'refs/tags/v')
         working-directory: ./light-curve
@@ -60,7 +60,7 @@ jobs:
             cibw_build: cp39-musllinux_aarch64
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           submodules: true
 
@@ -114,7 +114,7 @@ jobs:
         working-directory: ./light-curve
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Setup Python
         uses: actions/setup-python@v6
@@ -171,7 +171,7 @@ jobs:
         working-directory: light-curve-python
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v6
