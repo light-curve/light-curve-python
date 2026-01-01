@@ -66,7 +66,7 @@ unarray = "0.1.4"
 unzip3 = "1.0.0"
 
 [dependencies.light-curve-dmdt]
-version = "0.8.0"
+version = "0.9.0"
 features = ["serde"]
 
 [dependencies.light-curve-feature]

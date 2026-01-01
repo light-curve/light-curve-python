@@ -1113,15 +1113,15 @@ dependencies = [
 
 [[package]]
 name = "light-curve-dmdt"
-version = "0.8.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8658032ba2035394cacbaabe73427e6efc7fbf0bce2200ee244179dce5ef06a"
+checksum = "e9b75355f6c05f55318b398469c745ce87c0da07d9afc9021e0f487b750c617a"
 dependencies = [
  "conv",
  "enum_dispatch",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "libm",
- "ndarray 0.16.1",
+ "ndarray 0.17.1",
  "num-traits",
  "serde",
  "thiserror 2.0.17",
@@ -1299,6 +1299,22 @@ dependencies = [
  "portable-atomic-util",
  "rawpointer",
  "rayon",
+ "serde",
+]
+
+[[package]]
+name = "ndarray"
+version = "0.17.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0c7c9125e8f6f10c9da3aad044cc918cf8784fa34de857b1aa68038eb05a50a9"
+dependencies = [
+ "matrixmultiply",
+ "num-complex",
+ "num-integer",
+ "num-traits",
+ "portable-atomic",
+ "portable-atomic-util",
+ "rawpointer",
  "serde",
 ]
 
