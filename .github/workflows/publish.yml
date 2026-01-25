@@ -121,6 +121,12 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          components: cargo
+
       - name: Install maturin
         run: pip install 'maturin>=1.0,<2.0'
 
