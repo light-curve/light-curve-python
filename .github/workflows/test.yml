@@ -7,7 +7,7 @@ jobs:
     outputs:
       output: ${{ steps.extract_from_toml.outputs.output }}
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
 
     defaults:
       run:
@@ -71,7 +71,7 @@ jobs:
         run: tox -e py3${{ matrix.python_minor }}-base,py3${{ matrix.python_minor }}-test
 
   cargo-fmt:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
 
     steps:
       - uses: actions/checkout@v6

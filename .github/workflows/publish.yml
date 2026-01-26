@@ -11,7 +11,7 @@ on:
 jobs:
   check-version:
     name: Check the tag corresponds to the crate version
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-slim
 
     steps:
       - uses: actions/checkout@v6
@@ -107,7 +107,7 @@ jobs:
 
   sdist:
     name: Build source distribution
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-slim
 
     defaults:
       run:
@@ -120,6 +120,12 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.x'
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          components: cargo
 
       - name: Install maturin
         run: pip install 'maturin>=1.0,<2.0'
@@ -138,7 +144,7 @@ jobs:
     needs: [ cibuildwheel, sdist ]
 
     name: Publish light-curve
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
 
     steps:
       - uses: actions/download-artifact@v6
@@ -164,7 +170,7 @@ jobs:
     needs: publish
 
     name: Publish light-curve-python
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-slim
 
     defaults:
       run:
