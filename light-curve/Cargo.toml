@@ -46,7 +46,7 @@ macro_const = "0.1.0"
 mimalloc = { version = "0.1.48", features = [
     "local_dynamic_tls",
 ], optional = true }
-ndarray = { version = "0.16.1", features = ["rayon"] }
+ndarray = { version = "0.17.2", features = ["rayon"] }
 numpy = "0.27.0"
 num_cpus = "1.17.0"
 num-traits = "0.2"

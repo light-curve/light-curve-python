@@ -1169,7 +1169,7 @@ dependencies = [
  "light-curve-feature",
  "macro_const",
  "mimalloc",
- "ndarray 0.16.1",
+ "ndarray 0.17.2",
  "num-traits",
  "num_cpus",
  "numpy",
@@ -1298,8 +1298,23 @@ dependencies = [
  "portable-atomic",
  "portable-atomic-util",
  "rawpointer",
- "rayon",
  "serde",
+]
+
+[[package]]
+name = "ndarray"
+version = "0.17.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "520080814a7a6b4a6e9070823bb24b4531daac8c4627e08ba5de8c5ef2f2752d"
+dependencies = [
+ "matrixmultiply",
+ "num-complex",
+ "num-integer",
+ "num-traits",
+ "portable-atomic",
+ "portable-atomic-util",
+ "rawpointer",
+ "rayon",
 ]
 
 [[package]]
@@ -1408,7 +1423,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0fa24ffc88cf9d43f7269d6b6a0d0a00010924a8cc90604a21ef9c433b66998d"
 dependencies = [
  "libc",
- "ndarray 0.16.1",
+ "ndarray 0.15.6",
  "num-complex",
  "num-integer",
  "num-traits",
