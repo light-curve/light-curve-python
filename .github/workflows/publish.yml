@@ -99,7 +99,7 @@ jobs:
           CIBW_BUILD_VERBOSITY: "3"
 
       - name: Upload wheels as artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           path: ./wheelhouse/*.whl
           if-no-files-found: error
@@ -134,7 +134,7 @@ jobs:
         run: maturin sdist
 
       - name: Upload sdist as an artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           path: ./light-curve/target/wheels/*.tar.gz
           if-no-files-found: error
