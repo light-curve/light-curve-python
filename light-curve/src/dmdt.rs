@@ -849,7 +849,7 @@ py_dmdt_batches!(
 /// gausses_batches(lcs, sorted=None, batch_size=1, yield_index=False, shuffle=False, drop_nobs=0, random_seed=None)
 ///     Gives a reusable iterable which yields smeared dmdt-maps
 ///
-#[pyclass(module = "light_curve.light_curve_ext")]
+#[pyclass(module = "light_curve.light_curve_ext", skip_from_py_object)]
 #[derive(Serialize, Deserialize, Clone)]
 pub struct DmDt {
     dmdt_f64: GenericDmDt<f64>,

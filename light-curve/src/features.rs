@@ -155,7 +155,8 @@ type PyLightCurve<'a, T> = (Arr<'a, T>, Arr<'a, T>, Option<Arr<'a, T>>);
 #[pyclass(
     subclass,
     name = "_FeatureEvaluator",
-    module = "light_curve.light_curve_ext"
+    module = "light_curve.light_curve_ext",
+    from_py_object
 )]
 pub struct PyFeatureEvaluator {
     feature_evaluator_f32: lcf::Feature<f32>,
