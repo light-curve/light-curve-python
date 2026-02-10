@@ -36,25 +36,13 @@ fn light_curve(py: Python, m: Bound<PyModule>) -> PyResult<()> {
     )?;
     m.add("_built_with_gsl", cfg!(feature = "gsl"))?;
     m.add("_fft_backend", {
-        #[cfg(feature = "fftw-mkl")]
+        #[cfg(feature = "mkl")]
         {
-            "Intel MKL linked statically for FFTW"
+            "FFTW with Intel MKL"
         }
-        #[cfg(all(not(feature = "fftw-mkl"), feature = "fftw-system"))]
+        #[cfg(not(feature = "mkl"))]
         {
-            "FFTW linked from system, may or may not be bundled into the package"
-        }
-        #[cfg(all(
-            not(feature = "fftw-mkl"),
-            not(feature = "fftw-system"),
-            feature = "fftw-source"
-        ))]
-        {
-            "FFTW built from source by fftw-src crate and statically linked into the module"
-        }
-        #[cfg(not(any(feature = "fftw-mkl", feature = "fftw-system", feature = "fftw-source")))]
-        {
-            compile_error!("One of fftw-mkl, fftw-system or fftw-source features is required");
+            "RustFFT"
         }
     })?;
 

@@ -31,7 +31,7 @@ maturin develop --release             # Optimized build
 # After Rust changes, re-run maturin develop. Python-only changes need no rebuild.
 
 # Minimal build (fewer system deps)
-maturin build --release --locked --no-default-features --features=abi3,fftw-source,mimalloc
+maturin build --release --locked --no-default-features --features=abi3,mimalloc
 ```
 
 ## Testing
@@ -69,7 +69,7 @@ pre-commit run --all-files
 
 **Rust edition**: 2024, MSRV 1.85. Clippy treats warnings as errors.
 
-**Cargo features**: `abi3` (stable Python ABI), `ceres-source`/`ceres-system`, `fftw-source`/`fftw-system`/`fftw-mkl`, `gsl`, `mimalloc`. Default features include abi3, ceres-source, fftw-source, gsl, mimalloc.
+**Cargo features**: `abi3` (stable Python ABI), `ceres-source`/`ceres-system`, `mkl` (Intel MKL for FFTW-based fast periodogram), `gsl`, `mimalloc`. Default features include abi3, ceres-source, gsl, mimalloc.
 
 **Code style**: Line length 120, Python target 3.9+, Ruff for Python linting (rules: F, E, W, I001, NPY201).
 

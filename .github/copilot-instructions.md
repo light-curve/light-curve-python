@@ -95,8 +95,7 @@ light-curve-python/
 The package has several compile-time features (see `Cargo.toml`):
 - `abi3` (default): CPython ABI3 compatibility for stable Python ABI
 - `ceres-source` (default): Ceres solver built from source
-- `fftw-source` (default): FFTW built from source
-- `fftw-mkl`: Intel MKL backend for FFTW (recommended for Intel CPUs)
+- `mkl`: Intel MKL for FFTW-based fast periodogram (recommended for Intel CPUs)
 - `gsl` (default): GNU Scientific Library support
 - `mimalloc` (default): High-performance memory allocator
 
@@ -171,7 +170,7 @@ When suggesting build commands, consider: `--no-default-features --features=...`
 
 - Check system dependencies (GSL, CMake, C++ compiler)
 - Verify Rust toolchain version meets MSRV
-- For Ceres/FFTW issues: try `--no-default-features --features=fftw-source`
+- For Ceres issues: try `--no-default-features --features=abi3,mimalloc`
 - Enable verbose output: `maturin develop -v`
 
 ## CI/CD Pipeline

@@ -694,7 +694,7 @@ source [bellow](#build-from-source)).
 ```bash
 python -mpip install maturin
 # --release would take longer, but the package would be faster
-# Put other Cargo flags if needed, e.g. --no-default-features --features=fftw-source,ceres-source
+# Put other Cargo flags if needed, e.g. --no-default-features --features=ceres-source
 maturin develop --extras=dev
 ```
 
@@ -747,13 +747,9 @@ The following features are available:
   It is used as an optional optimization algorithm for `BazinFit` and `VillarFit`.
 - `ceres-system` - enables Ceres solver support but links with a dynamic library. You need to have a
   compatible version of Ceres installed on your system.
-- `fftw-source` (default) - enables [FFTW](http://www.fftw.org/) support and builds it from source. You need
-  a C compiler available on your system. Note that at least one of the `fftw-*` features must be activated.
-- `fftw-system` - enables FFTW support but links with a dynamic library. You need to have a compatible
-  version of FFTW installed on your system.
-- `fftw-mkl` - enables FFTW support with the Intel MKL backend. Intel MKL will be downloaded automatically
-  during the build. Highly recommended for Intel CPUs to achieve up to 2× faster "fast" periodogram
-  calculations.
+- `mkl` - enables [FFTW](http://www.fftw.org/) support with the Intel MKL backend for the "fast" periodogram.
+  Intel MKL will be downloaded automatically during the build. Highly recommended for Intel CPUs.
+  When not enabled, the pure-Rust [RustFFT](https://crates.io/crates/rustfft) backend is used instead.
 - `gsl` (default) - enables [GNU Scientific Library](https://www.gnu.org/software/gsl/) support. You need a
   compatible version of GSL installed on your system. It is used as an optional optimization algorithm
   for `BazinFit` and `VillarFit`.
@@ -768,14 +764,14 @@ This example shows how to build the package with the minimal system dependencies
 
 ```bash
 python -mpip install maturin
-maturin build --release --locked --no-default-features --features=abi3,fftw-source,mimalloc
+maturin build --release --locked --no-default-features --features=abi3,mimalloc
 ````
 
 Here we use `--release` to build the package in release mode (slower build, faster execution), `--locked` to
 ensure
 reproducible builds, `--no-default-features` to disable default features, and
-`--features=abi3,fftw-source,mimalloc`
-to enable FFTW (builds from vendored sources), ABI3 compatibility, and mimalloc memory allocator.
+`--features=abi3,mimalloc`
+to enable ABI3 compatibility and mimalloc memory allocator.
 
 #### Build with `build`
 
@@ -784,7 +780,7 @@ source.
 
 ```bash
 python -mpip install build
-MATURIN_PEP517_ARGS="--locked --no-default-features --features=abi3,fftw-source,mimalloc" python -m build
+MATURIN_PEP517_ARGS="--locked --no-default-features --features=abi3,mimalloc" python -m build
 ```
 
 #### Build with cibuildwheel
