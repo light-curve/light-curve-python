@@ -155,7 +155,8 @@ type PyLightCurve<'a, T> = (Arr<'a, T>, Arr<'a, T>, Option<Arr<'a, T>>);
 #[pyclass(
     subclass,
     name = "_FeatureEvaluator",
-    module = "light_curve.light_curve_ext"
+    module = "light_curve.light_curve_ext",
+    from_py_object
 )]
 pub struct PyFeatureEvaluator {
     feature_evaluator_f32: lcf::Feature<f32>,
@@ -1183,11 +1184,11 @@ impl_pickle_serialisation!(BeyondNStd);
 #[pymethods]
 impl BeyondNStd {
     #[new]
-    #[pyo3(signature = (nstd=lcf::BeyondNStd::default_nstd(), *, transform=None))]
-    fn __new__(nstd: f64, transform: Option<Bound<PyAny>>) -> Res<PyClassInitializer<Self>> {
+    #[pyo3(signature = (nstd=lcf::BeyondNStd::<f32>::default_nstd(), *, transform=None))]
+    fn __new__(nstd: f32, transform: Option<Bound<PyAny>>) -> Res<PyClassInitializer<Self>> {
         Ok(
             PyClassInitializer::from(PyFeatureEvaluator::with_py_transform(
-                lcf::BeyondNStd::new(nstd as f32).into(),
+                lcf::BeyondNStd::new(nstd).into(),
                 lcf::BeyondNStd::new(nstd).into(),
                 transform,
                 Self::DEFAULT_TRANSFORMER,
@@ -1198,8 +1199,8 @@ impl BeyondNStd {
 
     /// Required by pickle.load / pickle.loads
     #[staticmethod]
-    fn __getnewargs__() -> (f64,) {
-        (lcf::BeyondNStd::default_nstd(),)
+    fn __getnewargs__() -> (f32,) {
+        (lcf::BeyondNStd::<f32>::default_nstd(),)
     }
 
     #[classattr]
@@ -1267,10 +1268,10 @@ impl Bins {
             eval_f64.add_feature(py_feature.feature_evaluator_f64.clone());
         }
 
-        eval_f32.set_window(window as f32);
+        eval_f32.set_window(window);
         eval_f64.set_window(window);
 
-        eval_f32.set_offset(offset as f32);
+        eval_f32.set_offset(offset);
         eval_f64.set_offset(offset);
 
         Ok((
@@ -1296,8 +1297,8 @@ impl Bins {
         (
             (PyTuple::empty(py),),
             [
-                ("window", lcf::Bins::<_, Feature<_>>::default_window()),
-                ("offset", lcf::Bins::<_, Feature<_>>::default_offset()),
+                ("window", lcf::Bins::<f64, Feature<f64>>::default_window()),
+                ("offset", lcf::Bins::<f64, Feature<f64>>::default_offset()),
             ]
             .into(),
         )
@@ -1508,11 +1509,11 @@ impl_pickle_serialisation!(MedianBufferRangePercentage);
 #[pymethods]
 impl MedianBufferRangePercentage {
     #[new]
-    #[pyo3(signature = (quantile=lcf::MedianBufferRangePercentage::<f64>::default_quantile(), *, transform = None))]
-    fn __new__(quantile: f64, transform: Option<Bound<PyAny>>) -> Res<PyClassInitializer<Self>> {
+    #[pyo3(signature = (quantile=lcf::MedianBufferRangePercentage::<f32>::default_quantile(), *, transform = None))]
+    fn __new__(quantile: f32, transform: Option<Bound<PyAny>>) -> Res<PyClassInitializer<Self>> {
         Ok(
             PyClassInitializer::from(PyFeatureEvaluator::with_py_transform(
-                lcf::MedianBufferRangePercentage::new(quantile as f32).into(),
+                lcf::MedianBufferRangePercentage::new(quantile).into(),
                 lcf::MedianBufferRangePercentage::new(quantile).into(),
                 transform,
                 Self::DEFAULT_TRANSFORMER,
@@ -1523,8 +1524,8 @@ impl MedianBufferRangePercentage {
 
     /// Required by pickle.load / pickle.loads
     #[staticmethod]
-    fn __getnewargs__() -> (f64,) {
-        (lcf::MedianBufferRangePercentage::default_quantile(),)
+    fn __getnewargs__() -> (f32,) {
+        (lcf::MedianBufferRangePercentage::<f32>::default_quantile(),)
     }
 
     #[classattr]
@@ -1673,8 +1674,12 @@ impl Periodogram {
 
         let fast = fast.unwrap_or(false);
         if fast {
-            eval_f32.set_periodogram_algorithm(lcf::PeriodogramPowerFft::new().into());
-            eval_f64.set_periodogram_algorithm(lcf::PeriodogramPowerFft::new().into());
+            eval_f32.set_periodogram_algorithm(
+                lcf::PeriodogramPowerFft::<f32, lcf::periodogram::FftwFft<f32>>::new().into(),
+            );
+            eval_f64.set_periodogram_algorithm(
+                lcf::PeriodogramPowerFft::<f64, lcf::periodogram::FftwFft<f64>>::new().into(),
+            );
         } else {
             eval_f32.set_periodogram_algorithm(lcf::PeriodogramPowerDirect {}.into());
             eval_f64.set_periodogram_algorithm(lcf::PeriodogramPowerDirect {}.into());
@@ -1721,7 +1726,7 @@ impl Periodogram {
                     "When Periodogram(freqs=[...], fast=True), freqs must be a linear grid, like np.linspace(0, max_freq, 2**k + 1)",
                 ));
             } else {
-                FreqGrid::from_array(freqs_f64)
+                FreqGrid::from_array(&freqs_f64)
             };
 
             let freq_grid_f32 = match &freq_grid_f64 {
@@ -1730,7 +1735,7 @@ impl Periodogram {
                         PyArrayLike1::<f32, AllowTypeChange>::extract(freqs.as_borrowed())?;
                     let freqs_f32 = freqs_f32.readonly();
                     let freqs_f32 = freqs_f32.as_array();
-                    FreqGrid::from_array(freqs_f32)
+                    FreqGrid::from_array(&freqs_f32)
                 }
                 FreqGrid::Linear(_) => {
                     FreqGrid::linear(freqs_f64[0] as f32, step_candidate as f32, size)

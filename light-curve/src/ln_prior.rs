@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// Construct instances of this class using stand-alone functions. The constructor of this class
 /// always returns `none` variant (see `ln_prior.none()`).
-#[pyclass(module = "light_curve.light_curve_ext.ln_prior")]
+#[pyclass(module = "light_curve.light_curve_ext.ln_prior", from_py_object)]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct LnPrior1D(pub lcf::LnPrior1D);
 
@@ -141,11 +141,11 @@ fn uniform(left: f64, right: f64) -> LnPrior1D {
 ///     where norm_weight_i = weight_i / sum(weight_j)
 #[pyfunction]
 fn mix(mix: Vec<(f64, LnPrior1D)>) -> LnPrior1D {
-    let priors = mix
+    let priors: Vec<_> = mix
         .into_iter()
         .map(|(weight, py_ln_prior)| (weight, py_ln_prior.0))
         .collect();
-    LnPrior1D(lcf::LnPrior1D::mix(priors))
+    LnPrior1D(lcf::LnPrior1D::mix(&priors))
 }
 
 pub fn register_ln_prior_submodule(py: Python, parent_module: Bound<PyModule>) -> PyResult<()> {

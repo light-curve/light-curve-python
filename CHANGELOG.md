@@ -13,7 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
---
+- Bump `light-curve-feature` to 0.11.0 https://github.com/light-curve/light-curve-python/pull/611
+- Bump `light-curve-dmdt` to 0.9.0 https://github.com/light-curve/light-curve-python/pull/611
+- Bump `pyO3` and `rust-numpy` from 0.28.0 https://github.com/light-curve/light-curve-python/pull/611
 
 ### Deprecated
 
