@@ -46,7 +46,7 @@ macro_const = "0.1.0"
 mimalloc = { version = "0.1.48", features = [
     "local_dynamic_tls",
 ], optional = true }
-ndarray = { version = "0.16.1", features = ["rayon"] }
+ndarray = { version = "0.17.0", features = ["rayon"] }
 numpy = "0.28.0"
 num_cpus = "1.17.0"
 num-traits = "0.2"
@@ -66,9 +66,9 @@ unarray = "0.1.4"
 unzip3 = "1.0.0"
 
 [dependencies.light-curve-dmdt]
-version = "0.8.0"
+version = "0.9.0"
 features = ["serde"]
 
 [dependencies.light-curve-feature]
-version = "0.10.0"
+version = "0.11.0"
 default-features = false

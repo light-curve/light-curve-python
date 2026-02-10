@@ -141,11 +141,11 @@ fn uniform(left: f64, right: f64) -> LnPrior1D {
 ///     where norm_weight_i = weight_i / sum(weight_j)
 #[pyfunction]
 fn mix(mix: Vec<(f64, LnPrior1D)>) -> LnPrior1D {
-    let priors = mix
+    let priors: Vec<_> = mix
         .into_iter()
         .map(|(weight, py_ln_prior)| (weight, py_ln_prior.0))
         .collect();
-    LnPrior1D(lcf::LnPrior1D::mix(priors))
+    LnPrior1D(lcf::LnPrior1D::mix(&priors))
 }
 
 pub fn register_ln_prior_submodule(py: Python, parent_module: Bound<PyModule>) -> PyResult<()> {
