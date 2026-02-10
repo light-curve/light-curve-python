@@ -198,9 +198,9 @@ build-frontend = "build"
 
 # - Set PATH to include Rust.
 # - Set maturin build options, including LICU_ADDITIONAL_FEATURES which may be passed through CIBW_ENVIRONMENT_PASS_LINUX
-environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features=abi3,ceres-system,fftw-system,gsl,mimalloc" }
+environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features=abi3,ceres-system,gsl,mimalloc" }
 
-# We use our own images which include Rust, GSL and platform-optimised FFTW
+# We use our own images which include Rust and GSL
 # Manylinux CPython
 manylinux-aarch64-image = "ghcr.io/light-curve/base-docker-images/manylinux2014_aarch64"
 manylinux-x86_64-image = "ghcr.io/light-curve/base-docker-images/manylinux2014_x86_64"
@@ -215,27 +215,20 @@ musllinux-x86_64-image = "ghcr.io/light-curve/base-docker-images/musllinux_1_2_x
 before-all = [
     # Install Rust
     "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y",
-    # Install FFTW and GSL
-    "brew install ceres-solver fftw gsl",
+    # Install GSL
+    "brew install ceres-solver gsl",
 ]
 
 # We miss Rust installation here because it is not so simple on Windows
 [tool.cibuildwheel.windows]
-# fftw-src downloads FFTW DLLs, so fftw-sys doesn't link FFTW statically. We need to repair the wheel with these DLLs.
-before-all = [
-    "curl -o %USERPROFILE%\\Downloads\\fftw-dll64.zip https://fftw.org/pub/fftw/fftw-3.3.5-dll64.zip",
-    "powershell -command \"Expand-Archive -Path %USERPROFILE%\\Downloads\\fftw-dll64.zip -DestinationPath %USERPROFILE%\\Downloads\\fftw-dll64\"",
-]
-before-build = ["pip install delvewheel"]
-repair-wheel-command = "delvewheel repair --add-path=%USERPROFILE%\\Downloads\\fftw-dll64 -w {dest_dir} {wheel}"
 # We do not support Ceres and GSL on Windows
-environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features=abi3,fftw-source,mimalloc" }
+environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features=abi3,mimalloc" }
 
 # Build with Intel MKL on Linux x86_64
 [[tool.cibuildwheel.overrides]]
 select = "*linux_x86_64"
 # We'd like to use MKL for x86_64
-environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features=abi3,ceres-system,fftw-mkl,gsl,mimalloc" }
+environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features=abi3,ceres-system,mkl,gsl,mimalloc" }
 
 # Test
 # We use platforms natively available on GitHub Actions and skip Windows because it doesn't support all the features

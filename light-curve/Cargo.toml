@@ -26,13 +26,11 @@ lto = true
 codegen-units = 1
 
 [features]
-default = ["abi3", "ceres-source", "fftw-source", "gsl", "mimalloc"]
+default = ["abi3", "ceres-source", "gsl", "mimalloc"]
 abi3 = ["pyo3/abi3-py39"]
 ceres-source = ["light-curve-feature/ceres-source"]
 ceres-system = ["light-curve-feature/ceres-system"]
-fftw-source = ["light-curve-feature/fftw-source"]
-fftw-system = ["light-curve-feature/fftw-system"]
-fftw-mkl = ["light-curve-feature/fftw-mkl"]
+mkl = ["light-curve-feature/fftw-mkl"]
 gsl = ["light-curve-feature/gsl"]
 mimalloc = ["dep:mimalloc"]
 

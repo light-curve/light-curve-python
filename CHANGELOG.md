@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Breaking**: replace `fftw-source` (default), `fftw-system`, and `fftw-mkl` Cargo features with a single
+  optional `mkl` feature. The default FFT backend for the fast periodogram is now
+  [RustFFT](https://crates.io/crates/rustfft) (pure Rust, no C dependencies). Enable the `mkl` feature to use
+  FFTW with Intel MKL instead, recommended for Intel CPUs. https://github.com/light-curve/light-curve-python/pull/612
+- **PyPI wheels change**: Linux x86_64 wheels continue to ship with Intel MKL for the fast periodogram.
+  All other platforms (macOS, Windows, Linux aarch64) now use RustFFT instead of FFTW. https://github.com/light-curve/light-curve-python/pull/612
 - Bump `light-curve-feature` to 0.11.0 https://github.com/light-curve/light-curve-python/pull/611
 - Bump `light-curve-dmdt` to 0.9.0 https://github.com/light-curve/light-curve-python/pull/611
 - Bump `pyO3` and `rust-numpy` from 0.28.0 https://github.com/light-curve/light-curve-python/pull/611
@@ -23,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
---
+- `fftw-source`, `fftw-system`, and `fftw-mkl` Cargo features, replaced by optional `mkl` feature
 
 ### Fixed
 

@@ -1674,12 +1674,24 @@ impl Periodogram {
 
         let fast = fast.unwrap_or(false);
         if fast {
-            eval_f32.set_periodogram_algorithm(
-                lcf::PeriodogramPowerFft::<f32, lcf::periodogram::FftwFft<f32>>::new().into(),
-            );
-            eval_f64.set_periodogram_algorithm(
-                lcf::PeriodogramPowerFft::<f64, lcf::periodogram::FftwFft<f64>>::new().into(),
-            );
+            #[cfg(feature = "mkl")]
+            {
+                eval_f32.set_periodogram_algorithm(
+                    lcf::PeriodogramPowerFft::<f32, lcf::periodogram::FftwFft<f32>>::new().into(),
+                );
+                eval_f64.set_periodogram_algorithm(
+                    lcf::PeriodogramPowerFft::<f64, lcf::periodogram::FftwFft<f64>>::new().into(),
+                );
+            }
+            #[cfg(not(feature = "mkl"))]
+            {
+                eval_f32.set_periodogram_algorithm(
+                    lcf::PeriodogramPowerFft::<f32, lcf::periodogram::RustFft<f32>>::new().into(),
+                );
+                eval_f64.set_periodogram_algorithm(
+                    lcf::PeriodogramPowerFft::<f64, lcf::periodogram::RustFft<f64>>::new().into(),
+                );
+            }
         } else {
             eval_f32.set_periodogram_algorithm(lcf::PeriodogramPowerDirect {}.into());
             eval_f64.set_periodogram_algorithm(lcf::PeriodogramPowerDirect {}.into());
