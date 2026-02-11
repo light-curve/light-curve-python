@@ -106,3 +106,47 @@ def test_failure_for_wrong_freq_grids():
     with pytest.raises(ValueError):
         # Doesn't start with 0.0
         Periodogram(freqs=np.linspace(1.0, 100.0, 257), fast=True)
+
+
+def test_normalization_default_is_psd():
+    """Default normalization should match explicit 'psd'."""
+    rng = np.random.default_rng(42)
+    n = 100
+    t = np.sort(rng.uniform(0, 10, n))
+    m = np.sin(2.0 * t) + 0.1 * rng.normal(0, 1, n)
+    freqs = np.linspace(1.0, 50.0, 200)
+
+    power_default = Periodogram(freqs=freqs, fast=False).power(t, m)
+    power_psd = Periodogram(freqs=freqs, fast=False, normalization="psd").power(t, m)
+    assert_allclose(power_default, power_psd)
+
+
+def test_normalization_invalid():
+    """Invalid normalization string should raise ValueError."""
+    with pytest.raises(ValueError, match="normalization must be one of"):
+        Periodogram(normalization="invalid")
+
+
+@pytest.mark.parametrize("normalization", ["standard", "model", "log"])
+def test_normalization_vs_astropy(normalization):
+    """Compare normalizations against astropy LombScargle.
+
+    'psd' is excluded because our convention matches scipy.signal.lombscargle
+    (normalize=False) on variance-normalized data, while astropy's 'psd'
+    uses a different scaling convention.
+    """
+    astropy_ts = pytest.importorskip("astropy.timeseries")
+
+    rng = np.random.default_rng(42)
+    n = 100
+    t = np.sort(rng.uniform(0, 10, n))
+    m = np.sin(2.0 * t) + 0.1 * rng.normal(0, 1, n)
+    freqs = np.linspace(1.0, 50.0, 200)
+    # astropy uses ordinary frequency, not angular
+    astropy_freq = freqs / (2.0 * np.pi)
+
+    ls = astropy_ts.LombScargle(t, m, fit_mean=False, center_data=True)
+
+    licu_power = Periodogram(freqs=freqs, fast=False, normalization=normalization).power(t, m)
+    astropy_power = ls.power(astropy_freq, normalization=normalization)
+    assert_allclose(licu_power, astropy_power, rtol=1e-5)

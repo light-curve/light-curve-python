@@ -88,6 +88,16 @@ def gen_periodogram_variants(*, rng=None):
                     features=features,
                 )
 
+    # Test one non-default normalization; full normalization coverage
+    # is in test_periodogram.py
+    yield lc.Periodogram(
+        peaks=peaks,
+        resolution=resolution,
+        max_freq_factor=max_freq_factor,
+        features=features,
+        normalization="standard",
+    )
+
 
 def gen_fit_variants(cls, *, rng=None):
     rng = np.random.default_rng(rng)

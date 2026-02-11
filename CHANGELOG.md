@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
---
+- `Periodogram` now accepts a `normalization` parameter (`'psd'`, `'standard'`, `'model'`, `'log'`) affecting
+  `power()` and `freq_power()` outputs. Default is `'psd'` (unchanged behavior). The `'standard'`, `'model'`,
+  and `'log'` normalizations are consistent with astropy's `LombScargle`.
 
 ### Changed
 
