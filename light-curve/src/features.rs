@@ -8,7 +8,11 @@ use crate::transform::{StockTransformer, parse_transform};
 use const_format::formatcp;
 use conv::ConvUtil;
 use itertools::Itertools;
-use light_curve_feature::{self as lcf, DataSample, periodogram::FreqGrid, prelude::*};
+use light_curve_feature::{
+    self as lcf, DataSample,
+    periodogram::{FreqGrid, PeriodogramNormalization},
+    prelude::*,
+};
 use macro_const::macro_const;
 use ndarray::IntoNdProducer;
 use num_traits::Zero;
@@ -1627,6 +1631,19 @@ pub struct Periodogram {
 impl_pickle_serialisation!(Periodogram);
 
 impl Periodogram {
+    fn parse_normalization(normalization: &str) -> PyResult<PeriodogramNormalization> {
+        match normalization {
+            "psd" => Ok(PeriodogramNormalization::Psd),
+            "standard" => Ok(PeriodogramNormalization::Standard),
+            "model" => Ok(PeriodogramNormalization::Model),
+            "log" => Ok(PeriodogramNormalization::Log),
+            _ => Err(PyValueError::new_err(format!(
+                "normalization must be one of: 'psd', 'standard', 'model', 'log', got '{normalization}'"
+            ))),
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
     fn create_evals(
         peaks: Option<usize>,
         resolution: Option<f32>,
@@ -1635,6 +1652,7 @@ impl Periodogram {
         freqs: Option<Bound<PyAny>>,
         fast: Option<bool>,
         features: Option<Bound<PyAny>>,
+        normalization: PeriodogramNormalization,
     ) -> PyResult<(LcfPeriodogram<f32>, LcfPeriodogram<f64>)> {
         let mut eval_f32 = match peaks {
             Some(peaks) => lcf::Periodogram::new(peaks),
@@ -1772,6 +1790,9 @@ impl Periodogram {
             }
         }
 
+        eval_f32.set_normalization(normalization);
+        eval_f64.set_normalization(normalization);
+
         Ok((eval_f32, eval_f64))
     }
 
@@ -1826,6 +1847,7 @@ impl Periodogram {
         freqs = None,
         fast = true,
         features = None,
+        normalization = "psd",
         transform = None,
     ))]
     fn __new__(
@@ -1836,6 +1858,7 @@ impl Periodogram {
         freqs: Option<Bound<PyAny>>,
         fast: Option<bool>,
         features: Option<Bound<PyAny>>,
+        normalization: &str,
         transform: Option<Bound<PyAny>>,
     ) -> PyResult<(Self, PyFeatureEvaluator)> {
         if transform.is_some() {
@@ -1843,6 +1866,7 @@ impl Periodogram {
                 "transform is not supported by Periodogram, peak-related features are not transformed, but you still may apply transformation for the underlying features",
             ));
         }
+        let normalization = Self::parse_normalization(normalization)?;
         let (eval_f32, eval_f64) = Self::create_evals(
             peaks,
             resolution,
@@ -1851,6 +1875,7 @@ impl Periodogram {
             freqs,
             fast,
             features,
+            normalization,
         )?;
         Ok((
             Self {
@@ -1936,6 +1961,21 @@ features : iterable or None, optional
     Features to extract from periodogram considering it as a time-series,
     default is None which means no additional features
     Features to extract from periodogram considering it as a time-series
+normalization : str, optional
+    Normalization of the periodogram power. Affects `power()`,
+    `freq_power()`, and feature extraction via `__call__()`.
+    Let P be the raw power and n the number of observations.
+    Must be one of:
+     - 'psd': Raw power P, unnormalized (default). Consistent with
+       scipy.signal.lombscargle(normalize=False) on variance-normalized
+       data, but differs from astropy's 'psd' convention
+     - 'standard': P_std = P * 2 / (n - 1), values in [0, 1].
+       Matches astropy's 'standard' normalization
+     - 'model': P_std / (1 - P_std), values in [0, inf).
+       Matches astropy's 'model' normalization
+     - 'log': -ln(1 - P_std), values in [0, inf).
+       Matches astropy's 'log' normalization
+    Default is 'psd'
 transform : None, optional
     Not supported for Periodogram, peaks are not transformed, but you still
     may apply transformation for the underlying features with thier
