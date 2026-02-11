@@ -5,13 +5,12 @@ build-backend = "maturin"
 [project]
 name = "light-curve"
 dependencies = ["numpy"]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -89,7 +88,7 @@ macos-deployment-target = "10.9"
 
 [tool.black]
 line-length = 120
-target-version = ["py39"]
+target-version = ["py310"]
 include = '\.py$'
 exclude = '''
      /(
@@ -122,7 +121,7 @@ exclude = [
     ".tox",
     "_build",
 ]
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = [
@@ -160,10 +159,10 @@ markers = [
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py{39,310,311,312,313,313t,314,314t}-{base,test}
+envlist = py{310,311,312,313,313t,314,314t}-{base,test}
 isolated_build = True
 
-[testenv:py{39,310,311,312,313,313t,314,314t}-base]
+[testenv:py{310,311,312,313,313t,314,314t}-base]
 change_dir = {envtmpdir}
 extras =
 commands =
@@ -171,7 +170,7 @@ commands =
 set_env =
     CARGO_TARGET_DIR = {tox_root}/target
 
-[testenv:py{39,310,311,312,313,314}-test]
+[testenv:py{310,311,312,313,314}-test]
 extras = dev
 commands =
     pytest README.md tests/ light_curve/

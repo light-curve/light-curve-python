@@ -4,18 +4,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-`light-curve-python` is a hybrid Rust/Python package for time-series feature extraction in astrophysics. It wraps the `light-curve-feature` and `light-curve-dmdt` Rust crates via PyO3/Maturin bindings.
+`light-curve-python` is a hybrid Rust/Python package for time-series feature extraction in astrophysics. It wraps the
+`light-curve-feature` and `light-curve-dmdt` Rust crates via PyO3/Maturin bindings.
 
 ## Repository Layout
 
-The main package lives in `light-curve/` (not the repo root). There's also a thin alias package in `light-curve-python/`.
+The main package lives in `light-curve/` (not the repo root). There's also a thin alias package in
+`light-curve-python/`.
 
 Within `light-curve/`:
+
 - `src/` — Rust PyO3 bindings (`features.rs` is the main file with 40+ feature extractors, `dmdt.rs` for dm-dt maps)
 - `light_curve/` — Python package
-  - `light_curve_py/` — Pure Python experimental feature implementations
-  - `light_curve_ext.py` — Re-exports from compiled Rust extension
-  - `__init__.py` — Imports Python features first, then overrides with faster Rust equivalents
+    - `light_curve_py/` — Pure Python experimental feature implementations
+    - `light_curve_ext.py` — Re-exports from compiled Rust extension
+    - `__init__.py` — Imports Python features first, then overrides with faster Rust equivalents
 - `tests/` — pytest suite
 
 ## Build & Development Commands
@@ -63,15 +66,19 @@ pre-commit run --all-files
 
 ## Architecture Notes
 
-**Import layering**: `__init__.py` imports all Python implementations first, then overwrites them with Rust equivalents. This means Rust features shadow Python ones at runtime, but both exist for testing/comparison.
+**Import layering**: `__init__.py` imports all Python implementations first, then overwrites them with Rust equivalents.
+This means Rust features shadow Python ones at runtime, but both exist for testing/comparison.
 
-**Feature extraction pattern**: Each feature (e.g., `Amplitude`, `BazinFit`, `Periodogram`) is a class with `__call__(t, m, sigma, ...)` for single light curves and `.many(...)` for batch processing with reduced Python-Rust overhead.
+**Feature extraction pattern**: Each feature (e.g., `Amplitude`, `BazinFit`, `Periodogram`) is a class with
+`__call__(t, m, sigma, ...)` for single light curves and `.many(...)` for batch processing with reduced Python-Rust
+overhead.
 
 **Rust edition**: 2024, MSRV 1.85. Clippy treats warnings as errors.
 
-**Cargo features**: `abi3` (stable Python ABI), `ceres-source`/`ceres-system`, `mkl` (Intel MKL for FFTW-based fast periodogram), `gsl`, `mimalloc`. Default features include abi3, ceres-source, gsl, mimalloc.
+**Cargo features**: `abi3` (stable Python ABI), `ceres-source`/`ceres-system`, `mkl` (Intel MKL for FFTW-based fast
+periodogram), `gsl`, `mimalloc`. Default features include abi3, ceres-source, gsl, mimalloc.
 
-**Code style**: Line length 120, Python target 3.9+, Ruff for Python linting (rules: F, E, W, I001, NPY201).
+**Code style**: Line length 120, Python target 3.10+, Ruff for Python linting (rules: F, E, W, I001, NPY201).
 
 ## Adding a New Feature Extractor
 

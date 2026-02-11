@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_minor: [ '9', '10', '11', '12', '13', '13t', '14', '14t' ]
+        python_minor: [ '10', '11', '12', '13', '13t', '14', '14t' ]
         os: [ ubuntu-latest ]
         # Just a single ARM worker to be sure that it works
         include:
@@ -193,10 +193,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-      - name: Set up Python 3.9
+      - name: Set up Python 3.10
         uses: actions/setup-python@v6
         with:
-          python-version: '3.9'
+          python-version: '3.10'
       - name: Set up Python 3.13t
         uses: actions/setup-python@v6
         with:
@@ -225,6 +225,6 @@ jobs:
       - name: Build
         run: |
           rustup default ${{ steps.get_msrv.outputs.msrv }}
-          maturin build -i python3.9
+          maturin build -i python3.10
           maturin build -i python3.13t
           maturin build -i python3.14t
