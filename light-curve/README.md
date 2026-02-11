@@ -22,7 +22,7 @@ conda install -c conda-forge light-curve-python
 features.
 We also provide `light-curve-python` package which is just an "alias" to the main `light-curve[full]` package.
 
-The minimum supported Python version is 3.9.
+The minimum supported Python version is 3.10.
 We provide binary CPython distributions via [PyPI](https://pypi.org/project/light-curve/)
 and [Anaconda](https://anaconda.org/conda-forge/light-curve-python) for various platforms and architectures.
 On PyPI, we provide binary wheels for the stable CPython ABI, ensuring compatibility with future
@@ -675,7 +675,7 @@ assert_array_equal(actual, desired)
 
 ### Prepare environment
 
-Install a recent Rust toolchain and Python 3.9 or higher.
+Install a recent Rust toolchain and Python 3.10 or higher.
 It is recommended to use [`rustup`](https://rustup.rs/) to install Rust toolchain and update it with
 `rustup update` periodically.
 
@@ -792,7 +792,7 @@ from [the list of supported](https://cibuildwheel.pypa.io/en/stable/options/#bui
 
 ```bash
 python -mpip install cibuildwheel
-python -m cibuildwheel --only=cp39-manylinux_x86_64
+python -m cibuildwheel --only=cp310-manylinux_x86_64
 ```
 
 Please notice that we use different Cargo feature set for different platforms, which is defined in
@@ -806,11 +806,11 @@ dependent libraries installed from `homebrew` are built with this target:
 
 ```bash
 export MACOSX_DEPLOYMENT_TARGET=$(sw_vers -productVersion | awk -F '.' '{print $1"."0}')
-python -m cibuildwheel --only=cp39-macosx_arm64
+python -m cibuildwheel --only=cp310-macosx_arm64
 unset MACOSX_DEPLOYMENT_TARGET
 ```
 
-Since we use ABI3 compatibility, you can build wheels for a single CPython version (currently 3.9+) and they
+Since we use ABI3 compatibility, you can build wheels for a single CPython version (currently 3.10+) and they
 will work with any later version of CPython.
 
 ## Citation

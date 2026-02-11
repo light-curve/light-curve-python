@@ -41,23 +41,23 @@ jobs:
         # * For Windows we support amd64 only
         # * For Linux we support ARM64 and x86_64
         # * For macOS we support x86_64 (macos-15-intel runner) and ARM64 (macos-14 runner)
-        # * We build wheels for CPython only, one per platform, compatible with ABI3.9
+        # * We build wheels for CPython only, one per platform, compatible with ABI3.10
         include:
-          # CPython 3.9
+          # CPython 3.10
           - os: macos-15-intel
-            cibw_build: cp39-macosx_x86_64
+            cibw_build: cp310-macosx_x86_64
           - os: macos-14
-            cibw_build: cp39-macosx_arm64
+            cibw_build: cp310-macosx_arm64
           - os: windows-2025
-            cibw_build: cp39-win_amd64
+            cibw_build: cp310-win_amd64
           - os: ubuntu-24.04
-            cibw_build: cp39-manylinux_x86_64
+            cibw_build: cp310-manylinux_x86_64
           - os: ubuntu-24.04
-            cibw_build: cp39-musllinux_x86_64
+            cibw_build: cp310-musllinux_x86_64
           - os: ubuntu-24.04-arm
-            cibw_build: cp39-manylinux_aarch64
+            cibw_build: cp310-manylinux_aarch64
           - os: ubuntu-24.04-arm
-            cibw_build: cp39-musllinux_aarch64
+            cibw_build: cp310-musllinux_aarch64
 
     steps:
       - uses: actions/checkout@v6
