@@ -8,7 +8,7 @@ high-performant time-series feature extractors.
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/light-curve-python.svg)](https://anaconda.org/conda-forge/light-curve-python)
 [![Conda Recipe](https://img.shields.io/badge/recipe-light--curve--python-green.svg)](https://anaconda.org/conda-forge/light-curve-python)
 [![testing](https://github.com/light-curve/light-curve-python/actions/workflows/test.yml/badge.svg)](https://github.com/light-curve/light-curve-python/actions/workflows/test.yml)
-[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/light-curve/light-curve-python/master.svg)](https://results.pre-commit.ci/latest/github/light-curve/light-curve-python/master)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/light-curve/light-curve-python/main.svg)](https://results.pre-commit.ci/latest/github/light-curve/light-curve-python/main)
 
 ## Installation
 
@@ -618,7 +618,7 @@ Here we benchmark the Rust implementation (`rust`) versus [`feets`](https://feet
 package and
 our own Python implementation (`lc_py`) for a light curve having n=1000 observations.
 
-![Benchmarks, Rust is much faster](https://github.com/light-curve/light-curve-python/raw/master/light-curve/.readme/benchplot_v2.png)
+![Benchmarks, Rust is much faster](https://github.com/light-curve/light-curve-python/raw/main/light-curve/.readme/benchplot_v2.png)
 
 The plot shows that the Rust implementation of the package outperforms other ones by a factor of 1.5—50.
 This allows to extract a large set of "cheap" features well under one ms for n=1000.
@@ -626,14 +626,14 @@ The performance of parametric fits (`BazinFit` and `VillarFit`) and `Periodogram
 but the
 typical timescale of feature extraction including these features is 20—50 ms for few hundred observations.
 
-![Benchmark for different number of observations](https://github.com/light-curve/light-curve-python/raw/master/light-curve/.readme/nobs_bench_v2.png)
+![Benchmark for different number of observations](https://github.com/light-curve/light-curve-python/raw/main/light-curve/.readme/nobs_bench_v2.png)
 
 Benchmark results of several features for both the pure-Python and Rust implementations of the "light-curve"
 package, as
 a function of the number of observations in a light curve. Both the x-axis and y-axis are on a logarithmic
 scale.
 
-![Benchmark for multithreading and multiprocessing](https://github.com/light-curve/light-curve-python/raw/master/light-curve/.readme/multi_bench_v2.png)
+![Benchmark for multithreading and multiprocessing](https://github.com/light-curve/light-curve-python/raw/main/light-curve/.readme/multi_bench_v2.png)
 
 Processing time per a single light curve for extraction of features subset presented in first benchmark versus
 the
