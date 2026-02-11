@@ -183,7 +183,7 @@ jobs:
             . venv/bin/activate
             pip install "${{ needs.py_build_deps.outputs.output }}" pytest-codspeed
             maturin develop --extras=test --release
-            python3 -mpytest -m "not (nobs or multi)" --codspeed tests/test_w_bench.py
+            python3 -mpytest -k test_benchmark_rust -m "not (nobs or multi)" --codspeed tests/test_w_bench.py
 
   msrv-build:
     runs-on: ubuntu-latest
