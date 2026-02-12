@@ -15,6 +15,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          components: cargo
       - name: Check Cargo.toml version vs Git tag
         if: startsWith(github.ref, 'refs/tags/v')
         working-directory: ./light-curve
