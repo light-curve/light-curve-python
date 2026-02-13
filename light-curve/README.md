@@ -747,7 +747,7 @@ The following features are available:
   It is used as an optional optimization algorithm for `BazinFit` and `VillarFit`.
 - `ceres-system` - enables Ceres solver support but links with a dynamic library. You need to have a
   compatible version of Ceres installed on your system.
-- `mkl` - enables [FFTW](http://www.fftw.org/) support with the Intel MKL backend for the "fast" periodogram.
+- `mkl` - enables [FFTW](http://www.fftw.org/) interface with the Intel MKL backend for the "fast" periodogram.
   Intel MKL will be downloaded automatically during the build. Highly recommended for Intel CPUs.
   When not enabled, the pure-Rust [RustFFT](https://crates.io/crates/rustfft) backend is used instead.
 - `gsl` (default) - enables [GNU Scientific Library](https://www.gnu.org/software/gsl/) support. You need a

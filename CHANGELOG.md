@@ -9,24 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `Periodogram` now accepts a `normalization` parameter (`'psd'`, `'standard'`, `'model'`, `'log'`) affecting
-  `power()` and `freq_power()` outputs. Default is `'psd'` (unchanged behavior). The `'standard'`, `'model'`,
-  and `'log'` normalizations are consistent with astropy's `LombScargle`.
+--
 
 ### Changed
 
-- **PyPI wheels changes**:
-  - Minimum supported Python version bumped from 3.9 to 3.10 https://github.com/light-curve/light-curve-python/pull/614
-  - Linux x86_64 wheels continue to ship with Intel MKL for the fast periodogram.
-    All other platforms (macOS, Windows, Linux aarch64) now use RustFFT instead of FFTW. https://github.com/light-curve/light-curve-python/pull/612
-- **Breaking Build**: Default ABI3 Cargo feature flag now enables Python 3.10 instead of Python 3.9 https://github.com/light-curve/light-curve-python/pull/614
-- **Breaking Build**: replace `fftw-source` (default), `fftw-system`, and `fftw-mkl` Cargo features with a single
-  optional `mkl` feature. The default FFT backend for the fast periodogram is now
-  [RustFFT](https://crates.io/crates/rustfft) (pure Rust, no C dependencies). Enable the `mkl` feature to use
-  FFTW with Intel MKL instead, recommended for Intel CPUs. https://github.com/light-curve/light-curve-python/pull/612
-- Bump `light-curve-feature` to 0.11.0 https://github.com/light-curve/light-curve-python/pull/611
-- Bump `light-curve-dmdt` to 0.9.0 https://github.com/light-curve/light-curve-python/pull/611
-- Bump `pyO3` and `rust-numpy` from 0.28.0 https://github.com/light-curve/light-curve-python/pull/611
+--
 
 ### Deprecated
 
@@ -34,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- `fftw-source`, `fftw-system`, and `fftw-mkl` Cargo features, replaced by optional `mkl` feature
+--
 
 ### Fixed
 
@@ -43,6 +30,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 --
+
+## [0.11.0] 2026-02-12
+
+### Added
+
+- `Periodogram` now accepts a `normalization` parameter (`'psd'`, `'standard'`, `'model'`, `'log'`) affecting
+  `power()` and `freq_power()` outputs. Default is `'psd'` (unchanged behavior). The `'standard'`, `'model'`,
+  and `'log'` normalizations are consistent with astropy's `LombScargle`.
+
+### Changed
+
+- **PyPI wheels changes**:
+  - Minimum supported Python version bumped from 3.9 to 3.10 https://github.com/light-curve/light-curve-python/pull/614
+  - Linux x86_64 wheels continue to ship with Intel MKL, for its FFT implementation, which is used by `Periodogram(fast=True)`.
+    All other platforms (macOS, Windows, Linux aarch64) now use RustFFT instead of FFTW for FFT. https://github.com/light-curve/light-curve-python/pull/612
+- **Breaking Build**: Default ABI3 Cargo feature flag now enables Python 3.10 instead of Python 3.9 https://github.com/light-curve/light-curve-python/pull/614
+- **Breaking Build**: `fftw-source` (default), `fftw-system`, and `fftw-mkl` Cargo features are replaced with a single
+  optional `mkl` feature. The default FFT backend for the fast periodogram is now
+  [RustFFT](https://crates.io/crates/rustfft) (pure Rust, no C dependencies). Enable the `mkl` feature to use
+  FFTW with Intel MKL instead, recommended for Intel CPUs. https://github.com/light-curve/light-curve-python/pull/612
+- Bump `light-curve-feature` to 0.12.0 https://github.com/light-curve/light-curve-python/pull/611 https://github.com/light-curve/light-curve-python/pull/613
+- Bump `light-curve-dmdt` to 0.9.0 https://github.com/light-curve/light-curve-python/pull/611
+- Bump `pyO3` and `rust-numpy` from 0.28.0 https://github.com/light-curve/light-curve-python/pull/611
+
+### Removed
+
+- **Breaking Build** `fftw-source`, `fftw-system`, and `fftw-mkl` Cargo features, replaced by optional `mkl` feature
 
 ## [0.10.5] 2025-11-26
 
