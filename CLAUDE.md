@@ -80,6 +80,11 @@ periodogram), `gsl`, `mimalloc`. Default features include abi3, ceres-source, gs
 
 **Code style**: Line length 120, Python target 3.10+, Ruff for Python linting (rules: F, E, W, I001, NPY201).
 
+**Rust style**: Write idiomatic Rust — prefer immutability by default (`let` over `let mut`), use iterators and
+combinators (`.map()`, `.filter()`, `.collect()`, `.fold()`, etc.) instead of imperative `for` loops with manual
+accumulation, leverage pattern matching and `if let`/`let else` over nested `if`/`else` chains, use `?` for error
+propagation, and prefer owned types only when necessary (borrow when possible).
+
 ## Adding a New Feature Extractor
 
 1. Core implementation goes in upstream `light-curve-feature` Rust crate

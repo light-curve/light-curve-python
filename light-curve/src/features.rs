@@ -1,3 +1,4 @@
+use crate::arrow_input::{ArrowDtype, ArrowFloat, validate_arrow_lcs};
 use crate::check::{check_finite, check_no_nans, is_sorted};
 use crate::cont_array::ContCowArray;
 use crate::errors::{Exception, Res};
@@ -5,6 +6,7 @@ use crate::ln_prior::LnPrior1D;
 use crate::np_array::Arr;
 use crate::transform::{StockTransformer, parse_transform};
 
+use arrow_array::cast::AsArray;
 use const_format::formatcp;
 use conv::ConvUtil;
 use itertools::Itertools;
@@ -22,6 +24,7 @@ use once_cell::sync::OnceCell;
 use pyo3::exceptions::{PyNotImplementedError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyBytes, PyTuple};
+use pyo3_arrow::PyChunkedArray;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -107,10 +110,15 @@ many(self, lcs, *, fill_value=None, sorted=None, check=True, cast=False, n_jobs=
 
     Parameters
     ----------
-    lcs : list ot (t, m, sigma)
-        A collection of light curves packed into three-tuples, all light curves
-        must be represented by numpy.ndarray of the same dtype. See __call__
-        documentation for details
+    lcs : list of (t, m, sigma) or Arrow array
+        Either a list of light curves packed into three-tuples (all numpy.ndarray
+        of the same dtype), or an Arrow array/chunked array of type
+        List<Struct<t, m[, sigma]>> where all fields share the same float dtype
+        (float32 or float64). Arrow input is auto-detected via the
+        __arrow_c_array__ / __arrow_c_stream__ protocol and enables zero-copy
+        data access from pyarrow, polars, and other Arrow-compatible libraries.
+        When using Arrow input, 2 struct fields means (t, m) without sigma,
+        3 fields means (t, m, sigma). Field names are ignored
     fill_value : float or None, optional
         Fill invalid values by this or raise an exception if None
     sorted : bool or None, optional
@@ -163,13 +171,13 @@ type PyLightCurve<'a, T> = (Arr<'a, T>, Arr<'a, T>, Option<Arr<'a, T>>);
     from_py_object
 )]
 pub struct PyFeatureEvaluator {
-    feature_evaluator_f32: lcf::Feature<f32>,
-    feature_evaluator_f64: lcf::Feature<f64>,
+    feature_evaluator_f32: Feature<f32>,
+    feature_evaluator_f64: Feature<f64>,
 }
 
 impl PyFeatureEvaluator {
     fn with_transform(
-        (fe_f32, fe_f64): (lcf::Feature<f32>, lcf::Feature<f64>),
+        (fe_f32, fe_f64): (Feature<f32>, Feature<f64>),
         (tr_f32, tr_f64): (lcf::Transformer<f32>, lcf::Transformer<f64>),
     ) -> Res<Self> {
         Ok(Self {
@@ -191,8 +199,8 @@ impl PyFeatureEvaluator {
     }
 
     fn with_py_transform(
-        fe_f32: lcf::Feature<f32>,
-        fe_f64: lcf::Feature<f64>,
+        fe_f32: Feature<f32>,
+        fe_f64: Feature<f64>,
         transform: Option<Bound<PyAny>>,
         default_transformer: StockTransformer,
     ) -> Res<Self> {
@@ -206,8 +214,77 @@ impl PyFeatureEvaluator {
         }
     }
 
+    /// Core TimeSeries construction from array views.
+    /// Used by both the numpy and arrow input paths.
+    fn ts_from_views<'a, T>(
+        feature_evaluator: &Feature<T>,
+        t: ndarray::ArrayView1<'a, T>,
+        m: ndarray::ArrayView1<'a, T>,
+        sigma: Option<ndarray::ArrayView1<'a, T>>,
+        sorted: Option<bool>,
+        check: bool,
+        is_t_required: bool,
+    ) -> Res<lcf::TimeSeries<'a, T>>
+    where
+        T: Float,
+    {
+        // Check finite on the views as passed by the caller. For numpy,
+        // ts_from_numpy passes a unity broadcast when !required && !contiguous,
+        // so this is a harmless no-op in that case.
+        if check {
+            check_finite(t)?;
+            check_finite(m)?;
+        }
+
+        let mut t_ds: lcf::DataSample<_> = if is_t_required {
+            t.into()
+        } else {
+            T::array0_unity().broadcast(t.len()).unwrap().into()
+        };
+        match sorted {
+            Some(true) => {}
+            Some(false) => {
+                return Err(Exception::NotImplementedError(
+                    "sorting is not implemented, please provide time-sorted arrays".to_string(),
+                ));
+            }
+            None => {
+                if feature_evaluator.is_sorting_required() && !is_sorted(t_ds.as_slice()) {
+                    return Err(Exception::ValueError(
+                        "t must be in ascending order".to_string(),
+                    ));
+                }
+            }
+        }
+
+        let m_ds: lcf::DataSample<_> = if feature_evaluator.is_m_required() {
+            m.into()
+        } else {
+            T::array0_unity().broadcast(m.len()).unwrap().into()
+        };
+
+        let w = match sigma {
+            Some(sigma_view) if feature_evaluator.is_w_required() => {
+                if check {
+                    check_no_nans(sigma_view)?;
+                }
+                let mut a = sigma_view.to_owned();
+                a.mapv_inplace(|x| x.powi(-2));
+                Some(a)
+            }
+            _ => None,
+        };
+
+        let ts = match w {
+            Some(w) => lcf::TimeSeries::new(t_ds, m_ds, w),
+            None => lcf::TimeSeries::new_without_weight(t_ds, m_ds),
+        };
+
+        Ok(ts)
+    }
+
     fn ts_from_numpy<'a, T>(
-        feature_evaluator: &lcf::Feature<T>,
+        feature_evaluator: &Feature<T>,
         t: &'a Arr<'a, T>,
         m: &'a Arr<'a, T>,
         sigma: &'a Option<Arr<'a, T>>,
@@ -216,7 +293,7 @@ impl PyFeatureEvaluator {
         is_t_required: bool,
     ) -> Res<lcf::TimeSeries<'a, T>>
     where
-        T: lcf::Float + numpy::Element,
+        T: Float + numpy::Element,
     {
         if t.len() != m.len() {
             return Err(Exception::ValueError(
@@ -231,69 +308,37 @@ impl PyFeatureEvaluator {
             }
         }
 
-        let mut t: lcf::DataSample<_> = if is_t_required || t.is_contiguous() {
-            let t = t.as_array();
-            if check {
-                check_finite(t)?;
-            }
-            t.into()
+        // For non-contiguous numpy arrays that aren't needed, use the actual
+        // array view anyway — ts_from_views will substitute unity when the
+        // feature doesn't require the data. For contiguous arrays or when
+        // required, extract the real view. We still pass is_t_required through
+        // so ts_from_views can decide whether to check/use the data.
+        let t_view = if is_t_required || t.is_contiguous() {
+            t.as_array()
         } else {
-            T::array0_unity().broadcast(t.len()).unwrap().into()
+            T::array0_unity().broadcast(t.len()).unwrap()
         };
-        match sorted {
-            Some(true) => {}
-            Some(false) => {
-                return Err(Exception::NotImplementedError(
-                    "sorting is not implemented, please provide time-sorted arrays".to_string(),
-                ));
-            }
-            None => {
-                if feature_evaluator.is_sorting_required() && !is_sorted(t.as_slice()) {
-                    return Err(Exception::ValueError(
-                        "t must be in ascending order".to_string(),
-                    ));
-                }
-            }
-        }
-
-        let m: lcf::DataSample<_> = if feature_evaluator.is_m_required() || m.is_contiguous() {
-            let m = m.as_array();
-            if check {
-                check_finite(m)?;
-            }
-            m.into()
+        let m_view = if feature_evaluator.is_m_required() || m.is_contiguous() {
+            m.as_array()
         } else {
-            T::array0_unity().broadcast(m.len()).unwrap().into()
+            T::array0_unity().broadcast(m.len()).unwrap()
         };
+        let sigma_view = sigma.as_ref().map(|s| s.as_array());
 
-        let w = match sigma.as_ref() {
-            Some(sigma) => {
-                if feature_evaluator.is_w_required() {
-                    let sigma = sigma.as_array();
-                    if check {
-                        check_no_nans(sigma)?;
-                    }
-                    let mut a = sigma.to_owned();
-                    a.mapv_inplace(|x| x.powi(-2));
-                    Some(a)
-                } else {
-                    None
-                }
-            }
-            None => None,
-        };
-
-        let ts = match w {
-            Some(w) => lcf::TimeSeries::new(t, m, w),
-            None => lcf::TimeSeries::new_without_weight(t, m),
-        };
-
-        Ok(ts)
+        Self::ts_from_views(
+            feature_evaluator,
+            t_view,
+            m_view,
+            sigma_view,
+            sorted,
+            check,
+            is_t_required,
+        )
     }
 
     #[allow(clippy::too_many_arguments)]
     fn call_impl<'py, T>(
-        feature_evaluator: &lcf::Feature<T>,
+        feature_evaluator: &Feature<T>,
         py: Python<'py>,
         t: Arr<'py, T>,
         m: Arr<'py, T>,
@@ -304,7 +349,7 @@ impl PyFeatureEvaluator {
         fill_value: Option<T>,
     ) -> Res<Bound<'py, PyUntypedArray>>
     where
-        T: lcf::Float + numpy::Element,
+        T: Float + numpy::Element,
     {
         let mut ts = Self::ts_from_numpy(
             feature_evaluator,
@@ -329,7 +374,7 @@ impl PyFeatureEvaluator {
     #[allow(clippy::too_many_arguments)]
     fn py_many<'py, T>(
         &self,
-        feature_evaluator: &lcf::Feature<T>,
+        feature_evaluator: &Feature<T>,
         py: Python<'py>,
         lcs: PyLcs<'py>,
         sorted: Option<bool>,
@@ -338,7 +383,7 @@ impl PyFeatureEvaluator {
         n_jobs: i64,
     ) -> Res<Bound<'py, PyUntypedArray>>
     where
-        T: lcf::Float + numpy::Element,
+        T: Float + numpy::Element,
     {
         let wrapped_lcs = lcs
             .into_iter()
@@ -375,29 +420,15 @@ impl PyFeatureEvaluator {
         .clone())
     }
 
-    fn many_impl<T>(
-        feature_evaluator: &lcf::Feature<T>,
-        lcs: Vec<PyLightCurve<T>>,
-        sorted: Option<bool>,
-        check: bool,
-        is_t_required: bool,
+    /// Parallel feature evaluation over a pre-built vector of TimeSeries.
+    fn eval_many_parallel<T: Float>(
+        feature_evaluator: &Feature<T>,
+        mut tss: Vec<lcf::TimeSeries<'_, T>>,
         fill_value: Option<T>,
         n_jobs: i64,
-    ) -> Res<ndarray::Array2<T>>
-    where
-        T: lcf::Float + numpy::Element,
-    {
+    ) -> Res<ndarray::Array2<T>> {
         let n_jobs = if n_jobs < 0 { 0 } else { n_jobs as usize };
-
-        let mut result = ndarray::Array2::zeros((lcs.len(), feature_evaluator.size_hint()));
-
-        let mut tss = lcs
-            .iter()
-            .map(|(t, m, sigma)| {
-                Self::ts_from_numpy(feature_evaluator, t, m, sigma, sorted, check, is_t_required)
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-
+        let mut result = ndarray::Array2::zeros((tss.len(), feature_evaluator.size_hint()));
         rayon::ThreadPoolBuilder::new()
             .num_threads(n_jobs)
             .build()
@@ -421,6 +452,28 @@ impl PyFeatureEvaluator {
         Ok(result)
     }
 
+    fn many_impl<T>(
+        feature_evaluator: &Feature<T>,
+        lcs: Vec<PyLightCurve<T>>,
+        sorted: Option<bool>,
+        check: bool,
+        is_t_required: bool,
+        fill_value: Option<T>,
+        n_jobs: i64,
+    ) -> Res<ndarray::Array2<T>>
+    where
+        T: Float + numpy::Element,
+    {
+        let tss = lcs
+            .iter()
+            .map(|(t, m, sigma)| {
+                Self::ts_from_numpy(feature_evaluator, t, m, sigma, sorted, check, is_t_required)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Self::eval_many_parallel(feature_evaluator, tss, fill_value, n_jobs)
+    }
+
     fn is_t_required(&self, sorted: Option<bool>) -> bool {
         match (
             self.feature_evaluator_f64.is_t_required(),
@@ -436,6 +489,118 @@ impl PyFeatureEvaluator {
             // neither t or sorting is required
             (false, false, _) => false,
         }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn many_arrow<'py>(
+        &self,
+        py: Python<'py>,
+        lcs: &Bound<'py, PyAny>,
+        fill_value: Option<f64>,
+        sorted: Option<bool>,
+        check: bool,
+        n_jobs: i64,
+    ) -> Res<Bound<'py, PyUntypedArray>> {
+        // Try __arrow_c_stream__ (ChunkedArray) first, then __arrow_c_array__ (Array)
+        let chunked: PyChunkedArray = if let Ok(ca) = lcs.extract::<PyChunkedArray>() {
+            ca
+        } else if let Ok(arr) = lcs.extract::<pyo3_arrow::PyArray>() {
+            PyChunkedArray::from_array_refs(vec![arr.array().clone()])
+                .map_err(|e| Exception::ValueError(format!("Failed to convert Arrow array: {e}")))?
+        } else {
+            return Err(Exception::TypeError(
+                "Arrow input must implement __arrow_c_array__ or __arrow_c_stream__".to_string(),
+            ));
+        };
+        let schema = validate_arrow_lcs(&chunked)?;
+        let is_t_required = self.is_t_required(sorted);
+
+        match schema.dtype {
+            ArrowDtype::F32 => {
+                let result = Self::many_arrow_impl(
+                    &self.feature_evaluator_f32,
+                    &chunked,
+                    schema.has_sigma,
+                    sorted,
+                    check,
+                    is_t_required,
+                    fill_value.map(|v| v as f32),
+                    n_jobs,
+                )?;
+                Ok(result.into_pyarray(py).as_untyped().clone())
+            }
+            ArrowDtype::F64 => {
+                let result = Self::many_arrow_impl(
+                    &self.feature_evaluator_f64,
+                    &chunked,
+                    schema.has_sigma,
+                    sorted,
+                    check,
+                    is_t_required,
+                    fill_value,
+                    n_jobs,
+                )?;
+                Ok(result.into_pyarray(py).as_untyped().clone())
+            }
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn many_arrow_impl<T: ArrowFloat>(
+        feature_evaluator: &Feature<T>,
+        chunked: &PyChunkedArray,
+        has_sigma: bool,
+        sorted: Option<bool>,
+        check: bool,
+        is_t_required: bool,
+        fill_value: Option<T>,
+        n_jobs: i64,
+    ) -> Res<ndarray::Array2<T>> {
+        let chunks = chunked.chunks();
+
+        let tss = chunks
+            .iter()
+            .flat_map(|chunk| {
+                let list = chunk.as_list::<i32>();
+                let struct_arr = list.values().as_struct();
+                let t_vals: &[T] = struct_arr
+                    .column(0)
+                    .as_primitive::<T::ArrowType>()
+                    .values()
+                    .as_ref();
+                let m_vals: &[T] = struct_arr
+                    .column(1)
+                    .as_primitive::<T::ArrowType>()
+                    .values()
+                    .as_ref();
+                let sigma_vals: Option<&[T]> = has_sigma.then(|| {
+                    struct_arr
+                        .column(2)
+                        .as_primitive::<T::ArrowType>()
+                        .values()
+                        .as_ref()
+                });
+                let offsets = list.value_offsets();
+                offsets.iter().tuple_windows().map(move |(&start, &end)| {
+                    let (start, end) = (start as usize, end as usize);
+                    Self::ts_from_views(
+                        feature_evaluator,
+                        ndarray::ArrayView1::from(&t_vals[start..end]),
+                        ndarray::ArrayView1::from(&m_vals[start..end]),
+                        sigma_vals.map(|s| ndarray::ArrayView1::from(&s[start..end])),
+                        sorted,
+                        check,
+                        is_t_required,
+                    )
+                })
+            })
+            .collect::<Res<Vec<_>>>()?;
+
+        if tss.is_empty() {
+            return Err(Exception::ValueError("lcs is empty".to_string()));
+        }
+
+        Self::eval_many_parallel(feature_evaluator, tss, fill_value, n_jobs)
     }
 }
 
@@ -536,12 +701,18 @@ impl PyFeatureEvaluator {
     fn many<'py>(
         &self,
         py: Python<'py>,
-        lcs: PyLcs<'py>,
+        lcs: Bound<'py, PyAny>,
         fill_value: Option<f64>,
         sorted: Option<bool>,
         check: bool,
         n_jobs: i64,
     ) -> Res<Bound<'py, PyUntypedArray>> {
+        // Try Arrow path first
+        if lcs.hasattr("__arrow_c_array__")? || lcs.hasattr("__arrow_c_stream__")? {
+            return self.many_arrow(py, &lcs, fill_value, sorted, check, n_jobs);
+        }
+        // Fall back to list-of-tuples path
+        let lcs: PyLcs<'py> = lcs.extract()?;
         if lcs.is_empty() {
             Err(Exception::ValueError("lcs is empty".to_string()))
         } else {
@@ -666,8 +837,8 @@ impl Extractor {
         Ok((
             Self {},
             PyFeatureEvaluator {
-                feature_evaluator_f32: lcf::FeatureExtractor::new(evals_f32).into(),
-                feature_evaluator_f64: lcf::FeatureExtractor::new(evals_f64).into(),
+                feature_evaluator_f32: FeatureExtractor::new(evals_f32).into(),
+                feature_evaluator_f64: FeatureExtractor::new(evals_f64).into(),
             },
         ))
     }
@@ -685,7 +856,7 @@ transform : None, optional
     Not implemented for Extractor, transform individual features instead
 {}
 "#,
-            lcf::FeatureExtractor::<f64, lcf::Feature<f64>>::doc().trim_start(),
+            FeatureExtractor::<f64, Feature<f64>>::doc().trim_start(),
             COMMON_FEATURE_DOC,
         )
     }
@@ -853,7 +1024,7 @@ macro_rules! fit_evaluator {
         impl $name {
             fn model_impl<T>(t: Arr<T>, params: Arr<T>) -> ndarray::Array1<T>
             where
-                T: lcf::Float + numpy::Element,
+                T: Float + numpy::Element,
             {
                 let params = ContCowArray::from_view(params.as_array(), true);
                 t.as_array().mapv(|x| <$eval>::f(x, params.as_slice()))
@@ -1325,7 +1496,7 @@ transform : None
     Not supported, apply transformations to individual features
 {footer}
 "#,
-            header = lcf::Bins::<f64, lcf::Feature<f64>>::doc().trim_start(),
+            header = lcf::Bins::<f64, Feature<f64>>::doc().trim_start(),
             footer = COMMON_FEATURE_DOC,
         )
     }
@@ -1613,7 +1784,7 @@ quantile : positive float
     }
 }
 
-type LcfPeriodogram<T> = lcf::Periodogram<T, lcf::Feature<T>>;
+type LcfPeriodogram<T> = lcf::Periodogram<T, Feature<T>>;
 
 #[derive(FromPyObject)]
 enum NyquistArgumentOfPeriodogram {
@@ -1797,7 +1968,7 @@ impl Periodogram {
     }
 
     fn power_impl<'py, T>(
-        eval: &lcf::Periodogram<T, lcf::Feature<T>>,
+        eval: &lcf::Periodogram<T, Feature<T>>,
         py: Python<'py>,
         t: Arr<T>,
         m: Arr<T>,
@@ -1814,7 +1985,7 @@ impl Periodogram {
     }
 
     fn freq_power_impl<'py, T>(
-        eval: &lcf::Periodogram<T, lcf::Feature<T>>,
+        eval: &lcf::Periodogram<T, Feature<T>>,
         py: Python<'py>,
         t: Arr<T>,
         m: Arr<T>,
@@ -2137,7 +2308,7 @@ impl OtsuSplit {
 impl OtsuSplit {
     fn threshold_impl<T>(m: Arr<T>) -> Res<f64>
     where
-        T: lcf::Float + numpy::Element,
+        T: Float + numpy::Element,
     {
         let mut ds = m.as_array().into();
         let (thr, _, _) = lcf::OtsuSplit::threshold(&mut ds).map_err(|_| {
@@ -2169,10 +2340,10 @@ impl JsonDeserializedFeature {
     #[new]
     #[pyo3(text_signature = "(json_string)")]
     fn __new__(s: String) -> Res<(Self, PyFeatureEvaluator)> {
-        let feature_evaluator_f32: lcf::Feature<f32> = serde_json::from_str(&s).map_err(|err| {
+        let feature_evaluator_f32: Feature<f32> = serde_json::from_str(&s).map_err(|err| {
             Exception::ValueError(format!("Cannot deserialize feature from JSON: {err}"))
         })?;
-        let feature_evaluator_f64: lcf::Feature<f64> = serde_json::from_str(&s).map_err(|err| {
+        let feature_evaluator_f64: Feature<f64> = serde_json::from_str(&s).map_err(|err| {
             Exception::ValueError(format!("Cannot deserialize feature from JSON: {err}"))
         })?;
 
