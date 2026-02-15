@@ -4,7 +4,10 @@ import pickle
 from concurrent.futures import ThreadPoolExecutor
 from itertools import chain
 
+import arro3.core
+import nanoarrow
 import numpy as np
+import polars as pl
 import pyarrow as pa
 import pytest
 from numpy.testing import assert_allclose, assert_array_equal
@@ -616,4 +619,50 @@ def test_many_arrow_parallel():
     expected = feature.many(lcs, sorted=True, n_jobs=1)
     arrow_arr = _make_arrow_lcs(lcs)
     result = feature.many(arrow_arr, sorted=True, n_jobs=2)
+    assert_array_equal(expected, result)
+
+
+def test_many_polars():
+    """Polars Series (Arrow-backed) works with many()."""
+    rng = np.random.default_rng(42)
+    n_obs, n_lc = 64, 8
+    lcs = [gen_lc(n_obs, rng=rng) for _ in range(n_lc)]
+
+    feature = lc.Amplitude()
+    expected = feature.many(lcs, sorted=True, n_jobs=1)
+
+    # Build a Polars Series of list-of-structs
+    arrow_arr = _make_arrow_lcs(lcs)
+    polars_series = pl.Series(arrow_arr)
+    result = feature.many(polars_series, sorted=True, n_jobs=1)
+    assert_array_equal(expected, result)
+
+
+def test_many_nanoarrow():
+    """nanoarrow array works with many()."""
+    rng = np.random.default_rng(42)
+    n_obs, n_lc = 64, 8
+    lcs = [gen_lc(n_obs, rng=rng) for _ in range(n_lc)]
+
+    feature = lc.Amplitude()
+    expected = feature.many(lcs, sorted=True, n_jobs=1)
+
+    arrow_arr = _make_arrow_lcs(lcs)
+    nano_arr = nanoarrow.Array(arrow_arr)
+    result = feature.many(nano_arr, sorted=True, n_jobs=1)
+    assert_array_equal(expected, result)
+
+
+def test_many_arro3():
+    """arro3 array works with many()."""
+    rng = np.random.default_rng(42)
+    n_obs, n_lc = 64, 8
+    lcs = [gen_lc(n_obs, rng=rng) for _ in range(n_lc)]
+
+    feature = lc.Amplitude()
+    expected = feature.many(lcs, sorted=True, n_jobs=1)
+
+    arrow_arr = _make_arrow_lcs(lcs)
+    arro3_arr = arro3.core.Array.from_arrow(arrow_arr)
+    result = feature.many(arro3_arr, sorted=True, n_jobs=1)
     assert_array_equal(expected, result)

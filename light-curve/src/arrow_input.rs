@@ -25,21 +25,28 @@ pub(crate) enum ArrowDtype {
     F64,
 }
 
+pub(crate) enum ArrowListType {
+    List,
+    LargeList,
+}
+
 pub(crate) struct ArrowLcsSchema {
     pub dtype: ArrowDtype,
     pub has_sigma: bool,
+    pub list_type: ArrowListType,
 }
 
 /// Validate that the chunked array has type `List<Struct<f, f[, f]>>` and return schema info.
 pub(crate) fn validate_arrow_lcs(chunked: &PyChunkedArray) -> Res<ArrowLcsSchema> {
     let data_type = chunked.data_type();
 
-    // 1. Check outer type is List
-    let inner_field = match data_type {
-        DataType::List(field) => field,
+    // 1. Check outer type is List or LargeList
+    let (inner_field, list_type) = match data_type {
+        DataType::List(field) => (field, ArrowListType::List),
+        DataType::LargeList(field) => (field, ArrowListType::LargeList),
         other => {
             return Err(Exception::TypeError(format!(
-                "Arrow input must be a List array, got {other:?}"
+                "Arrow input must be a List or LargeList array, got {other:?}"
             )));
         }
     };
@@ -86,5 +93,9 @@ pub(crate) fn validate_arrow_lcs(chunked: &PyChunkedArray) -> Res<ArrowLcsSchema
         }
     };
 
-    Ok(ArrowLcsSchema { dtype, has_sigma })
+    Ok(ArrowLcsSchema {
+        dtype,
+        has_sigma,
+        list_type,
+    })
 }

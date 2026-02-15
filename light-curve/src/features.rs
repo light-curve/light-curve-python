@@ -1,4 +1,6 @@
-use crate::arrow_input::{ArrowDtype, ArrowFloat, validate_arrow_lcs};
+use crate::arrow_input::{
+    ArrowDtype, ArrowFloat, ArrowLcsSchema, ArrowListType, validate_arrow_lcs,
+};
 use crate::check::{check_finite, check_no_nans, is_sorted};
 use crate::cont_array::ContCowArray;
 use crate::errors::{Exception, Res};
@@ -520,7 +522,7 @@ impl PyFeatureEvaluator {
                 let result = Self::many_arrow_impl(
                     &self.feature_evaluator_f32,
                     &chunked,
-                    schema.has_sigma,
+                    &schema,
                     sorted,
                     check,
                     is_t_required,
@@ -533,7 +535,7 @@ impl PyFeatureEvaluator {
                 let result = Self::many_arrow_impl(
                     &self.feature_evaluator_f64,
                     &chunked,
-                    schema.has_sigma,
+                    &schema,
                     sorted,
                     check,
                     is_t_required,
@@ -549,6 +551,41 @@ impl PyFeatureEvaluator {
     fn many_arrow_impl<T: ArrowFloat>(
         feature_evaluator: &Feature<T>,
         chunked: &PyChunkedArray,
+        schema: &ArrowLcsSchema,
+        sorted: Option<bool>,
+        check: bool,
+        is_t_required: bool,
+        fill_value: Option<T>,
+        n_jobs: i64,
+    ) -> Res<ndarray::Array2<T>> {
+        match schema.list_type {
+            ArrowListType::List => Self::many_arrow_chunks::<T, i32>(
+                feature_evaluator,
+                chunked,
+                schema.has_sigma,
+                sorted,
+                check,
+                is_t_required,
+                fill_value,
+                n_jobs,
+            ),
+            ArrowListType::LargeList => Self::many_arrow_chunks::<T, i64>(
+                feature_evaluator,
+                chunked,
+                schema.has_sigma,
+                sorted,
+                check,
+                is_t_required,
+                fill_value,
+                n_jobs,
+            ),
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn many_arrow_chunks<T: ArrowFloat, O: arrow_array::OffsetSizeTrait>(
+        feature_evaluator: &Feature<T>,
+        chunked: &PyChunkedArray,
         has_sigma: bool,
         sorted: Option<bool>,
         check: bool,
@@ -561,7 +598,7 @@ impl PyFeatureEvaluator {
         let tss = chunks
             .iter()
             .flat_map(|chunk| {
-                let list = chunk.as_list::<i32>();
+                let list = chunk.as_list::<O>();
                 let struct_arr = list.values().as_struct();
                 let t_vals: &[T] = struct_arr
                     .column(0)
@@ -582,7 +619,7 @@ impl PyFeatureEvaluator {
                 });
                 let offsets = list.value_offsets();
                 offsets.iter().tuple_windows().map(move |(&start, &end)| {
-                    let (start, end) = (start as usize, end as usize);
+                    let (start, end) = (start.as_usize(), end.as_usize());
                     Self::ts_from_views(
                         feature_evaluator,
                         ndarray::ArrayView1::from(&t_vals[start..end]),
