@@ -43,7 +43,7 @@ test = [
     "pytest-subtests>=0.10",
     "iminuit>=2.21,<3",
     "numpy",
-    "pyarrow",
+    "pyarrow<=20", # Because of manylinux2014 support
     "arro3-core",
     "nanoarrow",
     "polars",
