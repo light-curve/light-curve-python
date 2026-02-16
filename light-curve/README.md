@@ -111,6 +111,117 @@ results = amplitude.many(
 print("Amplitude of amplitude is {:.2f}".format(np.ptp(results)))
 ```
 
+### Arrow input for batch processing
+
+The `.many()` method also accepts Arrow arrays instead of a list of tuples, enabling zero-copy data access
+from Arrow-compatible libraries. The input must be a `List<Struct<t, m[, sigma]>>` array where all fields
+share the same float dtype. Any library implementing the
+[Arrow C Data Interface](https://arrow.apache.org/docs/format/CDataInterface.html) is supported.
+All light curves are processed in parallel using Rust threads, bypassing the GIL entirely.
+
+#### nested-pandas
+
+[nested-pandas](https://nested-pandas.readthedocs.io) extends pandas with nested column support,
+useful for working with catalog data like ZTF or Rubin LSST.
+Install with `pip install nested-pandas s3fs`.
+
+<!-- name: test_many_nested_pandas -->
+
+```python
+import light_curve as lc
+import nested_pandas as npd
+import numpy as np
+import pyarrow as pa
+
+# Read a ZTF DR23 HiPSCat partition with nested light curves
+ndf = npd.read_parquet(
+    "s3://ipac-irsa-ztf/contributed/dr23/lc/hats/ztf_dr23_lc-hats/dataset/"
+    "Norder=6/Dir=30000/Npix=34623/part0.snappy.parquet",
+    columns=["objectid", "lightcurve.hmjd", "lightcurve.mag", "lightcurve.magerr"],
+)
+
+# Select rows with more than 10 observations
+ndf = ndf.loc[ndf["lightcurve"].list_lengths > 10]
+
+# Create a float32 time column and drop the original double-precision one
+ndf["lightcurve.t"] = np.asarray(ndf["lightcurve.hmjd"] - 58000, dtype=np.float32)
+ndf = ndf.drop(columns="lightcurve.hmjd")
+
+# Extract features directly from the Arrow-backed nested column
+feature = lc.Extractor(lc.Amplitude(), lc.EtaE(), lc.InterPercentileRange(quantile=0.25))
+result = feature.many(pa.array(ndf["lightcurve"]), sorted=True)
+
+# Assign features back to the dataframe
+ndf = ndf.assign(**dict(zip(feature.names, result.T)))
+print(ndf.head())
+```
+
+#### PyArrow
+
+[PyArrow](https://arrow.apache.org/docs/python/) is the reference Python implementation of Apache Arrow.
+Install with `pip install pyarrow`.
+
+<!-- name: test_many_pyarrow -->
+
+```python
+import light_curve as lc
+import numpy as np
+import pyarrow as pa
+
+rng = np.random.default_rng(42)
+n_lc = 10
+
+# Build a PyArrow List<Struct<t, m, sigma>> array
+struct_type = pa.struct([("t", pa.float64()), ("m", pa.float64()), ("sigma", pa.float64())])
+lcs_arrow = pa.array(
+    [
+        [{"t": t, "m": m, "sigma": s} for t, m, s in zip(*[rng.random(50) for _ in range(3)])]
+        for _ in range(n_lc)
+    ],
+    type=pa.list_(struct_type),
+)
+
+feature = lc.Extractor(lc.Kurtosis(), lc.Skew(), lc.ReducedChi2())
+result = feature.many(lcs_arrow, sorted=True)
+print(f"Features: {feature.names}")
+print(f"Results shape: {result.shape}")
+```
+
+#### Polars
+
+[Polars](https://docs.pola.rs) is a fast DataFrame library built on Arrow.
+Install with `pip install polars`.
+
+<!-- name: test_many_polars -->
+
+```python
+import light_curve as lc
+import numpy as np
+import polars as pl
+
+rng = np.random.default_rng(42)
+
+# Start with a flat DataFrame, as you might get from a database or CSV
+object_id = np.repeat(np.arange(10), 50)
+t = rng.random(500)
+m = rng.random(500)
+sigma = rng.random(500)
+
+df = pl.DataFrame({"object_id": object_id, "t": t, "m": m, "sigma": sigma})
+
+# Group by object_id into List<Struct<t, m, sigma>>
+nested = df.group_by("object_id").agg(pl.struct("t", "m", "sigma").alias("lc"))
+
+feature = lc.Extractor(lc.Amplitude(), lc.BeyondNStd(nstd=2), lc.LinearFit(), lc.StetsonK())
+result = feature.many(nested["lc"], sorted=True)
+
+# Join feature columns back to the nested DataFrame
+nested = nested.with_columns(
+    [pl.Series(name, result[:, i]) for i, name in enumerate(feature.names)]
+)
+print(nested)
+```
+
 If you're confident in your inputs you could use `sorted = True` (`t` is in ascending order)
 and `check = False` (no NaNs in inputs, no infs in `t` or `m`) for better performance.
 Note that if your inputs are not valid and are not validated by
