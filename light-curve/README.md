@@ -268,7 +268,7 @@ or any kind of light curves.
 <p align="center">$\displaystyle m_{i} \ =\ c\ +\ \text{slope} \ t_{i} \ +\ \delta _{i} \varepsilon _{i} ,$</p> where $c$ is a constant, $\{\varepsilon _{i}\}$ are standard distributed random variables</td>
     <td align="center">3</td>
     <td align="center">3</td>
-    <td>Flux or magn</td>
+    <td>Magn only</td>
   </tr>
 
   <tr>
@@ -277,7 +277,7 @@ or any kind of light curves.
 <p align="center">$\displaystyle m_{i} \ =\ c\ +\ \text{slope} \ t_{i} \ +\ \Sigma \varepsilon _{i} ,$</p> where $c$ and $\Sigma$ are constants, $\{\varepsilon _{i}\}$  are standard distributed random variables.</td>
     <td align="center">2</td>
     <td align="center">2</td>
-    <td>Flux or magn</td>
+    <td>Magn only</td>
   </tr>
 
   <tr>
