@@ -5,7 +5,6 @@ from concurrent.futures import ThreadPoolExecutor
 from itertools import chain
 
 import arro3.core
-import nanoarrow
 import numpy as np
 import pyarrow as pa
 import pytest
@@ -641,6 +640,8 @@ def test_many_polars():
 
 def test_many_nanoarrow():
     """nanoarrow array works with many()."""
+    import nanoarrow
+
     rng = np.random.default_rng(42)
     n_obs, n_lc = 64, 8
     lcs = [gen_lc(n_obs, rng=rng) for _ in range(n_lc)]
