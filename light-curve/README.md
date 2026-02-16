@@ -202,7 +202,9 @@ or any kind of light curves.
    <tr>
     <td>Cusum</td>
     <td>A range of cumulative sums:
-<p align="center">$\displaystyle \max(S) -\min(S),$</p> where $S_{j} \equiv \frac{1}{N\sigma _{m}}\sum\limits _{i=0}^{j} (m_{i} -\langle m\rangle )$, $j\in \{1..N-1\}$</td>
+<p align="center">$\displaystyle \max(S) - \min(S),$</p>
+    where
+<p align="center">$\displaystyle S_{j} \equiv \frac{1}{N\sigma_{m}} \sum_{i=0}^{j} (m_{i} - \langle m\rangle), \quad j \in \lbrace 1..N-1 \rbrace\;$</p></td>
     <td align="center">2</td>
     <td align="center">1</td>
     <td>Flux or magn</td>
@@ -266,7 +268,7 @@ or any kind of light curves.
 <p align="center">$\displaystyle m_{i} \ =\ c\ +\ \text{slope} \ t_{i} \ +\ \delta _{i} \varepsilon _{i} ,$</p> where $c$ is a constant, $\{\varepsilon _{i}\}$ are standard distributed random variables</td>
     <td align="center">3</td>
     <td align="center">3</td>
-    <td>Flux or magn</td>
+    <td>Magn only</td>
   </tr>
 
   <tr>
@@ -275,7 +277,7 @@ or any kind of light curves.
 <p align="center">$\displaystyle m_{i} \ =\ c\ +\ \text{slope} \ t_{i} \ +\ \Sigma \varepsilon _{i} ,$</p> where $c$ and $\Sigma$ are constants, $\{\varepsilon _{i}\}$  are standard distributed random variables.</td>
     <td align="center">2</td>
     <td align="center">2</td>
-    <td>Flux or magn</td>
+    <td>Magn only</td>
   </tr>
 
   <tr>
@@ -425,7 +427,7 @@ Otsu's method is used to perform automatic thresholding. The algorithm returns a
   <tr>
     <td>StetsonK</td>
     <td><b>Stetson K</b> coefficient described light curve shape:
-<p align="center">$\displaystyle \frac{\sum _{i}\left| \frac{m_{i} -\langle m\rangle }{\delta _{i}}\right| }{\sqrt{N\ \chi ^{2}}}$</p></td>
+<p align="center">$\displaystyle \frac{\sum _{i}\left| \frac{m_{i} -\overline{m} }{\delta _{i}}\right| }{\sqrt{N\ \chi ^{2}}}$</p></td>
     <td align="center">2</td>
     <td align="center">1</td>
     <td>Flux or magn</td>
