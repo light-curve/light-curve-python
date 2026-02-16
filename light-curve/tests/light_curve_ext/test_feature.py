@@ -7,7 +7,6 @@ from itertools import chain
 import arro3.core
 import nanoarrow
 import numpy as np
-import polars as pl
 import pyarrow as pa
 import pytest
 from numpy.testing import assert_allclose, assert_array_equal
@@ -624,6 +623,8 @@ def test_many_arrow_parallel():
 
 def test_many_polars():
     """Polars Series (Arrow-backed) works with many()."""
+    import polars as pl
+
     rng = np.random.default_rng(42)
     n_obs, n_lc = 64, 8
     lcs = [gen_lc(n_obs, rng=rng) for _ in range(n_lc)]
