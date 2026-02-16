@@ -9,11 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Arrow input support for `.many()`: pass a `List<Struct<t, m[, sigma]>>` Arrow array (or chunked array)
-  instead of a list of tuples. Works with any library implementing the Arrow C Data Interface
-  (`__arrow_c_array__` / `__arrow_c_stream__`), including pyarrow, polars, nanoarrow, and arro3.
-  Two struct fields means `(t, m)` without sigma, three fields means `(t, m, sigma)`. Field names are
-  ignored; all fields must share the same float dtype (float32 or float64).
+--
 
 ### Changed
 
@@ -34,6 +30,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 --
+
+## [0.11.1] 2026-02-16
+
+### Added
+
+- Arrow input support for `.many()`: pass a `List<Struct<t, m[, sigma]>>` Arrow array (or chunked array)
+  instead of a list of tuples. Works with any library implementing the Arrow C Data Interface,
+  including pyarrow, polars, nanoarrow, and arro3.
+  Two struct fields means `(t, m)` without sigma, three fields means `(t, m, sigma)`. Field names are
+  ignored; all fields must share the same float dtype (float32 or float64). https://github.com/light-curve/light-curve-python/pull/621
 
 ## [0.11.0] 2026-02-12
 
