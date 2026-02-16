@@ -203,7 +203,7 @@ or any kind of light curves.
     <td>Cusum</td>
     <td>A range of cumulative sums:
 <p align="center">$\displaystyle \max(S) - \min(S),$</p>
-    where 
+    where
 <p align="center">$\displaystyle S_{j} \equiv \frac{1}{N\sigma_{m}} \sum_{i=0}^{j} (m_{i} - \langle m\rangle), \quad j \in \lbrace 1..N-1 \rbrace\;$</p></td>
     <td align="center">2</td>
     <td align="center">1</td>
