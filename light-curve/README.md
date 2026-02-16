@@ -123,7 +123,7 @@ All light curves are processed in parallel using Rust threads, bypassing the GIL
 
 [nested-pandas](https://nested-pandas.readthedocs.io) extends pandas with nested column support,
 useful for working with catalog data like ZTF or Rubin LSST.
-Install with `pip install nested-pandas s3fs`.
+Install with `pip install nested-pandas s3fs universal-pathlib`.
 
 <!-- name: test_many_nested_pandas -->
 
@@ -132,11 +132,15 @@ import light_curve as lc
 import nested_pandas as npd
 import numpy as np
 import pyarrow as pa
+from upath import UPath
 
 # Read a ZTF DR23 HiPSCat partition with nested light curves
+s3_path = UPath(
+    "s3://ipac-irsa-ztf/contributed/dr23/lc/hats/ztf_dr23_lc-hats/dataset/Norder=6/Dir=30000/Npix=34623/part0.snappy.parquet",
+    anon=True,
+)
 ndf = npd.read_parquet(
-    "s3://ipac-irsa-ztf/contributed/dr23/lc/hats/ztf_dr23_lc-hats/dataset/"
-    "Norder=6/Dir=30000/Npix=34623/part0.snappy.parquet",
+    s3_path,
     columns=["objectid", "lightcurve.hmjd", "lightcurve.mag", "lightcurve.magerr"],
 )
 
