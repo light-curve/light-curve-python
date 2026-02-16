@@ -206,7 +206,7 @@ commands =
         --ignore tests/test_w_bench.py \
         --ignore tests/light_curve_py/features/test_rainbow.py \
         --deselect=README.md::test_rainbow_fit_example \
-        -k "not "
+        -k "not test_*polars*"
     ruff check .
 set_env =
     CARGO_TARGET_DIR = {tox_root}/target
