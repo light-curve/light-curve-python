@@ -7,6 +7,7 @@ use pyo3::prelude::*;
 
 #[macro_use]
 mod np_array;
+mod arrow_input;
 mod check;
 mod cont_array;
 mod dmdt;

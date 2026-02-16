@@ -9,7 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
---
+- Arrow input support for `.many()`: pass a `List<Struct<t, m[, sigma]>>` Arrow array (or chunked array)
+  instead of a list of tuples. Works with any library implementing the Arrow C Data Interface
+  (`__arrow_c_array__` / `__arrow_c_stream__`), including pyarrow, polars, nanoarrow, and arro3.
+  Two struct fields means `(t, m)` without sigma, three fields means `(t, m, sigma)`. Field names are
+  ignored; all fields must share the same float dtype (float32 or float64).
 
 ### Changed
 

@@ -43,6 +43,13 @@ test = [
     "pytest-subtests>=0.10",
     "iminuit>=2.21,<3",
     "numpy",
+    "pyarrow<=20", # Because of manylinux2014 support
+    "arro3-core",
+    "nanoarrow",
+    "polars",
+    "nested-pandas",
+    "s3fs",
+    "universal-pathlib",
     "scipy",
     "cesium",
     "joblib",
@@ -55,6 +62,13 @@ dev = [
     "pytest-subtests>=0.10",
     "iminuit>=2.21,<3",
     "numpy",
+    "pyarrow",
+    "arro3-core",
+    "nanoarrow",
+    "polars",
+    "nested-pandas",
+    "s3fs",
+    "universal-pathlib",
     "scipy",
     "astropy",
     "cesium",
@@ -62,13 +76,18 @@ dev = [
     "pandas",
     "ruff",
 ]
-# cesium and iminuit don't support free-threading yet
+# cesium, iminuit, nanoarrow, polars don't support free-threading yet
 dev-free-threading = [
     "pytest",
     "markdown-pytest",
     "pytest-benchmark",
     "pytest-subtests>=0.10",
     "numpy",
+    "pyarrow",
+    "arro3-core",
+    "nested-pandas",
+    "s3fs",
+    "universal-pathlib",
     "scipy",
     "joblib",
     "pandas",
@@ -184,8 +203,11 @@ extras = dev-free-threading
 commands =
     pytest README.md tests/ light_curve/ \
         --ignore tests/test_w_bench.py \
-        --ignore=tests/light_curve_py/features/test_rainbow.py \
-        --deselect=README.md::test_rainbow_fit_example
+        --ignore tests/light_curve_py/features/test_rainbow.py \
+        --deselect README.md::test_rainbow_fit_example \
+        --deselect README.md::test_many_polars \
+        --deselect tests/light_curve_ext/test_feature.py::test_many_nanoarrow \
+        --deselect tests/light_curve_ext/test_feature.py::test_many_polars
     ruff check .
 set_env =
     CARGO_TARGET_DIR = {tox_root}/target
