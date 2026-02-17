@@ -8,6 +8,7 @@ use crate::ln_prior::LnPrior1D;
 use crate::np_array::Arr;
 use crate::transform::{StockTransformer, parse_transform};
 
+use arrow_array::Array;
 use arrow_array::cast::AsArray;
 use const_format::formatcp;
 use conv::ConvUtil;
@@ -594,6 +595,29 @@ impl PyFeatureEvaluator {
         n_jobs: i64,
     ) -> Res<ndarray::Array2<T>> {
         let chunks = chunked.chunks();
+
+        // O(1) null checks — nulls are not supported yet
+        for chunk in chunks.iter() {
+            let list: &arrow_array::GenericListArray<O> = chunk.as_list::<O>();
+            if list.null_count() > 0 {
+                return Err(Exception::NotImplementedError(
+                    "Null entries in the list array are not supported".to_string(),
+                ));
+            }
+            let struct_arr = list.values().as_struct();
+            if struct_arr.null_count() > 0 {
+                return Err(Exception::NotImplementedError(
+                    "Null entries in the struct array are not supported".to_string(),
+                ));
+            }
+            for i in 0..struct_arr.num_columns() {
+                if struct_arr.column(i).null_count() > 0 {
+                    return Err(Exception::NotImplementedError(
+                        "Null values in data columns are not supported".to_string(),
+                    ));
+                }
+            }
+        }
 
         let tss = chunks
             .iter()
