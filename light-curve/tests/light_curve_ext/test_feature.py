@@ -668,3 +668,44 @@ def test_many_arro3():
     arro3_arr = arro3.core.Array.from_arrow(arrow_arr)
     result = feature.many(arro3_arr, sorted=True, n_jobs=1)
     assert_array_equal(expected, result)
+
+
+@pytest.mark.parametrize(
+    "arrow_arr, match_msg",
+    [
+        # Null list entry (whole light curve is null)
+        (
+            pa.array(
+                [[{"t": 1.0, "m": 2.0, "sigma": 0.1}], None],
+                type=pa.list_(pa.struct([("t", pa.float64()), ("m", pa.float64()), ("sigma", pa.float64())])),
+            ),
+            "list array",
+        ),
+        # Null struct entry (observation within a light curve is null)
+        (
+            pa.ListArray.from_arrays(
+                pa.array([0, 2], type=pa.int32()),
+                pa.StructArray.from_arrays(
+                    [pa.array([1.0, 2.0]), pa.array([3.0, 4.0]), pa.array([0.1, 0.2])],
+                    names=["t", "m", "sigma"],
+                    mask=pa.array([False, True]),
+                ),
+            ),
+            "struct array",
+        ),
+        # Null value in a data column
+        (
+            pa.array(
+                [[{"t": 1.0, "m": None, "sigma": 0.1}, {"t": 2.0, "m": 5.0, "sigma": 0.2}]],
+                type=pa.list_(pa.struct([("t", pa.float64()), ("m", pa.float64()), ("sigma", pa.float64())])),
+            ),
+            "data columns",
+        ),
+    ],
+    ids=["null_list_entry", "null_struct_entry", "null_value"],
+)
+def test_many_arrow_nulls_rejected(arrow_arr, match_msg):
+    """Null values at any level of the Arrow array raise NotImplementedError."""
+    feature = lc.Amplitude()
+    with pytest.raises(NotImplementedError, match=match_msg):
+        feature.many(arrow_arr, sorted=True, n_jobs=1)

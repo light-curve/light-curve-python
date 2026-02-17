@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
---
+- `.many(arrow_array)` now checks for nulls, and raises an arrow if any. Previously we used all the values, even masked, which may cause unexpected results https://github.com/light-curve/light-curve-python/pull/629
 
 ### Security
 
