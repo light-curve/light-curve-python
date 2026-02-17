@@ -180,7 +180,7 @@ n_lc = 10
 struct_type = pa.struct([("t", pa.float64()), ("m", pa.float64()), ("sigma", pa.float64())])
 lcs_arrow = pa.array(
     [
-        [{"t": np.sort(t), "m": m, "sigma": s} for t, m, s in zip(*[rng.random(50) for _ in range(3)])]
+        [{"t": t, "m": m, "sigma": s} for t, m, s in zip(*[np.sort(rng.random(50)) for _ in range(3)])]
         for _ in range(n_lc)
     ],
     type=pa.list_(struct_type),
