@@ -594,36 +594,31 @@ impl PyFeatureEvaluator {
         fill_value: Option<T>,
         n_jobs: i64,
     ) -> Res<ndarray::Array2<T>> {
-        let chunks = chunked.chunks();
-
-        // O(1) null checks — nulls are not supported yet
-        for chunk in chunks.iter() {
-            let list: &arrow_array::GenericListArray<O> = chunk.as_list::<O>();
-            if list.null_count() > 0 {
-                return Err(Exception::NotImplementedError(
-                    "Null entries in the list array are not supported".to_string(),
-                ));
-            }
-            let struct_arr = list.values().as_struct();
-            if struct_arr.null_count() > 0 {
-                return Err(Exception::NotImplementedError(
-                    "Null entries in the struct array are not supported".to_string(),
-                ));
-            }
-            for i in 0..struct_arr.num_columns() {
-                if struct_arr.column(i).null_count() > 0 {
+        let tss = chunked
+            .chunks()
+            .iter()
+            .map(|chunk| {
+                let list: &arrow_array::GenericListArray<O> = chunk.as_list::<O>();
+                // O(1) null checks — nulls are not supported yet
+                if list.null_count() > 0 {
                     return Err(Exception::NotImplementedError(
-                        "Null values in data columns are not supported".to_string(),
+                        "Null entries in the list array are not supported".to_string(),
                     ));
                 }
-            }
-        }
-
-        let tss = chunks
-            .iter()
-            .flat_map(|chunk| {
-                let list = chunk.as_list::<O>();
                 let struct_arr = list.values().as_struct();
+                if struct_arr.null_count() > 0 {
+                    return Err(Exception::NotImplementedError(
+                        "Null entries in the struct array are not supported".to_string(),
+                    ));
+                }
+                for i in 0..struct_arr.num_columns() {
+                    if struct_arr.column(i).null_count() > 0 {
+                        return Err(Exception::NotImplementedError(
+                            "Null values in data columns are not supported".to_string(),
+                        ));
+                    }
+                }
+
                 let t_vals: &[T] = struct_arr
                     .column(0)
                     .as_primitive::<T::ArrowType>()
@@ -642,19 +637,24 @@ impl PyFeatureEvaluator {
                         .as_ref()
                 });
                 let offsets = list.value_offsets();
-                offsets.iter().tuple_windows().map(move |(&start, &end)| {
-                    let (start, end) = (start.as_usize(), end.as_usize());
-                    Self::ts_from_views(
-                        feature_evaluator,
-                        ndarray::ArrayView1::from(&t_vals[start..end]),
-                        ndarray::ArrayView1::from(&m_vals[start..end]),
-                        sigma_vals.map(|s| ndarray::ArrayView1::from(&s[start..end])),
-                        sorted,
-                        check,
-                        is_t_required,
-                    )
-                })
+                offsets
+                    .iter()
+                    .tuple_windows()
+                    .map(move |(&start, &end)| {
+                        let (start, end) = (start.as_usize(), end.as_usize());
+                        Self::ts_from_views(
+                            feature_evaluator,
+                            ndarray::ArrayView1::from(&t_vals[start..end]),
+                            ndarray::ArrayView1::from(&m_vals[start..end]),
+                            sigma_vals.map(|s| ndarray::ArrayView1::from(&s[start..end])),
+                            sorted,
+                            check,
+                            is_t_required,
+                        )
+                    })
+                    .collect::<Res<Vec<_>>>()
             })
+            .flatten_ok()
             .collect::<Res<Vec<_>>>()?;
 
         if tss.is_empty() {
