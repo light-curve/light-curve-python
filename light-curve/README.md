@@ -154,7 +154,7 @@ ndf["lightcurve"] = ndf[["lightcurve.t", "lightcurve.mag", "lightcurve.magerr"]]
 
 # Extract features directly from the Arrow-backed nested column
 feature = lc.Extractor(lc.Amplitude(), lc.EtaE(), lc.InterPercentileRange(quantile=0.25))
-result = feature.many(pa.array(ndf["lightcurve"]), sorted=True)
+result = feature.many(pa.array(ndf["lightcurve"]), n_jobs=-1)
 
 # Assign features back to the dataframe
 ndf = ndf.assign(**dict(zip(feature.names, result.T)))
@@ -180,14 +180,14 @@ n_lc = 10
 struct_type = pa.struct([("t", pa.float64()), ("m", pa.float64()), ("sigma", pa.float64())])
 lcs_arrow = pa.array(
     [
-        [{"t": t, "m": m, "sigma": s} for t, m, s in zip(*[rng.random(50) for _ in range(3)])]
+        [{"t": np.sort(t), "m": m, "sigma": s} for t, m, s in zip(*[rng.random(50) for _ in range(3)])]
         for _ in range(n_lc)
     ],
     type=pa.list_(struct_type),
 )
 
 feature = lc.Extractor(lc.Kurtosis(), lc.Skew(), lc.ReducedChi2())
-result = feature.many(lcs_arrow, sorted=True)
+result = feature.many(lcs_arrow, sorted=True, check=False, n_jobs=4)
 print(f"Features: {feature.names}")
 print(f"Results shape: {result.shape}")
 ```
@@ -208,7 +208,7 @@ rng = np.random.default_rng(42)
 
 # Start with a flat DataFrame, as you might get from a database or CSV
 object_id = np.repeat(np.arange(10), 50)
-t = rng.random(500)
+t = np.sort(rng.random(500))
 m = rng.random(500)
 sigma = rng.random(500)
 
@@ -218,7 +218,7 @@ df = pl.DataFrame({"object_id": object_id, "t": t, "m": m, "sigma": sigma})
 nested = df.group_by("object_id").agg(pl.struct("t", "m", "sigma").alias("lc"))
 
 feature = lc.Extractor(lc.Amplitude(), lc.BeyondNStd(nstd=2), lc.LinearFit(), lc.StetsonK())
-result = feature.many(nested["lc"], sorted=True)
+result = feature.many(nested["lc"], sorted=True, check=False, n_jobs=1)
 
 # Join feature columns back to the nested DataFrame
 nested = nested.with_columns(
