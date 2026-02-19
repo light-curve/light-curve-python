@@ -1,8 +1,8 @@
 # `light-curve` processing toolbox for Python
 
-The Python wrapper for Rust [`light-curve-feature`](https://github.com/light-curve/light-curve-feature)
-and [`light-curve-dmdt`](https://github.com/light-curve/light-curve-dmdt) packages which gives a collection of
-high-performant time-series feature extractors.
+A Python wrapper for the [`light-curve-feature`](https://github.com/light-curve/light-curve-feature) and
+[`light-curve-dmdt`](https://github.com/light-curve/light-curve-dmdt) Rust crates, providing high-performance
+time-series feature extraction for astrophysics.
 
 [![PyPI version](https://badge.fury.io/py/light-curve.svg)](https://pypi.org/project/light-curve/)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/light-curve-python.svg)](https://anaconda.org/conda-forge/light-curve-python)
@@ -10,69 +10,11 @@ high-performant time-series feature extractors.
 [![testing](https://github.com/light-curve/light-curve-python/actions/workflows/test.yml/badge.svg)](https://github.com/light-curve/light-curve-python/actions/workflows/test.yml)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/light-curve/light-curve-python/main.svg)](https://results.pre-commit.ci/latest/github/light-curve/light-curve-python/main)
 
-## Installation
+## Quick start
 
 ```sh
-python3 -mpip install 'light-curve[full]'
-# or
-conda install -c conda-forge light-curve-python
+pip install 'light-curve[full]'
 ```
-
-`full` extras would install the package with all optional Python dependencies required by experimental
-features.
-We also provide `light-curve-python` package which is just an "alias" to the main `light-curve[full]` package.
-
-The minimum supported Python version is 3.10.
-We provide binary CPython distributions via [PyPI](https://pypi.org/project/light-curve/)
-and [Anaconda](https://anaconda.org/conda-forge/light-curve-python) for various platforms and architectures.
-On PyPI, we provide binary wheels for the stable CPython ABI, ensuring compatibility with future
-CPython 3 versions.
-
-### Support matrix
-
-| Arch \ OS   | Linux glibc 2.17+ | Linux musl 1.2+                | macOS                 | Windows https://github.com/light-curve/light-curve-python/issues/186 |
-|-------------|-------------------|--------------------------------|-----------------------|----------------------------------------------------------------------|
-| **x86-64**  | PyPI (MKL), conda | PyPI (MKL)                     | PyPI macOS 15+, conda | PyPI, conda (both no Ceres, no GSL)                                  |
-| **i686**    | src               | src                            | —                     | not tested                                                           |
-| **aarch64** | PyPI              | PyPI                           | PyPI macOS 14+, conda | not tested                                                           |
-| **ppc64le** | src               | not tested (no Rust toolchain) | —                     | —                                                                    |
-
-- **PyPI / conda**: A binary wheel or package is available on pypi.org or anaconda.org.
-  Local building is not required for the platform; the only prerequisite is a recent version of
-  `pip` or `conda`. For Linux x86-64, PyPI binary wheels are built with Intel MKL
-  for improved periodogram performance, which is not a default build option.
-  For Windows x86-64, all distributions exclude Ceres and GSL support, which is also not a default build option.
-- **src**: The package has been confirmed to build and pass unit tests locally,
-  but testing and package building are not supported by CI.
-  See the ["Build from source"] section below for details.
-  Please open an issue or pull request if you encounter any problems building
-  the package or would like us to distribute it for these platforms.
-- **not tested**: Building from source has not been tested.
-  Please report build status via issue, PR, or email.
-
-macOS wheels require relatively new OS versions, please open an issue if you require support of older Macs,
-see https://github.com/light-curve/light-curve-python/issues/376 for the details.
-
-We stopped publishing all PyPy wheels (https://github.com/light-curve/light-curve-python/issues/345)
-and the PPC64le CPython glibc wheel (https://github.com/light-curve/light-curve-python/issues/479),
-please feel free to open an issue if you need any of them.
-
-Free-threaded
-Python ([experimental in Python 3.13](https://docs.python.org/3.13/whatsnew/3.13.html#free-threaded-cpython), [officially supported by Python 3.14+](https://docs.python.org/3.14/whatsnew/3.14.html#whatsnew314-pep779))
-is supported when built from source.
-No pre-built distributions are provided so far, please comment on these issues if you need
-them: [PyPI binary wheel issue](https://github.com/light-curve/light-curve-python/issues/500), [conda-forge package issue](https://github.com/conda-forge/light-curve-python-feedstock/issues/11).
-Notably, for expensive features, the performance with the GIL-enabled interpreter and the `.many()` method provided by
-the feature extractors is on par with the free-threaded interpreter and Python threads for parallelism.
-However, for inexpensive feature extractors, `.many()` still significantly reduces the overhead caused by the
-Rust–Python interaction and shows better performance.
-
-See [bellow](#build-from-source) for the details on how to build the package from the source code.
-
-## Feature evaluators
-
-Most of the classes implement various feature evaluators useful for light-curve based
-astrophysical source classification and characterisation.
 
 <!-- name: test_feature_evaluators_basic -->
 
@@ -80,38 +22,630 @@ astrophysical source classification and characterisation.
 import light_curve as lc
 import numpy as np
 
-# Time values can be non-evenly separated but must be an ascending array
-n = 101
-t = np.linspace(0.0, 1.0, n)
-perfect_m = 1e3 * t + 1e2
-err = np.sqrt(perfect_m)
-m = perfect_m + np.random.normal(0, err)
+rng = np.random.default_rng(0)
+n = 100  # observations per light curve
 
-# Half-amplitude of magnitude
-amplitude = lc.Amplitude()
-# Fraction of points beyond standard deviations from mean
-beyond_std = lc.BeyondNStd(nstd=1)
-# Slope, its error and reduced chi^2 of linear fit
-linear_fit = lc.LinearFit()
-# Feature extractor, it will evaluate all features in more efficient way
-extractor = lc.Extractor(amplitude, beyond_std, linear_fit)
+# Observation times in days (unevenly sampled, must be sorted)
+t = np.sort(rng.uniform(0, 100, n))
+# Magnitudes with a slight linear fade and measurement noise
+m = 15.0 + 0.01 * t + rng.normal(0, 0.1, n)
+err = np.full(n, 0.1)
 
-# Array with all 5 extracted features
-result = extractor(t, m, err, sorted=True, check=False)
+# Combine features into a single extractor evaluated in one pass
+extractor = lc.Extractor(lc.Amplitude(), lc.BeyondNStd(nstd=1), lc.LinearFit())
 
-print('\n'.join(f"{name} = {value:.2f}" for name, value in zip(extractor.names, result)))
+result = extractor(t, m, err)
+print('\n'.join(f"{name} = {value:.4f}" for name, value in zip(extractor.names, result)))
 
-# Run in parallel for multiple light curves:
-results = amplitude.many(
-    [(t[:i], m[:i], err[:i]) for i in range(n // 2, n)],
-    n_jobs=-1,
-    sorted=True,
-    check=False,
-)
-print("Amplitude of amplitude is {:.2f}".format(np.ptp(results)))
+# Extract a feature from 1000 light curves in parallel
+light_curves = [
+    (np.sort(rng.uniform(0, 100, n)), 15.0 + rng.normal(0, 0.2, n), np.full(n, 0.1))
+    for _ in range(1000)
+]
+amplitudes = lc.Amplitude().many(light_curves)
+print(f"Amplitude: mean = {np.mean(amplitudes):.3f} mag, std = {np.std(amplitudes):.3f} mag")
 ```
 
-### Arrow input for batch processing
+For conda, alternative package names, and platform-specific installation notes, see the [Installation](#installation)
+section.
+
+## Feature extractors
+
+Most classes implement feature extractors useful for astrophysical source classification and characterization based
+on light curves.
+
+To list all available feature extractors:
+
+<!-- name: test_feature_evaluators_list -->
+
+```python
+import light_curve as lc
+
+print([x for x in dir(lc) if hasattr(getattr(lc, x), "names")])
+```
+
+To read the documentation for a specific extractor:
+
+<!-- name: test_feature_evaluators_help -->
+
+```python
+import light_curve as lc
+
+help(lc.BazinFit)
+```
+
+### Available features
+
+See the complete list of available feature extractors and their documentation in the
+[`light-curve-feature` Rust crate docs](https://docs.rs/light-curve-feature/latest/light_curve_feature/features/index.html).
+Italic names are experimental features.
+While we usually say "magnitude" and use "m" as the time-series value, some features are designed for
+flux light curves.
+The last column indicates whether a feature should be used with flux light curves only, magnitude light
+curves only, or either.
+
+<table>
+  <tr>
+    <th>Feature name</th>
+    <th>Description</th>
+    <th>Min data points</th>
+    <th>Features number</th>
+    <th>Flux/magnitude</th>
+    <th>Default transform</th>
+  </tr>
+  <tr>
+    <td>Amplitude</td>
+    <td>Half amplitude of magnitude: <p align="center">$\displaystyle \frac{\max (m)-\min (m)}{2}$</p></td>
+    <td align="center">1</td>
+    <td align="center">1</td>
+    <td>Flux or magn</td>
+    <td>identity</td>
+  </tr>
+
+  <tr>
+    <td>AndersonDarlingNormal</td>
+    <td>Unbiased Anderson–Darling normality test statistic:
+<p align="left">$\displaystyle \left( 1+\frac{4}{N} -\frac{25}{N^{2}}\right) \times$<p>
+<p align="right">$\times \left( -N-\frac{1}{N}\sum\limits_{i=0}^{N-1} (2i+1)\ln \Phi _{i} +(2(N-i)-1)\ln (1-\Phi _{i} )\right) ,$<p> where $\Phi _{i\ } \equiv \Phi (( m_{i} \ -\ \langle m\rangle ) /\sigma _{m})$ is the commutative distribution function of the standard normal distribution, $N-$ the number of observations, $\langle m\rangle -$ mean magnitude and $\sigma _{m} =\sqrt{\sum\limits_{i=0}^{N-1}( m_{i} -\langle m\rangle )^{2} /( N-1) \ }$ is the magnitude standard deviation</td>
+    <td align="center">4</td>
+    <td align="center">1</td>
+    <td>Flux or magn</td>
+    <td>lg</td>
+  </tr>
+
+  <tr>
+    <td>BazinFit</td>
+    <td>Five fit parameters and goodness of fit (reduced $\chi ^{2}$) of the Bazin function developed for core-collapsed supernovae:
+<p align="center">$\displaystyle f(t)=A\frac{\mathrm{e}^{-(t-t_{0} )/\tau _{fall}}}{1+\mathrm{e}^{-(t-t_{0} )/\tau _{rise}}} +B,$</p> where $f(t)-$ flux observation</td>
+    <td align="center">6</td>
+    <td align="center">1</td>
+    <td>Flux only</td>
+    <td>$A$ → mag, $B/A$, $t_0$ dropped, $\chi^2$ → $\ln(1+\chi^2)$</td>
+  </tr>
+
+  <tr>
+    <td>BeyondNStd</td>
+    <td>Fraction of observations beyond $n\sigma _{m}$ from the mean magnitude $\langle m\rangle $:
+<p align="center">$\displaystyle \frac{\sum _{i} I_{|m-\langle m\rangle | >n\sigma _{m}} (m_{i} )}{N},$</p> where $I-$ an indicator function</td>
+    <td align="center">2</td>
+    <td align="center">1</td>
+    <td>Flux or magn</td>
+    <td>identity</td>
+  </tr>
+
+  <tr>
+    <td><i>ColorOfMedian</i> <br>(experimental)</td>
+    <td>Magnitude difference between medians of two bands</td>
+    <td align="center">2</td>
+    <td align="center">1</td>
+    <td>Magn only</td>
+    <td>identity</td>
+  </tr>
+
+   <tr>
+    <td>Cusum</td>
+    <td>A range of cumulative sums:
+<p align="center">$\displaystyle \max(S) - \min(S),$</p>
+    where
+<p align="center">$\displaystyle S_{j} \equiv \frac{1}{N\sigma_{m}} \sum_{i=0}^{j} (m_{i} - \langle m\rangle), \quad j \in \lbrace 1..N-1 \rbrace\;$</p></td>
+    <td align="center">2</td>
+    <td align="center">1</td>
+    <td>Flux or magn</td>
+    <td>identity</td>
+  </tr>
+
+  <tr>
+    <td>Eta</td>
+    <td>Von Neummann $\eta $:
+<p align="center">$\displaystyle \eta \equiv \frac{1}{(N-1)\sigma _{m}^{2}}\sum\limits _{i=0}^{N-2} (m_{i+1} -m_{i} )^{2}$</p></td>
+    <td align="center">2</td>
+    <td align="center">1</td>
+    <td>Flux or magn</td>
+    <td>identity</td>
+  </tr>
+
+  <tr>
+    <td>EtaE</td>
+    <td>Modernisation of <b>Eta</b> for unevenly spaced time series:
+<p align="center">$\displaystyle \eta ^{e} \equiv \frac{(t_{N-1} -t_{0} )^{2}}{(N-1)^{3}}\frac{\sum\limits_{i=0}^{N-2}\left(\frac{m_{i+1} -m_{i}}{t_{i+1} -t_{i}}\right)^{2}}{\sigma _{m}^{2}}$</p></td>
+    <td align="center">2</td>
+    <td align="center">1</td>
+    <td>Flux or magn</td>
+    <td>lg</td>
+  </tr>
+
+  <tr>
+    <td>ExcessVariance</td>
+    <td>Measure of the variability amplitude:
+<p align="center">$\displaystyle \frac{\sigma _{m}^{2} -\langle \delta ^{2} \rangle }{\langle m\rangle ^{2}},$</p> where $\langle \delta ^{2} \rangle -$ mean squared error</td>
+    <td align="center">2</td>
+    <td align="center">1</td>
+    <td>Flux only</td>
+    <td>identity</td>
+  </tr>
+
+  <tr>
+    <td><i>FluxNNotDetBeforeFd</i><br>(experimental)</td>
+    <td>Number of non-detections before the first detection</td>
+    <td align="center">2</td>
+    <td align="center">1</td>
+    <td>Flux only</td>
+    <td>identity</td>
+  </tr>
+
+  <tr>
+    <td>InterPercentileRange</td>
+    <td><p align="center">$\displaystyle Q(1-p)-Q(p),$</p> where $Q(n)$ and $Q(d)-$ $n$-th and $d$-th quantile of magnitude sample</td>
+    <td align="center">1</td>
+    <td align="center">1</td>
+    <td>Flux or magn</td>
+    <td>identity</td>
+  </tr>
+
+  <tr>
+    <td>Kurtosis</td>
+    <td>Excess kurtosis of magnitude:
+<p align="center">$\displaystyle \frac{N(N+1)}{(N-1)(N-2)(N-3)}\frac{\sum _{i} (m_{i} -\langle m\rangle )^{4}}{\sigma _{m}^{2}} -3\frac{(N+1)^{2}}{(N-2)(N-3)}$</p></td>
+    <td align="center">4</td>
+    <td align="center">1</td>
+    <td>Flux or magn</td>
+    <td>arcsinh</td>
+  </tr>
+
+  <tr>
+    <td>LinearFit</td>
+    <td>The slope, its error and reduced $\chi ^{2}$ of the light curve in the linear fit of a magnitude light curve with respect to the observation error $\{\delta _{i}\}$:
+<p align="center">$\displaystyle m_{i} \ =\ c\ +\ \text{slope} \ t_{i} \ +\ \delta _{i} \varepsilon _{i} ,$</p> where $c$ is a constant, $\{\varepsilon _{i}\}$ are standard distributed random variables</td>
+    <td align="center">3</td>
+    <td align="center">3</td>
+    <td>Magn only</td>
+    <td>identity</td>
+  </tr>
+
+  <tr>
+    <td>LinearTrend</td>
+    <td>The slope and its error of the light curve in the linear fit of a magnitude light curve without respect to the observation error $\{\delta _{i}\}$:
+<p align="center">$\displaystyle m_{i} \ =\ c\ +\ \text{slope} \ t_{i} \ +\ \Sigma \varepsilon _{i} ,$</p> where $c$ and $\Sigma$ are constants, $\{\varepsilon _{i}\}$ are standard distributed random variables.</td>
+    <td align="center">2</td>
+    <td align="center">2</td>
+    <td>Magn only</td>
+    <td>identity</td>
+  </tr>
+
+  <tr>
+    <td><i>MagnitudeNNotDetBeforeFd</i><br>(experimental)</td>
+    <td>Number of non-detections before the first detection</td>
+    <td align="center">2</td>
+    <td align="center">1</td>
+    <td>Magn only</td>
+    <td>identity</td>
+  </tr>
+
+  <tr>
+    <td>MagnitudePercentageRatio</td>
+    <td>Magnitude percentage ratio:
+<p align="center">$\displaystyle \frac{Q(1-n)-Q(n)}{Q(1-d)-Q(d)}$</p></td>
+    <td align="center">1</td>
+    <td align="center">1</td>
+    <td>Flux or magn</td>
+    <td>identity</td>
+  </tr>
+
+  <tr>
+    <td>MaximumSlope</td>
+    <td>Maximum slope between two consecutive observations:
+<p align="center">$\displaystyle \max_{i=0\dotsc N-2}\left| \frac{m_{i+1} -m_{i}}{t_{i+1} -t_{i}}\right|$</p></td>
+    <td align="center">2</td>
+    <td align="center">1</td>
+    <td>Flux or magn</td>
+    <td>clipped lg</td>
+  </tr>
+
+  <tr>
+    <td>Mean</td>
+    <td>Mean magnitude:
+<p align="center">$\displaystyle \langle m\rangle =\frac{1}{N}\sum\limits _{i} m_{i}$</p></td>
+    <td align="center">1</td>
+    <td align="center">1</td>
+    <td>Flux or magn</td>
+    <td>identity</td>
+  </tr>
+
+  <tr>
+    <td>MeanVariance</td>
+    <td>Standard deviation to mean ratio:
+<p align="center">$\displaystyle \frac{\sigma _{m}}{\langle m\rangle }$</p></td>
+    <td align="center">2</td>
+    <td align="center">1</td>
+    <td>Flux only</td>
+    <td>identity</td>
+  </tr>
+
+  <tr>
+    <td>Median</td>
+    <td>Median magnitude
+    <td align="center">1</td>
+    <td align="center">1</td>
+    <td>Flux or magn</td>
+    <td>identity</td>
+  </tr>
+
+  <tr>
+    <td>MedianAbsoluteDeviation</td>
+    <td>Median of the absolute value of the difference between magnitude and its median:
+<p align="center">$\displaystyle \mathrm{Median} (|m_{i} -\mathrm{Median} (m)|)$</p></td>
+    <td align="center">1</td>
+    <td align="center">1</td>
+    <td>Flux or magn</td>
+    <td>identity</td>
+  </tr>
+
+  <tr>
+    <td>MedianBufferRangePercentage</td>
+    <td>Fraction of points within <p align="center">$\displaystyle \mathrm{Median} (m)\pm q\times (\max (m)-\min (m))/2$</p></td>
+    <td align="center">1</td>
+    <td align="center">1</td>
+    <td>Flux or magn</td>
+    <td>identity</td>
+  </tr>
+
+  <tr>
+    <td>OtsuSplit</td>
+    <td>Difference of subset means, standard deviation of the lower subset, standard deviation of the upper
+subset and lower-to-all observation count ratio for two subsets of magnitudes obtained by Otsu's method split.
+<br>
+<br>
+Otsu's method is used to perform automatic thresholding. The algorithm returns a single threshold that separates values into two classes. This threshold is determined by minimizing intra-class intensity variance $\sigma^2_{W}=w_0\sigma^2_0+w_1\sigma^2_1$, or equivalently, by maximizing inter-class variance $\sigma^2_{B}=w_0 w_1 (\mu_1-\mu_0)^2$. When multiple extrema exist, the algorithm returns the minimum threshold.
+   </td>
+    <td align="center">2</td>
+    <td align="center">4</td>
+    <td>Flux or magn</td>
+    <td>not supported</td>
+  </tr>
+
+  <tr>
+    <td>PercentAmplitude</td>
+    <td>Maximum deviation of magnitude from its median:
+<p align="center">$\displaystyle \max_{i} |m_{i} \ -\ \text{Median}( m) |$</p></td>
+    <td align="center">1</td>
+    <td align="center">1</td>
+    <td>Flux or magn</td>
+    <td>identity</td>
+  </tr>
+
+  <tr>
+    <td>PercentDifferenceMagnitudePercentile</td>
+    <td>Ratio of $p$-th inter-percentile range to the median:
+<p align="center">$\displaystyle \frac{Q( 1-p) -Q( p)}{\text{Median}( m)}$</p></td>
+    <td align="center">1</td>
+    <td align="center">1</td>
+    <td>Flux only</td>
+    <td>clipped lg</td>
+  </tr>
+
+  <tr>
+    <td>LinexpFit</td>
+    <td>Four fit parameters and goodness of fit (reduced $\chi^{2}$) of the Linexp function developed for core-collapsed supernovae:
+<p align="center">$\displaystyle f(t)=A\frac{t-t_{0}}{\tau}\exp\!\left(\frac{t-t_{0}}{\tau}\right)+B$</p></td>
+    <td align="center">5</td>
+    <td align="center">5</td>
+    <td>Flux only</td>
+    <td>$A$ → mag, $B/A$, $t_0$ dropped, $\chi^2$ → $\ln(1+\chi^2)$</td>
+  </tr>
+
+  <tr>
+    <td><i>RainbowFit</i><br>(experimental)</td>
+    <td>Seven fit parameters and goodness of fit (reduced $\chi ^{2}$). The Rainbow method is developed and detailed in <a href="https://arxiv.org/abs/2310.02916">Russeil+23</a>. This implementation is suited for transient objects. Bolometric flux and temperature functions are customizable; by default, Bazin and logistic functions are used:
+<p align="center">$\displaystyle F_{\nu}(t, \nu) = \frac{\pi\,B\left(T(t),\nu\right)}{\sigma_\mathrm{SB}\,T(t)^{4}} \times F_\mathrm{bol}(t),$</p> where $F_{\nu}(t, \nu)-$ flux observation at a given wavelength</td>
+    <td align="center">6</td>
+    <td align="center">1</td>
+    <td>Flux only</td>
+    <td>identity</td>
+  </tr>
+
+  <tr>
+    <td>ReducedChi2</td>
+    <td>Reduced $\chi ^{2}$ of magnitude measurements:
+<p align="center">$\displaystyle \frac{1}{N-1}\sum _{i}\left(\frac{m_{i} -\overline{m}}{\delta _{i}}\right)^{2} ,$</p> where $\overline{m} -$ weighted mean magnitude</td>
+    <td align="center">2</td>
+    <td align="center">1</td>
+    <td>Flux or magn</td>
+    <td>$\ln(1+x)$</td>
+  </tr>
+
+  <tr>
+    <td><i>Roms</i><br>(experimental)</td>
+    <td>Robust median statistic: <p align="center">$\displaystyle \frac1{N-1} \sum_{i=0}^{N-1} \frac{|m_i - \mathrm{median}(m_i)|}{\sigma_i}$</p></td>
+    <td align="center">2</td>
+    <td align="center">1</td>
+    <td>Flux or magn</td>
+    <td>identity</td>
+  </tr>
+
+  <tr>
+    <td>Skew</td>
+    <td>Skewness of magnitude:
+<p align="center">$\displaystyle \frac{N}{(N-1)(N-2)}\frac{\sum _{i} (m_{i} -\langle m\rangle )^{3}}{\sigma _{m}^{3}}$</p></td>
+    <td align="center">3</td>
+    <td align="center">1</td>
+    <td>Flux or magn</td>
+    <td>arcsinh</td>
+  </tr>
+
+  <tr>
+    <td>StandardDeviation</td>
+    <td>Standard deviation of magnitude:
+<p align="center">$\displaystyle \sigma _{m} \equiv \sqrt{\sum _{i} (m_{i} -\langle m\rangle )^{2} /(N-1)}$</p></td>
+    <td align="center">2</td>
+    <td align="center">1</td>
+    <td>Flux or magn</td>
+    <td>identity</td>
+  </tr>
+
+  <tr>
+    <td>StetsonK</td>
+    <td><b>Stetson K</b> coefficient describing light curve shape:
+<p align="center">$\displaystyle \frac{\sum _{i}\left| \frac{m_{i} -\overline{m} }{\delta _{i}}\right| }{\sqrt{N\ \chi ^{2}}}$</p></td>
+    <td align="center">2</td>
+    <td align="center">1</td>
+    <td>Flux or magn</td>
+    <td>identity</td>
+  </tr>
+
+  <tr>
+    <td>VillarFit</td>
+    <td>Seven fit parameters and goodness of fit (reduced $\chi ^{2}$) of the Villar function developed for supernovae classification:
+<p align="center">$f(t)=c+\frac{A}{1+\exp\frac{-(t-t_{0} )}{\tau _{rise}}} \times f_{fall}(t),$</p>
+<p align="center">$f_{fall}(t) = 1-\frac{\nu (t-t_{0} )}{\gamma }, ~~~ t< t_{0} +\gamma,$</p>
+<p align="center">$f_{fall}(t) = (1-\nu )\exp\frac{-(t-t_{0} -\gamma )}{\tau _{fall}}, ~~~ t \geq t_{0} + \gamma.$</p>
+where $f(t) -$ flux observation, $A, \gamma , \tau _{rise} , \tau _{fall}  >0$, $\nu \in [0;1)$</p>Here we introduce a new dimensionless parameter $\nu$ instead of the plateau slope $\beta$ from the original paper: $\nu \equiv -\beta \gamma /A$</td>
+    <td align="center">8</td>
+    <td align="center">8</td>
+    <td>Flux only</td>
+    <td>$A$ → mag, $c/A$, $t_0$ dropped, $\chi^2$ → $\ln(1+\chi^2)$</td>
+  </tr>
+
+  <tr>
+    <td>WeightedMean</td>
+    <td>Weighted mean magnitude:
+<p align="center">$\displaystyle \overline{m} \equiv \frac{\sum _{i} m_{i} /\delta _{i}^{2}}{\sum _{i} 1/\delta _{i}^{2}}$</p></td>
+    <td align="center">1</td>
+    <td align="center">1</td>
+    <td>Flux or magn</td>
+    <td>identity</td>
+  </tr>
+
+</table>
+
+### Meta-features
+
+Meta-features accept other feature extractors and apply them to pre-processed data.
+
+#### Periodogram
+
+This feature transforms time-series data into the Lomb-Scargle periodogram, providing an estimate of the power
+spectrum. The `peaks` argument specifies how many of the most significant spectral density peaks to return. For
+each peak, its period and signal-to-noise ratio are returned:
+
+$$
+\text{signal to noise of peak} \equiv \frac{P(\omega_\mathrm{peak}) - \langle P(\omega) \rangle}{\sigma\_{P(\omega)}}
+$$
+
+The optional `features` argument accepts a list of additional feature extractors, which are applied to the power
+spectrum: frequency is passed as "time," power spectrum is passed as "magnitude," and no uncertainties are set.
+
+#### Bins
+
+Bins the time series into windows of width $\mathrm{window}$ with respect to some $\mathrm{offset}$.
+The $j$-th bin spans $[j \cdot \mathrm{window} + \mathrm{offset},\ (j + 1) \cdot \mathrm{window} + \mathrm{offset}]$.
+
+The binned time series is defined by
+$$t_j^* = (j + \frac12) \cdot \mathrm{window} + \mathrm{offset},$$
+$$m_j^* = \frac{\sum{m_i / \delta_i^2}}{\sum{\delta_i^{-2}}},$$
+$$\delta_j^* = \frac{N_j}{\sum{\delta_i^{-2}}},$$
+where $N_j$ is the number of observations in the bin and all sums are over observations within that bin.
+
+### Parametric fit features
+
+`BazinFit`, `LinexpFit`, and `VillarFit` fit parametric functions to transient flux light curves (see
+[Available features](#available-features) for the function definitions). Unlike other extractors,
+they require an explicit `algorithm` argument selecting the optimization method.
+
+The available algorithms depend on the compile-time Cargo features (see
+[Build from source](#build-from-source)):
+
+| Algorithm | Requires | Description |
+|-----------|----------|-------------|
+| `"mcmc"` | always available | MCMC ensemble sampler; robust but slow |
+| `"ceres"` | `ceres-source` or `ceres-system` | Ceres trust-region solver; fast, gradient-based |
+| `"mcmc-ceres"` | `ceres-source` or `ceres-system` | MCMC exploration followed by Ceres refinement |
+| `"lmsder"` | `gsl` | Levenberg-Marquardt via GSL |
+| `"mcmc-lmsder"` | `gsl` | MCMC exploration followed by LMSDER refinement |
+
+The hybrid `"mcmc-ceres"` and `"mcmc-lmsder"` algorithms run MCMC first to broadly explore the
+parameter space, then hand off to the gradient-based solver for precise convergence. This typically
+gives the best balance of robustness and final accuracy.
+
+By default, initial parameter values and bounds are estimated from the data. Override them with the
+`init` and `bounds` arguments (supported by MCMC-based algorithms only), each a list of values or
+`None`s to keep data-derived defaults for individual parameters. `BazinFit` has 5 parameters, `LinexpFit` has 4, `VillarFit` has 7; run `help()` on the
+respective class for the parameter order.
+
+The `ln_prior` argument sets the MCMC prior. It accepts `None` / `"no"` (flat prior, the default),
+a named string literal, or a list of `light_curve.ln_prior.LnPrior1D` objects for per-parameter
+distributions (see `help(light_curve.ln_prior)` for the available distribution types).
+`VillarFit` additionally supports `"hosseinzadeh2020"`, a prior from Hosseinzadeh et al. 2020 that
+encodes supernova physics constraints; it assumes time values are in days.
+
+Pass `transform=True` to convert the raw fit parameters to a magnitude-like representation: the
+amplitude becomes a magnitude, the baseline is normalized by the amplitude, the reference time is
+dropped, and the reduced chi^2 is log-scaled. Run `help(lc.BazinFit)` for the exact definition.
+
+For the experimental multi-band analogue, see [Rainbow Fit](#rainbow-fit) below.
+
+### Multi-band features
+
+As of v0.8, experimental extractors support multi-band light-curve inputs.
+
+<!-- name: test_multiband_experimental_features -->
+
+```python
+import numpy as np
+from light_curve.light_curve_py import LinearFit
+
+t = np.arange(20, dtype=float)
+m = np.arange(20, dtype=float)
+sigma = np.full_like(t, 0.1)
+bands = np.array(["g"] * 10 + ["r"] * 10)
+feature = LinearFit(bands=["g", "r"])
+values = feature(t, m, sigma, bands)
+print(values)
+```
+
+#### Rainbow Fit
+
+Rainbow ([Russeil+23](https://arxiv.org/abs/2310.02916)) is a black-body parametric model for transient light
+curves. By default, it uses the Bazin function as a model for bolometric flux evolution and a logistic function
+for temperature evolution. The user may customize the model by providing their own functions for bolometric flux
+and temperature evolution. This example demonstrates the reconstruction of a synthetic light curve with this model.
+`RainbowFit` requires the `iminuit` package.
+
+<!-- name: test_rainbow_fit_example -->
+
+```python
+import numpy as np
+from light_curve.light_curve_py import RainbowFit
+
+
+def bb_nu(wave_aa, T):
+    """Black-body spectral model"""
+    nu = 3e10 / (wave_aa * 1e-8)
+    return 2 * 6.626e-27 * nu ** 3 / 3e10 ** 2 / np.expm1(6.626e-27 * nu / (1.38e-16 * T))
+
+
+# Effective wavelengths in Angstrom
+band_wave_aa = {"g": 4770.0, "r": 6231.0, "i": 7625.0, "z": 9134.0}
+
+# Parameter values
+reference_time = 60000.0  # time close to the peak time
+# Bolometric flux model parameters
+amplitude = 1.0  # bolometric flux semiamplitude, arbitrary (non-spectral) flux/luminosity units
+rise_time = 5.0  # exponential growth timescale, days
+fall_time = 30.0  # exponential decay timescale, days
+# Temperature model parameters
+Tmin = 5e3  # temperature on +infinite time, kelvins
+delta_T = 10e3  # (Tmin + delta_T) is temperature on -infinite time, kelvins
+k_sig = 4.0  # temperature evolution timescale, days
+
+rng = np.random.default_rng(0)
+t = np.sort(rng.uniform(reference_time - 3 * rise_time, reference_time + 3 * fall_time, 1000))
+band = rng.choice(list(band_wave_aa), size=len(t))
+waves = np.array([band_wave_aa[b] for b in band])
+
+# Temperature evolution is a sigmoid function
+temp = Tmin + delta_T / (1.0 + np.exp((t - reference_time) / k_sig))
+# Bolometric flux evolution is the Bazin function
+lum = amplitude * np.exp(-(t - reference_time) / fall_time) / (
+        1.0 + np.exp(-(t - reference_time) / rise_time))
+
+# Spectral flux density for each given pair of time and passband
+flux = np.pi * bb_nu(waves, temp) / (5.67e-5 * temp ** 4) * lum
+# S/N = 5 for minimum flux, scale for Poisson noise
+flux_err = np.sqrt(flux * np.min(flux) / 5.0)
+flux += rng.normal(0.0, flux_err)
+
+feature = RainbowFit.from_angstrom(band_wave_aa, with_baseline=False)
+values = feature(t, flux, sigma=flux_err, band=band)
+print(dict(zip(feature.names, values)))
+print(f"Goodness of fit: {values[-1]}")
+```
+
+Note that while the data generation above uses approximate physical constant values, `RainbowFit` uses CODATA 2018
+values internally.
+
+### Experimental extractors
+
+The package consists of two parts: a wrapper for the
+[`light-curve-feature` Rust crate](https://crates.io/crates/light-curve-feature) (`light_curve_ext` sub-package)
+and a pure-Python sub-package `light_curve_py`.
+We use the Python implementation to test the Rust implementation and to develop new experimental extractors.
+The Python implementation is significantly slower for most extractors and does not provide the same full
+feature set as the Rust implementation, but it does include some extractors you may find useful.
+
+You can use extractors from either implementation directly:
+
+<!-- name: test_experimental_extractors -->
+
+```python
+import numpy as np
+from numpy.testing import assert_allclose
+from light_curve.light_curve_ext import LinearTrend as RustLinearTrend
+from light_curve.light_curve_py import LinearTrend as PythonLinearTrend
+
+rust_fe = RustLinearTrend()
+py_fe = PythonLinearTrend()
+
+n = 100
+t = np.sort(np.random.normal(size=n))
+m = 3.14 * t - 2.16 + np.random.normal(size=n)
+
+assert_allclose(rust_fe(t, m), py_fe(t, m),
+                err_msg="Python and Rust implementations must provide the same result")
+```
+
+This should print a warning about the experimental status of the Python class.
+
+## Performance
+
+The package is designed for high throughput. The following techniques help extract features with minimal overhead.
+
+### `sorted` and `check` parameters
+
+The `sorted=True` argument tells the extractor that `t` is already sorted in ascending order, and `check=False`
+disables validation of NaN/inf values. The defaults are `sorted=None` (the array will be validated and an error raised if unsorted) and
+`check=True`. Passing invalid inputs without validation can cause incorrect results or crashes.
+
+### Batch processing with `.many()`
+
+Each extractor has a `.many()` method that processes a collection of light curves in parallel across all
+available CPU cores by default. It accepts either a list of `(t, m[, sigma])` tuples or an Arrow array
+(see below).
+
+```python
+import light_curve as lc
+import numpy as np
+
+rng = np.random.default_rng(0)
+# A list of (t, m, sigma) tuples, one per light curve
+light_curves = [
+    (np.sort(rng.random(50)), rng.random(50), rng.random(50) * 0.1)
+    for _ in range(1000)
+]
+
+results = lc.Amplitude().many(light_curves)
+```
+
+### Arrow input
 
 The `.many()` method also accepts Arrow arrays instead of a list of tuples, enabling zero-copy data access
 from Arrow-compatible libraries. The input must be a `List<Struct<t, m[, sigma]>>` array where all fields
@@ -227,544 +761,46 @@ nested = nested.with_columns(
 print(nested)
 ```
 
-If you're confident in your inputs you could use `sorted = True` (`t` is in ascending order)
-and `check = False` (no NaNs in inputs, no infs in `t` or `m`) for better performance.
-Note that if your inputs are not valid and are not validated by
-`sorted=None` and `check=True` (default values) then all kind of bad things could happen.
-
-Print feature classes list
-<!-- name: test_feature_evaluators_list -->
-
-```python
-import light_curve as lc
-
-print([x for x in dir(lc) if hasattr(getattr(lc, x), "names")])
-```
-
-Read feature docs
-<!-- name: test_feature_evaluators_help -->
-
-```python
-import light_curve as lc
-
-help(lc.BazinFit)
-```
-
-### Available features
-
-See the complete list of available feature evaluators and documentation
-in [
-`light-curve-feature` Rust crate docs](https://docs.rs/light-curve-feature/latest/light_curve_feature/features/index.html).
-Italic names are experimental features.
-While we usually say "magnitude" and use "m" as a time-series value, some of the features are supposed to be
-used with
-flux light-curves.
-The last column indicates whether the feature should be used with flux light curves only, magnitude light
-curves only,
-or any kind of light curves.
-
-<table>
-  <tr>
-    <th>Feature name</th>
-    <th>Description</th>
-    <th>Min data points</th>
-    <th>Features number</th>
-    <th>Flux/magnitude</th>
-  </tr>
-  <tr>
-    <td>Amplitude</td>
-    <td>Half amplitude of magnitude: <p align="center">$\displaystyle \frac{\max (m)-\min (m)}{2}$</p></td>
-    <td align="center">1</td>
-    <td align="center">1</td>
-    <td>Flux or magn</td>
-  </tr>
-
-  <tr>
-    <td>AndersonDarlingNormal</td>
-    <td>Unbiased Anderson–Darling normality test statistic:
-<p align="left">$\displaystyle \left( 1+\frac{4}{N} -\frac{25}{N^{2}}\right) \times$<p>
-<p align="right">$\times \left( -N-\frac{1}{N}\sum\limits_{i=0}^{N-1} (2i+1)\ln \Phi _{i} +(2(N-i)-1)\ln (1-\Phi _{i} )\right) ,$<p> where $\Phi _{i\ } \equiv \Phi (( m_{i} \ -\ \langle m\rangle ) /\sigma _{m})$ is the commutative distribution function of the standard normal distribution, $N-$ the number of observations, $\langle m\rangle -$ mean magnitude and $\sigma _{m} =\sqrt{\sum\limits_{i=0}^{N-1}( m_{i} -\langle m\rangle )^{2} /( N-1) \ }$ is the magnitude standard deviation</td>
-    <td align="center">4</td>
-    <td align="center">1</td>
-    <td>Flux or magn</td>
-  </tr>
-
-  <tr>
-    <td>BazinFit</td>
-    <td>Five fit parameters and goodness of fit (reduced $\chi ^{2}$ of the Bazin function developed for core-collapsed supernovae:
-<p align="center">$\displaystyle f(t)=A\frac{\mathrm{e}^{-(t-t_{0} )/\tau _{fall}}}{1+\mathrm{e}^{-(t-t_{0} )/\tau _{rise}}} +B,$</p> where $f(t)-$ flux observation</td>
-    <td align="center">6</td>
-    <td align="center">1</td>
-    <td>Flux only</td>
-  </tr>
-
-  <tr>
-    <td>BeyondNStd</td>
-    <td>Fraction of observations beyond $n\sigma _{m}$ from the mean magnitude $\langle m\rangle $:
-<p align="center">$\displaystyle \frac{\sum _{i} I_{|m-\langle m\rangle | >n\sigma _{m}} (m_{i} )}{N},$</p> where $I-$ an indicator function</td>
-    <td align="center">2</td>
-    <td align="center">1</td>
-    <td>Flux or magn</td>
-  </tr>
-
-  <tr>
-    <td><i>ColorOfMedian</i> <br>(experimental)</td>
-    <td>Magnitude difference between medians of two bands</td>
-    <td align="center">2</td>
-    <td align="center">1</td>
-    <td>Magn only</td>
-  </tr>
-
-   <tr>
-    <td>Cusum</td>
-    <td>A range of cumulative sums:
-<p align="center">$\displaystyle \max(S) - \min(S),$</p>
-    where
-<p align="center">$\displaystyle S_{j} \equiv \frac{1}{N\sigma_{m}} \sum_{i=0}^{j} (m_{i} - \langle m\rangle), \quad j \in \lbrace 1..N-1 \rbrace\;$</p></td>
-    <td align="center">2</td>
-    <td align="center">1</td>
-    <td>Flux or magn</td>
-  </tr>
-
-  <tr>
-    <td>Eta</td>
-    <td>Von Neummann $\eta $:
-<p align="center">$\displaystyle \eta \equiv \frac{1}{(N-1)\sigma _{m}^{2}}\sum\limits _{i=0}^{N-2} (m_{i+1} -m_{i} )^{2}$</p></td>
-    <td align="center">2</td>
-    <td align="center">1</td>
-    <td>Flux or magn</td>
-  </tr>
-
-  <tr>
-    <td>EtaE</td>
-    <td>Modernisation of <b>Eta</b> for unevenly time series:
-<p align="center">$\displaystyle \eta ^{e} \equiv \frac{(t_{N-1} -t_{0} )^{2}}{(N-1)^{3}}\frac{\sum\limits_{i=0}^{N-2}\left(\frac{m_{i+1} -m_{i}}{t_{i+1} -t_{i}}\right)^{2}}{\sigma _{m}^{2}}$</p></td>
-    <td align="center">2</td>
-    <td align="center">1</td>
-    <td>Flux or magn</td>
-  </tr>
-
-  <tr>
-    <td>ExcessVariance</td>
-    <td>Measure of the variability amplitude:
-<p align="center">$\displaystyle \frac{\sigma _{m}^{2} -\langle \delta ^{2} \rangle }{\langle m\rangle ^{2}},$</p> where $\langle \delta ^{2} \rangle -$ mean squared error</td>
-    <td align="center">2</td>
-    <td align="center">1</td>
-    <td>Flux only</td>
-  </tr>
-
-  <tr>
-    <td><i>FluxNNotDetBeforeFd</i><br>(experimental)</td>
-    <td>Number of non-detections before the first detection</td>
-    <td align="center">2</td>
-    <td align="center">1</td>
-    <td>Flux only</td>
-  </tr>
-
-  <tr>
-    <td>InterPercentileRange</td>
-    <td><p align="center">$\displaystyle Q(1-p)-Q(p),$</p> where $Q(n)$ and $Q(d)-$ $n$-th and $d$-th quantile of magnitude sample</td>
-    <td align="center">1</td>
-    <td align="center">1</td>
-    <td>Flux or magn</td>
-  </tr>
-
-  <tr>
-    <td>Kurtosis</td>
-    <td>Excess kurtosis of magnitude:
-<p align="center">$\displaystyle \frac{N(N+1)}{(N-1)(N-2)(N-3)}\frac{\sum _{i} (m_{i} -\langle m\rangle )^{4}}{\sigma _{m}^{2}} -3\frac{(N+1)^{2}}{(N-2)(N-3)}$</p></td>
-    <td align="center">4</td>
-    <td align="center">1</td>
-    <td>Flux or magn</td>
-  </tr>
-
-  <tr>
-    <td>LinearFit</td>
-    <td>The slope, its error and reduced $\chi ^{2}$ of the light curve in the linear fit of a magnitude light curve with respect to the observation error $\{\delta _{i}\}$:
-<p align="center">$\displaystyle m_{i} \ =\ c\ +\ \text{slope} \ t_{i} \ +\ \delta _{i} \varepsilon _{i} ,$</p> where $c$ is a constant, $\{\varepsilon _{i}\}$ are standard distributed random variables</td>
-    <td align="center">3</td>
-    <td align="center">3</td>
-    <td>Magn only</td>
-  </tr>
-
-  <tr>
-    <td>LinearTrend</td>
-    <td>The slope and its error of the light curve in the linear fit of a magnitude light curve without respect to the observation error $\{\delta _{i}\}$:
-<p align="center">$\displaystyle m_{i} \ =\ c\ +\ \text{slope} \ t_{i} \ +\ \Sigma \varepsilon _{i} ,$</p> where $c$ and $\Sigma$ are constants, $\{\varepsilon _{i}\}$  are standard distributed random variables.</td>
-    <td align="center">2</td>
-    <td align="center">2</td>
-    <td>Magn only</td>
-  </tr>
-
-  <tr>
-    <td><i>MagnitudeNNotDetBeforeFd</i><br>(experimental)</td>
-    <td>Number of non-detections before the first detection</td>
-    <td align="center">2</td>
-    <td align="center">1</td>
-    <td>Magn only</td>
-  </tr>
-
-  <tr>
-    <td>MagnitudePercentageRatio</td>
-    <td>Magnitude percentage ratio:
-<p align="center">$\displaystyle \frac{Q(1-n)-Q(n)}{Q(1-d)-Q(d)}$</p></td>
-    <td align="center">1</td>
-    <td align="center">1</td>
-    <td>Flux or magn</td>
-  </tr>
-
-  <tr>
-    <td>MaximumSlope</td>
-    <td>Maximum slope between two sub-sequential observations:
-<p align="center">$\displaystyle \max_{i=0\dotsc N-2}\left| \frac{m_{i+1} -m_{i}}{t_{i+1} -t_{i}}\right|$</p></td>
-    <td align="center">2</td>
-    <td align="center">1</td>
-    <td>Flux or magn</td>
-  </tr>
-
-  <tr>
-    <td>Mean</td>
-    <td>Mean magnitude:
-<p align="center">$\displaystyle \langle m\rangle =\frac{1}{N}\sum\limits _{i} m_{i}$</p></td>
-    <td align="center">1</td>
-    <td align="center">1</td>
-    <td>Flux or magn</td>
-  </tr>
-
-  <tr>
-    <td>MeanVariance</td>
-    <td>Standard deviation to mean ratio:
-<p align="center">$\displaystyle \frac{\sigma _{m}}{\langle m\rangle }$</p></td>
-    <td align="center">2</td>
-    <td align="center">1</td>
-    <td>Flux only</td>
-  </tr>
-
-  <tr>
-    <td>Median</td>
-    <td>Median magnitude
-    <td align="center">1</td>
-    <td align="center">1</td>
-    <td>Flux or magn</td>
-  </tr>
-
-  <tr>
-    <td>MedianAbsoluteDeviation</td>
-    <td>Median of the absolute value of the difference between magnitude and its median:
-<p align="center">$\displaystyle \mathrm{Median} (|m_{i} -\mathrm{Median} (m)|)$</p></td>
-    <td align="center">1</td>
-    <td align="center">1</td>
-    <td>Flux or magn</td>
-  </tr>
-
-  <tr>
-    <td>MedianBufferRangePercentage</td>
-    <td>Fraction of points within <p align="center">$\displaystyle \mathrm{Median} (m)\pm q\times (\max (m)-\min (m))/2$</p></td>
-    <td align="center">1</td>
-    <td align="center">1</td>
-    <td>Flux or magn</td>
-  </tr>
-
-  <tr>
-    <td>OtsuSplit</td>
-    <td>Difference of subset means, standard deviation of the lower subset, standard deviation of the upper
-subset and lower-to-all observation count ratio for two subsets of magnitudes obtained by Otsu's method split.
-<br>
-<br>
-Otsu's method is used to perform automatic thresholding. The algorithm returns a single threshold that separate values into two classes. This threshold is determined by minimizing intra-class intensity variance $\sigma^2_{W}=w_0\sigma^2_0+w_1\sigma^2_1$, or equivalently, by maximizing inter-class variance $\sigma^2_{B}=w_0 w_1 (\mu_1-\mu_0)^2$. There can be more than one extremum. In this case, the algorithm returns the minimum threshold.
-   </td>
-    <td align="center">2</td>
-    <td align="center">4</td>
-    <td>Flux or magn</td>
-  </tr>
-
-  <tr>
-    <td>PercentAmplitude</td>
-    <td>Maximum deviation of magnitude from its median:
-<p align="center">$\displaystyle \max_{i} |m_{i} \ -\ \text{Median}( m) |$</p></td>
-    <td align="center">1</td>
-    <td align="center">1</td>
-    <td>Flux or magn</td>
-  </tr>
-
-  <tr>
-    <td>PercentDifferenceMagnitudePercentile</td>
-    <td>Ratio of $p$-th inter-percentile range to the median:
-<p align="center">$\displaystyle \frac{Q( 1-p) -Q( p)}{\text{Median}( m)}$</p></td>
-    <td align="center">1</td>
-    <td align="center">1</td>
-    <td>Flux only</td>
-  </tr>
-
-  <tr>
-    <td><i>RainbowFit</i><br>(experimental)</td>
-    <td>Seven fit parameters and goodness of fit (reduced $\chi ^{2}$). The Rainbow method is developed and detailed here : https://arxiv.org/abs/2310.02916). This implementation is suited for transient objects. Bolometric flux and temperature functions are customizable, by default Bazin and logistic functions are used:
-<p align="center">$\displaystyle F_{\nu}(t, \nu) = \frac{\pi\,B\left(T(t),\nu\right)}{\sigma_\mathrm{SB}\,T(t)^{4}} \times F_\mathrm{bol}(t),$</p> where $F_{\nu}(t, \nu)-$ flux observation at a given wavelength</td>
-    <td align="center">6</td>
-    <td align="center">1</td>
-    <td>Flux only</td>
-  </tr>
-
-  <tr>
-    <td>ReducedChi2</td>
-    <td>Reduced $\chi ^{2}$ of magnitude measurements:
-<p align="center">$\displaystyle \frac{1}{N-1}\sum _{i}\left(\frac{m_{i} -\overline{m}}{\delta _{i}}\right)^{2} ,$</p> where $\overline{m} -$ weighted mean magnitude</td>
-    <td align="center">2</td>
-    <td align="center">1</td>
-    <td>Flux or magn</td>
-  </tr>
-
-  <tr>
-    <td><i>Roms</i><br>(Experimental)</td>
-    <td>Robust median statistic: <p align="center">$\displaystyle \frac1{N-1} \sum_{i=0}^{N-1} \frac{|m_i - \mathrm{median}(m_i)|}{\sigma_i}$</p></td>
-    <td align="center">2</td>
-    <td align="center">1</td>
-    <td>Flux or magn</td>
-  </tr>
-
-  <tr>
-    <td>Skew</td>
-    <td>Skewness of magnitude:
-<p align="center">$\displaystyle \frac{N}{(N-1)(N-2)}\frac{\sum _{i} (m_{i} -\langle m\rangle )^{3}}{\sigma _{m}^{3}}$</p></td>
-    <td align="center">3</td>
-    <td align="center">1</td>
-    <td>Flux or magn</td>
-  </tr>
-
-  <tr>
-    <td>StandardDeviation</td>
-    <td>Standard deviation of magnitude:
-<p align="center">$\displaystyle \sigma _{m} \equiv \sqrt{\sum _{i} (m_{i} -\langle m\rangle )^{2} /(N-1)}$</p></td>
-    <td align="center">2</td>
-    <td align="center">1</td>
-    <td>Flux or magn</td>
-  </tr>
-
-  <tr>
-    <td>StetsonK</td>
-    <td><b>Stetson K</b> coefficient described light curve shape:
-<p align="center">$\displaystyle \frac{\sum _{i}\left| \frac{m_{i} -\overline{m} }{\delta _{i}}\right| }{\sqrt{N\ \chi ^{2}}}$</p></td>
-    <td align="center">2</td>
-    <td align="center">1</td>
-    <td>Flux or magn</td>
-  </tr>
-
-  <tr>
-    <td>VillarFit</td>
-    <td>Seven fit parameters and goodness of fit (reduced $\chi ^{2}$) of the Villar function developed for supernovae classification:
-<p align="center">$f(t)=c+\frac{A}{1+\exp\frac{-(t-t_{0} )}{\tau _{rise}}} \times f_{fall}(t),$</p>
-<p align="center">$f_{fall}(t) = 1-\frac{\nu (t-t_{0} )}{\gamma }, ~~~ t< t_{0} +\gamma,$</p>
-<p align="center">$f_{fall}(t) = (1-\nu )\exp\frac{-(t-t_{0} -\gamma )}{\tau _{fall}}, ~~~ t \geq t_{0} + \gamma.$</p>
-where $f(t) -$ flux observation, $A, \gamma , \tau _{rise} , \tau _{fall}  >0$, $\nu \in [0;1)$</p>Here we introduce a new dimensionless parameter $\nu$ instead of the plateau slope $\beta$ from the original paper: $\nu \equiv -\beta \gamma /A$</td>
-    <td align="center">8</td>
-    <td align="center">8</td>
-    <td>Flux only</td>
-  </tr>
-
-  <tr>
-    <td>WeightedMean</td>
-    <td>Weighted mean magnitude:
-<p align="center">$\displaystyle \overline{m} \equiv \frac{\sum _{i} m_{i} /\delta _{i}^{2}}{\sum _{i} 1/\delta _{i}^{2}}$</p></td>
-    <td align="center">1</td>
-    <td align="center">1</td>
-    <td>Flux or magn</td>
-  </tr>
-
-</table>
-
-### Meta-features
-
-Meta-features can accept other feature extractors and apply them to pre-processed data.
-
-#### Periodogram
-
-This feature transforms time-series data into the Lomb-Scargle periodogram, providing an estimation of the
-power
-spectrum. The peaks argument corresponds to the number of the most significant spectral density peaks to
-return. For
-each peak, its period and "signal-to-noise" ratio are returned.
-
-$$
-\text{signal to noise of peak} \equiv \frac{P(\omega_\mathrm{peak}) - \langle P(\omega) \rangle}{\sigma\_{P(\omega)}}
-$$
-
-The optional features argument accepts a list of additional feature evaluators, which are applied to the power
-spectrum:
-frequency is passed as "time," power spectrum is passed as "magnitude," and no uncertainties are set.
-
-#### Bins
-
-Binning time series to bins with width $\mathrm{window}$ with respect to some $\mathrm{offset}$.
-$j-th$ bin boundaries
-are $[j \cdot \mathrm{window} + \mathrm{offset}; (j + 1) \cdot \mathrm{window} + \mathrm{offset}]$.
-
-Binned time series is defined by
-$$t_j^* = (j + \frac12) \cdot \mathrm{window} + \mathrm{offset},$$
-$$m_j^* = \frac{\sum{m_i / \delta_i^2}}{\sum{\delta_i^{-2}}},$$
-$$\delta_j^* = \frac{N_j}{\sum{\delta_i^{-2}}},$$
-where $N_j$ is a number of sampling observations and all sums are over observations inside considering bin.
-
-### Multi-band features
-
-As of v0.8, experimental extractors (see below), support multi-band light-curve inputs.
-
-<!-- name: test_multiband_experimental_features -->
-
-```python
-import numpy as np
-from light_curve.light_curve_py import LinearFit
-
-t = np.arange(20, dtype=float)
-m = np.arange(20, dtype=float)
-sigma = np.full_like(t, 0.1)
-bands = np.array(["g"] * 10 + ["r"] * 10)
-feature = LinearFit(bands=["g", "r"])
-values = feature(t, m, sigma, bands)
-print(values)
-```
-
-#### Rainbow Fit
-
-Rainbow ([Russeil+23](https://arxiv.org/abs/2310.02916)) is a black-body parametric model for transient light
-curves.
-By default, it uses Bazin function as a model for bolometric flux evolution and a logistic function for the
-temperature
-evolution.
-The user may customize the model by providing their own functions for bolometric flux and temperature
-evolution.
-This example demonstrates the reconstruction of a synthetic light curve with this model.
-`RainbowFit` requires `iminuit` package.
-
-<!-- name: test_rainbow_fit_example -->
-
-```python
-import numpy as np
-from light_curve.light_curve_py import RainbowFit
-
-
-def bb_nu(wave_aa, T):
-    """Black-body spectral model"""
-    nu = 3e10 / (wave_aa * 1e-8)
-    return 2 * 6.626e-27 * nu ** 3 / 3e10 ** 2 / np.expm1(6.626e-27 * nu / (1.38e-16 * T))
-
-
-# Effective wavelengths in Angstrom
-band_wave_aa = {"g": 4770.0, "r": 6231.0, "i": 7625.0, "z": 9134.0}
-
-# Parameter values
-reference_time = 60000.0  # time close to the peak time
-# Bolometric flux model parameters
-amplitude = 1.0  # bolometric flux semiamplitude, arbitrary (non-spectral) flux/luminosity units
-rise_time = 5.0  # exponential growth timescale, days
-fall_time = 30.0  # exponential decay timescale, days
-# Temperature model parameters
-Tmin = 5e3  # temperature on +infinite time, kelvins
-delta_T = 10e3  # (Tmin + delta_T) is temperature on -infinite time, kelvins
-k_sig = 4.0  # temperature evolution timescale, days
-
-rng = np.random.default_rng(0)
-t = np.sort(rng.uniform(reference_time - 3 * rise_time, reference_time + 3 * fall_time, 1000))
-band = rng.choice(list(band_wave_aa), size=len(t))
-waves = np.array([band_wave_aa[b] for b in band])
-
-# Temperature evolution is a sigmoid function
-temp = Tmin + delta_T / (1.0 + np.exp((t - reference_time) / k_sig))
-# Bolometric flux evolution is the Bazin function
-lum = amplitude * np.exp(-(t - reference_time) / fall_time) / (
-        1.0 + np.exp(-(t - reference_time) / rise_time))
-
-# Spectral flux density for each given pair of time and passband
-flux = np.pi * bb_nu(waves, temp) / (5.67e-5 * temp ** 4) * lum
-# S/N = 5 for minimum flux, scale for Poisson noise
-flux_err = np.sqrt(flux * np.min(flux) / 5.0)
-flux += rng.normal(0.0, flux_err)
-
-feature = RainbowFit.from_angstrom(band_wave_aa, with_baseline=False)
-values = feature(t, flux, sigma=flux_err, band=band)
-print(dict(zip(feature.names, values)))
-print(f"Goodness of fit: {values[-1]}")
-```
-
-Note, that while we don't use precise physical constant values to generate the data, `RainbowFit` uses CODATA
-2018
-values.
-
-### Experimental extractors
-
-From the technical point of view the package consists of two parts: a wrapper
-for [`light-curve-feature` Rust crate](https://crates.io/crates/light-curve-feature) (`light_curve_ext`
-sub-package) and
-pure Python sub-package `light_curve_py`.
-We use the Python implementation of feature extractors to test Rust implementation and to implement new
-experimental
-extractors.
-Please note, that the Python implementation is much slower for most of the extractors and doesn't provide the
-same
-functionality as the Rust implementation.
-However, the Python implementation provides some new feature extractors you can find useful.
-
-You can manually use extractors from both implementations:
-
-<!-- name: test_experimental_extractors -->
-
-```python
-import numpy as np
-from numpy.testing import assert_allclose
-from light_curve.light_curve_ext import LinearTrend as RustLinearTrend
-from light_curve.light_curve_py import LinearTrend as PythonLinearTrend
-
-rust_fe = RustLinearTrend()
-py_fe = PythonLinearTrend()
-
-n = 100
-t = np.sort(np.random.normal(size=n))
-m = 3.14 * t - 2.16 + np.random.normal(size=n)
-
-assert_allclose(rust_fe(t, m), py_fe(t, m),
-                err_msg="Python and Rust implementations must provide the same result")
-```
-
-This should print a warning about experimental status of the Python class
-
 ### Benchmarks
 
-You can run all benchmarks from the Python project folder
-with `python3 -mpytest --benchmark-enable tests/test_w_bench.py`, or with slow benchmarks
-disabled `python3 -mpytest -m "not (nobs or multi)" --benchmark-enable tests/test_w_bench.py`.
+Run all benchmarks from the Python project folder with
+`python3 -mpytest --benchmark-enable tests/test_w_bench.py`, or with slow benchmarks disabled:
+`python3 -mpytest -m "not (nobs or multi)" --benchmark-enable tests/test_w_bench.py`.
 
-Here we benchmark the Rust implementation (`rust`) versus [`feets`](https://feets.readthedocs.io/en/latest/)
-package and
-our own Python implementation (`lc_py`) for a light curve having n=1000 observations.
+Below we benchmark the Rust implementation (`rust`) against the [`feets`](https://feets.readthedocs.io/en/latest/)
+package and our own Python implementation (`lc_py`) for a light curve with n=1000 observations.
 
 ![Benchmarks, Rust is much faster](https://github.com/light-curve/light-curve-python/raw/main/light-curve/.readme/benchplot_v2.png)
 
-The plot shows that the Rust implementation of the package outperforms other ones by a factor of 1.5—50.
-This allows to extract a large set of "cheap" features well under one ms for n=1000.
-The performance of parametric fits (`BazinFit` and `VillarFit`) and `Periodogram` depend on their parameters,
-but the
-typical timescale of feature extraction including these features is 20—50 ms for few hundred observations.
+The Rust implementation outperforms the alternatives by a factor of 1.5–50.
+This allows extracting a large set of "cheap" features in well under one millisecond for n=1000.
+The performance of parametric fits (`BazinFit` and `VillarFit`) and `Periodogram` depends on their parameters,
+but the typical extraction time including these features is 20–50 ms for a few hundred observations.
 
 ![Benchmark for different number of observations](https://github.com/light-curve/light-curve-python/raw/main/light-curve/.readme/nobs_bench_v2.png)
 
-Benchmark results of several features for both the pure-Python and Rust implementations of the "light-curve"
-package, as
-a function of the number of observations in a light curve. Both the x-axis and y-axis are on a logarithmic
-scale.
+Benchmark results for both the pure-Python and Rust implementations as a function of the number of observations.
+Both axes are on a logarithmic scale.
 
 ![Benchmark for multithreading and multiprocessing](https://github.com/light-curve/light-curve-python/raw/main/light-curve/.readme/multi_bench_v2.png)
 
-Processing time per a single light curve for extraction of features subset presented in first benchmark versus
-the
-number of CPU cores used. The dataset consists of 10,000 light curves with 1,000 observations in each.
+Processing time per light curve for the feature subset from the first benchmark, as a function of the number of
+CPU cores used. The dataset consists of 10,000 light curves with 1,000 observations each.
 
-See benchmarks' descriptions in more details
-in ["Performant feature extraction for photometric time series"](https://arxiv.org/abs/2302.10837).
+See the benchmarks described in more detail in
+["Performant feature extraction for photometric time series"](https://arxiv.org/abs/2302.10837).
 
 ## dm-dt map
 
-Class `DmDt` provides dm–dt mapper (based
-on [Mahabal et al. 2011](https://ui.adsabs.harvard.edu/abs/2011BASI...39..387M/abstract), [Soraisam et al. 2020](https://ui.adsabs.harvard.edu/abs/2020ApJ...892..112S/abstract)).
-It is a Python wrapper for [`light-curve-dmdt` Rust crate](https://crates.io/crates/light-curve-dmdt).
+In addition to the feature extractors above, the package provides a separate dm–dt mapping tool.
+The dm–dt map is a 2-D histogram of magnitude differences (dm) versus time differences (dt) for all pairs
+of observations in a light curve. It is commonly used as an input representation for machine learning
+classifiers rather than as a scalar feature.
+
+The `DmDt` class (a Python wrapper for the
+[`light-curve-dmdt` Rust crate](https://crates.io/crates/light-curve-dmdt)) implements this mapper,
+following [Mahabal et al. 2011](https://ui.adsabs.harvard.edu/abs/2011BASI...39..387M/abstract) and
+[Soraisam et al. 2020](https://ui.adsabs.harvard.edu/abs/2020ApJ...892..112S/abstract).
 
 <!-- name: test_dmdt -->
 
@@ -789,15 +825,71 @@ actual = dmdt.points(t, m)
 assert_array_equal(actual, desired)
 ```
 
+## Installation
+
+```sh
+pip install 'light-curve[full]'
+# or
+conda install -c conda-forge light-curve-python
+```
+
+The `full` extra installs all optional Python dependencies required by experimental features.
+We also provide a `light-curve-python` package as an alias for `light-curve[full]`.
+
+The minimum supported Python version is 3.10.
+Binary CPython distributions are available via [PyPI](https://pypi.org/project/light-curve/)
+and [Anaconda](https://anaconda.org/conda-forge/light-curve-python) for various platforms and architectures.
+On PyPI, we publish wheels for the stable CPython ABI, ensuring compatibility with future CPython 3 versions.
+
+### Support matrix
+
+| Arch \ OS   | Linux glibc 2.17+ | Linux musl 1.2+                | macOS                 | Windows https://github.com/light-curve/light-curve-python/issues/186 |
+|-------------|-------------------|--------------------------------|-----------------------|----------------------------------------------------------------------|
+| **x86-64**  | PyPI (MKL), conda | PyPI (MKL)                     | PyPI macOS 15+, conda | PyPI, conda (both no Ceres, no GSL)                                  |
+| **i686**    | src               | src                            | —                     | not tested                                                           |
+| **aarch64** | PyPI              | PyPI                           | PyPI macOS 14+, conda | not tested                                                           |
+| **ppc64le** | src               | not tested (no Rust toolchain) | —                     | —                                                                    |
+
+- **PyPI / conda**: A binary wheel or package is available on pypi.org or anaconda.org.
+  Local building is not required; the only prerequisite is a recent version of `pip` or `conda`.
+  For Linux x86-64, PyPI wheels are built with Intel MKL for improved periodogram performance,
+  which is not the default build option.
+  For Windows x86-64, all distributions exclude Ceres and GSL support.
+- **src**: The package has been confirmed to build and pass unit tests locally,
+  but CI does not test or publish packages for this platform.
+  See the [Build from source](#build-from-source) section for details.
+  Please open an issue or pull request if you encounter build problems or would like us to distribute
+  packages for these platforms.
+- **not tested**: Building from source has not been tested.
+  Please report build status via issue, PR, or email.
+
+macOS wheels require relatively recent OS versions; please open an issue if you need support for older macOS
+versions (see https://github.com/light-curve/light-curve-python/issues/376 for details).
+
+We no longer publish PyPy wheels ([#345](https://github.com/light-curve/light-curve-python/issues/345))
+or the PPC64le CPython glibc wheel ([#479](https://github.com/light-curve/light-curve-python/issues/479));
+please open an issue if you need either.
+
+Free-threaded Python
+([experimental in Python 3.13](https://docs.python.org/3.13/whatsnew/3.13.html#free-threaded-cpython),
+[officially supported in Python 3.14+](https://docs.python.org/3.14/whatsnew/3.14.html#whatsnew314-pep779))
+is supported when built from source.
+No pre-built distributions are currently provided; please comment on the relevant issues if you need them:
+[PyPI binary wheel issue](https://github.com/light-curve/light-curve-python/issues/500),
+[conda-forge package issue](https://github.com/conda-forge/light-curve-python-feedstock/issues/11).
+Note that for expensive features, the GIL-enabled interpreter with `.many()` achieves performance on par with
+the free-threaded interpreter using Python threads. For inexpensive extractors, `.many()` still reduces
+Rust–Python interaction overhead significantly.
+
 ## Developer guide
 
 ### Prepare environment
 
 Install a recent Rust toolchain and Python 3.10 or higher.
-It is recommended to use [`rustup`](https://rustup.rs/) to install Rust toolchain and update it with
-`rustup update` periodically.
+It is recommended to use [`rustup`](https://rustup.rs/) to install the Rust toolchain and keep it updated
+with `rustup update`.
 
-Clone the code, create and activate a virtual environment.
+Clone the repository, then create and activate a virtual environment:
 
 ```bash
 git clone https://github.com/light-curve/light-curve-python.git
@@ -806,24 +898,21 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-Install the package in the editable mode (see more details about building from
-source [bellow](#build-from-source)).
+Install the package in editable mode (see [Build from source](#build-from-source) for more details):
 
 ```bash
 python -mpip install maturin
-# --release would take longer, but the package would be faster
-# Put other Cargo flags if needed, e.g. --no-default-features --features=ceres-source
+# --release takes longer to build but produces a faster package
+# Add other Cargo flags if needed, e.g. --no-default-features --features=ceres-source
 maturin develop --extras=dev
 ```
 
-Next time you can just run `source venv/bin/activate` to activate the environment and `maturin develop` to
-rebuild Rust code if changed.
-You don't need to re-run `maturin develop` the package if you change Python code only.
-You also don't need to add `--extras=dev` next time, it is needed only to install the development dependencies.
+On subsequent runs, activate the environment with `source venv/bin/activate` and rebuild Rust code with
+`maturin develop`. Python-only changes require no rebuild. The `--extras=dev` flag is only needed once to
+install development dependencies.
 
-You are also encouraged to install `pre-commit` hooks to keep the codebase clean.
-You can get it with `pip` (see the [documentation](https://pre-commit.com/#install) for other ways), and then
-install the hooks with
+It is also recommended to install `pre-commit` hooks to keep the codebase clean.
+Install via `pip` (see the [documentation](https://pre-commit.com/#install) for other options), then run:
 
 ```bash
 pre-commit install
@@ -831,70 +920,63 @@ pre-commit install
 
 ### Run tests and benchmarks
 
-All test-related dependencies are installed with `--extras=dev` flag, so you don't need to install anything
-else.
-You can run tests with `pytest`:
+All test dependencies are installed with `--extras=dev`. Run the tests with:
 
 ```bash
 python -mpytest
 ```
 
-Benchmarks are disabled by default, you can enable them with `--benchmark-enable` flag:
+Benchmarks are disabled by default; enable them with `--benchmark-enable`:
 
 ```bash
 python -mpytest --benchmark-enable
 ```
 
-See [Benchamrks](#benchmarks) section for more details.
+See the [Benchmarks](#benchmarks) section in [Performance](#performance) for more details.
 
 ### Build from source
 
 #### Dependencies and Cargo features
 
-The package has a number of compile-time features, mostly to control which C/C++ dependencies are used.
-The list of these Cargo features may be passed to `maturin` with `--features` flag, it is also
-recommended to use `--no-default-features` to avoid building unnecessary dependencies.
+The package has a number of compile-time Cargo features, mostly controlling which C/C++ dependencies are used.
+Pass the desired features to `maturin` with `--features`; it is also recommended to use `--no-default-features`
+to avoid building unnecessary dependencies.
 
-The following features are available:
+Available features:
 
-- `abi3` (default) - enables CPython ABI3 compatibility. Turn it off for other interpreters or if you believe
-  the code would be faster without it (our benchmarks show that is not the case). ABI3 is not supported
-  by free-threaded CPython or PyPy.
-- `ceres-source` (default) - enables [Ceres solver](http://ceres-solver.org/) support and builds it from
-  source. You need a C++ compiler and CMake available on your system. Known to not work on Windows.
-  It is used as an optional optimization algorithm for `BazinFit` and `VillarFit`.
-- `ceres-system` - enables Ceres solver support but links with a dynamic library. You need to have a
-  compatible version of Ceres installed on your system.
-- `mkl` - enables [FFTW](http://www.fftw.org/) interface with the Intel MKL backend for the "fast" periodogram.
-  Intel MKL will be downloaded automatically during the build. Highly recommended for Intel CPUs.
-  When not enabled, the pure-Rust [RustFFT](https://crates.io/crates/rustfft) backend is used instead.
-- `gsl` (default) - enables [GNU Scientific Library](https://www.gnu.org/software/gsl/) support. You need a
-  compatible version of GSL installed on your system. It is used as an optional optimization algorithm
-  for `BazinFit` and `VillarFit`.
-- `mimalloc` (default) - enables [mimalloc](https://github.com/microsoft/mimalloc) memory allocator support.
-  Our benchmarks show up to a 2× speedup for some cheap features, but it may lead to larger memory usage.
+- `abi3` (default) — enables CPython ABI3 compatibility. Disable for other interpreters or if you have a
+  specific reason (our benchmarks show no performance difference). ABI3 is not supported by free-threaded
+  CPython or PyPy.
+- `ceres-source` (default) — builds [Ceres solver](http://ceres-solver.org/) from source. Requires a C++
+  compiler and CMake. Known to not work on Windows. Used as an optional optimization backend for `BazinFit`
+  and `VillarFit`.
+- `ceres-system` — links against a system-installed Ceres dynamic library instead of building from source.
+- `mkl` — enables the [FFTW](http://www.fftw.org/) interface with the Intel MKL backend for the fast
+  periodogram. Intel MKL is downloaded automatically during the build. Highly recommended for Intel CPUs.
+  Without this feature, the pure-Rust [RustFFT](https://crates.io/crates/rustfft) backend is used.
+- `gsl` (default) — enables [GNU Scientific Library](https://www.gnu.org/software/gsl/) support. Requires a
+  compatible GSL version installed on your system. Used as an optional optimization backend for `BazinFit`
+  and `VillarFit`.
+- `mimalloc` (default) — enables the [mimalloc](https://github.com/microsoft/mimalloc) memory allocator.
+  Benchmarks show up to a 2× speedup for some cheap features, though it may increase memory usage.
 
 #### Build with maturin
 
-You can build the package with `maturin` (a Python package for building and publishing Rust crates as Python
-packages).
-This example shows how to build the package with the minimal system dependencies.
+[maturin](https://www.maturin.rs/) is the recommended tool for building Rust-backed Python packages.
+This example builds with minimal system dependencies:
 
 ```bash
 python -mpip install maturin
 maturin build --release --locked --no-default-features --features=abi3,mimalloc
 ````
 
-Here we use `--release` to build the package in release mode (slower build, faster execution), `--locked` to
-ensure
-reproducible builds, `--no-default-features` to disable default features, and
-`--features=abi3,mimalloc`
-to enable ABI3 compatibility and mimalloc memory allocator.
+The `--release` flag enables release mode (slower build, faster execution), `--locked` ensures reproducible
+builds, and `--no-default-features --features=abi3,mimalloc` selects only ABI3 compatibility and the mimalloc
+allocator.
 
 #### Build with `build`
 
-You can also build the package with `build`, a Python package for building and installing Python packages from
-source.
+You can also build the package with [build](https://build.pypa.io/):
 
 ```bash
 python -mpip install build
@@ -903,24 +985,20 @@ MATURIN_PEP517_ARGS="--locked --no-default-features --features=abi3,mimalloc" py
 
 #### Build with cibuildwheel
 
-`ciwbuildwheel` is a project that builds wheels for Python packages on CI servers, we use it to build wheels
-with GitHub Actions.
-You can use it locally to build wheels on your platform (change platform identifier to one
-from [the list of supported](https://cibuildwheel.pypa.io/en/stable/options/#build-skip):
+[cibuildwheel](https://cibuildwheel.pypa.io/) builds wheels on CI servers; we use it with GitHub Actions.
+You can also use it locally to build wheels for your platform (replace the identifier with one from
+the [list of supported platforms](https://cibuildwheel.pypa.io/en/stable/options/#build-skip)):
 
 ```bash
 python -mpip install cibuildwheel
 python -m cibuildwheel --only=cp310-manylinux_x86_64
 ```
 
-Please notice that we use different Cargo feature set for different platforms, which is defined in
-`pyproject.toml`.
-You can build Windows wheels on Windows, Linux wheels on any platform with Docker installed (Qemu may be
-needed for cross-architecture builds), and macOS wheels on macOS.
-On Windows and macOS some additional dependencies will be installed automatically, please check
-the [cibuildwheel documentation](https://cibuildwheel.pypa.io/) and `pyproject.toml` for details.
-Also, macOS builds require `MACOSX_DEPLOYMENT_TARGET` to be set to the current version of macOS, because
-dependent libraries installed from `homebrew` are built with this target:
+Note that different Cargo feature sets are used for different platforms, as defined in `pyproject.toml`.
+Windows wheels must be built on Windows; Linux wheels can be built on any platform with Docker (Qemu may be
+needed for cross-architecture builds); macOS wheels must be built on macOS.
+macOS builds also require `MACOSX_DEPLOYMENT_TARGET` to match the current macOS version, since Homebrew
+dependencies are built against it:
 
 ```bash
 export MACOSX_DEPLOYMENT_TARGET=$(sw_vers -productVersion | awk -F '.' '{print $1"."0}')
@@ -928,13 +1006,12 @@ python -m cibuildwheel --only=cp310-macosx_arm64
 unset MACOSX_DEPLOYMENT_TARGET
 ```
 
-Since we use ABI3 compatibility, you can build wheels for a single CPython version (currently 3.10+) and they
-will work with any later version of CPython.
+Since we use ABI3 compatibility, a wheel built for CPython 3.10 works with any later CPython 3 version.
 
 ## Citation
 
-If you found this project useful for your research please
-cite [Malanchev et al., 2021](https://ui.adsabs.harvard.edu/abs/2021MNRAS.502.5147M/abstract)
+If you found this project useful for your research, please
+cite [Malanchev et al., 2021](https://ui.adsabs.harvard.edu/abs/2021MNRAS.502.5147M/abstract):
 
 ```bibtex
 @ARTICLE{2021MNRAS.502.5147M,
