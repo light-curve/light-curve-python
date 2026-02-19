@@ -77,12 +77,26 @@ help(lc.BazinFit)
 ### Available features
 
 See the complete list of available feature extractors and their documentation in the
-[`light-curve-feature` Rust crate docs](https://docs.rs/light-curve-feature/latest/light_curve_feature/features/index.html).
+[
+`light-curve-feature` Rust crate docs](https://docs.rs/light-curve-feature/latest/light_curve_feature/features/index.html).
 Italic names are experimental features.
 While we usually say "magnitude" and use "m" as the time-series value, some features are designed for
 flux light curves.
-The last column indicates whether a feature should be used with flux light curves only, magnitude light
-curves only, or either.
+
+The Flux/magnitude column indicates whether a feature should be used with flux light curves only,
+magnitude light curves only, or either.
+
+The `transform=True` column shows the default transformation applied to the output when `transform=True`
+is passed to the extractor constructor (default is `transform=None`, which does not apply any transformations).
+Transformations are monotonic functions intended to reduce dynamic range and improve the suitability of
+raw feature values for machine learning.
+You can also select a transformation by name string (e.g. `transform="lg"`) for supported features;
+available names are `"identity"` (no-op), `"lg"` (base-10 logarithm), `"arcsinh"` (inverse hyperbolic sine),
+`"clipped_lg"` (base-10 logarithm with values below the minimum positive float clipped to a floor),
+`"ln1p"` (natural logarithm of 1 + x), and `"sqrt"`.
+For parametric fit features (`BazinFit`, `LinexpFit`, `VillarFit`), `transform=True` applies a
+feature-specific transformation described under [Parametric fit features](#parametric-fit-features).
+Features marked "N/A" do not implement transformation.
 
 <table>
   <tr>
@@ -91,7 +105,7 @@ curves only, or either.
     <th>Min data points</th>
     <th>Features number</th>
     <th>Flux/magnitude</th>
-    <th>Default transform</th>
+    <th>`transform=True`</th>
   </tr>
   <tr>
     <td>Amplitude</td>
@@ -258,7 +272,7 @@ curves only, or either.
     <td align="center">2</td>
     <td align="center">1</td>
     <td>Flux or magn</td>
-    <td>clipped lg</td>
+    <td>clipped_lg</td>
   </tr>
 
   <tr>
@@ -320,7 +334,7 @@ Otsu's method is used to perform automatic thresholding. The algorithm returns a
     <td align="center">2</td>
     <td align="center">4</td>
     <td>Flux or magn</td>
-    <td>not supported</td>
+    <td>N/A</td>
   </tr>
 
   <tr>
@@ -340,7 +354,7 @@ Otsu's method is used to perform automatic thresholding. The algorithm returns a
     <td align="center">1</td>
     <td align="center">1</td>
     <td>Flux only</td>
-    <td>clipped lg</td>
+    <td>clipped_lg</td>
   </tr>
 
   <tr>
@@ -370,7 +384,7 @@ Otsu's method is used to perform automatic thresholding. The algorithm returns a
     <td align="center">2</td>
     <td align="center">1</td>
     <td>Flux or magn</td>
-    <td>$\ln(1+x)$</td>
+    <td>ln1x</td>
   </tr>
 
   <tr>
@@ -474,13 +488,13 @@ they require an explicit `algorithm` argument selecting the optimization method.
 The available algorithms depend on the compile-time Cargo features (see
 [Build from source](#build-from-source)):
 
-| Algorithm | Requires | Description |
-|-----------|----------|-------------|
-| `"mcmc"` | always available | MCMC ensemble sampler; robust but slow |
-| `"ceres"` | `ceres-source` or `ceres-system` | Ceres trust-region solver; fast, gradient-based |
-| `"mcmc-ceres"` | `ceres-source` or `ceres-system` | MCMC exploration followed by Ceres refinement |
-| `"lmsder"` | `gsl` | Levenberg-Marquardt via GSL |
-| `"mcmc-lmsder"` | `gsl` | MCMC exploration followed by LMSDER refinement |
+| Algorithm       | Requires                         | Description                                     |
+|-----------------|----------------------------------|-------------------------------------------------|
+| `"mcmc"`        | always available                 | MCMC ensemble sampler; robust but slow          |
+| `"ceres"`       | `ceres-source` or `ceres-system` | Ceres trust-region solver; fast, gradient-based |
+| `"mcmc-ceres"`  | `ceres-source` or `ceres-system` | MCMC exploration followed by Ceres refinement   |
+| `"lmsder"`      | `gsl`                            | Levenberg-Marquardt via GSL                     |
+| `"mcmc-lmsder"` | `gsl`                            | MCMC exploration followed by LMSDER refinement  |
 
 The hybrid `"mcmc-ceres"` and `"mcmc-lmsder"` algorithms run MCMC first to broadly explore the
 parameter space, then hand off to the gradient-based solver for precise convergence. This typically
@@ -488,8 +502,8 @@ gives the best balance of robustness and final accuracy.
 
 By default, initial parameter values and bounds are estimated from the data. Override them with the
 `init` and `bounds` arguments (supported by MCMC-based algorithms only), each a list of values or
-`None`s to keep data-derived defaults for individual parameters. `BazinFit` has 5 parameters, `LinexpFit` has 4, `VillarFit` has 7; run `help()` on the
-respective class for the parameter order.
+`None`s to keep data-derived defaults for individual parameters. `BazinFit` has 5 parameters, `LinexpFit` has 4,
+`VillarFit` has 7; run `help()` on the respective class for the parameter order.
 
 The `ln_prior` argument sets the MCMC prior. It accepts `None` / `"no"` (flat prior, the default),
 a named string literal, or a list of `light_curve.ln_prior.LnPrior1D` objects for per-parameter
@@ -498,7 +512,8 @@ distributions (see `help(light_curve.ln_prior)` for the available distribution t
 encodes supernova physics constraints; it assumes time values are in days.
 
 Pass `transform=True` to convert the raw fit parameters to a magnitude-like representation: the
-amplitude becomes a magnitude, the baseline is normalized by the amplitude, the reference time is
+amplitude becomes a magnitude (assuming input flux in janskys), the baseline is normalized by the amplitude, the
+reference time is
 dropped, and the reduced chi^2 is log-scaled. Run `help(lc.BazinFit)` for the exact definition.
 
 For the experimental multi-band analogue, see [Rainbow Fit](#rainbow-fit) below.
@@ -622,7 +637,8 @@ The package is designed for high throughput. The following techniques help extra
 ### `sorted` and `check` parameters
 
 The `sorted=True` argument tells the extractor that `t` is already sorted in ascending order, and `check=False`
-disables validation of NaN/inf values. The defaults are `sorted=None` (the array will be validated and an error raised if unsorted) and
+disables validation of NaN/inf values. The defaults are `sorted=None` (the array will be validated and an error raised
+if unsorted) and
 `check=True`. Passing invalid inputs without validation can cause incorrect results or crashes.
 
 ### Batch processing with `.many()`
