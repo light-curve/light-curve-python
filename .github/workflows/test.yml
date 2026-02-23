@@ -207,7 +207,7 @@ jobs:
           python-version: '3.14t'
           allow-prereleases: true
       - name: Get minimum supported Rust version
-        run: echo "::set-output name=msrv::$(grep '^rust-version = ' Cargo.toml | grep -o '[0-9.]\+')"
+        run: echo "msrv=$(grep '^rust-version = ' Cargo.toml | grep -o '[0-9.]\+')" >> $GITHUB_OUTPUT
         id: get_msrv
       - uses: dtolnay/rust-toolchain@master
         with:
