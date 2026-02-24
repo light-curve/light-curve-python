@@ -1008,16 +1008,7 @@ const N_ALGO_CURVE_FIT_GSL: usize = {
     }
 };
 const N_ALGO_CURVE_FIT_PURE_MCMC: usize = 1;
-const N_ALGO_CURVE_FIT_NUTS: usize = {
-    #[cfg(feature = "nuts")]
-    {
-        1 + N_ALGO_CURVE_FIT_CERES / 2 + N_ALGO_CURVE_FIT_GSL / 2
-    }
-    #[cfg(not(feature = "nuts"))]
-    {
-        0
-    }
-};
+const N_ALGO_CURVE_FIT_NUTS: usize = 1 + N_ALGO_CURVE_FIT_CERES / 2 + N_ALGO_CURVE_FIT_GSL / 2;
 const N_ALGO_CURVE_FIT: usize = N_ALGO_CURVE_FIT_CERES
     + N_ALGO_CURVE_FIT_GSL
     + N_ALGO_CURVE_FIT_PURE_MCMC
@@ -1033,14 +1024,10 @@ const SUPPORTED_ALGORITHMS_CURVE_FIT: [&str; N_ALGO_CURVE_FIT] = [
     "lmsder",
     #[cfg(feature = "gsl")]
     "mcmc-lmsder",
-    #[cfg(feature = "nuts")]
     "nuts",
-    #[cfg(all(
-        feature = "nuts",
-        any(feature = "ceres-source", feature = "ceres-system")
-    ))]
+    #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
     "nuts-ceres",
-    #[cfg(all(feature = "nuts", feature = "gsl"))]
+    #[cfg(feature = "gsl")]
     "nuts-lmsder",
 ];
 
@@ -1134,26 +1121,12 @@ macro_rules! fit_evaluator {
                 }
             }
 
-            fn default_nuts_ntune() -> Option<u32> {
-                #[cfg(feature = "nuts")]
-                {
-                    lcf::NutsCurveFit::default_num_tune().into()
-                }
-                #[cfg(not(feature = "nuts"))]
-                {
-                    None
-                }
+            fn default_nuts_ntune() -> u32 {
+                lcf::NutsCurveFit::default_num_tune()
             }
 
-            fn default_nuts_ndraws() -> Option<u32> {
-                #[cfg(feature = "nuts")]
-                {
-                    lcf::NutsCurveFit::default_num_draws().into()
-                }
-                #[cfg(not(feature = "nuts"))]
-                {
-                    None
-                }
+            fn default_nuts_niter() -> u32 {
+                lcf::NutsCurveFit::default_num_draws()
             }
         }
 
@@ -1169,7 +1142,7 @@ macro_rules! fit_evaluator {
                 ceres_niter = Self::default_ceres_iterations(),
                 ceres_loss_reg = None,
                 nuts_ntune = Self::default_nuts_ntune(),
-                nuts_ndraws = Self::default_nuts_ndraws(),
+                nuts_niter = Self::default_nuts_niter(),
                 init = None,
                 bounds = None,
                 ln_prior = None,
@@ -1185,12 +1158,8 @@ macro_rules! fit_evaluator {
                 // Self::default_ceres_iterations()
                 ceres_niter: Option<Option<u16>>,
                 ceres_loss_reg: Option<f64>,
-                // The first Option is for Python's None, the second is for compile-time None from
-                // Self::default_nuts_ntune()
-                nuts_ntune: Option<Option<u32>>,
-                // The first Option is for Python's None, the second is for compile-time None from
-                // Self::default_nuts_ndraws()
-                nuts_ndraws: Option<Option<u32>>,
+                nuts_ntune: u32,
+                nuts_niter: u32,
                 init: Option<Vec<Option<f64>>>,
                 bounds: Option<Vec<(Option<f64>, Option<f64>)>>,
                 ln_prior: Option<FitLnPrior>,
@@ -1219,17 +1188,6 @@ macro_rules! fit_evaluator {
                 if ceres_niter.flatten().is_some() || ceres_loss_reg.is_some() {
                     return Err(PyValueError::new_err(
                         "Compiled without Ceres support, ceres_niter and ceres_loss_reg are not supported",
-                    ));
-                }
-
-                #[cfg(feature = "nuts")]
-                let nuts_ntune_value = nuts_ntune.unwrap_or_else(Self::default_nuts_ntune).expect("logical error: default nuts_ntune is None but nuts is enabled");
-                #[cfg(feature = "nuts")]
-                let nuts_ndraws_value = nuts_ndraws.unwrap_or_else(Self::default_nuts_ndraws).expect("logical error: default nuts_ndraws is None but nuts is enabled");
-                #[cfg(not(feature = "nuts"))]
-                if nuts_ntune.flatten().is_some() || nuts_ndraws.flatten().is_some() {
-                    return Err(PyValueError::new_err(
-                        "Compiled without NUTS support, nuts_ntune and nuts_ndraws are not supported",
                     ));
                 }
 
@@ -1289,12 +1247,11 @@ macro_rules! fit_evaluator {
                     "lmsder" => lmsder_fit,
                     #[cfg(feature = "gsl")]
                     "mcmc-lmsder" => lcf::McmcCurveFit::new(mcmc_niter, Some(lmsder_fit)).into(),
-                    #[cfg(feature = "nuts")]
-                    "nuts" => lcf::NutsCurveFit::new(nuts_ntune_value, nuts_ndraws_value, None).into(),
-                    #[cfg(all(feature = "nuts", any(feature = "ceres-source", feature = "ceres-system")))]
-                    "nuts-ceres" => lcf::NutsCurveFit::new(nuts_ntune_value, nuts_ndraws_value, Some(ceres_fit)).into(),
-                    #[cfg(all(feature = "nuts", feature = "gsl"))]
-                    "nuts-lmsder" => lcf::NutsCurveFit::new(nuts_ntune_value, nuts_ndraws_value, Some(lmsder_fit)).into(),
+                    "nuts" => lcf::NutsCurveFit::new(nuts_ntune, nuts_niter, None).into(),
+                    #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+                    "nuts-ceres" => lcf::NutsCurveFit::new(nuts_ntune, nuts_niter, Some(ceres_fit)).into(),
+                    #[cfg(feature = "gsl")]
+                    "nuts-lmsder" => lcf::NutsCurveFit::new(nuts_ntune, nuts_niter, Some(lmsder_fit)).into(),
                     _ => {
                         return Err(PyValueError::new_err(format!(
                             r#"wrong algorithm value "{}", supported values are: {}"#,

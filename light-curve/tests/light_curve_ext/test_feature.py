@@ -114,7 +114,7 @@ def gen_fit_variants(cls, *, rng=None):
             ceres_niter=rng.integers(1, 10),
             ceres_loss_reg=rng.uniform(0.5, 2.0),
             nuts_ntune=rng.integers(5, 20),
-            nuts_ndraws=rng.integers(5, 20),
+            nuts_niter=rng.integers(5, 20),
         )
 
 
@@ -464,7 +464,7 @@ def test_nuts_in_supported_algorithms(cls):
 
 @pytest.mark.parametrize("cls", list(fit_feature_classes))
 def test_nuts_custom_params(cls):
-    feat = cls("nuts-ceres", nuts_ntune=50, nuts_ndraws=50)
+    feat = cls("nuts-ceres", nuts_ntune=50, nuts_niter=50)
     assert feat is not None
 
 

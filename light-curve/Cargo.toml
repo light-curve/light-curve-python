@@ -26,13 +26,12 @@ lto = true
 codegen-units = 1
 
 [features]
-default = ["abi3", "ceres-source", "gsl", "mimalloc", "nuts"]
+default = ["abi3", "ceres-source", "gsl", "mimalloc"]
 abi3 = ["pyo3/abi3-py310"]
 ceres-source = ["light-curve-feature/ceres-source"]
 ceres-system = ["light-curve-feature/ceres-system"]
 mkl = ["light-curve-feature/fftw-mkl"]
 gsl = ["light-curve-feature/gsl"]
-nuts = ["light-curve-feature/nuts"]
 mimalloc = ["dep:mimalloc"]
 
 [dependencies]
@@ -73,6 +72,7 @@ comfy-table = "7,<7.2"  # 7.2 requires MSRV>1.85
 [dependencies.light-curve-feature]
 version = "0.12.0"
 default-features = false
+features = ["nuts"]
 
 [dependencies.light-curve-dmdt]
 version = "0.9.0"
