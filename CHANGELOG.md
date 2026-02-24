@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
---
+- Minimum supported Rust version (MSRV) bumped from 1.85 to 1.88, required by the `nuts-rs` dependency
 
 ### Deprecated
 
