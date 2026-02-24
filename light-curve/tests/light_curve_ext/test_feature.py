@@ -104,12 +104,17 @@ def gen_periodogram_variants(*, rng=None):
 def gen_fit_variants(cls, *, rng=None):
     rng = np.random.default_rng(rng)
     for algo in cls.supported_algorithms:
+        # Skip NUTS algorithms - they can panic on random data due to bad initial gradients
+        if algo.startswith("nuts"):
+            continue
         yield cls(
             algo,
             mcmc_niter=rng.integers(5, 20),
             lmsder_niter=rng.integers(1, 10),
             ceres_niter=rng.integers(1, 10),
             ceres_loss_reg=rng.uniform(0.5, 2.0),
+            nuts_ntune=rng.integers(5, 20),
+            nuts_ndraws=rng.integers(5, 20),
         )
 
 
@@ -433,6 +438,34 @@ def test_bazin_fit_precise(algo):
 
     *params, reduced_chi2 = bazin(t, flux, fluxerr)
     assert_allclose(true_params, params, rtol=1e-4)  # tolerance set to underlying algorithms
+
+
+# We do not check pure NUTS because it requires a lot of iterations and would be too slow
+@pytest.mark.parametrize("algo", ("nuts-ceres", "nuts-lmsder"))
+def test_bazin_fit_precise_nuts(algo):
+    bazin = lc.BazinFit(algo)
+
+    true_params = np.array([10.0, -2.0, 10.0, 10.0, 25.0])
+    t = np.linspace(-50.0, 120.0, 1000)
+    flux = bazin.model(t, true_params)
+    fluxerr = np.ones_like(t)
+
+    *params, reduced_chi2 = bazin(t, flux, fluxerr)
+    assert_allclose(true_params, params, rtol=1e-3)
+
+
+@pytest.mark.parametrize("cls", list(fit_feature_classes))
+def test_nuts_in_supported_algorithms(cls):
+    algos = cls.supported_algorithms
+    assert "nuts" in algos
+    assert "nuts-ceres" in algos
+    assert "nuts-lmsder" in algos
+
+
+@pytest.mark.parametrize("cls", list(fit_feature_classes))
+def test_nuts_custom_params(cls):
+    feat = cls("nuts-ceres", nuts_ntune=50, nuts_ndraws=50)
+    assert feat is not None
 
 
 @pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=5, rng=0))

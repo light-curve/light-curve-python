@@ -36,6 +36,7 @@ fn light_curve(py: Python, m: Bound<PyModule>) -> PyResult<()> {
         cfg!(any(feature = "ceres-source", feature = "ceres-system")),
     )?;
     m.add("_built_with_gsl", cfg!(feature = "gsl"))?;
+    m.add("_built_with_nuts", cfg!(feature = "nuts"))?;
     m.add("_fft_backend", {
         #[cfg(feature = "mkl")]
         {
