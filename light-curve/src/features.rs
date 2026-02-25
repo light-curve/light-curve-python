@@ -303,12 +303,12 @@ impl PyFeatureEvaluator {
                 "t and m must have the same size".to_string(),
             ));
         }
-        if let Some(sigma) = sigma {
-            if t.len() != sigma.len() {
-                return Err(Exception::ValueError(
-                    "t and sigma must have the same size".to_string(),
-                ));
-            }
+        if let Some(sigma) = sigma
+            && t.len() != sigma.len()
+        {
+            return Err(Exception::ValueError(
+                "t and sigma must have the same size".to_string(),
+            ));
         }
 
         // For non-contiguous numpy arrays that aren't needed, use the actual
@@ -1008,8 +1008,11 @@ const N_ALGO_CURVE_FIT_GSL: usize = {
     }
 };
 const N_ALGO_CURVE_FIT_PURE_MCMC: usize = 1;
-const N_ALGO_CURVE_FIT: usize =
-    N_ALGO_CURVE_FIT_CERES + N_ALGO_CURVE_FIT_GSL + N_ALGO_CURVE_FIT_PURE_MCMC;
+const N_ALGO_CURVE_FIT_NUTS: usize = 1 + N_ALGO_CURVE_FIT_CERES / 2 + N_ALGO_CURVE_FIT_GSL / 2;
+const N_ALGO_CURVE_FIT: usize = N_ALGO_CURVE_FIT_CERES
+    + N_ALGO_CURVE_FIT_GSL
+    + N_ALGO_CURVE_FIT_PURE_MCMC
+    + N_ALGO_CURVE_FIT_NUTS;
 
 const SUPPORTED_ALGORITHMS_CURVE_FIT: [&str; N_ALGO_CURVE_FIT] = [
     "mcmc",
@@ -1021,6 +1024,11 @@ const SUPPORTED_ALGORITHMS_CURVE_FIT: [&str; N_ALGO_CURVE_FIT] = [
     "lmsder",
     #[cfg(feature = "gsl")]
     "mcmc-lmsder",
+    "nuts",
+    #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+    "nuts-ceres",
+    #[cfg(feature = "gsl")]
+    "nuts-lmsder",
 ];
 
 macro_const! {
@@ -1112,6 +1120,14 @@ macro_rules! fit_evaluator {
                     None
                 }
             }
+
+            fn default_nuts_ntune() -> u32 {
+                lcf::NutsCurveFit::default_num_tune()
+            }
+
+            fn default_nuts_niter() -> u32 {
+                lcf::NutsCurveFit::default_num_draws()
+            }
         }
 
         #[allow(clippy::too_many_arguments)]
@@ -1125,6 +1141,8 @@ macro_rules! fit_evaluator {
                 lmsder_niter = Self::default_lmsder_iterations(),
                 ceres_niter = Self::default_ceres_iterations(),
                 ceres_loss_reg = None,
+                nuts_ntune = Self::default_nuts_ntune(),
+                nuts_niter = Self::default_nuts_niter(),
                 init = None,
                 bounds = None,
                 ln_prior = None,
@@ -1140,6 +1158,8 @@ macro_rules! fit_evaluator {
                 // Self::default_ceres_iterations()
                 ceres_niter: Option<Option<u16>>,
                 ceres_loss_reg: Option<f64>,
+                nuts_ntune: u32,
+                nuts_niter: u32,
                 init: Option<Vec<Option<f64>>>,
                 bounds: Option<Vec<(Option<f64>, Option<f64>)>>,
                 ln_prior: Option<FitLnPrior>,
@@ -1227,6 +1247,11 @@ macro_rules! fit_evaluator {
                     "lmsder" => lmsder_fit,
                     #[cfg(feature = "gsl")]
                     "mcmc-lmsder" => lcf::McmcCurveFit::new(mcmc_niter, Some(lmsder_fit)).into(),
+                    "nuts" => lcf::NutsCurveFit::new(nuts_ntune, nuts_niter, None).into(),
+                    #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+                    "nuts-ceres" => lcf::NutsCurveFit::new(nuts_ntune, nuts_niter, Some(ceres_fit)).into(),
+                    #[cfg(feature = "gsl")]
+                    "nuts-lmsder" => lcf::NutsCurveFit::new(nuts_ntune, nuts_niter, Some(lmsder_fit)).into(),
                     _ => {
                         return Err(PyValueError::new_err(format!(
                             r#"wrong algorithm value "{}", supported values are: {}"#,
