@@ -65,7 +65,7 @@ unarray = "0.1.4"
 unzip3 = "1.0.0"
 # Transitive deps of pyo3-arrow:
 arrow-array = "57"
-arrow-buffer = "57"
+arrow-buffer = "58"
 arrow-schema = "57"
 comfy-table = "7,<7.2"  # 7.2 requires MSRV>1.85
 
