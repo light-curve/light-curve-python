@@ -66,7 +66,7 @@ unzip3 = "1.0.0"
 # Transitive deps of pyo3-arrow:
 arrow-array = "57"
 arrow-buffer = "57"
-arrow-schema = "57"
+arrow-schema = "58"
 comfy-table = "7,<7.2"  # 7.2 requires MSRV>1.85
 
 [dependencies.light-curve-feature]
