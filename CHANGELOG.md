@@ -13,7 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
---
+- Bump `light-curve-feature` from 0.12.0 to 0.13.0
+- Bump `rand` from 0.9 to 0.10, `rand_xoshiro` from 0.7 to 0.8
+- **Build breaking**: bump minimum supported Rust version (MSRV) from 1.85 to 1.88
 
 ### Deprecated
 

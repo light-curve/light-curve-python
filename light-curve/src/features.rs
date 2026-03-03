@@ -303,12 +303,12 @@ impl PyFeatureEvaluator {
                 "t and m must have the same size".to_string(),
             ));
         }
-        if let Some(sigma) = sigma {
-            if t.len() != sigma.len() {
-                return Err(Exception::ValueError(
-                    "t and sigma must have the same size".to_string(),
-                ));
-            }
+        if let Some(sigma) = sigma
+            && t.len() != sigma.len()
+        {
+            return Err(Exception::ValueError(
+                "t and sigma must have the same size".to_string(),
+            ));
         }
 
         // For non-contiguous numpy arrays that aren't needed, use the actual
