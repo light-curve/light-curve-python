@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Bump `light-curve-feature` to 0.13.0: remove `nuts` cargo feature (NUTS is now always available), fix non-deterministic `NutsCurveFit` results by seeding RNG with a fixed value
 - Minimum supported Rust version (MSRV) bumped from 1.85 to 1.88, required by the `nuts-rs` dependency; `comfy-table` upper-version bound removed (was `<7.2` due to old MSRV)
 
 ### Deprecated
