@@ -381,6 +381,25 @@ if lc_ext._built_with_gsl:
         args = ("mcmc-lmsder",)
 
 
+@pytest.mark.skip("Runs too long")
+class TestBazinFitNuts(_TestBazinFit, _Test):
+    args = ("nuts",)
+
+
+if lc_ext._built_with_ceres:
+
+    @pytest.mark.skip("Runs too long")
+    class TestBazinFitNutsCeres(_TestBazinFit, _Test):
+        args = ("nuts-ceres",)
+
+
+if lc_ext._built_with_gsl:
+
+    @pytest.mark.skip("Runs too long")
+    class TestBazinFitNutsLmsder(_TestBazinFit, _Test):
+        args = ("nuts-lmsder",)
+
+
 class TestBeyond1Std(_Test):
     nstd = 1.0
 
