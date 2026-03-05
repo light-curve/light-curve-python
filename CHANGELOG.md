@@ -13,9 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Bump `light-curve-feature` to 0.13.0: remove `nuts` cargo feature (NUTS is now always available), fix non-deterministic `NutsCurveFit` results by seeding RNG with a fixed value
-- Bump `rand` to 0.10 and `rand_xoshiro` to 0.8
-- Minimum supported Rust version (MSRV) bumped from 1.85 to 1.88, required by the `nuts-rs` dependency; `comfy-table` upper-version bound removed (was `<7.2` due to old MSRV)
+- Bump `light-curve-feature` to 0.13.0, `rand` to 0.10, `rand_xoshiro` to 0.8 https://github.com/light-curve/light-curve-python/pull/648
+- Minimum supported Rust version (MSRV) bumped from 1.85 to 1.88 https://github.com/light-curve/light-curve-python/pull/648
 
 ### Deprecated
 
