@@ -9,12 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `BazinFit`, `LinexpFit`, and `VillarFit` gained `nuts`, `nuts-ceres`, and `nuts-lmsder` algorithms using NUTS (No-U-Turn Sampler) for gradient-based Hamiltonian Monte Carlo optimization. New `nuts_ntune` and `nuts_niter` parameters control the number of tuning and drawing iterations respectively
+- `BazinFit`, `LinexpFit`, and `VillarFit` gained `nuts`, `nuts-ceres`, and `nuts-lmsder` algorithms using NUTS (No-U-Turn Sampler) for gradient-based Hamiltonian Monte Carlo optimization. New `nuts_ntune` and `nuts_niter` parameters control the number of tuning and drawing iterations respectively https://github.com/light-curve/light-curve-python/pull/635
 
 ### Changed
 
 - Bump `light-curve-feature` to 0.13.0, `rand` to 0.10, `rand_xoshiro` to 0.8 https://github.com/light-curve/light-curve-python/pull/648
-- Minimum supported Rust version (MSRV) bumped from 1.85 to 1.88 https://github.com/light-curve/light-curve-python/pull/648
+- **Build breaking**: Minimum supported Rust version (MSRV) bumped from 1.85 to 1.88 https://github.com/light-curve/light-curve-python/pull/648
 
 ### Deprecated
 
