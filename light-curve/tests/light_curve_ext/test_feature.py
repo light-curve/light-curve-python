@@ -555,7 +555,7 @@ def test_many_arrow_3fields(feature):
 
     expected = feature.many(lcs, sorted=True, n_jobs=1)
     arrow_arr = _make_arrow_lcs(lcs)
-    result = feature.many(arrow_arr, sorted=True, n_jobs=1)
+    result = feature.many(arrow_arr, sorted=True, n_jobs=1, arrow_fields=[0, 1, 2])
     assert_array_equal(expected, result)
 
 
@@ -569,7 +569,7 @@ def test_many_arrow_2fields(feature):
     lcs_no_sigma = [(t, m, None) for t, m, _s in lcs]
     expected = feature.many(lcs_no_sigma, sorted=True, n_jobs=1)
     arrow_arr = _make_arrow_lcs_no_sigma(lcs)
-    result = feature.many(arrow_arr, sorted=True, n_jobs=1)
+    result = feature.many(arrow_arr, sorted=True, n_jobs=1, arrow_fields=[0, 1])
     assert_array_equal(expected, result)
 
 
@@ -583,7 +583,7 @@ def test_many_arrow_f32():
     lcs_f32 = [(t.astype(np.float32), m.astype(np.float32), s.astype(np.float32)) for t, m, s in lcs]
     expected = feature.many(lcs_f32, sorted=True, n_jobs=1)
     arrow_arr = _make_arrow_lcs(lcs, dtype=np.float32)
-    result = feature.many(arrow_arr, sorted=True, n_jobs=1)
+    result = feature.many(arrow_arr, sorted=True, n_jobs=1, arrow_fields=[0, 1, 2])
     assert_array_equal(expected, result)
     assert result.dtype == np.float32
 
@@ -602,7 +602,7 @@ def test_many_arrow_chunked():
     chunk1 = _make_arrow_lcs(lcs[:mid])
     chunk2 = _make_arrow_lcs(lcs[mid:])
     chunked = pa.chunked_array([chunk1, chunk2])
-    result = feature.many(chunked, sorted=True, n_jobs=1)
+    result = feature.many(chunked, sorted=True, n_jobs=1, arrow_fields=[0, 1, 2])
     assert_array_equal(expected, result)
 
 
@@ -610,12 +610,12 @@ def test_many_arrow_wrong_fields():
     """Arrow input with wrong schema raises appropriate errors."""
     feature = lc.Amplitude()
 
-    # Wrong number of struct fields (1 field)
+    # Missing arrow_fields raises ValueError
     arr = pa.array(
-        [[{"x": 1.0}], [{"x": 2.0}]],
-        type=pa.list_(pa.struct([("x", pa.float64())])),
+        [[{"t": 1.0, "m": 2.0, "sigma": 0.1}]],
+        type=pa.list_(pa.struct([("t", pa.float64()), ("m", pa.float64()), ("sigma", pa.float64())])),
     )
-    with pytest.raises(ValueError, match="2 .* or 3"):
+    with pytest.raises(ValueError, match="arrow_fields is required"):
         feature.many(arr, sorted=True)
 
     # Wrong field dtype (int32)
@@ -624,12 +624,12 @@ def test_many_arrow_wrong_fields():
         type=pa.list_(pa.struct([("t", pa.int32()), ("m", pa.int32())])),
     )
     with pytest.raises(TypeError, match="Float32 or Float64"):
-        feature.many(arr, sorted=True)
+        feature.many(arr, sorted=True, arrow_fields=[0, 1])
 
     # Non-list type
     arr = pa.array([1.0, 2.0, 3.0])
     with pytest.raises(TypeError, match="List array"):
-        feature.many(arr, sorted=True)
+        feature.many(arr, sorted=True, arrow_fields=[0, 1])
 
     # Mixed field dtypes
     arr = pa.array(
@@ -637,7 +637,7 @@ def test_many_arrow_wrong_fields():
         type=pa.list_(pa.struct([("t", pa.float32()), ("m", pa.float64())])),
     )
     with pytest.raises(TypeError, match="same dtype"):
-        feature.many(arr, sorted=True)
+        feature.many(arr, sorted=True, arrow_fields=[0, 1])
 
 
 def test_many_arrow_parallel():
@@ -649,7 +649,7 @@ def test_many_arrow_parallel():
     feature = lc.Amplitude()
     expected = feature.many(lcs, sorted=True, n_jobs=1)
     arrow_arr = _make_arrow_lcs(lcs)
-    result = feature.many(arrow_arr, sorted=True, n_jobs=2)
+    result = feature.many(arrow_arr, sorted=True, n_jobs=2, arrow_fields=[0, 1, 2])
     assert_array_equal(expected, result)
 
 
@@ -667,7 +667,7 @@ def test_many_polars():
     # Build a Polars Series of list-of-structs
     arrow_arr = _make_arrow_lcs(lcs)
     polars_series = pl.Series(arrow_arr)
-    result = feature.many(polars_series, sorted=True, n_jobs=1)
+    result = feature.many(polars_series, sorted=True, n_jobs=1, arrow_fields=[0, 1, 2])
     assert_array_equal(expected, result)
 
 
@@ -684,7 +684,7 @@ def test_many_nanoarrow():
 
     arrow_arr = _make_arrow_lcs(lcs)
     nano_arr = nanoarrow.Array(arrow_arr)
-    result = feature.many(nano_arr, sorted=True, n_jobs=1)
+    result = feature.many(nano_arr, sorted=True, n_jobs=1, arrow_fields=[0, 1, 2])
     assert_array_equal(expected, result)
 
 
@@ -699,7 +699,7 @@ def test_many_arro3():
 
     arrow_arr = _make_arrow_lcs(lcs)
     arro3_arr = arro3.core.Array.from_arrow(arrow_arr)
-    result = feature.many(arro3_arr, sorted=True, n_jobs=1)
+    result = feature.many(arro3_arr, sorted=True, n_jobs=1, arrow_fields=[0, 1, 2])
     assert_array_equal(expected, result)
 
 
@@ -741,4 +741,167 @@ def test_many_arrow_nulls_rejected(arrow_arr, match_msg):
     """Null values at any level of the Arrow array raise NotImplementedError."""
     feature = lc.Amplitude()
     with pytest.raises(NotImplementedError, match=match_msg):
-        feature.many(arrow_arr, sorted=True, n_jobs=1)
+        feature.many(arrow_arr, sorted=True, n_jobs=1, arrow_fields=[0, 1, 2])
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# arrow_fields tests
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+def _make_arrow_lcs_extra_fields(lcs, dtype=np.float64):
+    """Build a pyarrow List<Struct<extra, t, m, sigma, extra2>> with extra fields."""
+    pa_type = pa.float32() if dtype == np.float32 else pa.float64()
+    struct_type = pa.struct(
+        [
+            ("extra", pa_type),
+            ("t", pa_type),
+            ("m", pa_type),
+            ("sigma", pa_type),
+            ("extra2", pa_type),
+        ]
+    )
+    all_lcs = []
+    for t, m, sigma in lcs:
+        rows = [
+            {"extra": dtype(0.0), "t": dtype(ti), "m": dtype(mi), "sigma": dtype(si), "extra2": dtype(0.0)}
+            for ti, mi, si in zip(t, m, sigma)
+        ]
+        all_lcs.append(rows)
+    return pa.array(all_lcs, type=pa.list_(struct_type))
+
+
+def test_many_arrow_fields_by_name():
+    """arrow_fields with field names selects correct columns from a wider struct."""
+    rng = np.random.default_rng(0)
+    n_obs, n_lc = 32, 4
+    lcs = [gen_lc(n_obs, rng=rng) for _ in range(n_lc)]
+
+    feature = lc.Amplitude()
+    expected = feature.many(lcs, sorted=True, n_jobs=1)
+
+    arrow_arr = _make_arrow_lcs_extra_fields(lcs)
+    result = feature.many(arrow_arr, sorted=True, n_jobs=1, arrow_fields=["t", "m", "sigma"])
+    assert_array_equal(expected, result)
+
+
+def test_many_arrow_fields_by_index():
+    """arrow_fields with integer indices selects correct columns."""
+    rng = np.random.default_rng(1)
+    n_obs, n_lc = 32, 4
+    lcs = [gen_lc(n_obs, rng=rng) for _ in range(n_lc)]
+
+    feature = lc.Amplitude()
+    expected = feature.many(lcs, sorted=True, n_jobs=1)
+
+    # struct is [extra, t, m, sigma, extra2] — t=1, m=2, sigma=3
+    arrow_arr = _make_arrow_lcs_extra_fields(lcs)
+    result = feature.many(arrow_arr, sorted=True, n_jobs=1, arrow_fields=[1, 2, 3])
+    assert_array_equal(expected, result)
+
+
+def test_many_arrow_fields_two_elements_no_sigma():
+    """arrow_fields with 2 elements selects t and m without sigma."""
+    rng = np.random.default_rng(2)
+    n_obs, n_lc = 32, 4
+    lcs = [gen_lc(n_obs, rng=rng) for _ in range(n_lc)]
+
+    feature = lc.Amplitude()
+    lcs_no_sigma = [(t, m, None) for t, m, _s in lcs]
+    expected = feature.many(lcs_no_sigma, sorted=True, n_jobs=1)
+
+    arrow_arr = _make_arrow_lcs_extra_fields(lcs)
+    result = feature.many(arrow_arr, sorted=True, n_jobs=1, arrow_fields=["t", "m"])
+    assert_array_equal(expected, result)
+
+
+def test_many_arrow_fields_mixed_name_and_index():
+    """arrow_fields mixing str and int raises TypeError."""
+    rng = np.random.default_rng(3)
+    n_obs, n_lc = 32, 4
+    lcs = [gen_lc(n_obs, rng=rng) for _ in range(n_lc)]
+
+    feature = lc.Amplitude()
+    arrow_arr = _make_arrow_lcs_extra_fields(lcs)
+    with pytest.raises(TypeError, match="PyArrowFields"):
+        feature.many(arrow_arr, sorted=True, n_jobs=1, arrow_fields=["t", 2, 3])
+
+
+def test_many_arrow_fields_nondefault_order():
+    """arrow_fields lets user pick fields regardless of position order."""
+    rng = np.random.default_rng(4)
+    n_obs, n_lc = 32, 4
+    lcs = [gen_lc(n_obs, rng=rng) for _ in range(n_lc)]
+
+    feature = lc.Amplitude()
+    expected = feature.many(lcs, sorted=True, n_jobs=1)
+
+    # Build struct with fields in non-standard order: sigma, m, t
+    pa_type = pa.float64()
+    struct_type = pa.struct([("sigma", pa_type), ("m", pa_type), ("t", pa_type)])
+    all_lcs = []
+    for t, m, sigma in lcs:
+        rows = [{"sigma": si, "m": mi, "t": ti} for ti, mi, si in zip(t, m, sigma)]
+        all_lcs.append(rows)
+    arrow_arr = pa.array(all_lcs, type=pa.list_(struct_type))
+
+    result = feature.many(arrow_arr, sorted=True, n_jobs=1, arrow_fields=["t", "m", "sigma"])
+    assert_array_equal(expected, result)
+
+
+def test_many_arrow_fields_invalid_name():
+    """arrow_fields with a nonexistent field name raises ValueError."""
+    feature = lc.Amplitude()
+    arr = _make_arrow_lcs([gen_lc(10, rng=np.random.default_rng(5)) for _ in range(2)])
+    with pytest.raises(ValueError, match="not found"):
+        feature.many(arr, sorted=True, arrow_fields=["t", "nonexistent"])
+
+
+def test_many_arrow_fields_index_out_of_range():
+    """arrow_fields with an out-of-range index raises ValueError."""
+    feature = lc.Amplitude()
+    arr = _make_arrow_lcs([gen_lc(10, rng=np.random.default_rng(6)) for _ in range(2)])
+    with pytest.raises(ValueError, match="out of range"):
+        feature.many(arr, sorted=True, arrow_fields=[0, 99])
+
+
+def test_many_arrow_fields_wrong_count():
+    """arrow_fields with 1 or 4 elements raises ValueError."""
+    feature = lc.Amplitude()
+    arr = _make_arrow_lcs([gen_lc(10, rng=np.random.default_rng(7)) for _ in range(2)])
+    with pytest.raises(ValueError, match="2 .* or 3"):
+        feature.many(arr, sorted=True, arrow_fields=["t"])
+    with pytest.raises(ValueError, match="2 .* or 3"):
+        feature.many(arr, sorted=True, arrow_fields=["t", "m", "sigma", "extra"])
+
+
+def test_many_arrow_fields_duplicate_fields():
+    """arrow_fields pointing to the same field twice raises ValueError."""
+    feature = lc.Amplitude()
+    arr = _make_arrow_lcs([gen_lc(10, rng=np.random.default_rng(8)) for _ in range(2)])
+    with pytest.raises(ValueError, match="different fields"):
+        feature.many(arr, sorted=True, arrow_fields=["t", "t"])
+
+
+def test_many_arrow_fields_wrong_element_type():
+    """Non-str, non-int element in arrow_fields raises TypeError."""
+    feature = lc.Amplitude()
+    arr = _make_arrow_lcs([gen_lc(10, rng=np.random.default_rng(9)) for _ in range(2)])
+    with pytest.raises(TypeError, match="PyArrowFields"):
+        feature.many(arr, sorted=True, arrow_fields=["t", 1.5])
+
+
+def test_many_arrow_fields_duplicate_field_name():
+    """arrow_fields with a duplicate field name raises ValueError."""
+    feature = lc.Amplitude()
+    # pyarrow allows structs with duplicate field names; build one without dict literals
+    # (dict literals deduplicate keys, so use from_arrays instead)
+    dup_struct_type = pa.struct([("t", pa.float64()), ("m", pa.float64()), ("m", pa.float64())])
+    inner = pa.StructArray.from_arrays(
+        [pa.array([1.0]), pa.array([2.0]), pa.array([3.0])],
+        names=["t", "m", "m"],
+    )
+    offsets = pa.array([0, 1], type=pa.int32())
+    arr = pa.ListArray.from_arrays(offsets, inner).cast(pa.list_(dup_struct_type))
+    with pytest.raises(ValueError, match="ambiguous"):
+        feature.many(arr, sorted=True, arrow_fields=["t", "m"])
