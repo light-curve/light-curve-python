@@ -704,7 +704,7 @@ ndf["lightcurve"] = ndf[["lightcurve.t", "lightcurve.mag", "lightcurve.magerr"]]
 
 # Extract features directly from the Arrow-backed nested column
 feature = lc.Extractor(lc.Amplitude(), lc.EtaE(), lc.InterPercentileRange(quantile=0.25))
-result = feature.many(pa.array(ndf["lightcurve"]), n_jobs=-1)
+result = feature.many(pa.array(ndf["lightcurve"]), n_jobs=-1, arrow_fields=["t", "mag", "magerr"])
 
 # Assign features back to the dataframe
 ndf = ndf.assign(**dict(zip(feature.names, result.T)))
@@ -737,7 +737,7 @@ lcs_arrow = pa.array(
 )
 
 feature = lc.Extractor(lc.Kurtosis(), lc.Skew(), lc.ReducedChi2())
-result = feature.many(lcs_arrow, sorted=True, check=False, n_jobs=4)
+result = feature.many(lcs_arrow, sorted=True, check=False, n_jobs=4, arrow_fields=["t", "m", "sigma"])
 print(f"Features: {feature.names}")
 print(f"Results shape: {result.shape}")
 ```
@@ -768,7 +768,7 @@ df = pl.DataFrame({"object_id": object_id, "t": t, "m": m, "sigma": sigma})
 nested = df.group_by("object_id").agg(pl.struct("t", "m", "sigma").alias("lc"))
 
 feature = lc.Extractor(lc.Amplitude(), lc.BeyondNStd(nstd=2), lc.LinearFit(), lc.StetsonK())
-result = feature.many(nested["lc"], sorted=True, check=False, n_jobs=1)
+result = feature.many(nested["lc"], sorted=True, check=False, n_jobs=1, arrow_fields=["t", "m", "sigma"])
 
 # Join feature columns back to the nested DataFrame
 nested = nested.with_columns(

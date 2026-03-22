@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **API breaking**: `.many()` now requires `arrow_fields` argument when called with an Arrow array. Pass a list of 2 or 3 field names (str) or indices (int) to select `t`, `m`, and optionally `sigma` from the struct https://github.com/light-curve/light-curve-python/pull/632
 - Bump `light-curve-feature` to 0.13.0, `rand` to 0.10, `rand_xoshiro` to 0.8 https://github.com/light-curve/light-curve-python/pull/648
 - **Build breaking**: Minimum supported Rust version (MSRV) bumped from 1.85 to 1.88 https://github.com/light-curve/light-curve-python/pull/648
 

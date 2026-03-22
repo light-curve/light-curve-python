@@ -1,5 +1,5 @@
 use crate::arrow_input::{
-    ArrowDtype, ArrowFloat, ArrowLcsSchema, ArrowListType, validate_arrow_lcs,
+    ArrowDtype, ArrowFloat, ArrowLcsSchema, ArrowListType, PyArrowFields, validate_arrow_lcs,
 };
 use crate::check::{check_finite, check_no_nans, is_sorted};
 use crate::cont_array::ContCowArray;
@@ -116,12 +116,16 @@ many(self, lcs, *, fill_value=None, sorted=None, check=True, cast=False, n_jobs=
     lcs : list of (t, m, sigma) or Arrow array
         Either a list of light curves packed into three-tuples (all numpy.ndarray
         of the same dtype), or an Arrow array/chunked array of type
-        List<Struct<t, m[, sigma]>> where all fields share the same float dtype
+        List<Struct<...>> where the selected fields share the same float dtype
         (float32 or float64). Arrow input is auto-detected via the
         __arrow_c_array__ / __arrow_c_stream__ protocol and enables zero-copy
         data access from pyarrow, polars, and other Arrow-compatible libraries.
-        When using Arrow input, 2 struct fields means (t, m) without sigma,
-        3 fields means (t, m, sigma). Field names are ignored
+    arrow_fields : list of (str or int)
+        Required when lcs is an Arrow array. Field names or indices specifying
+        which struct fields to use as t, m, and optionally sigma. Must contain
+        2 elements [t, m] or 3 elements [t, m, sigma]. Each element may be a
+        field name (str) or a zero-based positional index (int); all elements
+        must be of the same type. Ignored for non-Arrow input.
     fill_value : float or None, optional
         Fill invalid values by this or raise an exception if None
     sorted : bool or None, optional
@@ -503,6 +507,7 @@ impl PyFeatureEvaluator {
         sorted: Option<bool>,
         check: bool,
         n_jobs: i64,
+        arrow_fields: &PyArrowFields,
     ) -> Res<Bound<'py, PyUntypedArray>> {
         // Try __arrow_c_stream__ (ChunkedArray) first, then __arrow_c_array__ (Array)
         let chunked: PyChunkedArray = if let Ok(ca) = lcs.extract::<PyChunkedArray>() {
@@ -515,7 +520,7 @@ impl PyFeatureEvaluator {
                 "Arrow input must implement __arrow_c_array__ or __arrow_c_stream__".to_string(),
             ));
         };
-        let schema = validate_arrow_lcs(&chunked)?;
+        let schema = validate_arrow_lcs(&chunked, arrow_fields)?;
         let is_t_required = self.is_t_required(sorted);
 
         match schema.dtype {
@@ -563,7 +568,9 @@ impl PyFeatureEvaluator {
             ArrowListType::List => Self::many_arrow_chunks::<T, i32>(
                 feature_evaluator,
                 chunked,
-                schema.has_sigma,
+                schema.t_idx,
+                schema.m_idx,
+                schema.sigma_idx,
                 sorted,
                 check,
                 is_t_required,
@@ -573,7 +580,9 @@ impl PyFeatureEvaluator {
             ArrowListType::LargeList => Self::many_arrow_chunks::<T, i64>(
                 feature_evaluator,
                 chunked,
-                schema.has_sigma,
+                schema.t_idx,
+                schema.m_idx,
+                schema.sigma_idx,
                 sorted,
                 check,
                 is_t_required,
@@ -587,7 +596,9 @@ impl PyFeatureEvaluator {
     fn many_arrow_chunks<T: ArrowFloat, O: arrow_array::OffsetSizeTrait>(
         feature_evaluator: &Feature<T>,
         chunked: &PyChunkedArray,
-        has_sigma: bool,
+        t_idx: usize,
+        m_idx: usize,
+        sigma_idx: Option<usize>,
         sorted: Option<bool>,
         check: bool,
         is_t_required: bool,
@@ -611,8 +622,12 @@ impl PyFeatureEvaluator {
                         "Null entries in the struct array are not supported".to_string(),
                     ));
                 }
-                for i in 0..struct_arr.num_columns() {
-                    if struct_arr.column(i).null_count() > 0 {
+                for &col_idx in &[Some(t_idx), Some(m_idx), sigma_idx]
+                    .into_iter()
+                    .flatten()
+                    .collect::<Vec<_>>()
+                {
+                    if struct_arr.column(col_idx).null_count() > 0 {
                         return Err(Exception::NotImplementedError(
                             "Null values in data columns are not supported".to_string(),
                         ));
@@ -620,18 +635,18 @@ impl PyFeatureEvaluator {
                 }
 
                 let t_vals: &[T] = struct_arr
-                    .column(0)
+                    .column(t_idx)
                     .as_primitive::<T::ArrowType>()
                     .values()
                     .as_ref();
                 let m_vals: &[T] = struct_arr
-                    .column(1)
+                    .column(m_idx)
                     .as_primitive::<T::ArrowType>()
                     .values()
                     .as_ref();
-                let sigma_vals: Option<&[T]> = has_sigma.then(|| {
+                let sigma_vals: Option<&[T]> = sigma_idx.map(|idx| {
                     struct_arr
-                        .column(2)
+                        .column(idx)
                         .as_primitive::<T::ArrowType>()
                         .values()
                         .as_ref()
@@ -758,7 +773,8 @@ impl PyFeatureEvaluator {
     }
 
     #[doc = METHOD_MANY_DOC!()]
-    #[pyo3(signature = (lcs, *, fill_value=None, sorted=None, check=true, n_jobs=-1))]
+    #[allow(clippy::too_many_arguments)]
+    #[pyo3(signature = (lcs, *, fill_value=None, sorted=None, check=true, n_jobs=-1, arrow_fields=None))]
     fn many<'py>(
         &self,
         py: Python<'py>,
@@ -767,10 +783,17 @@ impl PyFeatureEvaluator {
         sorted: Option<bool>,
         check: bool,
         n_jobs: i64,
+        arrow_fields: Option<PyArrowFields>,
     ) -> Res<Bound<'py, PyUntypedArray>> {
         // Try Arrow path first
         if lcs.hasattr("__arrow_c_array__")? || lcs.hasattr("__arrow_c_stream__")? {
-            return self.many_arrow(py, &lcs, fill_value, sorted, check, n_jobs);
+            let fields = arrow_fields.ok_or_else(|| {
+                Exception::ValueError(
+                    "arrow_fields is required when using Arrow input:                     provide a list of 2 or 3 field names or indices for [t, m] or [t, m, sigma]"
+                        .to_string(),
+                )
+            })?;
+            return self.many_arrow(py, &lcs, fill_value, sorted, check, n_jobs, &fields);
         }
         // Fall back to list-of-tuples path
         let lcs: PyLcs<'py> = lcs.extract()?;
