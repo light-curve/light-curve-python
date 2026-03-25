@@ -151,8 +151,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   benchmarks:
-    # latest (24.04) is not supported as of 2024-10-09
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     needs: [ py_build_deps ]
 
