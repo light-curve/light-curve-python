@@ -169,7 +169,7 @@ jobs:
           shared-key: "${{ runner.os }}_stable-rust_maturin-develop-release"
           workspaces: "light-curve"
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@v4
+        uses: CodSpeedHQ/action@v4.11.0
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
           mode: walltime
