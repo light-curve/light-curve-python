@@ -151,7 +151,6 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   benchmarks:
-    # latest (24.04) is not supported as of 2024-10-09
     runs-on: ubuntu-22.04
 
     needs: [ py_build_deps ]
@@ -173,7 +172,7 @@ jobs:
         uses: CodSpeedHQ/action@v4
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
-          mode: walltime
+          mode: simulation
           run: |
             cd light-curve
             python3 -m venv venv
