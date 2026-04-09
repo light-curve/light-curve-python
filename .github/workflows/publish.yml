@@ -96,6 +96,20 @@ jobs:
           CIBW_ARCHS=$(echo ${{ matrix.cibw_build }} | cut -d'_' -f2,3)
           echo "CIBW_ARCHS=${CIBW_ARCHS}" >> $GITHUB_ENV
 
+      - name: Cache vcpkg binary packages for Windows
+        if: ${{ runner.os == 'Windows' }}
+        uses: actions/cache@v4
+        with:
+          path: C:\vcpkg_cache
+          key: vcpkg-ceres-gsl-x64-windows-static-md-v1
+
+      - name: Set VCPKG_BINARY_SOURCES for Windows
+        if: ${{ runner.os == 'Windows' }}
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path C:\vcpkg_cache | Out-Null
+          "VCPKG_BINARY_SOURCES=clear;files,C:\vcpkg_cache,readwrite" >> $env:GITHUB_ENV
+
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.4.0
         with:

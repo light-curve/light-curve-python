@@ -243,8 +243,20 @@ before-all = [
 
 # We miss Rust installation here because it is not so simple on Windows
 [tool.cibuildwheel.windows]
-# We do not support Ceres and GSL on Windows
-environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features=abi3,mimalloc" }
+# Install Ceres and GSL via vcpkg (pre-installed on GitHub Actions Windows runners)
+# Binary packages are cached in the CI workflow to avoid long rebuild times.
+before-all = [
+    "vcpkg install ceres:x64-windows-static-md gsl:x64-windows-static-md",
+]
+environment = {
+    "PATH" = "$PATH:$HOME/.cargo/bin",
+    "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features=abi3,ceres-system,gsl,mimalloc",
+    # ceres-solver-rs uses VCPKG_ROOT + VCPKGRS_TRIPLET to locate Ceres
+    "VCPKG_ROOT" = "C:/vcpkg",
+    "VCPKGRS_TRIPLET" = "x64-windows-static-md",
+    # GSL-sys falls back to cargo:rustc-link-lib without pkg-config; add vcpkg lib dir to MSVC search path
+    "LIB" = "C:/vcpkg/installed/x64-windows-static-md/lib;$LIB",
+}
 
 # Build with Intel MKL on Linux x86_64
 [[tool.cibuildwheel.overrides]]
