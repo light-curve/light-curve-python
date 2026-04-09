@@ -241,11 +241,13 @@ before-all = [
     "brew install ceres-solver gsl",
 ]
 
-# We miss Rust installation here because it is not so simple on Windows
 [tool.cibuildwheel.windows]
 # Install Ceres and GSL via vcpkg (pre-installed on GitHub Actions Windows runners)
 # Binary packages are cached in the CI workflow to avoid long rebuild times.
 before-all = [
+    # Install Rust
+    "curl -sSf https://win.rustup.rs/x86_64 -o rustup-init.exe && rustup-init.exe -y --default-toolchain stable --no-modify-path",
+    # Install Ceres and GSL
     "vcpkg install ceres:x64-windows-static-md gsl:x64-windows-static-md",
 ]
 environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features=abi3,ceres-system,gsl,mimalloc", "VCPKG_ROOT" = "C:/vcpkg", "VCPKGRS_TRIPLET" = "x64-windows-static-md", "LIB" = "C:/vcpkg/installed/x64-windows-static-md/lib;$LIB" }
