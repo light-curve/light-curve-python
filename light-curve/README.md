@@ -859,9 +859,9 @@ On PyPI, we publish wheels for the stable CPython ABI, ensuring compatibility wi
 
 ### Support matrix
 
-| Arch \ OS   | Linux glibc 2.17+ | Linux musl 1.2+                | macOS                 | Windows https://github.com/light-curve/light-curve-python/issues/186 |
-|-------------|-------------------|--------------------------------|-----------------------|----------------------------------------------------------------------|
-| **x86-64**  | PyPI (MKL), conda | PyPI (MKL)                     | PyPI macOS 15+, conda | PyPI, conda (both no Ceres, no GSL)                                  |
+| Arch \ OS   | Linux glibc 2.17+ | Linux musl 1.2+                | macOS                 | Windows                   |
+|-------------|-------------------|--------------------------------|-----------------------|---------------------------|
+| **x86-64**  | PyPI (MKL), conda | PyPI (MKL)                     | PyPI macOS 15+, conda | PyPI, conda               |
 | **i686**    | src               | src                            | —                     | not tested                                                           |
 | **aarch64** | PyPI              | PyPI                           | PyPI macOS 14+, conda | not tested                                                           |
 | **ppc64le** | src               | not tested (no Rust toolchain) | —                     | —                                                                    |
@@ -870,7 +870,6 @@ On PyPI, we publish wheels for the stable CPython ABI, ensuring compatibility wi
   Local building is not required; the only prerequisite is a recent version of `pip` or `conda`.
   For Linux x86-64, PyPI wheels are built with Intel MKL for improved periodogram performance,
   which is not the default build option.
-  For Windows x86-64, all distributions exclude Ceres and GSL support.
 - **src**: The package has been confirmed to build and pass unit tests locally,
   but CI does not test or publish packages for this platform.
   See the [Build from source](#build-from-source) section for details.
@@ -964,7 +963,7 @@ Available features:
   specific reason (our benchmarks show no performance difference). ABI3 is not supported by free-threaded
   CPython or PyPy.
 - `ceres-source` (default) — builds [Ceres solver](http://ceres-solver.org/) from source. Requires a C++
-  compiler and CMake. Known to not work on Windows. Used as an optional optimization backend for `BazinFit`
+  compiler and CMake. Used as an optional optimization backend for `BazinFit`
   and `VillarFit`.
 - `ceres-system` — links against a system-installed Ceres dynamic library instead of building from source.
 - `mkl` — enables the [FFTW](http://www.fftw.org/) interface with the Intel MKL backend for the fast
