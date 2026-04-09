@@ -70,7 +70,7 @@ arrow-schema = "58"
 comfy-table = "7"
 
 [dependencies.light-curve-feature]
-version = "0.13.0"
+version = "0.13.1"
 default-features = false
 
 [dependencies.light-curve-dmdt]
