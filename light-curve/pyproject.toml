@@ -240,6 +240,9 @@ before-all = [
     # Install GSL
     "brew install ceres-solver gsl",
 ]
+# ceres-solver links against libgcc_s.1.1.dylib from Homebrew GCC;
+# set DYLD_LIBRARY_PATH so maturin's internal delocate-wheel call can find it
+environment = { "DYLD_LIBRARY_PATH" = "$(brew --prefix gcc)/lib/gcc/current" }
 
 [tool.cibuildwheel.windows]
 # Install Ceres and GSL via vcpkg (pre-installed on GitHub Actions Windows runners)
