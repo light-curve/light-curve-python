@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Windows PyPI wheels now include Ceres and GSL support, enabled via vcpkg https://github.com/light-curve/light-curve-python/pull/661
+--
 
 ### Deprecated
 
@@ -30,6 +30,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 --
+
+## [0.12.1] 2026-04-09
+
+### Changed
+
+- Windows PyPI wheels now include Ceres and GSL support, enabled via vcpkg https://github.com/light-curve/light-curve-python/pull/661
+
 
 ## [0.12.0] 2026-03-24
 
