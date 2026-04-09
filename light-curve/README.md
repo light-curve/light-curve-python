@@ -870,7 +870,6 @@ On PyPI, we publish wheels for the stable CPython ABI, ensuring compatibility wi
   Local building is not required; the only prerequisite is a recent version of `pip` or `conda`.
   For Linux x86-64, PyPI wheels are built with Intel MKL for improved periodogram performance,
   which is not the default build option.
-  For Windows x86-64, PyPI and conda wheels include Ceres and GSL support.
 - **src**: The package has been confirmed to build and pass unit tests locally,
   but CI does not test or publish packages for this platform.
   See the [Build from source](#build-from-source) section for details.
