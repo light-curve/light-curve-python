@@ -861,7 +861,7 @@ On PyPI, we publish wheels for the stable CPython ABI, ensuring compatibility wi
 
 | Arch \ OS   | Linux glibc 2.17+ | Linux musl 1.2+                | macOS                 | Windows                   |
 |-------------|-------------------|--------------------------------|-----------------------|---------------------------|
-| **x86-64**  | PyPI (MKL), conda | PyPI (MKL)                     | PyPI macOS 15+, conda | PyPI, conda               |
+| **x86-64**  | PyPI (MKL), conda | PyPI (MKL)                     | PyPI macOS 15+, conda | PyPI, conda (conda: no GSL) |
 | **i686**    | src               | src                            | —                     | not tested                                                           |
 | **aarch64** | PyPI              | PyPI                           | PyPI macOS 14+, conda | not tested                                                           |
 | **ppc64le** | src               | not tested (no Rust toolchain) | —                     | —                                                                    |
@@ -870,6 +870,8 @@ On PyPI, we publish wheels for the stable CPython ABI, ensuring compatibility wi
   Local building is not required; the only prerequisite is a recent version of `pip` or `conda`.
   For Linux x86-64, PyPI wheels are built with Intel MKL for improved periodogram performance,
   which is not the default build option.
+  For Windows x86-64, the conda package excludes GSL support (LMSDER fitting unavailable);
+  PyPI wheels include both Ceres and GSL.
 - **src**: The package has been confirmed to build and pass unit tests locally,
   but CI does not test or publish packages for this platform.
   See the [Build from source](#build-from-source) section for details.
