@@ -1564,9 +1564,9 @@ dependencies = [
 
 [[package]]
 name = "light-curve-feature"
-version = "0.13.1"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26fecc72b003d349f2b430d0706c76cfbfbd26f8d7711fb83cd0b745177e7318"
+checksum = "ee2904875c317752af502e15192d6e2318983e24d10c3018b28a2e9ba0e246b2"
 dependencies = [
  "GSL",
  "ceres-solver",
@@ -1592,6 +1592,7 @@ dependencies = [
  "rustfft",
  "schemars",
  "serde",
+ "take_mut",
  "thiserror 2.0.18",
  "thread_local",
  "unzip3",
@@ -2877,6 +2878,12 @@ dependencies = [
  "quote",
  "syn 2.0.117",
 ]
+
+[[package]]
+name = "take_mut"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f764005d11ee5f36500a149ace24e00e3da98b0158b3e2d53a7495660d3f4d60"
 
 [[package]]
 name = "tar"
