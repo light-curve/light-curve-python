@@ -186,7 +186,6 @@ pub struct PyFeatureEvaluator {
     feature_evaluator_f64: Feature<f64>,
 }
 
-
 /// Integer band index used as a passband type for multiband feature evaluation.
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
 struct BandIndex {
@@ -726,7 +725,6 @@ impl PyFeatureEvaluator {
         Self::eval_many_parallel(feature_evaluator, tss, fill_value, n_jobs)
     }
 
-
     #[allow(clippy::too_many_arguments)]
     fn call_impl_multiband<'py, T>(
         feature_evaluator: &Feature<T>,
@@ -748,12 +746,10 @@ impl PyFeatureEvaluator {
                 "t and m must have the same size".to_string(),
             ));
         }
-        if let Some(s) = &sigma {
-            if s.len() != n {
-                return Err(Exception::ValueError(
-                    "t and sigma must have the same size".to_string(),
-                ));
-            }
+        if sigma.as_ref().is_some_and(|s| s.len() != n) {
+            return Err(Exception::ValueError(
+                "t and sigma must have the same size".to_string(),
+            ));
         }
         if bands.len() != n {
             return Err(Exception::ValueError(
@@ -791,8 +787,10 @@ impl PyFeatureEvaluator {
             passbands.iter().cloned().collect();
 
         // Wrap the single-band feature for per-passband evaluation
-        let mono_feature =
-            MonochromeFeature::<BandIndex, T, Feature<T>>::new(feature_evaluator.clone(), passband_set);
+        let mono_feature = MonochromeFeature::<BandIndex, T, Feature<T>>::new(
+            feature_evaluator.clone(),
+            passband_set,
+        );
 
         // Convert sigma to weights (1/sigma^2), or use unity weights
         let w_array: ndarray::Array1<T> = match &sigma {
@@ -805,12 +803,8 @@ impl PyFeatureEvaluator {
             _ => ndarray::Array1::ones(n),
         };
 
-        let mut mcts = MultiColorTimeSeries::from_flat(
-            t.as_array(),
-            m.as_array(),
-            w_array.view(),
-            passbands,
-        );
+        let mut mcts =
+            MultiColorTimeSeries::from_flat(t.as_array(), m.as_array(), w_array.view(), passbands);
 
         let result = match fill_value {
             Some(x) => mono_feature
