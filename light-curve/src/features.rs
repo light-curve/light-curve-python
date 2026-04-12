@@ -96,7 +96,7 @@ const METHOD_CALL_DOC: &str = r#"__call__(self, t, m, sigma=None, *, fill_value=
 
 macro_const! {
     const METHOD_MANY_DOC: &str = r#"
-many(self, lcs, *, fill_value=None, sorted=None, check=True, cast=False, n_jobs=-1, bands=None)
+many(self, lcs, *, fill_value=None, sorted=None, check=True, cast=False, n_jobs=-1)
     Parallel light curve feature extraction
 
     It is a parallel executed equivalent of
@@ -139,10 +139,7 @@ many(self, lcs, *, fill_value=None, sorted=None, check=True, cast=False, n_jobs=
     n_jobs : int
         Number of tasks to run in paralell. Default is -1 which means run as
         many jobs as CPU count. See rayon rust crate documentation for
-        details
-    bands : numpy.ndarray of int or None, optional
-        Integer band indices for each observation, one per time point.
-        Reserved for future multiband support; currently accepted but not used."#;
+        details"#;
 }
 
 const METHODS_DOC: &str = formatcp!(
@@ -791,7 +788,7 @@ impl PyFeatureEvaluator {
 
     #[doc = METHOD_MANY_DOC!()]
     #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (lcs, *, fill_value=None, sorted=None, check=true, n_jobs=-1, arrow_fields=None, bands=None))]
+    #[pyo3(signature = (lcs, *, fill_value=None, sorted=None, check=true, n_jobs=-1, arrow_fields=None))]
     fn many<'py>(
         &self,
         py: Python<'py>,
@@ -801,9 +798,7 @@ impl PyFeatureEvaluator {
         check: bool,
         n_jobs: i64,
         arrow_fields: Option<PyArrowFields>,
-        bands: Option<Bound<'py, PyAny>>,
     ) -> Res<Bound<'py, PyUntypedArray>> {
-        let _bands = Self::parse_bands(bands)?;
         // Try Arrow path first
         if lcs.hasattr("__arrow_c_array__")? || lcs.hasattr("__arrow_c_stream__")? {
             let fields = arrow_fields.ok_or_else(|| {
