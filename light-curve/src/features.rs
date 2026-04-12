@@ -58,7 +58,7 @@ names : list of str
 descriptions : list of str
     Feature descriptions"#;
 
-const METHOD_CALL_DOC: &str = r#"__call__(self, t, m, sigma=None, *, fill_value=None, sorted=None, check=True, cast=False)
+const METHOD_CALL_DOC: &str = r#"__call__(self, t, m, sigma=None, *, fill_value=None, sorted=None, check=True, cast=False, bands=None)
     Extract features and return them as a numpy array
 
     Parameters
@@ -86,6 +86,9 @@ const METHOD_CALL_DOC: &str = r#"__call__(self, t, m, sigma=None, *, fill_value=
         If `False`, inputs must be `np.ndarray` instances with matched dtypes.
         Casting provides more flexibility with input types at the cost of
         performance.
+    bands : numpy.ndarray of int or None, optional
+        Integer band indices for each observation, one per time point.
+        Reserved for future multiband support; currently accepted but not used.
     Returns
     -------
     ndarray of np.float32 or np.float64
@@ -93,7 +96,7 @@ const METHOD_CALL_DOC: &str = r#"__call__(self, t, m, sigma=None, *, fill_value=
 
 macro_const! {
     const METHOD_MANY_DOC: &str = r#"
-many(self, lcs, *, fill_value=None, sorted=None, check=True, cast=False, n_jobs=-1)
+many(self, lcs, *, fill_value=None, sorted=None, check=True, cast=False, n_jobs=-1, bands=None)
     Parallel light curve feature extraction
 
     It is a parallel executed equivalent of
@@ -136,7 +139,10 @@ many(self, lcs, *, fill_value=None, sorted=None, check=True, cast=False, n_jobs=
     n_jobs : int
         Number of tasks to run in paralell. Default is -1 which means run as
         many jobs as CPU count. See rayon rust crate documentation for
-        details"#;
+        details
+    bands : numpy.ndarray of int or None, optional
+        Integer band indices for each observation, one per time point.
+        Reserved for future multiband support; currently accepted but not used."#;
 }
 
 const METHODS_DOC: &str = formatcp!(
@@ -678,6 +684,14 @@ impl PyFeatureEvaluator {
 
         Self::eval_many_parallel(feature_evaluator, tss, fill_value, n_jobs)
     }
+
+    fn parse_bands(bands: Option<Bound<'_, PyAny>>) -> Res<Option<Vec<i64>>> {
+        let Some(bands) = bands else {
+            return Ok(None);
+        };
+        let arr: PyArrayLike1<i64, AllowTypeChange> = bands.extract()?;
+        Ok(Some(arr.as_array().iter().copied().collect()))
+    }
 }
 
 #[pymethods]
@@ -692,6 +706,7 @@ impl PyFeatureEvaluator {
         sorted = None,
         check = true,
         cast = false,
+        bands = None,
     ))]
     fn __call__<'py>(
         &self,
@@ -703,7 +718,9 @@ impl PyFeatureEvaluator {
         sorted: Option<bool>,
         check: bool,
         cast: bool,
+        bands: Option<Bound<'py, PyAny>>,
     ) -> Res<Bound<'py, PyUntypedArray>> {
+        let _bands = Self::parse_bands(bands)?;
         if let Some(sigma) = sigma {
             dtype_dispatch!(
                 |t, m, sigma| {
@@ -774,7 +791,7 @@ impl PyFeatureEvaluator {
 
     #[doc = METHOD_MANY_DOC!()]
     #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (lcs, *, fill_value=None, sorted=None, check=true, n_jobs=-1, arrow_fields=None))]
+    #[pyo3(signature = (lcs, *, fill_value=None, sorted=None, check=true, n_jobs=-1, arrow_fields=None, bands=None))]
     fn many<'py>(
         &self,
         py: Python<'py>,
@@ -784,7 +801,9 @@ impl PyFeatureEvaluator {
         check: bool,
         n_jobs: i64,
         arrow_fields: Option<PyArrowFields>,
+        bands: Option<Bound<'py, PyAny>>,
     ) -> Res<Bound<'py, PyUntypedArray>> {
+        let _bands = Self::parse_bands(bands)?;
         // Try Arrow path first
         if lcs.hasattr("__arrow_c_array__")? || lcs.hasattr("__arrow_c_stream__")? {
             let fields = arrow_fields.ok_or_else(|| {
