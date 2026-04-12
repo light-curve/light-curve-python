@@ -58,7 +58,7 @@ names : list of str
 descriptions : list of str
     Feature descriptions"#;
 
-const METHOD_CALL_DOC: &str = r#"__call__(self, t, m, sigma=None, *, fill_value=None, sorted=None, check=True, cast=False, bands=None)
+const METHOD_CALL_DOC: &str = r#"__call__(self, t, m, sigma=None, bands=None, *, fill_value=None, sorted=None, check=True, cast=False)
     Extract features and return them as a numpy array
 
     Parameters
@@ -697,12 +697,12 @@ impl PyFeatureEvaluator {
         t,
         m,
         sigma = None,
+        bands = None,
         *,
         fill_value = None,
         sorted = None,
         check = true,
         cast = false,
-        bands = None,
     ))]
     fn __call__<'py>(
         &self,
@@ -710,11 +710,11 @@ impl PyFeatureEvaluator {
         t: Bound<'py, PyAny>,
         m: Bound<'py, PyAny>,
         sigma: Option<Bound<'py, PyAny>>,
+        bands: Option<Bound<'py, PyAny>>,
         fill_value: Option<f64>,
         sorted: Option<bool>,
         check: bool,
         cast: bool,
-        bands: Option<Bound<'py, PyAny>>,
     ) -> Res<Bound<'py, PyUntypedArray>> {
         let _bands = Self::parse_bands(bands)?;
         if let Some(sigma) = sigma {
