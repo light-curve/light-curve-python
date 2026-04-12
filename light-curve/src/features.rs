@@ -682,12 +682,11 @@ impl PyFeatureEvaluator {
         Self::eval_many_parallel(feature_evaluator, tss, fill_value, n_jobs)
     }
 
-    fn parse_bands(bands: Option<Bound<'_, PyAny>>) -> Res<Option<Vec<i64>>> {
-        let Some(bands) = bands else {
-            return Ok(None);
-        };
-        let arr: PyArrayLike1<i64, AllowTypeChange> = bands.extract()?;
-        Ok(Some(arr.as_array().iter().copied().collect()))
+    fn parse_bands(bands: Option<Bound<'_, PyAny>>) -> Res<()> {
+        if let Some(bands) = bands {
+            let _arr: PyArrayLike1<i64, AllowTypeChange> = bands.extract()?;
+        }
+        Ok(())
     }
 }
 
