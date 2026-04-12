@@ -14,7 +14,8 @@ use const_format::formatcp;
 use conv::ConvUtil;
 use itertools::Itertools;
 use light_curve_feature::{
-    self as lcf, DataSample,
+    self as lcf, DataSample, MonochromeFeature, MultiColorTimeSeries,
+    multicolor::MultiColorEvaluator,
     periodogram::{FreqGrid, PeriodogramNormalization},
     prelude::*,
 };
@@ -183,6 +184,49 @@ type PyLightCurve<'a, T> = (Arr<'a, T>, Arr<'a, T>, Option<Arr<'a, T>>);
 pub struct PyFeatureEvaluator {
     feature_evaluator_f32: Feature<f32>,
     feature_evaluator_f64: Feature<f64>,
+}
+
+
+/// Integer band index used as a passband type for multiband feature evaluation.
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
+struct BandIndex {
+    index: i64,
+    name: String,
+}
+
+impl BandIndex {
+    fn new(index: i64) -> Self {
+        Self {
+            index,
+            name: index.to_string(),
+        }
+    }
+}
+
+impl PartialEq for BandIndex {
+    fn eq(&self, other: &Self) -> bool {
+        self.index == other.index
+    }
+}
+
+impl Eq for BandIndex {}
+
+impl PartialOrd for BandIndex {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for BandIndex {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.index.cmp(&other.index)
+    }
+}
+
+impl lcf::PassbandTrait for BandIndex {
+    fn name(&self) -> &str {
+        &self.name
+    }
 }
 
 impl PyFeatureEvaluator {
@@ -682,11 +726,110 @@ impl PyFeatureEvaluator {
         Self::eval_many_parallel(feature_evaluator, tss, fill_value, n_jobs)
     }
 
-    fn parse_bands(bands: Option<Bound<'_, PyAny>>) -> Res<()> {
-        if let Some(bands) = bands {
-            let _arr: PyArrayLike1<i64, AllowTypeChange> = bands.extract()?;
+
+    #[allow(clippy::too_many_arguments)]
+    fn call_impl_multiband<'py, T>(
+        feature_evaluator: &Feature<T>,
+        py: Python<'py>,
+        t: Arr<'py, T>,
+        m: Arr<'py, T>,
+        sigma: Option<Arr<'py, T>>,
+        bands: &ndarray::Array1<i64>,
+        sorted: Option<bool>,
+        check: bool,
+        fill_value: Option<T>,
+    ) -> Res<Bound<'py, PyUntypedArray>>
+    where
+        T: Float + numpy::Element,
+    {
+        let n = t.len();
+        if m.len() != n {
+            return Err(Exception::ValueError(
+                "t and m must have the same size".to_string(),
+            ));
         }
-        Ok(())
+        if let Some(s) = &sigma {
+            if s.len() != n {
+                return Err(Exception::ValueError(
+                    "t and sigma must have the same size".to_string(),
+                ));
+            }
+        }
+        if bands.len() != n {
+            return Err(Exception::ValueError(
+                "t and bands must have the same size".to_string(),
+            ));
+        }
+
+        if check {
+            check_finite(t.as_array())?;
+            check_finite(m.as_array())?;
+        }
+
+        // Check sorting when the feature requires it
+        if feature_evaluator.is_sorting_required() {
+            match sorted {
+                Some(true) => {}
+                Some(false) => {
+                    return Err(Exception::NotImplementedError(
+                        "sorting is not implemented, please provide time-sorted arrays".to_string(),
+                    ));
+                }
+                None => {
+                    if !is_sorted(t.as_array().as_slice().unwrap_or(&[])) {
+                        return Err(Exception::ValueError(
+                            "t must be in ascending order".to_string(),
+                        ));
+                    }
+                }
+            }
+        }
+
+        // Build per-observation band labels and unique passband set
+        let passbands: Vec<BandIndex> = bands.iter().map(|&b| BandIndex::new(b)).collect();
+        let passband_set: std::collections::BTreeSet<BandIndex> =
+            passbands.iter().cloned().collect();
+
+        // Wrap the single-band feature for per-passband evaluation
+        let mono_feature =
+            MonochromeFeature::<BandIndex, T, Feature<T>>::new(feature_evaluator.clone(), passband_set);
+
+        // Convert sigma to weights (1/sigma^2), or use unity weights
+        let w_array: ndarray::Array1<T> = match &sigma {
+            Some(s) if feature_evaluator.is_w_required() => {
+                if check {
+                    check_no_nans(s.as_array())?;
+                }
+                s.as_array().mapv(|x| x.powi(-2))
+            }
+            _ => ndarray::Array1::ones(n),
+        };
+
+        let mut mcts = MultiColorTimeSeries::from_flat(
+            t.as_array(),
+            m.as_array(),
+            w_array.view(),
+            passbands,
+        );
+
+        let result = match fill_value {
+            Some(x) => mono_feature
+                .eval_or_fill_multicolor(&mut mcts, x)
+                .map_err(|e| Exception::ValueError(e.to_string()))?,
+            None => mono_feature
+                .eval_multicolor(&mut mcts)
+                .map_err(|e| Exception::ValueError(e.to_string()))?,
+        };
+
+        Ok(PyArray1::from_vec(py, result).as_untyped().clone())
+    }
+
+    fn parse_bands(bands: Option<Bound<'_, PyAny>>) -> Res<Option<ndarray::Array1<i64>>> {
+        let Some(bands) = bands else {
+            return Ok(None);
+        };
+        let arr: PyArrayLike1<i64, AllowTypeChange> = bands.extract()?;
+        Ok(Some(arr.as_array().to_owned()))
     }
 }
 
@@ -716,8 +859,75 @@ impl PyFeatureEvaluator {
         check: bool,
         cast: bool,
     ) -> Res<Bound<'py, PyUntypedArray>> {
-        let _bands = Self::parse_bands(bands)?;
-        if let Some(sigma) = sigma {
+        let bands = Self::parse_bands(bands)?;
+        if let Some(bands) = bands {
+            if let Some(sigma) = sigma {
+                dtype_dispatch!(
+                    |t, m, sigma| {
+                        Self::call_impl_multiband(
+                            &self.feature_evaluator_f32,
+                            py,
+                            t,
+                            m,
+                            Some(sigma),
+                            &bands,
+                            sorted,
+                            check,
+                            fill_value.map(|v| v as f32),
+                        )
+                    },
+                    |t, m, sigma| {
+                        Self::call_impl_multiband(
+                            &self.feature_evaluator_f64,
+                            py,
+                            t,
+                            m,
+                            Some(sigma),
+                            &bands,
+                            sorted,
+                            check,
+                            fill_value,
+                        )
+                    },
+                    t,
+                    =m,
+                    =sigma;
+                    cast=cast
+                )
+            } else {
+                dtype_dispatch!(
+                    |t, m| {
+                        Self::call_impl_multiband(
+                            &self.feature_evaluator_f32,
+                            py,
+                            t,
+                            m,
+                            None,
+                            &bands,
+                            sorted,
+                            check,
+                            fill_value.map(|v| v as f32),
+                        )
+                    },
+                    |t, m| {
+                        Self::call_impl_multiband(
+                            &self.feature_evaluator_f64,
+                            py,
+                            t,
+                            m,
+                            None,
+                            &bands,
+                            sorted,
+                            check,
+                            fill_value,
+                        )
+                    },
+                    t,
+                    =m;
+                    cast=cast
+                )
+            }
+        } else if let Some(sigma) = sigma {
             dtype_dispatch!(
                 |t, m, sigma| {
                     Self::call_impl(
