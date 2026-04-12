@@ -1625,6 +1625,7 @@ dependencies = [
  "rand 0.10.0",
  "rand_xoshiro",
  "rayon",
+ "schemars",
  "serde",
  "serde-pickle",
  "serde_json",
