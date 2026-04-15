@@ -215,9 +215,8 @@ set_env =
 
 
 [tool.cibuildwheel]
-# Use uv for installing packages during builds/tests, which prefers pre-built wheels
-# and avoids source builds that may fail in manylinux containers
-build-frontend = "build[uv]"
+# Default is "pip", but it is recommended to use "build"
+build-frontend = "build"
 
 # - Set PATH to include Rust.
 # - Set maturin build options, including LICU_ADDITIONAL_FEATURES which may be passed through CIBW_ENVIRONMENT_PASS_LINUX
@@ -233,10 +232,6 @@ manylinux-pypy_x86_64-image = "ghcr.io/light-curve/base-docker-images/manylinux2
 # Musllinux
 musllinux-aarch64-image = "ghcr.io/light-curve/base-docker-images/musllinux_1_2_aarch64"
 musllinux-x86_64-image = "ghcr.io/light-curve/base-docker-images/musllinux_1_2_x86_64"
-
-[tool.cibuildwheel.linux]
-# Install uv inside the container so build[uv] frontend can use it
-before-all = "pip install uv"
 
 [tool.cibuildwheel.macos]
 before-all = [

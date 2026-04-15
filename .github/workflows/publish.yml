@@ -110,9 +110,6 @@ jobs:
           New-Item -ItemType Directory -Force -Path C:\vcpkg_cache | Out-Null
           "VCPKG_BINARY_SOURCES=clear;files,C:\vcpkg_cache,readwrite" >> $env:GITHUB_ENV
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
-
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.4.0
         with:
