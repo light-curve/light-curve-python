@@ -234,6 +234,10 @@ manylinux-pypy_x86_64-image = "ghcr.io/light-curve/base-docker-images/manylinux2
 musllinux-aarch64-image = "ghcr.io/light-curve/base-docker-images/musllinux_1_2_aarch64"
 musllinux-x86_64-image = "ghcr.io/light-curve/base-docker-images/musllinux_1_2_x86_64"
 
+[tool.cibuildwheel.linux]
+# Install uv inside the container so build[uv] frontend can use it
+before-all = "pip install uv"
+
 [tool.cibuildwheel.macos]
 before-all = [
     # Install Rust
