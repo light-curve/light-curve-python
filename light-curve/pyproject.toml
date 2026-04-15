@@ -53,7 +53,7 @@ test = [
     "scipy",
     "cesium",
     "joblib",
-    "pandas",
+    "pandas<2.3.3",  # >=2.3.3 has no manylinux_2_17 wheels, only manylinux_2_28
 ]
 dev = [
     "pytest",
