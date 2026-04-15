@@ -215,8 +215,9 @@ set_env =
 
 
 [tool.cibuildwheel]
-# Default is "pip", but it is recommended to use "build"
-build-frontend = "build"
+# Use uv for installing packages during builds/tests, which prefers pre-built wheels
+# and avoids source builds that may fail in manylinux containers
+build-frontend = "build[uv]"
 
 # - Set PATH to include Rust.
 # - Set maturin build options, including LICU_ADDITIONAL_FEATURES which may be passed through CIBW_ENVIRONMENT_PASS_LINUX
