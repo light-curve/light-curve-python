@@ -921,14 +921,12 @@ Install the package in editable mode (see [Build from source](#build-from-source
 python -mpip install maturin
 # --release takes longer to build but produces a faster package
 # Add other Cargo flags if needed, e.g. --no-default-features --features=ceres-source
-maturin develop
-python -mpip install --group dev .
+maturin develop --group dev
 ```
 
-Run both commands during initial setup. On subsequent runs, activate the environment with `source venv/bin/activate`
-and rebuild Rust code with `maturin develop`. Python-only changes require no rebuild. The
-`pip install --group dev .` command (run from the `light-curve/` directory) is only needed once to install
-development dependencies.
+Run this command during initial setup. On subsequent runs, activate the environment with `source venv/bin/activate`
+and rebuild Rust code with `maturin develop`. Python-only changes require no rebuild. The `--group dev` flag
+(run from the `light-curve/` directory) is only needed once to install development dependencies.
 
 It is also recommended to install `pre-commit` hooks to keep the codebase clean.
 Install via `pip` (see the [documentation](https://pre-commit.com/#install) for other options), then run:
@@ -939,7 +937,7 @@ pre-commit install
 
 ### Run tests and benchmarks
 
-All test dependencies are installed with `pip install --group dev .`. Run the tests with:
+All test dependencies are installed with `maturin develop --group dev`. Run the tests with:
 
 ```bash
 python -mpytest
