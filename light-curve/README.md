@@ -926,8 +926,8 @@ python -mpip install --group dev .
 ```
 
 On subsequent runs, activate the environment with `source venv/bin/activate` and rebuild Rust code with
-`maturin develop`. Python-only changes require no rebuild. The `pip install --group dev .` command is only needed once
-to install development dependencies.
+`maturin develop`. Python-only changes require no rebuild. The `pip install --group dev .` command (run from the
+`light-curve/` directory) is only needed once to install development dependencies.
 
 It is also recommended to install `pre-commit` hooks to keep the codebase clean.
 Install via `pip` (see the [documentation](https://pre-commit.com/#install) for other options), then run:
