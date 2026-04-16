@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
---
+- Development and test dependencies are moved from project extras to `dependency-groups` in `pyproject.toml`, so only
+  user-facing optional dependencies are exposed as extras.
 
 ### Deprecated
 
