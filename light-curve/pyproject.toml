@@ -28,6 +28,9 @@ dynamic = [
     "version",
 ]
 
+[project.urls]
+Source = "https://github.com/light-curve/light-curve-python"
+
 [project.optional-dependencies]
 # Packages required by some experimental features
 full = [
