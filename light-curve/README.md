@@ -919,14 +919,16 @@ Install the package in editable mode (see [Build from source](#build-from-source
 
 ```bash
 python -mpip install maturin
+# Install dev dependencies (PEP 735 dependency group) and build the package
+python -mpip install --group dev
 # --release takes longer to build but produces a faster package
 # Add other Cargo flags if needed, e.g. --no-default-features --features=ceres-source
-maturin develop --extras=dev
+maturin develop
 ```
 
 On subsequent runs, activate the environment with `source venv/bin/activate` and rebuild Rust code with
-`maturin develop`. Python-only changes require no rebuild. The `--extras=dev` flag is only needed once to
-install development dependencies.
+`maturin develop`. Python-only changes require no rebuild. The `pip install --group dev` step is only
+needed once to install development dependencies.
 
 It is also recommended to install `pre-commit` hooks to keep the codebase clean.
 Install via `pip` (see the [documentation](https://pre-commit.com/#install) for other options), then run:
@@ -937,7 +939,7 @@ pre-commit install
 
 ### Run tests and benchmarks
 
-All test dependencies are installed with `--extras=dev`. Run the tests with:
+All test dependencies are installed via `pip install --group dev` (see above). Run the tests with:
 
 ```bash
 python -mpytest

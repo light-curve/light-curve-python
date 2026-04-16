@@ -35,7 +35,11 @@ full = [
     "scipy<2",
 ]
 
-# Testing environment
+# Testing environment. Still an extra because `maturin develop --extras=test`
+# in .github/workflows/test.yml and `cibuildwheel.test-extras` in the wheel
+# test overrides both call it by name; moving it to [dependency-groups] would
+# require updating those invocations (and cibuildwheel's test-groups support).
+# See issue #670.
 test = [
     "pytest",
     "markdown-pytest",
@@ -55,6 +59,11 @@ test = [
     "joblib",
     "pandas<2.3.3",  # >=2.3.3 has no manylinux_2_17 wheels, only manylinux_2_28
 ]
+
+# Dev dependencies moved out of [project.optional-dependencies] and into
+# [dependency-groups] (PEP 735) so they no longer surface as install-time
+# extras (`pip install light-curve[dev]`). See issue #670.
+[dependency-groups]
 dev = [
     "pytest",
     "markdown-pytest",
@@ -191,7 +200,7 @@ set_env =
     CARGO_TARGET_DIR = {tox_root}/target
 
 [testenv:py{310,311,312,313,314}-test]
-extras = dev
+dependency_groups = dev
 commands =
     pytest README.md tests/ light_curve/
     ruff check .
@@ -199,7 +208,7 @@ set_env =
     CARGO_TARGET_DIR = {tox_root}/target
 
 [testenv:py{313,314}t-test]
-extras = dev-free-threading
+dependency_groups = dev-free-threading
 commands =
     pytest README.md tests/ light_curve/ \
         --ignore tests/test_w_bench.py \

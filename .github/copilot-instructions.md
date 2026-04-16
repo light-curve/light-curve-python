@@ -51,7 +51,8 @@ light-curve-python/
    python3 -m venv venv
    source venv/bin/activate
    pip install maturin
-   maturin develop --extras=dev
+   pip install --group dev
+   maturin develop
    ```
 
 3. **Installing pre-commit hooks**:
@@ -150,7 +151,7 @@ When suggesting build commands, consider: `--no-default-features --features=...`
 ### Dependencies
 
 - **Rust dependencies**: Managed via `Cargo.toml`, keep `Cargo.lock` committed
-- **Python dependencies**: Minimal required (`numpy`), optional extras (`full`, `test`, `dev`)
+- **Python dependencies**: Minimal required (`numpy`), optional extras (`full`, `test`), and PEP 735 dependency groups (`dev`, `dev-free-threading`)
 - System dependencies required: GSL (optional but default)
 
 ## Common Tasks
