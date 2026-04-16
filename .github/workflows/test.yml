@@ -127,7 +127,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: "3.14"
       - name: Install build deps
         run: pip install "${{ needs.py_build_deps.outputs.output }}"
       - name: Install system dependencies
@@ -139,7 +139,7 @@ jobs:
           source <(cargo llvm-cov show-env --export-prefix)
           python -m venv venv
           source venv/bin/activate
-          maturin develop --extras=test
+          maturin develop --group dev
           python -m pytest
           cargo llvm-cov report --lcov --output-path lcov.info
       - name: Upload coverage to Codecov
@@ -178,7 +178,7 @@ jobs:
             python3 -m venv venv
             . venv/bin/activate
             pip install "${{ needs.py_build_deps.outputs.output }}" pytest-codspeed
-            maturin develop --extras=test --release
+            maturin develop --group test --release
             python3 -mpytest -m "not (nobs or multi)" --codspeed tests/test_w_bench.py
 
   msrv-build:

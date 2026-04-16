@@ -38,6 +38,7 @@ full = [
     "scipy<2",
 ]
 
+[dependency-groups]
 # Testing environment
 test = [
     "pytest",
@@ -194,7 +195,7 @@ set_env =
     CARGO_TARGET_DIR = {tox_root}/target
 
 [testenv:py{310,311,312,313,314}-test]
-extras = dev
+dependency_groups = dev
 commands =
     pytest README.md tests/ light_curve/
     ruff check .
@@ -202,7 +203,7 @@ set_env =
     CARGO_TARGET_DIR = {tox_root}/target
 
 [testenv:py{313,314}t-test]
-extras = dev-free-threading
+dependency_groups = dev-free-threading
 commands =
     pytest README.md tests/ light_curve/ \
         --ignore tests/test_w_bench.py \
@@ -269,4 +270,4 @@ environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--lo
 [[tool.cibuildwheel.overrides]]
 select = "cp*-manylinux_x86_64 cp*-macosx*"
 test-command = "pytest {package}/README.md {package}/light_curve/ {package}/tests/"
-test-extras = ["test"]
+test-groups = ["test"]
