@@ -57,8 +57,24 @@ test = [
     "pandas<2.3.3",  # >=2.3.3 has no manylinux_2_17 wheels, only manylinux_2_28
 ]
 dev = [
-    {include-group = "test"},
+    "pytest",
+    "markdown-pytest",
+    "pytest-benchmark",
+    "pytest-subtests>=0.10",
+    "iminuit>=2.21,<3",
+    "numpy",
+    "pyarrow",
+    "arro3-core",
+    "nanoarrow",
+    "polars",
+    "nested-pandas",
+    "s3fs",
+    "universal-pathlib",
+    "scipy",
     "astropy",
+    "cesium",
+    "joblib",
+    "pandas",
     "ruff",
 ]
 # cesium, iminuit, nanoarrow, polars don't support free-threading yet
