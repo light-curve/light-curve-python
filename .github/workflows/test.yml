@@ -6,6 +6,7 @@ jobs:
   py_build_deps:
     outputs:
       output: ${{ steps.extract_from_toml.outputs.output }}
+      test_output: ${{ steps.extract_from_toml.outputs.test_output }}
 
     runs-on: ubuntu-slim
 
@@ -24,7 +25,7 @@ jobs:
       - name: Extract build deps from pyproject.toml
         id: extract_from_toml
         run: |
-          echo "output="$(python -c 'import tomllib; print(" ".join(tomllib.load(open("pyproject.toml", "rb"))["build-system"]["requires"]))') >> "$GITHUB_OUTPUT"
+          python -c 'import tomllib; data = tomllib.load(open("pyproject.toml", "rb")); print("output=" + " ".join(data["build-system"]["requires"])); print("test_output=" + " ".join(data["dependency-groups"]["test"]))' >> "$GITHUB_OUTPUT"
 
 
   test:
@@ -140,7 +141,7 @@ jobs:
           python -m venv venv
           source venv/bin/activate
           maturin develop
-          python -c 'import subprocess, sys, tomllib; deps = tomllib.load(open("pyproject.toml", "rb"))["dependency-groups"]["test"]; subprocess.check_call([sys.executable, "-m", "pip", "install", *deps])'
+          pip install "${{ needs.py_build_deps.outputs.test_output }}"
           python -m pytest
           cargo llvm-cov report --lcov --output-path lcov.info
       - name: Upload coverage to Codecov
@@ -180,7 +181,7 @@ jobs:
             . venv/bin/activate
             pip install "${{ needs.py_build_deps.outputs.output }}" pytest-codspeed
             maturin develop --release
-            python -c 'import subprocess, sys, tomllib; deps = tomllib.load(open("pyproject.toml", "rb"))["dependency-groups"]["test"]; subprocess.check_call([sys.executable, "-m", "pip", "install", *deps])'
+            pip install "${{ needs.py_build_deps.outputs.test_output }}"
             python3 -mpytest -m "not (nobs or multi)" --codspeed tests/test_w_bench.py
 
   msrv-build:
