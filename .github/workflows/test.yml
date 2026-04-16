@@ -139,8 +139,7 @@ jobs:
           source <(cargo llvm-cov show-env --export-prefix)
           python -m venv venv
           source venv/bin/activate
-          maturin develop
-          pip install --group test .
+          maturin develop --group test
           python -m pytest
           cargo llvm-cov report --lcov --output-path lcov.info
       - name: Upload coverage to Codecov
@@ -179,8 +178,7 @@ jobs:
             python3 -m venv venv
             . venv/bin/activate
             pip install "${{ needs.py_build_deps.outputs.output }}" pytest-codspeed
-            maturin develop --release
-            pip install --group test .
+            maturin develop --group test --release
             python3 -mpytest -m "not (nobs or multi)" --codspeed tests/test_w_bench.py
 
   msrv-build:
