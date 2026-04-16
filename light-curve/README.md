@@ -684,7 +684,7 @@ import numpy as np
 import pyarrow as pa
 from upath import UPath
 
-# Read a ZTF DR23 HiPSCat partition with nested light curves
+# Read a ZTF DR23 HATS partition with nested light curves
 s3_path = UPath(
     "s3://ipac-irsa-ztf/contributed/dr23/lc/hats/ztf_dr23_lc-hats/dataset/Norder=6/Dir=30000/Npix=34623/part0.snappy.parquet",
     anon=True,
