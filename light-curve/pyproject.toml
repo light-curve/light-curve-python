@@ -34,8 +34,25 @@ full = [
     "iminuit>=2.21,<3",
     "scipy<2",
 ]
+# cesium, iminuit, nanoarrow, polars don't support free-threading yet
+dev-free-threading = [
+    "pytest",
+    "markdown-pytest",
+    "pytest-benchmark",
+    "pytest-subtests>=0.10",
+    "numpy",
+    "pyarrow",
+    "arro3-core",
+    "nested-pandas",
+    "s3fs",
+    "universal-pathlib",
+    "scipy",
+    "joblib",
+    "pandas",
+    "ruff",
+]
 
-# Testing environment
+[dependency-groups]
 test = [
     "pytest",
     "markdown-pytest",
@@ -76,23 +93,6 @@ dev = [
     "pandas",
     "ruff",
 ]
-# cesium, iminuit, nanoarrow, polars don't support free-threading yet
-dev-free-threading = [
-    "pytest",
-    "markdown-pytest",
-    "pytest-benchmark",
-    "pytest-subtests>=0.10",
-    "numpy",
-    "pyarrow",
-    "arro3-core",
-    "nested-pandas",
-    "s3fs",
-    "universal-pathlib",
-    "scipy",
-    "joblib",
-    "pandas",
-    "ruff",
-]
 
 [tool.maturin]
 # It asks to use Cargo.lock to make the build reproducible
@@ -109,7 +109,7 @@ macos-deployment-target = "10.9"
 [tool.black]
 line-length = 120
 target-version = ["py310"]
-include = '\.py$'
+include = '\\.py$'
 exclude = '''
      /(
          docs
@@ -117,11 +117,11 @@ exclude = '''
        | target
        | tests/light-curve-test-data
        | wheelhouse
-       | \.benchmarks
-       | \.idea
-       | \.mypy_cache
-       | \.pytest_cache
-       | \.tox
+       | \\.benchmarks
+       | \\.idea
+       | \\.mypy_cache
+       | \\.pytest_cache
+       | \\.tox
        | _build
      )/
  '''
@@ -157,7 +157,6 @@ select = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-# Unused and star imports
 "light_curve/__init__.py" = ["F401", "F403", "I001"]
 "light_curve/light_curve_ext.py" = ["F403", "F405"]
 "light_curve/light_curve_py/__init__.py" = ["F403"]
@@ -201,18 +200,17 @@ set_env =
 [testenv:py{313,314}t-test]
 extras = dev-free-threading
 commands =
-    pytest README.md tests/ light_curve/ \
-        --ignore tests/test_w_bench.py \
-        --ignore tests/light_curve_py/features/test_rainbow.py \
-        --deselect README.md::test_rainbow_fit_example \
-        --deselect README.md::test_many_polars \
-        --deselect tests/light_curve_ext/test_feature.py::test_many_nanoarrow \
+    pytest README.md tests/ light_curve/ \\
+        --ignore tests/test_w_bench.py \\
+        --ignore tests/light_curve_py/features/test_rainbow.py \\
+        --deselect README.md::test_rainbow_fit_example \\
+        --deselect README.md::test_many_polars \\
+        --deselect tests/light_curve_ext/test_feature.py::test_many_nanoarrow \\
         --deselect tests/light_curve_ext/test_feature.py::test_many_polars
     ruff check .
 set_env =
     CARGO_TARGET_DIR = {tox_root}/target
 """
-
 
 [tool.cibuildwheel]
 # Default is "pip", but it is recommended to use "build"
@@ -231,7 +229,19 @@ manylinux-pypy_aarch64-image = "ghcr.io/light-curve/base-docker-images/manylinux
 manylinux-pypy_x86_64-image = "ghcr.io/light-curve/base-docker-images/manylinux2014_x86_64"
 # Musllinux
 musllinux-aarch64-image = "ghcr.io/light-curve/base-docker-images/musllinux_1_2_aarch64"
-musllinux-x86_64-image = "ghcr.io/light-curve/base-docker-images/musllinux_1_2_x86_64"
+musllinux-x86_64-image = "ghcr.io/light-curve/base-docker-images/musllinux_1_2_aarch64"
+
+[[tool.cibuildwheel.overrides]]
+select = "*linux_x86_64"
+# We'd like to use MKL for x86_64
+environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features=abi3,ceres-system,mkl,gsl,mimalloc" }
+
+# Test
+# We use platforms natively available on GitHub Actions and skip Windows because it doesn't support all the features
+[[tool.cibuildwheel.overrides]]
+select = "cp*-manylinux_x86_64 cp*-macosx*"
+test-command = "pytest {package}/README.md {package}/light_curve/ {package}/tests/"
+test-extras = ["test"]
 
 [tool.cibuildwheel.macos]
 before-all = [
@@ -255,15 +265,12 @@ before-all = [
 ]
 environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features=abi3,ceres-system,gsl,mimalloc", "VCPKG_ROOT" = "C:/vcpkg", "VCPKGRS_TRIPLET" = "x64-windows-static-md", "LIB" = "C:/vcpkg/installed/x64-windows-static-md/lib;$LIB" }
 
-# Build with Intel MKL on Linux x86_64
-[[tool.cibuildwheel.overrides]]
-select = "*linux_x86_64"
-# We'd like to use MKL for x86_64
-environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features=abi3,ceres-system,mkl,gsl,mimalloc" }
+[[tool.cibuildwheel.macos.environment]]
+DYLD_LIBRARY_PATH = "$(brew --prefix gcc)/lib/gcc/current"
 
-# Test
-# We use platforms natively available on GitHub Actions and skip Windows because it doesn't support all the features
-[[tool.cibuildwheel.overrides]]
-select = "cp*-manylinux_x86_64 cp*-macosx*"
-test-command = "pytest {package}/README.md {package}/light_curve/ {package}/tests/"
-test-extras = ["test"]
+[[tool.cibuildwheel.windows.environment]]
+PATH = "$PATH:$HOME/.cargo/bin"
+MATURIN_PEP517_ARGS = "--locked --no-default-features --features=abi3,ceres-system,gsl,mimalloc"
+VCPKG_ROOT = "C:/vcpkg"
+VCPKGRS_TRIPLET = "x64-windows-static-md"
+LIB = "C:/vcpkg/installed/x64-windows-static-md/lib;$LIB"
