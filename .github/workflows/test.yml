@@ -139,7 +139,7 @@ jobs:
           source <(cargo llvm-cov show-env --export-prefix)
           python -m venv venv
           source venv/bin/activate
-          maturin develop --group test
+          maturin develop --group dev
           python -m pytest
           cargo llvm-cov report --lcov --output-path lcov.info
       - name: Upload coverage to Codecov
