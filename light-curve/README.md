@@ -6,7 +6,6 @@ time-series feature extraction for astrophysics.
 
 [![PyPI version](https://badge.fury.io/py/light-curve.svg)](https://pypi.org/project/light-curve/)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/light-curve-python.svg)](https://anaconda.org/conda-forge/light-curve-python)
-[![Conda Recipe](https://img.shields.io/badge/recipe-light--curve--python-green.svg)](https://anaconda.org/conda-forge/light-curve-python)
 [![testing](https://github.com/light-curve/light-curve-python/actions/workflows/test.yml/badge.svg)](https://github.com/light-curve/light-curve-python/actions/workflows/test.yml)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/light-curve/light-curve-python/main.svg)](https://results.pre-commit.ci/latest/github/light-curve/light-curve-python/main)
 
