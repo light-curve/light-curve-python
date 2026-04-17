@@ -697,7 +697,7 @@ ndf = npd.read_parquet(
 # Select rows with more than 10 observations
 ndf = ndf.loc[ndf["lightcurve"].list_lengths > 10]
 
-# We must have subcolumns to be the same dtype and be in t, m, sigma order, so we rename and convert time.
+# We must have subcolumns to be the same dtype, so we convert time to float32.
 ndf["lightcurve.t"] = np.asarray(ndf["lightcurve.hmjd"] - 58000, dtype=np.float32)
 
 # Extract features directly from the Arrow-backed nested column
