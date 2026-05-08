@@ -32,70 +32,61 @@ dynamic = [
 Source = "https://github.com/light-curve/light-curve-python"
 
 [project.optional-dependencies]
-# Packages required by some experimental features
+# Packages required by some experimental features.
+# Note: onnxruntime is intentionally excluded — install the variant that matches
+# your hardware (onnxruntime / onnxruntime-gpu / etc.) separately.
+# See https://onnxruntime.ai for available packages.
 full = [
     "iminuit>=2.21,<3",
     "scipy<2",
 ]
 
 [dependency-groups]
-# Testing environment
+# Base testing deps: no version-varying packages (numpy, pyarrow, pandas, onnxruntime),
+# no linting tools, compatible with free-threading
+test-base = [
+    "pytest",
+    "markdown-pytest",
+    "pytest-benchmark",
+    "pytest-subtests>=0.10",
+    "arro3-core",
+    "nested-pandas",
+    "s3fs",
+    "universal-pathlib",
+    "scipy",
+    "joblib",
+    "huggingface-hub",
+]
+# Full testing environment (adds packages that don't support free-threading yet:
+# cesium, iminuit, nanoarrow, polars)
 test = [
-    "pytest",
-    "markdown-pytest",
-    "pytest-benchmark",
-    "pytest-subtests>=0.10",
-    "iminuit>=2.21,<3",
-    "numpy",
-    "pyarrow<=20", # Because of manylinux2014 support
-    "arro3-core",
-    "nanoarrow",
-    "polars",
-    "nested-pandas",
-    "s3fs",
-    "universal-pathlib",
-    "scipy",
-    "cesium",
-    "joblib",
-    "pandas<2.3.4",  # >=2.3.3 has no manylinux_2_17 wheels, only manylinux_2_28
-]
-dev = [
-    "pytest",
-    "markdown-pytest",
-    "pytest-benchmark",
-    "pytest-subtests>=0.10",
-    "iminuit>=2.21,<3",
+    {include-group = "test-base"},
     "numpy",
     "pyarrow",
-    "arro3-core",
+    "pandas",
+    "onnxruntime<2",
+    "iminuit>=2.21,<3",
     "nanoarrow",
     "polars",
-    "nested-pandas",
-    "s3fs",
-    "universal-pathlib",
-    "scipy",
-    "astropy",
     "cesium",
-    "joblib",
-    "pandas",
-    "ruff",
 ]
-# cesium, iminuit, nanoarrow, polars don't support free-threading yet
+# Development environment for free-threaded Python builds
 dev-free-threading = [
-    "pytest",
-    "markdown-pytest",
-    "pytest-benchmark",
-    "pytest-subtests>=0.10",
+    {include-group = "test-base"},
     "numpy",
     "pyarrow",
-    "arro3-core",
-    "nested-pandas",
-    "s3fs",
-    "universal-pathlib",
-    "scipy",
-    "joblib",
     "pandas",
+    "onnxruntime<2",
     "ruff",
+]
+# Full development environment
+dev = [
+    {include-group = "dev-free-threading"},
+    "iminuit>=2.21,<3",
+    "nanoarrow",
+    "polars",
+    "cesium",
+    "astropy",
 ]
 
 [tool.maturin]
@@ -137,6 +128,7 @@ exclude = [
     "dist",
     "target",
     "tests/light-curve-test-data",
+    "tests/prep-models",
     "wheelhouse",
     ".benchmarks",
     ".idea",
@@ -174,6 +166,10 @@ addopts = "-ra --import-mode=append --benchmark-min-time=0.1 --benchmark-max-tim
 testpaths = [
     "tests/",
     "README.md", # requires markdown-pytest
+]
+norecursedirs = [
+    "tests/prep-models",
+    "tests/light-curve-test-data",
 ]
 markers = [
     "nobs: marks benchmarks for different numbers of observations (deselect with '-m \"not nobs\"')",
@@ -265,9 +261,10 @@ select = "*linux_x86_64"
 # We'd like to use MKL for x86_64
 environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features=abi3,ceres-system,mkl,gsl,mimalloc" }
 
-# Test
-# We use platforms natively available on GitHub Actions and skip Windows because it doesn't support all the features
+# Test on macOS only (natively available on GitHub Actions runners).
+# Manylinux wheels are not tested in cibuildwheel: numpy<2 required for
+# manylinux_2_17 onnxruntime wheels is incompatible with nested-pandas.
 [[tool.cibuildwheel.overrides]]
-select = "cp*-manylinux_x86_64 cp*-macosx*"
+select = "cp*-macosx*"
 test-command = "pytest {package}/README.md {package}/light_curve/ {package}/tests/"
 test-groups = ["test"]
