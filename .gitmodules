@@ -1,3 +1,6 @@
 [submodule "test-data"]
 	path = light-curve/tests/light-curve-test-data
 	url = https://github.com/light-curve/test-data.git
+[submodule "light-curve/tests/prep-models"]
+	path = light-curve/tests/prep-models
+	url = https://github.com/light-curve/prep-models.git
