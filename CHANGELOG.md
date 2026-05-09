@@ -13,8 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Development and test dependencies are moved from project extras to `dependency-groups` in `pyproject.toml`, so only
-  user-facing optional dependencies are exposed as extras.
+--
 
 ### Deprecated
 
@@ -26,11 +25,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed segmentation fault when using `pyarrow` 24 on macOS ([#694](https://github.com/light-curve/light-curve-python/pull/694))
+--
 
 ### Security
 
 --
+
+
+## [0.12.2] 2026-05-09
+
+### Changed
+
+- Development and test dependencies are moved from project extras to `dependency-groups` in `pyproject.toml`, so only
+  user-facing optional dependencies are exposed as extras.
+
+### Fixed
+
+- Fixed segmentation fault when using `pyarrow` 24 on macOS ([#694](https://github.com/light-curve/light-curve-python/pull/694))
+
 
 ## [0.12.1] 2026-04-09
 
