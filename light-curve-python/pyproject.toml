@@ -1,6 +1,3 @@
 [build-system]
 requires = ["setuptools", "toml", "wheel"]
 build-backend = "setuptools.build_meta"
-
-[project.urls]
-Source = "https://github.com/light-curve/light-curve-python"
