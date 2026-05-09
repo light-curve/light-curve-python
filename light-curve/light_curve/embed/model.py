@@ -8,6 +8,7 @@ from typing import Sequence
 import numpy as np
 from numpy.typing import ArrayLike
 
+from ..light_curve_py.warnings import warn_experimental
 from .reduction import InputTensors, Reduction, reduction_from_str
 
 
@@ -64,6 +65,9 @@ class EmbeddingSession(ABC):
         reduction: str | list[str] | Reduction,
         time_red_kwargs: dict[str, object] | None = None,
     ) -> None:
+        warn_experimental(
+            f"{self.__class__.__module__}.{self.__class__.__name__} is experimental and may change in future versions"
+        )
         self.session = session
 
         if time_red_kwargs is None:
