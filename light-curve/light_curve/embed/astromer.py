@@ -6,7 +6,7 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 from .model import AstromerInputs, SingleBandModel
-from .time_reduction import TimeReduction
+from .reduction import Reduction
 
 _ONNX_INSTALL_HINT = (
     "An ONNX runtime is required to run embedding models. "
@@ -50,7 +50,7 @@ class _AstromerModel(SingleBandModel):
 
     Provides shared preprocessing (per-window zero-mean normalisation) and
     ONNX inference logic for all Astromer variants.  Concrete subclasses set
-    :attr:`_HF_REPO` and, if needed, override the default ``time_reduction``.
+    :attr:`_HF_REPO` and, if needed, override the default ``reduction``.
 
     Output shape
     ------------
@@ -80,13 +80,13 @@ class _AstromerModel(SingleBandModel):
         *,
         output: str = "mean",
         bands: Sequence[str | int] | None = None,
-        time_reduction: str | list[str] | TimeReduction = "non-overlapping-windows",
+        reduction: str | list[str] | Reduction = "non-overlapping-windows",
         time_red_kwargs: dict[str, object] | None = None,
     ) -> None:
         super().__init__(
             session,
             bands=bands,
-            time_reduction=time_reduction,
+            reduction=reduction,
             time_red_kwargs=time_red_kwargs,
         )
         if output not in self._OUTPUTS:
@@ -99,7 +99,7 @@ class _AstromerModel(SingleBandModel):
         output: str = "mean",
         *,
         bands: Sequence[str | int] | None = None,
-        time_reduction: str | list[str] | TimeReduction = "non-overlapping-windows",
+        reduction: str | list[str] | Reduction = "non-overlapping-windows",
         time_red_kwargs: dict[str, object] | None = None,
         providers=None,
         sess_options=None,
@@ -126,12 +126,12 @@ class _AstromerModel(SingleBandModel):
         bands : sequence of str or int, optional
             Ordered band labels to embed.  ``None`` (default) treats the whole
             light curve as one band.
-        time_reduction : str, list of str, or TimeReduction, optional
+        reduction : str, list of str, or Reduction, optional
             Windowing / subsampling strategy.  Defaults to
             ``"non-overlapping-windows"``.
         time_red_kwargs : dict, optional
-            Extra keyword arguments forwarded to :func:`time_reduction_from_str`
-            when ``time_reduction`` is given as a string.
+            Extra keyword arguments forwarded to :func:`reduction_from_str`
+            when ``reduction`` is given as a string.
         providers : list of str, optional
             ONNX Runtime execution providers, e.g.
             ``["CUDAExecutionProvider", "CPUExecutionProvider"]``.
@@ -189,7 +189,7 @@ class _AstromerModel(SingleBandModel):
             session=session,
             output=output,
             bands=bands,
-            time_reduction=time_reduction,
+            reduction=reduction,
             time_red_kwargs=time_red_kwargs,
         )
 
@@ -219,7 +219,7 @@ class _AstromerModel(SingleBandModel):
             ``(n_windows, seq_size, 1)`` in float32; ``mask`` is 1 for valid
             observations and 0 for zero-padded positions, same shape and dtype.
         """
-        time, mag, mask = self.time_reduction.preprocess_lc(time, mag, seq_size=self.seq_size)
+        time, mag, mask = self.reduction.preprocess_lc(time, mag, seq_size=self.seq_size)
 
         bool_mask = mask  # (n_windows, seq_size), boolean
         n_valid = mask.sum(axis=-1, keepdims=True)
@@ -255,7 +255,7 @@ class _AstromerModel(SingleBandModel):
         if raw_embedding.ndim == 2:
             raw_embedding = np.expand_dims(raw_embedding, axis=1)
 
-        return self.time_reduction.reduce_embeddings(raw_embedding, tensors, output=self.output)
+        return self.reduction.reduce_embeddings(raw_embedding, tensors, output=self.output)
 
 
 class Astromer1(_AstromerModel):
@@ -285,7 +285,7 @@ class Astromer1(_AstromerModel):
     bands : sequence of str or int, optional
         Band labels.  ``None`` (default) treats the whole light curve as one
         band.
-    time_reduction : str, list of str, or TimeReduction
+    reduction : str, list of str, or Reduction
         Windowing strategy.  Defaults to :class:`NonOverlappingWindows`.
     """
 
@@ -318,7 +318,7 @@ class Astromer2(_AstromerModel):
     bands : sequence of str or int, optional
         Band labels.  ``None`` (default) treats the whole light curve as one
         band.
-    time_reduction : str, list of str, or TimeReduction
+    reduction : str, list of str, or Reduction
         Windowing strategy.  Defaults to :class:`NonOverlappingWindows`, which
         matches the sequential-window preprocessing used to produce the reference
         embeddings on HuggingFace.

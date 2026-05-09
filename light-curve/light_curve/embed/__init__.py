@@ -1,15 +1,15 @@
 from .astromer import Astromer1, Astromer2, create_onnx_session
 from .model import AstromerInputs, Dim, EmbeddingSession, SingleBandModel
-from .time_reduction import (
+from .reduction import (
     Beginning,
     End,
     InputTensors,
-    MultipleTimeReductions,
+    MultipleReductions,
     NonOverlappingWindows,
     RandomSubsample,
-    SingleSubsampleTimeReduction,
-    TimeReduction,
-    time_reduction_from_str,
+    Reduction,
+    SingleSubsampleReduction,
+    reduction_from_str,
 )
 
 __all__ = [
@@ -21,12 +21,12 @@ __all__ = [
     "EmbeddingSession",
     "End",
     "InputTensors",
-    "MultipleTimeReductions",
+    "MultipleReductions",
     "NonOverlappingWindows",
     "RandomSubsample",
+    "Reduction",
     "SingleBandModel",
-    "SingleSubsampleTimeReduction",
-    "TimeReduction",
+    "SingleSubsampleReduction",
     "create_onnx_session",
-    "time_reduction_from_str",
+    "reduction_from_str",
 ]

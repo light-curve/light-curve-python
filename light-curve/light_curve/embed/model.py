@@ -8,7 +8,7 @@ from typing import Sequence
 import numpy as np
 from numpy.typing import ArrayLike
 
-from .time_reduction import InputTensors, TimeReduction, time_reduction_from_str
+from .reduction import InputTensors, Reduction, reduction_from_str
 
 
 @dataclass
@@ -47,12 +47,12 @@ class EmbeddingSession(ABC):
     session :
         An ``onnxruntime.InferenceSession`` (or any object with a compatible
         ``.run()`` interface).
-    time_reduction : str, list of str, or TimeReduction
+    reduction : str, list of str, or Reduction
         Strategy for mapping variable-length light curves to fixed-length
         sequences.
     time_red_kwargs : dict, optional
-        Extra keyword arguments forwarded to :func:`time_reduction_from_str`
-        when ``time_reduction`` is given as a string.
+        Extra keyword arguments forwarded to :func:`reduction_from_str`
+        when ``reduction`` is given as a string.
     """
 
     seq_size: int
@@ -61,16 +61,16 @@ class EmbeddingSession(ABC):
         self,
         session,
         *,
-        time_reduction: str | list[str] | TimeReduction,
+        reduction: str | list[str] | Reduction,
         time_red_kwargs: dict[str, object] | None = None,
     ) -> None:
         self.session = session
 
         if time_red_kwargs is None:
             time_red_kwargs = {}
-        if not isinstance(time_reduction, TimeReduction):
-            time_reduction = time_reduction_from_str(time_reduction, **time_red_kwargs)
-        self.time_reduction = time_reduction
+        if not isinstance(reduction, Reduction):
+            reduction = reduction_from_str(reduction, **time_red_kwargs)
+        self.reduction = reduction
 
     @abstractmethod
     def __call__(self, *arrays: ArrayLike) -> np.ndarray:
@@ -126,11 +126,11 @@ class SingleBandModel(EmbeddingSession, ABC):
     bands : sequence of str or int, optional
         Ordered band labels to embed.  ``None`` treats the whole light curve as
         one band.
-    time_reduction : str, list of str, or TimeReduction
+    reduction : str, list of str, or Reduction
         Windowing / subsampling strategy.  Defaults to
         ``"non-overlapping-windows"``.
     time_red_kwargs : dict, optional
-        Extra kwargs forwarded to :func:`time_reduction_from_str`.
+        Extra kwargs forwarded to :func:`reduction_from_str`.
     """
 
     def __init__(
@@ -138,12 +138,12 @@ class SingleBandModel(EmbeddingSession, ABC):
         session,
         *,
         bands: Sequence[str | int] | None = None,
-        time_reduction: str | list[str] | TimeReduction = "non-overlapping-windows",
+        reduction: str | list[str] | Reduction = "non-overlapping-windows",
         time_red_kwargs: dict[str, object] | None = None,
     ) -> None:
         super().__init__(
             session,
-            time_reduction=time_reduction,
+            reduction=reduction,
             time_red_kwargs=time_red_kwargs,
         )
         self.bands = bands

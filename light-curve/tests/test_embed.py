@@ -21,8 +21,8 @@ class AstromerTestConfig:
     model_name: str
     repo_id: str
     test_parquet: Path
-    # time reduction used when generating the reference parquet
-    ref_time_reduction: str
+    # reduction used when generating the reference parquet
+    ref_reduction: str
     # Astromer1 has larger TF→ONNX drift (~0.98) than Astromer2 (~0.999)
     cos_sim_threshold: float
 
@@ -32,14 +32,14 @@ ASTROMER_CONFIGS = [
         model_name="Astromer1",
         repo_id="light-curve/astromer1",
         test_parquet=PREP_MODELS_DIR / "astromer1" / "out" / "test-data" / "astromer1_test.parquet",
-        ref_time_reduction="beginning",
+        ref_reduction="beginning",
         cos_sim_threshold=0.97,
     ),
     AstromerTestConfig(
         model_name="Astromer2",
         repo_id="light-curve/astromer2",
         test_parquet=PREP_MODELS_DIR / "astromer2" / "out" / "test-data" / "astromer2_test.parquet",
-        ref_time_reduction="non-overlapping-windows",
+        ref_reduction="non-overlapping-windows",
         cos_sim_threshold=0.999,
     ),
 ]
@@ -125,7 +125,7 @@ def test_astromer_preprocess_normalises(model_class_name):
     import light_curve.embed as lce
 
     model_class = getattr(lce, model_class_name)
-    model = model_class(session=None, time_reduction="non-overlapping-windows")
+    model = model_class(session=None, reduction="non-overlapping-windows")
     time = np.linspace(0, 100, 200)
     mag = np.linspace(10, 15, 200)
     tensors = model.preprocess_lc(time, mag)
@@ -144,7 +144,7 @@ def test_non_overlapping_windows_sequence_output_long_lc(astromer_config, astrom
     import light_curve.embed as lce
 
     model_class = getattr(lce, astromer_config.model_name)
-    model = model_class(session=astromer_session, output="sequence", time_reduction="non-overlapping-windows")
+    model = model_class(session=astromer_session, output="sequence", reduction="non-overlapping-windows")
 
     # 350 obs → 2 windows: 200 valid + 150 valid (+50 padded)
     time = np.linspace(0, 1000, 350)
@@ -206,7 +206,7 @@ def test_mean_matches_reference(astromer_config, astromer_session, astromer_test
     mag = np.array([obs["mag"] for obs in lc])
     expected = np.array(astromer_test_table["embedding_mean"][row_idx])
 
-    model = model_class(session=astromer_session, output="mean", time_reduction=astromer_config.ref_time_reduction)
+    model = model_class(session=astromer_session, output="mean", reduction=astromer_config.ref_reduction)
     embedding = model(time, mag)
 
     assert embedding.shape == (1, 1, 1, 256)

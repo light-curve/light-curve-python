@@ -22,7 +22,7 @@ class InputTensors:
     bool_mask: np.ndarray = field(kw_only=True)
 
 
-class TimeReduction(ABC):
+class Reduction(ABC):
     """Abstract base for strategies that map a variable-length light curve to fixed-length sequences.
 
     Subclasses implement :meth:`subsample_lc` (windowing / subsampling logic) and
@@ -123,7 +123,7 @@ class TimeReduction(ABC):
         raise NotImplementedError
 
 
-class SingleSubsampleTimeReduction(TimeReduction, ABC):
+class SingleSubsampleReduction(Reduction, ABC):
     """Base for strategies that produce exactly one window per light curve."""
 
     def subsample_lc(self, *arrays: np.ndarray, seq_size: int) -> list[tuple[np.ndarray, ...]]:
@@ -181,7 +181,7 @@ class SingleSubsampleTimeReduction(TimeReduction, ABC):
         return embeddings
 
 
-class Beginning(SingleSubsampleTimeReduction):
+class Beginning(SingleSubsampleReduction):
     """Select the chronologically first ``seq_size`` observations of the light curve."""
 
     def single_subsample_lc(self, *arrays: np.ndarray, seq_size: int) -> tuple[np.ndarray, ...]:
@@ -202,7 +202,7 @@ class Beginning(SingleSubsampleTimeReduction):
         return tuple(array[:seq_size] for array in arrays)
 
 
-class End(SingleSubsampleTimeReduction):
+class End(SingleSubsampleReduction):
     """Select the chronologically last ``seq_size`` observations of the light curve."""
 
     def single_subsample_lc(self, *arrays: np.ndarray, seq_size: int) -> tuple[np.ndarray, ...]:
@@ -223,7 +223,7 @@ class End(SingleSubsampleTimeReduction):
         return tuple(array[-seq_size:] for array in arrays)
 
 
-class RandomSubsample(SingleSubsampleTimeReduction):
+class RandomSubsample(SingleSubsampleReduction):
     """Draw ``seq_size`` observations uniformly at random without replacement.
 
     Parameters
@@ -261,7 +261,7 @@ class RandomSubsample(SingleSubsampleTimeReduction):
         return tuple(array[indices] for array in arrays)
 
 
-class NonOverlappingWindows(TimeReduction):
+class NonOverlappingWindows(Reduction):
     """Split the light curve into consecutive non-overlapping windows of ``seq_size`` observations.
 
     A light curve of length *L* yields ``ceil(L / seq_size)`` windows; the last window
@@ -330,34 +330,34 @@ class NonOverlappingWindows(TimeReduction):
         return (window_sum / n_valid[:, np.newaxis])[np.newaxis, ...]
 
 
-class MultipleTimeReductions(TimeReduction):
-    """Apply several :class:`SingleSubsampleTimeReduction` strategies in parallel.
+class MultipleReductions(Reduction):
+    """Apply several :class:`SingleSubsampleReduction` strategies in parallel.
 
     Each strategy produces one window; embeddings are stacked along the subsample
     axis rather than aggregated, giving one embedding per strategy.
 
     Parameters
     ----------
-    reductions : list of SingleSubsampleTimeReduction
+    reductions : list of SingleSubsampleReduction
         Ordered list of strategies to apply.
 
     Raises
     ------
     ValueError
         If any element of ``reductions`` is not a
-        :class:`SingleSubsampleTimeReduction`.
+        :class:`SingleSubsampleReduction`.
     """
 
     def __init__(
         self,
-        reductions: list[SingleSubsampleTimeReduction],
+        reductions: list[SingleSubsampleReduction],
     ) -> None:
         super().__init__()
         for r in reductions:
-            if not isinstance(r, SingleSubsampleTimeReduction):
+            if not isinstance(r, SingleSubsampleReduction):
                 raise ValueError(
-                    f"Time reduction '{r}' is not a subsampling time reduction; "
-                    "currently only subsampling time reductions can be used in multiple time reductions"
+                    f"Reduction '{r}' is not a subsampling reduction; "
+                    "currently only subsampling reductions can be used in multiple reductions"
                 )
         self.reductions = reductions
 
@@ -372,7 +372,7 @@ class MultipleTimeReductions(TimeReduction):
         Parameters
         ----------
         reductions : list of str
-            Strategy names recognised by :func:`time_reduction_from_str`.
+            Strategy names recognised by :func:`reduction_from_str`.
         **kwargs
             Forwarded to each strategy constructor.  If ``rng`` is an integer
             seed it is converted to a :class:`numpy.random.Generator` first so
@@ -380,7 +380,7 @@ class MultipleTimeReductions(TimeReduction):
 
         Returns
         -------
-        MultipleTimeReductions
+        MultipleReductions
             Instance wrapping the instantiated strategies.
         """
         # In the cases where rng is an integer (seed), we should convert to a Generator first, so we don't reuse the
@@ -388,7 +388,7 @@ class MultipleTimeReductions(TimeReduction):
         if "rng" in kwargs:
             kwargs["rng"] = np.random.default_rng(kwargs["rng"])
         return cls(
-            reductions=[time_reduction_from_str(s, **kwargs) for s in reductions],
+            reductions=[reduction_from_str(s, **kwargs) for s in reductions],
         )
 
     def subsample_lc(self, *arrays: np.ndarray, seq_size: int) -> list[tuple[np.ndarray, ...]]:
@@ -431,8 +431,8 @@ class MultipleTimeReductions(TimeReduction):
         return embeddings
 
 
-def time_reduction_from_str(s: str | list[str], **kwargs) -> TimeReduction:
-    """Instantiate a :class:`TimeReduction` from a name string or list of name strings.
+def reduction_from_str(s: str | list[str], **kwargs) -> Reduction:
+    """Instantiate a :class:`Reduction` from a name string or list of name strings.
 
     Parameters
     ----------
@@ -440,14 +440,14 @@ def time_reduction_from_str(s: str | list[str], **kwargs) -> TimeReduction:
         Strategy name or list of names.  Recognised values (case-insensitive,
         underscores treated as hyphens): ``"beginning"``, ``"end"``,
         ``"random-subsample"``, ``"non-overlapping-windows"``.  A list with more
-        than one entry produces a :class:`MultipleTimeReductions`.
+        than one entry produces a :class:`MultipleReductions`.
     **kwargs
         Forwarded to the strategy constructor (e.g. ``rng`` for
         :class:`RandomSubsample`).
 
     Returns
     -------
-    TimeReduction
+    Reduction
         The instantiated strategy.
 
     Raises
@@ -458,7 +458,7 @@ def time_reduction_from_str(s: str | list[str], **kwargs) -> TimeReduction:
     """
     if isinstance(s, list):
         if len(s) != 1:
-            return MultipleTimeReductions.from_strings(s, **kwargs)
+            return MultipleReductions.from_strings(s, **kwargs)
         s = s[0]
 
     match s.lower().replace("_", "-"):
@@ -470,9 +470,9 @@ def time_reduction_from_str(s: str | list[str], **kwargs) -> TimeReduction:
             try:
                 rng = kwargs["rng"]
             except KeyError:
-                raise ValueError("rng must be provided for random subsample time reduction")
+                raise ValueError("rng must be provided for random subsample reduction")
             return RandomSubsample(rng=rng)
         case "non-overlapping-windows":
             return NonOverlappingWindows()
         case _:
-            raise ValueError(f"Unknown time reduction '{s}'")
+            raise ValueError(f"Unknown reduction '{s}'")
