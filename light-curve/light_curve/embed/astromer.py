@@ -1,48 +1,33 @@
 from __future__ import annotations
 
-from typing import Sequence
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Sequence
 
 import numpy as np
 from numpy.typing import ArrayLike
 
-from .model import AstromerInputs, SingleBandModel
-from .reduction import Reduction
+from light_curve.embed.input_tensors import InputTensors
+from light_curve.embed.model import SingleBandModel
+from light_curve.embed.reduction import Reduction
 
-_ONNX_INSTALL_HINT = (
-    "An ONNX runtime is required to run embedding models. "
-    "Install the variant that matches your hardware:\n"
-    "  CPU / Apple Silicon:  pip install onnxruntime\n"
-    "  NVIDIA GPU (CUDA):    pip install onnxruntime-gpu\n"
-    "  Windows DirectML:     pip install onnxruntime-directml\n"
-    "See https://onnxruntime.ai for the full list of packages."
-)
+if TYPE_CHECKING:
+    from typing import Self
 
 
-def create_onnx_session(model_path: str, **kwargs):
-    """Create an ``onnxruntime.InferenceSession``, with a helpful error if the package is missing.
+@dataclass
+class AstromerInputs(InputTensors):
+    """Input tensors for Astromer-family models.
 
-    Parameters
-    ----------
-    model_path : str
-        Path to the ONNX model file.
-    **kwargs
-        Forwarded verbatim to ``onnxruntime.InferenceSession``.
-
-    Returns
-    -------
-    onnxruntime.InferenceSession
-        A ready-to-use inference session.
-
-    Raises
-    ------
-    ImportError
-        If no onnxruntime variant is installed, with installation instructions.
+    ``times`` and ``input`` are float32 arrays of shape
+    ``(n_windows, seq_size, 1)`` ready for ONNX inference.  ``mask`` is the
+    same validity information cast to float32 for the model (1 = valid,
+    0 = padded), shape ``(n_windows, seq_size, 1)``.  ``bool_mask`` (inherited)
+    is the boolean equivalent, shape ``(n_windows, seq_size)``.
     """
-    try:
-        import onnxruntime as ort
-    except ImportError as exc:
-        raise ImportError(_ONNX_INSTALL_HINT) from exc
-    return ort.InferenceSession(model_path, **kwargs)
+
+    times: np.ndarray = field(kw_only=True)
+    input: np.ndarray = field(kw_only=True)
+    mask_in: np.ndarray = field(kw_only=True)
 
 
 class _AstromerModel(SingleBandModel):
@@ -50,7 +35,7 @@ class _AstromerModel(SingleBandModel):
 
     Provides shared preprocessing (per-window zero-mean normalisation) and
     ONNX inference logic for all Astromer variants.  Concrete subclasses set
-    :attr:`_HF_REPO` and, if needed, override the default ``reduction``.
+    :attr:`hf_repo` and, if needed, override the default ``reduction``.
 
     Output shape
     ------------
@@ -71,8 +56,8 @@ class _AstromerModel(SingleBandModel):
 
     seq_size: int = 200
     dtype: type = np.float32
-    _HF_REPO: str
-    _OUTPUTS: frozenset[str] = frozenset({"mean", "max", "sequence"})
+    hf_filename: str
+    model_outputs: frozenset[str] = frozenset({"mean", "max", "sequence"})
 
     def __init__(
         self,
@@ -81,17 +66,43 @@ class _AstromerModel(SingleBandModel):
         output: str = "mean",
         bands: Sequence[str | int] | None = None,
         reduction: str | list[str] | Reduction = "non-overlapping-windows",
-        time_red_kwargs: dict[str, object] | None = None,
+        reduction_kwargs: dict[str, object] | None = None,
     ) -> None:
         super().__init__(
             session,
             bands=bands,
             reduction=reduction,
-            time_red_kwargs=time_red_kwargs,
+            reduction_kwargs=reduction_kwargs,
         )
-        if output not in self._OUTPUTS:
-            raise ValueError(f"Unknown output '{output}'. Must be one of: {', '.join(sorted(self._OUTPUTS))}")
+        if output not in self.model_outputs:
+            raise ValueError(f"Unknown output '{output}'. Must be one of: {', '.join(sorted(self.model_outputs))}")
         self.output = output
+
+    def __call__(self, time: ArrayLike, mag: ArrayLike, band: ArrayLike | None = None) -> np.ndarray:
+        """Embed a light curve.
+
+        Parameters
+        ----------
+        Parameters
+        ----------
+        time : array-like, shape ``(n,)``
+            Observation times in days (e.g. MJD).
+        mag : array-like, shape ``(n,)``
+            Magnitudes.
+        band : array-like, shape ``(n,)``, optional
+            Band labels, required when ``self.bands`` is not ``None``.
+
+        Returns
+        -------
+        np.ndarray, shape ``(n_bands, n_subsamples, seq_size, embed_dim)``
+            Embedding tensor.  ``n_bands`` is 1 when ``self.bands`` is ``None``.
+
+        Raises
+        ------
+        ValueError
+            If ``band`` is provided but ``self.bands`` is ``None``, or vice versa.
+        """
+        return super().__call__(time, mag, band=band)
 
     @classmethod
     def from_hf(
@@ -100,10 +111,9 @@ class _AstromerModel(SingleBandModel):
         *,
         bands: Sequence[str | int] | None = None,
         reduction: str | list[str] | Reduction = "non-overlapping-windows",
-        time_red_kwargs: dict[str, object] | None = None,
-        providers=None,
-        sess_options=None,
-    ) -> "_AstromerModel":
+        reduction_kwargs: dict[str, object] | None = None,
+        ort_session_kwargs: dict[str, object] | None = None,
+    ) -> Self:
         """Load a model from the HuggingFace Hub.
 
         Downloads (and caches) the ONNX model file, creates an
@@ -117,27 +127,24 @@ class _AstromerModel(SingleBandModel):
             Named ONNX output to return.  One of:
 
             * ``"mean"`` (default) — masked mean pooling over valid timesteps,
-              output shape ``(batch, 256)``
+              output shape ``(bands, reductions, 1, 256)``
             * ``"max"`` — masked max pooling over valid timesteps,
-              output shape ``(batch, 256)``
+              output shape ``(bands, reductions, 1, 256)``
             * ``"sequence"`` — per-timestep embeddings (no aggregation),
-              output shape ``(batch, seq_size, 256)``
+              output shape ``(bands, reductions, 200, 256)``
 
-        bands : sequence of str or int, optional
+        bands : sequence of str or int or None, optional
             Ordered band labels to embed.  ``None`` (default) treats the whole
             light curve as one band.
         reduction : str, list of str, or Reduction, optional
             Windowing / subsampling strategy.  Defaults to
             ``"non-overlapping-windows"``.
-        time_red_kwargs : dict, optional
+        reduction_kwargs : dict or None, optional
             Extra keyword arguments forwarded to :func:`reduction_from_str`
             when ``reduction`` is given as a string.
-        providers : list of str, optional
-            ONNX Runtime execution providers, e.g.
-            ``["CUDAExecutionProvider", "CPUExecutionProvider"]``.
-        sess_options : onnxruntime.SessionOptions, optional
-            Advanced session configuration passed directly to
-            ``onnxruntime.InferenceSession``.
+        ort_session_kwargs : dict or None, optional
+            Additional keyword arguments forwarded to ``onnxruntime.InferenceSession``:
+            "sess_options", "providers", "provider_options".
 
         Returns
         -------
@@ -149,48 +156,17 @@ class _AstromerModel(SingleBandModel):
         ValueError
             If ``output`` is not one of the recognised output names.
         ImportError
-            If ``huggingface_hub`` is not installed, with instructions to
-            install it or to download the model file manually.
+            If ``huggingface_hub`` is not installed.
         ImportError
-            If no ``onnxruntime`` variant is installed, with hardware-specific
-            installation instructions.
+            If no ``onnxruntime`` variant is installed.
         """
-        if output not in cls._OUTPUTS:
-            raise ValueError(f"Unknown output '{output}'. Must be one of: {', '.join(sorted(cls._OUTPUTS))}")
-
-        model_prefix = cls._HF_REPO.split("/")[-1]
-        filename = f"{model_prefix}.onnx"
-
-        try:
-            from huggingface_hub import hf_hub_download
-        except ImportError as exc:
-            hf_url = f"https://huggingface.co/{cls._HF_REPO}/resolve/main/{filename}"
-            raise ImportError(
-                "huggingface_hub is required to download models from HuggingFace.\n"
-                "Install it with:\n"
-                "  pip install huggingface-hub\n"
-                "Or download the model file directly:\n"
-                f"  {hf_url}\n"
-                "then load it with:\n"
-                "  import onnxruntime as ort\n"
-                f'  {cls.__name__}(session=ort.InferenceSession("/path/to/{filename}"), output="{output}")'
-            ) from exc
-
-        model_path = hf_hub_download(repo_id=cls._HF_REPO, filename=filename)
-
-        session_kwargs = {}
-        if providers is not None:
-            session_kwargs["providers"] = providers
-        if sess_options is not None:
-            session_kwargs["sess_options"] = sess_options
-
-        session = create_onnx_session(model_path, **session_kwargs)
-        return cls(
-            session=session,
+        return super().from_hf(
+            cls.hf_filename,
             output=output,
             bands=bands,
             reduction=reduction,
-            time_red_kwargs=time_red_kwargs,
+            reduction_kwargs=reduction_kwargs,
+            ort_session_kwargs=ort_session_kwargs,
         )
 
     def preprocess_lc(
@@ -230,7 +206,7 @@ class _AstromerModel(SingleBandModel):
         mask = mask.astype(self.dtype)
 
         idx = (..., np.newaxis)
-        return AstromerInputs(times=time[idx], input=mag[idx], mask=mask[idx], bool_mask=bool_mask)
+        return AstromerInputs(times=time[idx], input=mag[idx], mask_in=mask[idx], bool_mask=bool_mask)
 
     def predict_tensors(self, tensors: AstromerInputs) -> np.ndarray:
         """Run the ONNX model on pre-processed tensors and return reduced embeddings.
@@ -248,7 +224,8 @@ class _AstromerModel(SingleBandModel):
         """
         (raw_embedding,) = self.session.run(
             [self.output],
-            {"input": tensors.input, "times": tensors.times, "mask_in": tensors.mask},
+            # {"input": tensors.input, "times": tensors.times, "mask_in": tensors.mask},
+            tensors.asdict(),
         )
 
         # Aggregated outputs (mean / max) have shape (n_windows, embed_dim); add SEQUENCE=1 axis
@@ -289,7 +266,8 @@ class Astromer1(_AstromerModel):
         Windowing strategy.  Defaults to :class:`NonOverlappingWindows`.
     """
 
-    _HF_REPO = "light-curve/astromer1"
+    hf_repo: str = "light-curve/astromer1"
+    hf_filename: str = "astromer1.onnx"
 
 
 class Astromer2(_AstromerModel):
@@ -324,4 +302,5 @@ class Astromer2(_AstromerModel):
         embeddings on HuggingFace.
     """
 
-    _HF_REPO = "light-curve/astromer2"
+    hf_repo: str = "light-curve/astromer2"
+    hf_filename: str = "astromer2.onnx"

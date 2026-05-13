@@ -1,25 +1,15 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 import numpy as np
 from numpy.typing import ArrayLike
 
+from light_curve.embed.input_tensors import InputTensors
+
 if TYPE_CHECKING:
     from typing import Self
-
-
-@dataclass
-class InputTensors:
-    """Base tensor container produced by :meth:`EmbeddingSession.preprocess_lc`.
-
-    All subclasses carry a boolean ``bool_mask`` identifying valid (non-padded)
-    timesteps, shape ``(n_windows, seq_size)``.
-    """
-
-    bool_mask: np.ndarray = field(kw_only=True)
 
 
 class Reduction(ABC):
