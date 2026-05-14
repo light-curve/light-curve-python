@@ -45,12 +45,14 @@ amplitudes = lc.Amplitude().many(light_curves)
 print(f"Amplitude: mean = {np.mean(amplitudes):.3f} mag, std = {np.std(amplitudes):.3f} mag")
 ```
 
-For conda, alternative package names, and platform-specific installation notes, see the [Installation](#installation)
+For conda, alternative package names, and platform-specific installation notes, see
+the [Installation](#installation)
 section.
 
 ## Feature extractors
 
-Most classes implement feature extractors useful for astrophysical source classification and characterization based
+Most classes implement feature extractors useful for astrophysical source classification and characterization
+based
 on light curves.
 
 To list all available feature extractors:
@@ -86,7 +88,8 @@ The Flux/magnitude column indicates whether a feature should be used with flux l
 magnitude light curves only, or either.
 
 The `transform=True` column shows the default transformation applied to the output when `transform=True`
-is passed to the extractor constructor (default is `transform=None`, which does not apply any transformations).
+is passed to the extractor constructor (default is `transform=None`, which does not apply any
+transformations).
 Transformations are monotonic functions intended to reduce dynamic range and improve the suitability of
 raw feature values for machine learning.
 You can also select a transformation by name string (e.g. `transform="lg"`) for supported features;
@@ -457,20 +460,24 @@ Meta-features accept other feature extractors and apply them to pre-processed da
 #### Periodogram
 
 This feature transforms time-series data into the Lomb-Scargle periodogram, providing an estimate of the power
-spectrum. The `peaks` argument specifies how many of the most significant spectral density peaks to return. For
+spectrum. The `peaks` argument specifies how many of the most significant spectral density peaks to return.
+For
 each peak, its period and signal-to-noise ratio are returned:
 
 $$
 \text{signal to noise of peak} \equiv \frac{P(\omega_\mathrm{peak}) - \langle P(\omega) \rangle}{\sigma\_{P(\omega)}}
 $$
 
-The optional `features` argument accepts a list of additional feature extractors, which are applied to the power
-spectrum: frequency is passed as "time," power spectrum is passed as "magnitude," and no uncertainties are set.
+The optional `features` argument accepts a list of additional feature extractors, which are applied to the
+power
+spectrum: frequency is passed as "time," power spectrum is passed as "magnitude," and no uncertainties are
+set.
 
 #### Bins
 
 Bins the time series into windows of width $\mathrm{window}$ with respect to some $\mathrm{offset}$.
-The $j$-th bin spans $[j \cdot \mathrm{window} + \mathrm{offset},\ (j + 1) \cdot \mathrm{window} + \mathrm{offset}]$.
+The $j$-th bin
+spans $[j \cdot \mathrm{window} + \mathrm{offset},\ (j + 1) \cdot \mathrm{window} + \mathrm{offset}]$.
 
 The binned time series is defined by
 $$t_j^* = (j + \frac12) \cdot \mathrm{window} + \mathrm{offset},$$
@@ -501,7 +508,8 @@ gives the best balance of robustness and final accuracy.
 
 By default, initial parameter values and bounds are estimated from the data. Override them with the
 `init` and `bounds` arguments (supported by MCMC-based algorithms only), each a list of values or
-`None`s to keep data-derived defaults for individual parameters. `BazinFit` has 5 parameters, `LinexpFit` has 4,
+`None`s to keep data-derived defaults for individual parameters. `BazinFit` has 5 parameters, `LinexpFit` has
+4,
 `VillarFit` has 7; run `help()` on the respective class for the parameter order.
 
 The `ln_prior` argument sets the MCMC prior. It accepts `None` / `"no"` (flat prior, the default),
@@ -511,7 +519,8 @@ distributions (see `help(light_curve.ln_prior)` for the available distribution t
 encodes supernova physics constraints; it assumes time values are in days.
 
 Pass `transform=True` to convert the raw fit parameters to a magnitude-like representation: the
-amplitude becomes a magnitude (assuming input flux in janskys), the baseline is normalized by the amplitude, the
+amplitude becomes a magnitude (assuming input flux in janskys), the baseline is normalized by the amplitude,
+the
 reference time is
 dropped, and the reduced chi^2 is log-scaled. Run `help(lc.BazinFit)` for the exact definition.
 
@@ -539,9 +548,12 @@ print(values)
 #### Rainbow Fit
 
 Rainbow ([Russeil+23](https://arxiv.org/abs/2310.02916)) is a black-body parametric model for transient light
-curves. By default, it uses the Bazin function as a model for bolometric flux evolution and a logistic function
-for temperature evolution. The user may customize the model by providing their own functions for bolometric flux
-and temperature evolution. This example demonstrates the reconstruction of a synthetic light curve with this model.
+curves. By default, it uses the Bazin function as a model for bolometric flux evolution and a logistic
+function
+for temperature evolution. The user may customize the model by providing their own functions for bolometric
+flux
+and temperature evolution. This example demonstrates the reconstruction of a synthetic light curve with this
+model.
 `RainbowFit` requires the `iminuit` package.
 
 <!-- name: test_rainbow_fit_example -->
@@ -594,13 +606,15 @@ print(dict(zip(feature.names, values)))
 print(f"Goodness of fit: {values[-1]}")
 ```
 
-Note that while the data generation above uses approximate physical constant values, `RainbowFit` uses CODATA 2018
+Note that while the data generation above uses approximate physical constant values, `RainbowFit` uses CODATA
+2018
 values internally.
 
 ### Experimental extractors
 
 The package consists of two parts: a wrapper for the
-[`light-curve-feature` Rust crate](https://crates.io/crates/light-curve-feature) (`light_curve_ext` sub-package)
+[`light-curve-feature` Rust crate](https://crates.io/crates/light-curve-feature) (`light_curve_ext`
+sub-package)
 and a pure-Python sub-package `light_curve_py`.
 We use the Python implementation to test the Rust implementation and to develop new experimental extractors.
 The Python implementation is significantly slower for most extractors and does not provide the same full
@@ -631,12 +645,15 @@ This should print a warning about the experimental status of the Python class.
 
 ## Performance
 
-The package is designed for high throughput. The following techniques help extract features with minimal overhead.
+The package is designed for high throughput. The following techniques help extract features with minimal
+overhead.
 
 ### `sorted` and `check` parameters
 
-The `sorted=True` argument tells the extractor that `t` is already sorted in ascending order, and `check=False`
-disables validation of NaN/inf values. The defaults are `sorted=None` (the array will be validated and an error raised
+The `sorted=True` argument tells the extractor that `t` is already sorted in ascending order, and
+`check=False`
+disables validation of NaN/inf values. The defaults are `sorted=None` (the array will be validated and an
+error raised
 if unsorted) and
 `check=True`. Passing invalid inputs without validation can cause incorrect results or crashes.
 
@@ -780,7 +797,8 @@ Run all benchmarks from the Python project folder with
 `python3 -mpytest --benchmark-enable tests/test_w_bench.py`, or with slow benchmarks disabled:
 `python3 -mpytest -m "not (nobs or multi)" --benchmark-enable tests/test_w_bench.py`.
 
-Below we benchmark the Rust implementation (`rust`) against the [`feets`](https://feets.readthedocs.io/en/latest/)
+Below we benchmark the Rust implementation (`rust`) against the [
+`feets`](https://feets.readthedocs.io/en/latest/)
 package and our own Python implementation (`lc_py`) for a light curve with n=1000 observations.
 
 ![Benchmarks, Rust is much faster](https://github.com/light-curve/light-curve-python/raw/main/light-curve/.readme/benchplot_v2.png)
@@ -792,16 +810,111 @@ but the typical extraction time including these features is 20–50 ms for a few
 
 ![Benchmark for different number of observations](https://github.com/light-curve/light-curve-python/raw/main/light-curve/.readme/nobs_bench_v2.png)
 
-Benchmark results for both the pure-Python and Rust implementations as a function of the number of observations.
+Benchmark results for both the pure-Python and Rust implementations as a function of the number of
+observations.
 Both axes are on a logarithmic scale.
 
 ![Benchmark for multithreading and multiprocessing](https://github.com/light-curve/light-curve-python/raw/main/light-curve/.readme/multi_bench_v2.png)
 
-Processing time per light curve for the feature subset from the first benchmark, as a function of the number of
+Processing time per light curve for the feature subset from the first benchmark, as a function of the number
+of
 CPU cores used. The dataset consists of 10,000 light curves with 1,000 observations each.
 
 See the benchmarks described in more detail in
 ["Performant feature extraction for photometric time series"](https://arxiv.org/abs/2302.10837).
+
+## Light curve embeddings (`light_curve.embed`)
+
+The `light_curve.embed` submodule provides pretrained neural network models that map raw photometric
+time series to dense vector embeddings suitable for downstream machine learning tasks such as
+classification, anomaly detection, and similarity search.
+Models are loaded directly from HuggingFace (weights are cached locally after the first download)
+and require `onnxruntime` and `huggingface-hub`:
+
+```
+pip install onnxruntime huggingface_hub
+```
+
+See the [onnxruntime install guide](https://onnxruntime.ai/docs/install/) for GPU and platform-specific
+packages (`onnxruntime-gpu`, `onnxruntime-directml`, etc.).
+Hardware-specific options such as execution providers can be passed via `ort_session_kwargs`
+(see [onnxruntime Python API](https://onnxruntime.ai/docs/api/python/api_summary.html)).
+
+### Single-band models: Astromer
+
+`Astromer1` ([Donoso-Oliva et al. 2023](https://ui.adsabs.harvard.edu/abs/2023A%26A...670A..54D/abstract))
+and `Astromer2` ([Donoso-Oliva et al. 2026](https://ui.adsabs.harvard.edu/abs/2026A%26A...707A.170D/abstract))
+are models pretrained on MACHO light curves.
+They accept irregularly-sampled `(time, mag)` pairs and return 256-dimensional embeddings.
+
+<!-- name: test_embed_astromer -->
+
+```python
+import numpy as np
+from light_curve.embed import Astromer2
+
+model = Astromer2.from_hf(output="mean")
+# The default reduction splits long light curves into non-overlapping windows;
+# pass e.g. reduction="beginning" to always take the first 200 observations.
+
+rng = np.random.default_rng(0)
+time = np.sort(rng.uniform(0, 500, 120)).astype(np.float64)
+mag = rng.normal(15, 0.5, 120).astype(np.float64)
+
+# Returns shape (n_bands, n_subsamples, seq_size, embed_dim)
+embedding = model(time, mag)
+print(embedding.shape)  # (1, 1, 1, 256)
+```
+
+Multi-band light curves can be embedded per-band by passing a list of band labels to the `bands`
+constructor argument:
+
+<!-- name: test_embed_astromer_multiband -->
+
+```python
+import numpy as np
+from light_curve.embed import Astromer2
+
+model = Astromer2.from_hf(output="mean", bands=["g", "r"])
+
+rng = np.random.default_rng(1)
+n = 80
+time = np.sort(rng.uniform(0, 300, n)).astype(np.float64)
+mag = rng.normal(15, 0.5, n).astype(np.float64)
+band = np.array(["g", "r"] * (n // 2))
+
+# n_bands=2: one embedding per band
+embedding = model(time, mag, band=band)
+print(embedding.shape)  # (2, 1, 1, 256)
+```
+
+### Multi-band model: ATCAT
+
+`ATCAT` ([Tung 2025](https://ui.adsabs.harvard.edu/abs/2025arXiv251100614T/abstract)) is a model
+trained on ELAsTiCC light curves. It processes all six LSST bands jointly and returns
+384-dimensional embeddings. Inputs are flux, flux-error, time, and integer band indices (ugrizY → 012345):
+
+<!-- name: test_embed_atcat -->
+
+```python
+import numpy as np
+from light_curve.embed import ATCAT
+
+model = ATCAT.from_hf(output="last")
+
+rng = np.random.default_rng(2)
+n = 120
+time = np.sort(rng.uniform(0, 500, n)).astype(np.float32)
+flux = rng.normal(100, 10, n).astype(np.float32)
+flux_err = np.full(n, 5.0, dtype=np.float32)
+band = np.array([i % 6 for i in range(n)])  # ugrizY → 012345
+
+embedding = model(time, flux, flux_err, band)
+print(embedding.shape)  # (1, 1, 1, 384)
+```
+
+Input fluxes should be in AB units. The default zero-point is 31.4 (LSST nJy); set `mag_zp=27.5`
+for ELAsTiCC / SNANA FITS data or `mag_zp=8.9` for Jy.
 
 ## dm-dt map
 
@@ -856,12 +969,12 @@ On PyPI, we publish wheels for the stable CPython ABI, ensuring compatibility wi
 
 ### Support matrix
 
-| Arch \ OS   | Linux glibc 2.17+ | Linux musl 1.2+                | macOS                 | Windows                   |
-|-------------|-------------------|--------------------------------|-----------------------|---------------------------|
+| Arch \ OS   | Linux glibc 2.17+ | Linux musl 1.2+                | macOS                 | Windows                     |
+|-------------|-------------------|--------------------------------|-----------------------|-----------------------------|
 | **x86-64**  | PyPI (MKL), conda | PyPI (MKL)                     | PyPI macOS 15+, conda | PyPI, conda (conda: no GSL) |
-| **i686**    | src               | src                            | —                     | not tested                                                           |
-| **aarch64** | PyPI              | PyPI                           | PyPI macOS 14+, conda | not tested                                                           |
-| **ppc64le** | src               | not tested (no Rust toolchain) | —                     | —                                                                    |
+| **i686**    | src               | src                            | —                     | not tested                  |
+| **aarch64** | PyPI              | PyPI                           | PyPI macOS 14+, conda | not tested                  |
+| **ppc64le** | src               | not tested (no Rust toolchain) | —                     | —                           |
 
 - **PyPI / conda**: A binary wheel or package is available on pypi.org or anaconda.org.
   Local building is not required; the only prerequisite is a recent version of `pip` or `conda`.
@@ -921,7 +1034,8 @@ python -mpip install maturin
 maturin develop --group dev
 ```
 
-Run this command during initial setup. On subsequent runs, activate the environment with `source venv/bin/activate`
+Run this command during initial setup. On subsequent runs, activate the environment with
+`source venv/bin/activate`
 and rebuild Rust code with `maturin develop`. Python-only changes require no rebuild. The `--group dev` flag
 (run from the `light-curve/` directory) is only needed once to install development dependencies.
 
@@ -953,7 +1067,8 @@ See the [Benchmarks](#benchmarks) section in [Performance](#performance) for mor
 #### Dependencies and Cargo features
 
 The package has a number of compile-time Cargo features, mostly controlling which C/C++ dependencies are used.
-Pass the desired features to `maturin` with `--features`; it is also recommended to use `--no-default-features`
+Pass the desired features to `maturin` with `--features`; it is also recommended to use
+`--no-default-features`
 to avoid building unnecessary dependencies.
 
 Available features:
