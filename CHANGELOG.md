@@ -9,15 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- New `light_curve.embed` module with ONNX-backed light curve embedding
-  models ([#692](https://github.com/light-curve/light-curve-python/pull/692)):
-    - `Astromer1` and `Astromer2` — transformer encoders pretrained on MACHO light curves (Donoso-Oliva et al.
-      2023/2026). Load directly from HuggingFace with `Astromer1.from_hf()` / `Astromer2.from_hf()`.
-    - `ATCAT` — multiband transformer pretrained on LSST-like light curves (Tung 2025, arXiv:2511.00614).
-      Load with `ATCAT.from_hf()`.
-    - `NonOverlappingWindows`, `Beginning`, `End`, `RandomSubsample`, `MultipleReductions` — strategies for
-      mapping variable-length light curves to fixed-length model inputs.
-    - `InputTensors` / `AstromerInputs` / `ATCATInputs` — typed dataclass containers for preprocessed tensors.
+--
 
 ### Changed
 
@@ -38,6 +30,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 --
+
+## [0.12.3] 2026-05-14
+
+### Added
+
+- New experimental `light_curve.embed` module with ONNX-backed light-curve embedding
+  models ([#692](https://github.com/light-curve/light-curve-python/pull/692)):
+    - `Astromer1` and `Astromer2` — transformer encoders pretrained on MACHO light curves (Donoso-Oliva et al.
+      2023/2026). Load directly from HuggingFace with `Astromer1.from_hf()` / `Astromer2.from_hf()`.
+    - `ATCAT` — multiband transformer pretrained on LSST-like light curves (Tung 2025, arXiv:2511.00614).
+      Load with `ATCAT.from_hf()`.
+    - `NonOverlappingWindows`, `Beginning`, `End`, `RandomSubsample`, `MultipleReductions` — strategies for
+      mapping variable-length light curves to fixed-length model inputs.
+    - `InputTensors` / `AstromerInputs` / `ATCATInputs` — typed dataclass containers for preprocessed tensors.
 
 ## [0.12.2] 2026-05-09
 
