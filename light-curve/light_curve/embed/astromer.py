@@ -236,10 +236,10 @@ class _AstromerModel(SingleBandModel):
 
 
 class Astromer1(_AstromerModel):
-    """Astromer 1 embedding model (Donoso-Oliva et al. 2023).
+    """Astromer 1 embedding model.
 
     Transformer encoder pretrained on MACHO R-band light curves via masked
-    magnitude prediction.  Accepts irregularly-sampled single-band photometry
+    magnitude prediction.  Accepts single-band photometry
     and returns a 256-dimensional embedding (2 layers, 4 attention heads).
 
     The ONNX model is hosted on HuggingFace at
@@ -251,6 +251,16 @@ class Astromer1(_AstromerModel):
     * ``"sequence"`` — per-timestep features → shape ``(batch, 200, 256)``
 
     Use :meth:`from_hf` to download and load the model directly.
+
+    Model license
+    -------------
+    MIT.
+
+    References
+    ----------
+    Donoso-Oliva et al. (2023), *ASTROMER: A transformer-based embedding for
+    the representation of light curves*, A&A 670, A54.
+    https://ui.adsabs.harvard.edu/abs/2023A%26A...670A..54D/abstract
 
     Parameters
     ----------
@@ -271,9 +281,9 @@ class Astromer1(_AstromerModel):
 
 
 class Astromer2(_AstromerModel):
-    """Astromer 2 embedding model (Donoso-Oliva et al. 2026).
+    """Astromer 2 embedding model.
 
-    Pretrained on 1.5 million MACHO light curves.  Accepts irregularly-sampled
+    Pretrained on 1.5 million MACHO light curves. Accepts
     single-band photometry and returns a 256-dimensional embedding.
 
     The ONNX model is hosted on HuggingFace at
@@ -285,6 +295,16 @@ class Astromer2(_AstromerModel):
     * ``"sequence"`` — per-timestep features → shape ``(batch, 200, 256)``
 
     Use :meth:`from_hf` to download and load the model directly.
+
+    Model license
+    -------------
+    MIT.
+
+    References
+    ----------
+    Donoso-Oliva et al. (2026), *Generalizing across astronomical surveys:
+    Few-shot light curve classification with Astromer 2*, A&A 707, A170.
+    https://ui.adsabs.harvard.edu/abs/2026A%26A...707A.170D/abstract
 
     Parameters
     ----------

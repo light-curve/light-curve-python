@@ -13,6 +13,8 @@ from light_curve.embed.reduction import Reduction
 if TYPE_CHECKING:
     from typing import Self
 
+    import onnxruntime as ort
+
 
 @dataclass
 class ATCATInputs(InputTensors):
@@ -24,6 +26,79 @@ class ATCATInputs(InputTensors):
 
 
 class ATCAT(ExplicitMultiBandModel):
+    """ATCAT multiband transformer embedding model.
+
+    ATCAT (Astronomical Transformer for Classification and Analysis of
+    Transients) is a transformer-based model trained on LSST-like multiband
+    light curves.  It accepts flux, flux-error, time, and integer channel-index
+    arrays and produces dense embeddings.
+
+    The model expects fluxes calibrated to AB zero-point 27.5 (ELAsTiCC / SNANA
+    FITS convention).  Use ``mag_zp`` to convert from a different zero-point at
+    call time — common values are 31.4 (LSST nJy) and 8.9 (Jy).
+
+    Valid model band indices are 0–5, corresponding to LSST *u g r i z Y*.
+    Pass a ``band_groups`` dict (e.g. ``{"u": 0, "g": 1, ...}``) to use string
+    band labels instead of integers.
+
+    Parameters
+    ----------
+    session :
+        An ``onnxruntime.InferenceSession`` for the ATCAT ONNX model.
+    output : {"last", "mean", "sequence"}, optional
+        Which model head to return:
+
+        * ``"last"`` — embedding of the last valid timestep,
+          output shape ``(n_band_groups, n_subsamples, 1, 384)``
+        * ``"mean"`` — masked mean pooling over valid timesteps,
+          output shape ``(n_band_groups, n_subsamples, 1, 384)``
+        * ``"sequence"`` — per-timestep embeddings,
+          output shape ``(n_band_groups, n_subsamples, 243, 384)``
+
+    band_groups : Mapping, list of Mapping, or None, optional
+        Band label → model integer mapping(s).  See
+        :class:`~light_curve.embed.model.ExplicitMultiBandModel` for details.
+    allow_extra_bands : bool, optional
+        If ``False`` (default), raises :exc:`ValueError` when the input
+        contains band labels not in ``band_groups`` (or not in 0–5 when
+        ``band_groups`` is ``None``).
+    reduction : str, list of str, or Reduction, optional
+        Windowing / subsampling strategy.  Defaults to
+        ``"non-overlapping-windows"``.
+    reduction_kwargs : dict, optional
+        Extra keyword arguments forwarded to :func:`reduction_from_str`.
+    mag_zp : float, optional
+        AB zero-point of the input fluxes.  Fluxes are rescaled to ZP = 27.5
+        (ELAsTiCC / SNANA FITS convention) before inference.  Common values:
+        31.4 (LSST nJy, default), 27.5 (no rescaling needed), 8.9 (Jy).
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import light_curve.embed as lce
+    >>> model = lce.ATCAT.from_hf(
+    ...     output="last",
+    ...     band_groups={"u": 0, "g": 1, "r": 2, "i": 3, "z": 4, "Y": 5},
+    ... )
+    >>> time = np.linspace(0, 200, 100, dtype=np.float32)
+    >>> flux = np.ones(100, dtype=np.float32)
+    >>> flux_err = np.full(100, 0.1, dtype=np.float32)
+    >>> band = np.array(["g", "r"] * 50)
+    >>> embedding = model(time, flux, flux_err, band)
+    >>> embedding.shape
+    (1, 1, 1, 384)
+
+    Model license
+    -------------
+    Modified MIT with a non-military-use restriction (upstream ATCAT license).
+
+    References
+    ----------
+    Tung (2025), *ATCAT: Astronomical Timeseries CAusal Transformer*,
+    arXiv:2511.00614.
+    https://ui.adsabs.harvard.edu/abs/2025arXiv251100614T/abstract
+    """
+
     seq_size: int = 243
     valid_model_bands: frozenset[int] = frozenset(range(6))
     hf_repo: str = "light-curve/atcat"
@@ -32,7 +107,7 @@ class ATCAT(ExplicitMultiBandModel):
 
     def __init__(
         self,
-        session,
+        session: ort.InferenceSession,
         *,
         output: Literal["last", "mean", "sequence"] = "last",
         band_groups: Mapping | Sequence[Mapping] | None = None,
@@ -112,6 +187,10 @@ class ATCAT(ExplicitMultiBandModel):
         reduction_kwargs : dict or None, optional
             Extra keyword arguments forwarded to :func:`reduction_from_str`
             when ``reduction`` is given as a string.
+        mag_zp : float, optional
+            AB zero-point of the input fluxes.  Fluxes are rescaled to ZP = 27.5
+            (ELAsTiCC / SNANA FITS convention) before inference.  Common values:
+            31.4 (LSST nJy, default), 27.5 (no rescaling needed), 8.9 (Jy).
         ort_session_kwargs : dict or None, optional
             Additional keyword arguments forwarded to ``onnxruntime.InferenceSession``:
             "sess_options", "providers", "provider_options".
@@ -160,8 +239,8 @@ class ATCAT(ExplicitMultiBandModel):
 
         Returns
         -------
-        np.ndarray, shape ``(n_bands, n_subsamples, seq_size, embed_dim)``
-            Embedding tensor.  ``n_bands`` is 1 for ``self.band_groups`` is ``None`` or
+        np.ndarray, shape ``(n_band_groups, n_subsamples, seq_size, embed_dim)``
+            Embedding tensor.  ``n_band_groups`` is 1 for ``self.band_groups`` is ``None`` or
             a single dict, and is equal to the number of dicts in ``band_groups`` for
             ``band_groups`` is a list of dicts.
 

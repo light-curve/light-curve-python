@@ -16,6 +16,8 @@ from light_curve.light_curve_py.warnings import warn_experimental
 if TYPE_CHECKING:
     from typing import Self
 
+    import onnxruntime as ort
+
 
 class Dim(IntEnum):
     """Axis indices for the 4-D embedding array ``(BAND, SUBSAMPLE, SEQUENCE, VALUE)``."""
@@ -50,7 +52,7 @@ class EmbeddingSession(ABC):
 
     def __init__(
         self,
-        session,
+        session: ort.InferenceSession,
         *,
         reduction: str | list[str] | Reduction,
         reduction_kwargs: dict[str, object] | None = None,
@@ -189,7 +191,7 @@ class SingleBandModel(EmbeddingSession, ABC):
 
     def __init__(
         self,
-        session,
+        session: ort.InferenceSession,
         *,
         bands: Sequence[str | int] | None = None,
         reduction: str | list[str] | Reduction = "non-overlapping-windows",
@@ -241,14 +243,49 @@ class SingleBandModel(EmbeddingSession, ABC):
 
 
 class ExplicitMultiBandModel(EmbeddingSession, ABC):
-    """Embedding model that gets band input explicitly."""
+    """Embedding model that receives all photometric bands in a single forward pass.
+
+    Unlike :class:`SingleBandModel`, the band identity is passed explicitly to the
+    model as an integer channel index alongside the flux and time arrays.  This
+    allows the model to learn inter-band correlations.
+
+    ``band_groups`` controls how user-supplied band labels are mapped to the
+    integer indices the model expects:
+
+    * ``None`` (default) — the caller must already supply integer indices in
+      ``[0, ..., max(valid_model_bands)]``; all observations are fed to the model
+      as one group and the output has ``n_band_groups = 1``.
+    * A ``dict`` mapping input labels → model integers — the mapping is applied
+      before inference; all observations are still fed as one group
+      (``n_band_groups = 1``).
+    * A ``list`` of such dicts — each dict defines an independent group; the
+      model runs once per group and the results are stacked along the band axis
+      (``n_band_groups = len(band_groups)``).  Input labels must be unique across the
+      entire list.
+
+    Parameters
+    ----------
+    session :
+        ONNX inference session.
+    band_groups : Mapping, list of Mapping, or None, optional
+        Band label → model integer mapping(s).  See class docstring for details.
+    allow_extra_bands : bool, optional
+        If ``False`` (default), :meth:`__call__` raises :exc:`ValueError` when
+        the input contains band labels not covered by ``band_groups`` (or not in
+        ``valid_model_bands`` when ``band_groups`` is ``None``).  Set to ``True``
+        to silently ignore observations with unknown band labels.
+    reduction : str, list of str, or Reduction
+        Windowing / subsampling strategy.
+    reduction_kwargs : dict, optional
+        Extra keyword arguments forwarded to :func:`reduction_from_str`.
+    """
 
     seq_size: int
     valid_model_bands: frozenset[Number]
 
     def __init__(
         self,
-        session,
+        session: ort.InferenceSession,
         *,
         band_groups: Mapping | Sequence[Mapping] | None = None,
         allow_extra_bands: bool = False,
@@ -275,18 +312,18 @@ class ExplicitMultiBandModel(EmbeddingSession, ABC):
             for band_group in band_groups:
                 keys_counter.update(band_group.keys())
                 uniq_values.update(band_group.values())
-                band_mappings.append(np.vectorize(band_group.get))
+                band_mappings.append((frozenset(band_group.keys()), np.vectorize(band_group.get)))
             if keys_counter.total() > len(keys_counter):
                 duplicate_keys = [key for key, count in keys_counter.most_common() if count > 1]
                 raise ValueError(
                     "If ``band_groups`` is a list ``dict[input_band, model_map]``, "
-                    "than all ``input_band``s must be unique across the list. "
+                    "then all ``input_band``s must be unique across the list. "
                     f"Duplicate keys found: {duplicate_keys}"
                 )
             defined_input_bands = set(keys_counter.keys())
         else:
             uniq_values = set(band_groups.values())
-            band_mappings = [np.vectorize(band_groups.get)]
+            band_mappings = [(frozenset(band_groups.keys()), np.vectorize(band_groups.get))]
             defined_input_bands = set(band_groups.keys())
         if not uniq_values.issubset(self.valid_model_bands):
             raise ValueError(
@@ -304,7 +341,8 @@ class ExplicitMultiBandModel(EmbeddingSession, ABC):
         uniq_input_bands = np.unique(band)
         if not self.defined_input_bands.issuperset(uniq_input_bands):
             raise ValueError(
-                "if ``band_groups`` is ``None``, then all ``band`` values must be valid input band_groups. "
+                "all ``band`` values must be in the defined input bands "
+                "(keys of ``band_groups``, or ``valid_model_bands`` when ``band_groups`` is ``None``). "
                 f"Invalid values found: {sorted(set(uniq_input_bands) - self.defined_input_bands)}"
             )
 
@@ -317,14 +355,15 @@ class ExplicitMultiBandModel(EmbeddingSession, ABC):
         *arrays : array-like
             Raw light curve arrays (e.g. time, magnitude).
         band : array-like, shape ``(n,)``
-            Band labels, should match keys in
+            Band labels.  When ``band_groups`` is ``None``, must be integers in
+            ``valid_model_bands``; otherwise must match the keys defined in
+            ``band_groups``.
 
         Returns
         -------
-        np.ndarray, shape ``(n_bands, n_subsamples, seq_size, embed_dim)``
-            Embedding tensor.  ``n_bands`` is 1 for ``self.band_groups`` is ``None`` or
-            a single dict, and is equal to the number of dicts in ``band_groups`` for
-            ``band_groups`` is a list of dicts.
+        np.ndarray, shape ``(n_band_groups, n_subsamples, seq_size, embed_dim)``
+            Embedding tensor.  ``n_band_groups`` is 1 when ``band_groups`` is ``None`` or
+            a single dict, and equals the number of dicts when ``band_groups`` is a list.
 
         Raises
         ------
@@ -341,9 +380,11 @@ class ExplicitMultiBandModel(EmbeddingSession, ABC):
             raise RuntimeError("Logical error: band_mappings is None but band_groups is not None")
 
         embeddings = []
-        for band_mapping in self.band_mappings:
-            model_band = band_mapping(band)
-            embed_band_group = super().__call__(*(arrays + (model_band,)))
+        for group_keys, band_mapping in self.band_mappings:
+            group_mask = np.isin(band, list(group_keys))
+            filtered_arrays = tuple(arr[group_mask] for arr in arrays)
+            model_band = band_mapping(band[group_mask])
+            embed_band_group = super().__call__(*(filtered_arrays + (model_band,)))
             embeddings.append(np.expand_dims(embed_band_group, axis=Dim.BAND))
 
         return np.concatenate(embeddings, axis=Dim.BAND)
