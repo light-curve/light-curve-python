@@ -58,6 +58,7 @@ fn light_curve(py: Python, m: Bound<PyModule>) -> PyResult<()> {
     m.add_class::<f::BazinFit>()?;
     m.add_class::<f::BeyondNStd>()?;
     m.add_class::<f::Bins>()?;
+    m.add_class::<f::Chi2Pvar>()?;
     m.add_class::<f::Cusum>()?;
     m.add_class::<f::Duration>()?;
     m.add_class::<f::Eta>()?;
@@ -66,6 +67,7 @@ fn light_curve(py: Python, m: Bound<PyModule>) -> PyResult<()> {
     m.add_class::<f::JsonDeserializedFeature>()?;
     m.add_class::<f::InterPercentileRange>()?;
     m.add_class::<f::Kurtosis>()?;
+    m.add_class::<f::LaflerKinmanStringLength>()?;
     m.add_class::<f::LinearFit>()?;
     m.add_class::<f::LinearTrend>()?;
     m.add_class::<f::LinexpFit>()?;

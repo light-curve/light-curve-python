@@ -764,6 +764,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
 
 [[package]]
+name = "ellip"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c398315af820159155f5161699396ac1277b82f3c44052816b098a0de28a14d0"
+dependencies = [
+ "num-lazy",
+ "num-traits",
+ "numeric_literals",
+]
+
+[[package]]
 name = "emcee"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1175,11 +1186,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0de51e6874e94e7bf76d726fc5d13ba782deca734ff60d5bb2fb2607c7406555"
 dependencies = [
  "cfg-if",
+ "js-sys",
  "libc",
  "r-efi 6.0.0",
  "rand_core 0.10.1",
  "wasip2",
  "wasip3",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -1479,6 +1492,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a4933f3f57a8e9d9da04db23fb153356ecaf00cbd14aee46279c33dc80925c37"
 
 [[package]]
+name = "lambert_w"
+version = "2.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d0452ace452e1ef835a8616a980f7c49faca9f9a4798bcf605b734dd6baeb59"
+dependencies = [
+ "num-complex",
+ "num-traits",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1595,9 +1618,9 @@ dependencies = [
 
 [[package]]
 name = "light-curve-feature"
-version = "0.14.0"
+version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee2904875c317752af502e15192d6e2318983e24d10c3018b28a2e9ba0e246b2"
+checksum = "0b7187cccb7cd4450fdf907b1449b518cfe3b424595c53d260fa34d316d68fea"
 dependencies = [
  "GSL",
  "ceres-solver",
@@ -1614,7 +1637,7 @@ dependencies = [
  "num-complex",
  "num-traits",
  "nuts-rs",
- "nuts-storable 0.2.0",
+ "nuts-storable",
  "ordered-float",
  "paste",
  "rand 0.10.1",
@@ -1623,6 +1646,7 @@ dependencies = [
  "rustfft",
  "schemars",
  "serde",
+ "special",
  "take_mut",
  "thiserror 2.0.18",
  "thread_local",
@@ -1901,6 +1925,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "num-lazy"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3ca66a13db1c179f8414c75ebad0351f1597ef0b291aa6e58f7af129321f0f58"
+
+[[package]]
 name = "num-traits"
 version = "0.2.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1918,6 +1948,16 @@ checksum = "91df4bbde75afed763b708b7eee1e8e7651e02d97f6d5dd763e89367e957b23b"
 dependencies = [
  "hermit-abi",
  "libc",
+]
+
+[[package]]
+name = "numeric_literals"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "095aa67b0b9f2081746998f4f17106bdb51d56dc8c211afca5531b92b83bf98a"
+dependencies = [
+ "quote",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -1939,11 +1979,11 @@ dependencies = [
 
 [[package]]
 name = "nuts-derive"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "64eac5046c75ced9bdaede15ebc30c4ce982a13e75032ae8d5c1312d1e05d82e"
+checksum = "a8cce587b5f36bc6bfa54cbf2eaf31fe5a5e0d73e96d31fde5de87a701689363"
 dependencies = [
- "nuts-storable 0.1.0",
+ "nuts-storable",
  "proc-macro2",
  "quote",
  "syn 1.0.109",
@@ -1951,15 +1991,16 @@ dependencies = [
 
 [[package]]
 name = "nuts-rs"
-version = "0.17.4"
+version = "0.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4bd441b25a4ff7c222e396d073f36ec03ab3be4264a59a81264bd4501616df31"
+checksum = "a62664bb4327ef957a2188e2ea314d6693261100b9c2cc68c1b2398da301f6e2"
 dependencies = [
  "anyhow",
  "faer",
+ "getrandom 0.4.2",
  "itertools 0.14.0",
  "nuts-derive",
- "nuts-storable 0.2.0",
+ "nuts-storable",
  "pulp",
  "rand 0.10.1",
  "rand_distr",
@@ -1971,15 +2012,9 @@ dependencies = [
 
 [[package]]
 name = "nuts-storable"
-version = "0.1.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb6cf9fc84ca313648ddb112f8728eb2f9531f2e4533959dd01127eb34290b5b"
-
-[[package]]
-name = "nuts-storable"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcdee8fb53ac39f042885e732348a5bce2f28a08adc2798314a3c66a5f199293"
+checksum = "a9257959045c9682c06b3f993215f1b2896bf276a1fcf39f83ac0755a904dc0d"
 
 [[package]]
 name = "object"
@@ -2830,6 +2865,17 @@ name = "smallvec"
 version = "1.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67b1b7a3b5fe4f1376887184045fcf45c69e92af734b7aaddc05fb777b6fbd03"
+
+[[package]]
+name = "special"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2059cab5d76b5fa47f0c847f889071627a78b4fb6d9c582b67d9afbc75006da5"
+dependencies = [
+ "ellip",
+ "lambert_w",
+ "libm",
+]
 
 [[package]]
 name = "stable_deref_trait"
