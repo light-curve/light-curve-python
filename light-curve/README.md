@@ -916,6 +916,59 @@ print(embedding.shape)  # (1, 1, 1, 384)
 Input fluxes should be in AB units. The default zero-point is 31.4 (LSST nJy); set `mag_zp=27.5`
 for ELAsTiCC / SNANA FITS data or `mag_zp=8.9` for Jy.
 
+### Example: nearest-neighbour search on ZTF DR23
+
+The following example reads a ZTF DR23 [HATS](https://hats.readthedocs.io) pixel directly from the public S3
+bucket using
+[`nested-pandas`](https://nested-pandas.readthedocs.io) and `s3fs`
+(install both with `pip install nested-pandas s3fs`), embeds all well-observed light curves with
+Astromer2, and finds the closest neighbour to a given object by cosine distance.
+This particular pixel contains ~50k objects passing the quality cuts; embedding takes roughly
+12 minutes on M2 Pro (~15 ms per object).
+
+```python
+import numpy as np
+import nested_pandas as npd
+from scipy.spatial.distance import cdist
+from upath import UPath
+from light_curve.embed import Astromer2
+
+TARGET_OID = 680213300009232  # ZTF r-band light curve
+MIN_OBS = 1000
+
+nf = npd.read_parquet(UPath(
+    "s3://ipac-irsa-ztf/contributed/dr23/lc/hats/ztf_dr23_lc-hats/dataset/Norder=5/Dir=0/Npix=2378/",
+    anon=True,
+))
+nf = nf.query("lightcurve.catflags == 0").query(f"lightcurve.list_lengths >= {MIN_OBS}")
+
+model = Astromer2.from_hf(reduction="beginning")
+
+
+def embed_row(row):
+    return {"embedding.values": model(row["lightcurve.hmjd"], row["lightcurve.mag"]).squeeze()}
+
+
+nf = nf.map_rows(embed_row, columns=["lightcurve.hmjd", "lightcurve.mag"], append_columns=True)
+
+oids = nf["objectid"].to_numpy()
+matrix = nf["embedding.values"].to_numpy().reshape(len(nf), -1)
+
+query_idx = np.where(oids == TARGET_OID)[0][0]
+distances = cdist(matrix[query_idx: query_idx + 1], matrix, metric="cosine")[0]
+distances[query_idx] = np.inf
+
+best_idx = np.argmin(distances)
+print(f"Nearest neighbour: OID {oids[best_idx]}, cosine distance {distances[best_idx]:.6f}")
+# Nearest neighbour: OID 680113300005170, cosine distance 0.000046
+```
+
+The nearest neighbour is OID `680113300005170` — the same physical
+object ([HZ Her / Her X-1](https://en.wikipedia.org/wiki/Hercules_X-1), an X-ray binary) observed in the *g*
+-band,
+recovered automatically from an *r*-band query through embedding similarity.
+See the light curve on [SNAD Viewer](https://ztf.snad.space/dr23/view/680113300005170).
+
 ## dm-dt map
 
 In addition to the feature extractors above, the package provides a separate dm–dt mapping tool.
