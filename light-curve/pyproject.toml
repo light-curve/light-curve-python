@@ -46,7 +46,7 @@ full = [
 # no linting tools, compatible with free-threading
 test-base = [
     "pytest",
-    "markdown-pytest",
+    "markdown-pytest>=0.6",
     "pytest-benchmark",
     "pytest-subtests>=0.10",
     "arro3-core",
@@ -60,7 +60,7 @@ test-base = [
 # Full testing environment (adds packages that don't support free-threading yet:
 # cesium, iminuit, nanoarrow, polars)
 test = [
-    {include-group = "test-base"},
+    { include-group = "test-base" },
     "numpy",
     "pyarrow",
     "pandas",
@@ -72,7 +72,7 @@ test = [
 ]
 # Development environment for free-threaded Python builds
 dev-free-threading = [
-    {include-group = "test-base"},
+    { include-group = "test-base" },
     "numpy",
     "pyarrow",
     "pandas",
@@ -81,7 +81,7 @@ dev-free-threading = [
 ]
 # Full development environment
 dev = [
-    {include-group = "dev-free-threading"},
+    { include-group = "dev-free-threading" },
     "iminuit>=2.21,<3",
     "nanoarrow",
     "polars",

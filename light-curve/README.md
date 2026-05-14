@@ -828,12 +828,15 @@ See the benchmarks described in more detail in
 The `light_curve.embed` submodule provides pretrained neural network models that map raw photometric
 time series to dense vector embeddings suitable for downstream machine learning tasks such as
 classification, anomaly detection, and similarity search.
-Models are loaded directly from HuggingFace (weights are cached locally after the first download)
-and require `onnxruntime` and `huggingface-hub`:
+The examples below use `from_hf()` to download model weights from HuggingFace Hub
+(cached locally after the first download), which requires `onnxruntime` and `huggingface-hub`:
 
 ```
-pip install onnxruntime huggingface_hub
+pip install light-curve onnxruntime huggingface_hub
 ```
+
+Models can also be loaded directly from a local ONNX file via `from_onnx_file()`,
+without `huggingface-hub`.
 
 See the [onnxruntime install guide](https://onnxruntime.ai/docs/install/) for GPU and platform-specific
 packages (`onnxruntime-gpu`, `onnxruntime-directml`, etc.).
@@ -921,10 +924,13 @@ for ELAsTiCC / SNANA FITS data or `mag_zp=8.9` for Jy.
 The following example reads a ZTF DR23 [HATS](https://hats.readthedocs.io) pixel directly from the public S3
 bucket using
 [`nested-pandas`](https://nested-pandas.readthedocs.io) and `s3fs`
-(install both with `pip install nested-pandas s3fs`), embeds all well-observed light curves with
-Astromer2, and finds the closest neighbour to a given object by cosine distance.
+(install all dependencies for this example with
+`pip install huggingface_hub light-curve nested-pandas onnxruntime s3fs scipy`), embeds all well-observed
+light curves with Astromer2, and finds the closest neighbour to a given object by cosine distance.
 This particular pixel contains ~50k objects passing the quality cuts; embedding takes roughly
 12 minutes on M2 Pro (~15 ms per object).
+
+<!-- name: test_ztf_dr23_nn_example; mark: skip(reason="requires S3 access and ~12 minutes to run") -->
 
 ```python
 import numpy as np
