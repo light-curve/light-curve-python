@@ -3,7 +3,7 @@ import pytest
 from numpy.testing import assert_allclose
 from scipy.signal import lombscargle
 
-from light_curve.light_curve_ext import Periodogram
+from light_curve.light_curve_ext import Duration, Periodogram
 
 
 def test_vs_lombscargle():
@@ -119,6 +119,21 @@ def test_normalization_default_is_psd():
     power_default = Periodogram(freqs=freqs, fast=False).power(t, m)
     power_psd = Periodogram(freqs=freqs, fast=False, normalization="psd").power(t, m)
     assert_allclose(power_default, power_psd)
+
+
+def test_phase_features_duration():
+    """Duration of phase-folded dense light curve must be close to 1."""
+    period = 2.0
+    # Dense, regular sampling over many periods so the phase folds uniformly
+    t = np.linspace(0, 100 * period, 10_000)
+    m = np.sin(2 * np.pi * t / period)
+
+    fe = Periodogram(peaks=1, fast=True, phase_features=[Duration()])
+    result = fe(t, m, sorted=True)
+
+    # result layout: period_0, snr_0, period_folded_duration
+    period_folded_duration = result[-1]
+    assert_allclose(period_folded_duration, 1.0, atol=1e-3)
 
 
 def test_normalization_invalid():

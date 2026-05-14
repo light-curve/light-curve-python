@@ -9,11 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
---
+- `Periodogram` now accepts a `phase_features` argument: features extracted from the light curve
+  phase-folded at the best period
+  ([#701](https://github.com/light-curve/light-curve-python/pull/701)).
+- New feature `Chi2Pvar`: probability of variability from the chi-squared test
+  ([#701](https://github.com/light-curve/light-curve-python/pull/701)).
+- New feature `LaflerKinmanStringLength`: smoothness of the light curve
+  ([#701](https://github.com/light-curve/light-curve-python/pull/701)).
 
 ### Changed
 
-- **Breaking** Underlying `nuts-rs` crate has updated, so specific non-linear optimization results may change
+- **Breaking** Underlying `nuts-rs` crate has updated, so specific non-linear optimization results may change https://github.com/light-curve/light-curve-python/pull/701
 
 ### Deprecated
 

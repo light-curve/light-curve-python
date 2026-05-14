@@ -1611,6 +1611,8 @@ transform : None
     }
 }
 
+evaluator!(Chi2Pvar, lcf::Chi2Pvar, StockTransformer::Identity);
+
 evaluator!(Cusum, lcf::Cusum, StockTransformer::Identity);
 
 evaluator!(Eta, lcf::Eta, StockTransformer::Identity);
@@ -1672,6 +1674,12 @@ quantile : positive float
 }
 
 evaluator!(Kurtosis, lcf::Kurtosis, StockTransformer::Arcsinh);
+
+evaluator!(
+    LaflerKinmanStringLength,
+    lcf::LaflerKinmanStringLength,
+    StockTransformer::Identity
+);
 
 evaluator!(LinearFit, lcf::LinearFit, StockTransformer::Identity);
 
@@ -1932,6 +1940,7 @@ impl Periodogram {
         freqs: Option<Bound<PyAny>>,
         fast: Option<bool>,
         features: Option<Bound<PyAny>>,
+        phase_features: Option<Bound<PyAny>>,
         normalization: PeriodogramNormalization,
     ) -> PyResult<(LcfPeriodogram<f32>, LcfPeriodogram<f64>)> {
         let mut eval_f32 = match peaks {
@@ -2065,8 +2074,16 @@ impl Periodogram {
         if let Some(features) = features {
             for x in features.try_iter()? {
                 let py_feature = x?.cast::<PyFeatureEvaluator>()?.borrow();
-                eval_f32.add_feature(py_feature.feature_evaluator_f32.clone());
-                eval_f64.add_feature(py_feature.feature_evaluator_f64.clone());
+                eval_f32.add_spectrum_feature(py_feature.feature_evaluator_f32.clone());
+                eval_f64.add_spectrum_feature(py_feature.feature_evaluator_f64.clone());
+            }
+        }
+
+        if let Some(phase_features) = phase_features {
+            for x in phase_features.try_iter()? {
+                let py_feature = x?.cast::<PyFeatureEvaluator>()?.borrow();
+                eval_f32.add_phase_feature(py_feature.feature_evaluator_f32.clone());
+                eval_f64.add_phase_feature(py_feature.feature_evaluator_f64.clone());
             }
         }
 
@@ -2127,6 +2144,7 @@ impl Periodogram {
         freqs = None,
         fast = true,
         features = None,
+        phase_features = None,
         normalization = "psd",
         transform = None,
     ))]
@@ -2138,6 +2156,7 @@ impl Periodogram {
         freqs: Option<Bound<PyAny>>,
         fast: Option<bool>,
         features: Option<Bound<PyAny>>,
+        phase_features: Option<Bound<PyAny>>,
         normalization: &str,
         transform: Option<Bound<PyAny>>,
     ) -> PyResult<(Self, PyFeatureEvaluator)> {
@@ -2155,6 +2174,7 @@ impl Periodogram {
             freqs,
             fast,
             features,
+            phase_features,
             normalization,
         )?;
         Ok((
@@ -2238,9 +2258,14 @@ fast : bool or None, optional
     Use "Fast" (approximate and FFT-based) or direct periodogram algorithm,
     default is {default_fast}
 features : iterable or None, optional
-    Features to extract from periodogram considering it as a time-series,
-    default is None which means no additional features
-    Features to extract from periodogram considering it as a time-series
+    Features extracted from the periodogram power spectrum, treating it as a
+    time-series (frequency as time, power as magnitude).
+    Default is None which means no additional spectrum features.
+phase_features : iterable or None, optional
+    Features to extract from the light curve phase-folded at the best period.
+    Phase runs from 0 to 1 with phase 0 at the magnitude minimum.
+    Feature names are prefixed with `period_folded_`.
+    Default is None which means no phase features.
 normalization : str, optional
     Normalization of the periodogram power. Affects `power()`,
     `freq_power()`, and feature extraction via `__call__()`.
