@@ -3,8 +3,11 @@ name: Publish Python packages
 on:
   push:
     tags:
-    push:
+    branches-ignore:
+      - documentation
   pull_request:
+    branches-ignore:
+      - documentation
   repository_dispatch:
   workflow_dispatch:
 
