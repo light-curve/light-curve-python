@@ -5,6 +5,7 @@ from light_curve.light_curve_py.dataclass_field import dataclass_field
 from light_curve.light_curve_py.features.rainbow._base import BaseRainbowFit
 
 from .bolometric import BaseBolometricTerm, bolometric_terms
+from .spectral import BaseSpectralTerm, spectral_terms
 from .temperature import BaseTemperatureTerm, temperature_terms
 
 __all__ = ["RainbowFit"]
@@ -59,8 +60,15 @@ class RainbowFit(BaseRainbowFit):
 
     bolometric: Union[str, BaseBolometricTerm] = dataclass_field(default="bazin", kw_only=True)
     """Which parametric bolometric term to use"""
+
     temperature: Union[str, BaseTemperatureTerm] = dataclass_field(default="sigmoid", kw_only=True)
     """Which parametric temperature term to use"""
+
+    spectral: Union[str, BaseSpectralTerm] = dataclass_field(
+        default="planck",
+        kw_only=True,
+    )
+    """Which spectral term to use"""
 
     def __post_init__(self):
         if not isinstance(self.bolometric, BaseBolometricTerm):
@@ -68,6 +76,9 @@ class RainbowFit(BaseRainbowFit):
 
         if not isinstance(self.temperature, BaseTemperatureTerm):
             self.temperature = temperature_terms[self.temperature]
+
+        if not isinstance(self.spectral, BaseSpectralTerm):
+            self.spectral = spectral_terms[self.spectral]
 
         super().__post_init__()
 
@@ -84,16 +95,22 @@ class RainbowFit(BaseRainbowFit):
         temperature_parameters = self.temperature.parameter_names()
         return [i for i in temperature_parameters if i not in self._common_parameter_names()]
 
+    def _spectral_parameter_names(self) -> List[str]:
+        return self.spectral.parameter_names()
+
     def bol_func(self, t, params):
         return self.bolometric.value(t, *params[self.p.all_bol_idx])
 
     def temp_func(self, t, params):
         return self.temperature.value(t, *params[self.p.all_temp_idx])
 
+    def spectral_func(self, wave_cm, T, params):
+        return self.spectral.value(wave_cm, T, *params[self.p.all_spec_idx])
+
     def _parameter_scalings(self) -> Dict[str, str]:
         rules = super()._parameter_scalings()
 
-        for term in [self.bolometric, self.temperature]:
+        for term in [self.bolometric, self.temperature, self.spectral]:
             for name, scaling in zip(term.parameter_names(), term.parameter_scalings()):
                 rules[name] = scaling
 
@@ -102,12 +119,14 @@ class RainbowFit(BaseRainbowFit):
     def _initial_guesses(self, t, m, sigma, band) -> Dict[str, float]:
         initial = self.bolometric.initial_guesses(t, m, sigma, band)
         initial.update(self.temperature.initial_guesses(t, m, sigma, band))
+        initial.update(self.spectral.initial_guesses(t, m, sigma, band))
 
         return initial
 
     def _limits(self, t, m, sigma, band) -> Dict[str, Tuple[float, float]]:
         limits = self.bolometric.limits(t, m, sigma, band)
         limits.update(self.temperature.limits(t, m, sigma, band))
+        limits.update(self.spectral.limits(t, m, sigma, band))
 
         return limits
 
