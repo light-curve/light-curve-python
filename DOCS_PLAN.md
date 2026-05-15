@@ -43,20 +43,18 @@ PyPI and introspects it at runtime — no Rust compilation needed during docs bu
 notebooks to docs pages during build. Tutorials are authored as notebooks (runnable
 locally, rendered statically in docs), stored under `docs/tutorials/`.
 
-### Hosting
+### Hosting: Read the Docs
 
-**Recommended: GitHub Pages via GitHub Actions.**
+**Decided: [Read the Docs](https://readthedocs.org/).**
 
-Pros:
-- Zero external service setup
-- Deploy automatically on every push to `main`
-- Custom domain support (`light-curve.readthedocs.io` style URL or `light-curve.github.io/light-curve-python`)
-- PR preview deployments are straightforward with the `gh-pages` branch model
+Advantages over GitHub Pages:
+- PR preview builds (each PR gets its own docs URL)
+- Versioned docs (`/stable/`, `/latest/`, `/v0.9.x/`)
+- Built-in search across versions
+- No separate GitHub Actions workflow needed for deployment
 
-Alternative — **Read the Docs** — offers built-in PR preview builds and version
-management (e.g., docs for `v0.9.x` alongside `main`). This matters once the project
-has multiple release branches. Recommendation: **start with GitHub Pages** (simpler
-setup), and migrate to Read the Docs when versioned docs are needed.
+Setup: connect the repo at readthedocs.org, add `.readthedocs.yaml` config file.
+The build installs `light-curve[full]` from PyPI (no Rust compilation needed).
 
 ---
 
@@ -293,33 +291,27 @@ Path("docs/features/table.md").write_text("\n".join(rows))
 
 This guarantees the feature table is never out of date.
 
-### GitHub Actions workflow (`.github/workflows/docs.yml`)
+### Read the Docs config (`.readthedocs.yaml`)
 
 ```yaml
-name: Deploy docs
+version: 2
 
-on:
-  push:
-    branches: [main]
-  pull_request:   # build but don't deploy on PRs
+build:
+  os: ubuntu-24.04
+  tools:
+    python: "3.12"
+  commands:
+    - pip install uv
+    - uv sync --group docs
+    - uv run mkdocs build --strict --site-dir $READTHEDOCS_OUTPUT/html
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
-      - run: uv sync --group docs
-      - run: uv run mkdocs build --strict
-      - if: github.ref == 'refs/heads/main'
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./site
+mkdocs:
+  configuration: mkdocs.yml
 ```
 
-The workflow installs `light-curve[full]` from PyPI (the docs dependency group),
-so no Rust toolchain is required and the build completes in ~2 minutes.
+The build installs `light-curve[full]` from PyPI (no Rust toolchain required),
+completing in ~2 minutes. Read the Docs triggers builds on every push to `main`
+and on every PR.
 
 ---
 
@@ -336,11 +328,13 @@ so no Rust toolchain is required and the build completes in ~2 minutes.
    the docs build is fast and does not require HuggingFace access for the embed
    tutorials. A separate nightly CI job can re-execute and push updated notebooks.
 
-4. **Rust docstrings**: PyO3 exposes `#[pyo3(text_signature = "...")]` and docstrings
-   written in the Rust source. mkdocstrings introspects the installed wheel (not the
-   source), so these appear correctly. However, parameter type annotations from Rust
-   may be incomplete — we may want to add Python stub files (`.pyi`) for the best
-   experience.
+4. **Rust docstrings and `.pyi` stubs**: PyO3 exposes docstrings written in Rust source.
+   mkdocstrings introspects the installed wheel, so these appear. However, no `.pyi`
+   stub files exist yet, so parameter type annotations will be missing or incomplete in
+   the API docs. **Adding `.pyi` stubs is a prerequisite for full API doc quality** and
+   should be a parallel task (tracked separately). Until stubs exist, we can use
+   `show_signature_annotations: false` in mkdocstrings config to avoid showing
+   incorrect types.
 
 5. **Custom domain**: The site will initially live at
    `https://light-curve.github.io/light-curve-python/`. A custom domain
