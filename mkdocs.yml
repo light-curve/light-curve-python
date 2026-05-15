@@ -33,7 +33,6 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
-          paths: [light-curve]
           load_external_modules: true
           options:
             docstring_style: numpy
