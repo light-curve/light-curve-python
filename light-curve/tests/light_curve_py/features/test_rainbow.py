@@ -1,11 +1,11 @@
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import numpy as np
 
 from light_curve.light_curve_py import RainbowFit
 from light_curve.light_curve_py.features.rainbow._scaler import MultiBandScaler
 
 
-def test_noisy_with_baseline(plot=False):
+def test_noisy_with_baseline():
 
     rng = np.random.default_rng(0)
 
@@ -77,51 +77,52 @@ def test_noisy_with_baseline(plot=False):
         band=band,
     )
 
-    if plot:
-        colors = {
-            "g": "blue",
-            "r": "green",
-            "i": "orange",
-            "z": "red",
-        }
+    """
+    colors = {
+        "g": "blue",
+        "r": "green",
+        "i": "orange",
+        "z": "red",
+    }
 
-        plt.figure(figsize=(12, 5))
+    plt.figure(figsize=(12, 5))
 
-        for b in band_wave_aa:
-            mask = band == b
+    for b in band_wave_aa:
+        mask = band == b
 
-            plt.errorbar(
-                t[mask],
-                flux[mask],
-                yerr=flux_err[mask],
-                ls="none",
-                fmt=".",
-                alpha=0.3,
-                color=colors[b],
-            )
+        plt.errorbar(
+            t[mask],
+            flux[mask],
+            yerr=flux_err[mask],
+            ls="none",
+            fmt=".",
+            alpha=0.3,
+            color=colors[b],
+        )
 
-            plt.plot(
-                t[mask],
-                feature.model(t[mask], band[mask], *expected[:-1]),
-                color=colors[b],
-                linewidth=2,
-                label=f"{b} expected",
-            )
+        plt.plot(
+            t[mask],
+            feature.model(t[mask], band[mask], *expected[:-1]),
+            color=colors[b],
+            linewidth=2,
+            label=f"{b} expected",
+        )
 
-            plt.plot(
-                t[mask],
-                feature.model(t[mask], band[mask], *actual[:-1]),
-                "--",
-                color=colors[b],
-                linewidth=2,
-                label=f"{b} fitted",
-            )
+        plt.plot(
+            t[mask],
+            feature.model(t[mask], band[mask], *actual[:-1]),
+            "--",
+            color=colors[b],
+            linewidth=2,
+            label=f"{b} fitted",
+        )
 
-        plt.legend()
-        plt.title("Blanketed model with baseline")
-        plt.xlabel("time")
-        plt.ylabel("flux")
-        plt.show()
+    plt.legend()
+    plt.title("Blanketed model with baseline")
+    plt.xlabel("time")
+    plt.ylabel("flux")
+    plt.show()
+    """
 
     np.testing.assert_allclose(
         feature.model(t, band, *expected[:-1]),
@@ -130,7 +131,7 @@ def test_noisy_with_baseline(plot=False):
     )
 
 
-def test_noisy_all_functions_combination(plot=False):
+def test_noisy_all_functions_combination():
 
     rng = np.random.default_rng(0)
 
@@ -269,35 +270,36 @@ def test_noisy_all_functions_combination(plot=False):
                     band=band,
                 )
 
-                if plot:
-                    plt.figure(figsize=(10, 4))
+                """
+                plt.figure(figsize=(10, 4))
 
-                    plt.scatter(
-                        t,
-                        flux,
-                        s=5,
-                        alpha=0.4,
-                        label="data",
-                    )
+                plt.scatter(
+                    t,
+                    flux,
+                    s=5,
+                    alpha=0.4,
+                    label="data",
+                )
 
-                    plt.plot(
-                        t,
-                        feature.model(t, band, *expected[:-1]),
-                        "x",
-                        label="expected",
-                    )
+                plt.plot(
+                    t,
+                    feature.model(t, band, *expected[:-1]),
+                    "x",
+                    label="expected",
+                )
 
-                    plt.plot(
-                        t,
-                        feature.model(t, band, *actual[:-1]),
-                        ".",
-                        label="actual",
-                    )
+                plt.plot(
+                    t,
+                    feature.model(t, band, *actual[:-1]),
+                    ".",
+                    label="actual",
+                )
 
-                    plt.title(f"{bolometric_names[idx_b]} + {temperature_names[idx_t]} + {spectral_names[idx_s]}")
+                plt.title(f"{bolometric_names[idx_b]} + {temperature_names[idx_t]} + {spectral_names[idx_s]}")
 
-                    plt.legend()
-                    plt.show()
+                plt.legend()
+                plt.show()
+                """
 
                 np.testing.assert_allclose(
                     actual[:-1],
