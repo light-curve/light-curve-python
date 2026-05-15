@@ -346,9 +346,11 @@ and on every PR.
 
 | Phase | Scope | Effort |
 |-------|-------|--------|
-| 1 | mkdocs.yml, theme, CI deploy, skeleton pages, install page, API reference for features | ~1 day |
+| 0 | *(done)* CI disabled on `documentation` branch (`test.yml` uses `branches-ignore`) | — |
+| 1 | mkdocs.yml, `.readthedocs.yaml`, theme, skeleton pages, install page, API reference for features | ~1 day |
 | 2 | Landing page with animated SVG cards, dark-mode polish | ~1 day |
 | 3 | Features tutorials (5 notebooks) | ~2 days |
 | 4 | Embed section + 2 tutorials | ~1 day |
 | 5 | dm-dt section + CNN tutorial | ~1 day |
 | 6 | Feature table generator script, changelog page | ~0.5 day |
+| 7 | **Re-enable CI**: remove `branches-ignore` from `.github/workflows/test.yml`; add a separate lightweight `docs-build` CI job that runs `mkdocs build --strict` on every PR to catch broken links and missing references | ~0.5 day |

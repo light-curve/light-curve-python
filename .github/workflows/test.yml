@@ -1,6 +1,13 @@
 name: Test
 
-on: [ push, pull_request, workflow_dispatch ]
+on:
+  push:
+    branches-ignore:
+      - documentation
+  pull_request:
+    branches-ignore:
+      - documentation
+  workflow_dispatch:
 
 jobs:
   py_build_deps:
