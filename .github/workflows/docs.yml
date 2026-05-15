@@ -21,6 +21,11 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Install light-curve (pre-built wheel)
         run: pip install 'light-curve[full]'
 
