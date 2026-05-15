@@ -320,11 +320,12 @@ This guarantees the feature table is never out of date.
 
 | Phase | Scope | Effort |
 |-------|-------|--------|
-| 0 | *(done)* CI disabled on `documentation` branch (`test.yml` uses `branches-ignore`) | — |
+| 0 | *(done)* CI disabled on `documentation` branch | — |
 | 1 | *(done)* mkdocs.yml, Material theme, skeleton pages, API reference stubs, MathJax, numpy docstring style | — |
-| 2 | Landing page with animated SVG cards, dark-mode polish | ~1 day |
-| 3 | Features tutorials (5 notebooks) | ~2 days |
-| 4 | Embed section + 2 tutorials | ~1 day |
-| 5 | dm-dt section + CNN tutorial | ~1 day |
-| 6 | Feature table generator script, changelog page | ~0.5 day |
-| 7 | GitHub Actions `docs-deploy` workflow: `mkdocs gh-deploy` on push to `documentation` branch; add `mkdocs build --strict` check on PRs | ~0.5 day |
+| 2 | Landing page polish, animated SVG cards | ~1 day |
+| 3 | Features tutorials (notebooks) | ~2 days |
+| 4 | Embed section tutorials | ~1 day |
+| 5 | dm-dt tutorial | ~1 day |
+| 6 | *(done)* Feature table, changelog page, contributing page, GitHub Actions deploy | — |
+| 7 | Shorten README to intro + developer info only; point users to the docs site for full documentation | ~0.5 day |
+| 8 | Add `mkdocs build --strict` check on PRs to catch broken links | ~0.5 day |
