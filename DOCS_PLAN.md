@@ -301,17 +301,30 @@ build:
   tools:
     python: "3.12"
   commands:
-    - pip install uv
+    # Install Rust toolchain
+    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+    - source "$HOME/.cargo/env"
+    # Install system deps (minimal: no Ceres, no GSL — sufficient for API docs)
+    - pip install maturin uv
     - uv sync --group docs
+    # Build the extension from source (branch's own code, not PyPI)
+    - cd light-curve && maturin develop --locked --no-default-features --features=abi3
+    # Build docs
     - uv run mkdocs build --strict --site-dir $READTHEDOCS_OUTPUT/html
 
 mkdocs:
   configuration: mkdocs.yml
 ```
 
-The build installs `light-curve[full]` from PyPI (no Rust toolchain required),
-completing in ~2 minutes. Read the Docs triggers builds on every push to `main`
-and on every PR.
+Building from source ensures the API docs always reflect the code on the branch,
+not a pinned PyPI release. The minimal feature flags (`abi3` only, no Ceres/GSL)
+keep the Rust build fast (~3–4 minutes). Features that require Ceres or GSL
+(BazinFit, Periodogram with FFTW) will still be documented — their docstrings are
+in the source — but the built extension will raise an import error at runtime if
+called without those features compiled in. Since mkdocstrings only introspects
+signatures and docstrings (not calls), this is fine for API docs.
+
+Read the Docs triggers builds on every push to `main` and on every PR.
 
 ---
 
