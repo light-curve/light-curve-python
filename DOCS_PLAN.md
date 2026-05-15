@@ -34,8 +34,8 @@ at build time and renders them as linked, searchable API pages. Usage in Markdow
 This gives clickable type annotations, inheritance diagrams, and cross-links between
 classes automatically. Because `light_curve` is a Rust extension, the docstrings live
 in `src/features.rs` (exposed via PyO3) and in the Python stubs. mkdocstrings works
-with the installed package (not the source), so the docs build installs the wheel from
-PyPI and introspects it at runtime — no Rust compilation needed during docs build.
+with the installed package. `force_inspection: true` forces dynamic import (griffe's
+default static analyser cannot follow star-imports from compiled `.so` extensions).
 
 ### Tutorials: mkdocs-jupyter
 
@@ -43,18 +43,15 @@ PyPI and introspects it at runtime — no Rust compilation needed during docs bu
 notebooks to docs pages during build. Tutorials are authored as notebooks (runnable
 locally, rendered statically in docs), stored under `docs/tutorials/`.
 
-### Hosting: Read the Docs
+### Hosting: GitHub Pages + custom domain
 
-**Decided: [Read the Docs](https://readthedocs.org/).**
+**Decided: GitHub Pages** with custom domain `light-curve.snad.space`.
 
-Advantages over GitHub Pages:
-- PR preview builds (each PR gets its own docs URL)
-- Versioned docs (`/stable/`, `/latest/`, `/v0.9.x/`)
-- Built-in search across versions
-- No separate GitHub Actions workflow needed for deployment
-
-Setup: connect the repo at readthedocs.org, add `.readthedocs.yaml` config file.
-The build installs `light-curve[full]` from PyPI (no Rust compilation needed).
+Setup:
+- Deploy with `mkdocs gh-deploy` (pushes built site to `gh-pages` branch)
+- `docs/CNAME` file contains `light-curve.snad.space`
+- A GitHub Actions workflow on push to `documentation` branch runs `mkdocs gh-deploy`
+- Custom domain DNS: CNAME `light-curve.snad.space` → `light-curve.github.io`
 
 ---
 
@@ -209,10 +206,10 @@ This eliminates the duplication mentioned in the requirements.
 
 ```yaml
 site_name: light-curve
-site_url: https://light-curve.github.io/light-curve-python/
+site_url: https://light-curve.snad.space/
 repo_url: https://github.com/light-curve/light-curve-python
 repo_name: light-curve/light-curve-python
-edit_uri: edit/main/docs/
+edit_uri: edit/documentation/docs/
 
 theme:
   name: material
@@ -291,48 +288,13 @@ Path("docs/features/table.md").write_text("\n".join(rows))
 
 This guarantees the feature table is never out of date.
 
-### Read the Docs config (`.readthedocs.yaml`)
-
-```yaml
-version: 2
-
-build:
-  os: ubuntu-24.04
-  tools:
-    python: "3.12"
-  commands:
-    # Install Rust toolchain
-    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
-    - source "$HOME/.cargo/env"
-    # Install system deps (minimal: no Ceres, no GSL — sufficient for API docs)
-    - pip install maturin uv
-    - uv sync --group docs
-    # Build the extension from source (branch's own code, not PyPI)
-    - cd light-curve && maturin develop --locked --no-default-features --features=abi3
-    # Build docs
-    - uv run mkdocs build --strict --site-dir $READTHEDOCS_OUTPUT/html
-
-mkdocs:
-  configuration: mkdocs.yml
-```
-
-Building from source ensures the API docs always reflect the code on the branch,
-not a pinned PyPI release. The minimal feature flags (`abi3` only, no Ceres/GSL)
-keep the Rust build fast (~3–4 minutes). Features that require Ceres or GSL
-(BazinFit, Periodogram with FFTW) will still be documented — their docstrings are
-in the source — but the built extension will raise an import error at runtime if
-called without those features compiled in. Since mkdocstrings only introspects
-signatures and docstrings (not calls), this is fine for API docs.
-
-Read the Docs triggers builds on every push to `main` and on every PR.
-
 ---
 
 ## Design decisions / open questions
 
-1. **Hosting — GitHub Pages vs Read the Docs**: GitHub Pages is simpler to set up
-   (proposed above). Read the Docs adds PR preview links and versioned docs
-   (`/v0.9.x/` vs `/latest/`). Decision deferred to maintainer.
+1. **Hosting**: GitHub Pages + custom domain `light-curve.snad.space`. DNS: CNAME record
+   pointing `light-curve.snad.space` → `light-curve.github.io`. Deploy: `mkdocs gh-deploy`
+   via GitHub Actions on push to `documentation`.
 
 2. **Dark mode**: Material's built-in palette toggle is included in the config above.
    The landing-page SVG animations need a dark-mode variant (stroke colours inverted).
@@ -349,9 +311,8 @@ Read the Docs triggers builds on every push to `main` and on every PR.
    `show_signature_annotations: false` in mkdocstrings config to avoid showing
    incorrect types.
 
-5. **Custom domain**: The site will initially live at
-   `https://light-curve.github.io/light-curve-python/`. A custom domain
-   (`docs.light-curve.space` or similar) can be added later with a CNAME record.
+5. **Custom domain**: `light-curve.snad.space` (CNAME in `docs/CNAME`). DNS record
+   to be set by maintainer.
 
 ---
 
@@ -360,10 +321,10 @@ Read the Docs triggers builds on every push to `main` and on every PR.
 | Phase | Scope | Effort |
 |-------|-------|--------|
 | 0 | *(done)* CI disabled on `documentation` branch (`test.yml` uses `branches-ignore`) | — |
-| 1 | mkdocs.yml, `.readthedocs.yaml`, theme, skeleton pages, install page, API reference for features | ~1 day |
+| 1 | *(done)* mkdocs.yml, Material theme, skeleton pages, API reference stubs, MathJax, numpy docstring style | — |
 | 2 | Landing page with animated SVG cards, dark-mode polish | ~1 day |
 | 3 | Features tutorials (5 notebooks) | ~2 days |
 | 4 | Embed section + 2 tutorials | ~1 day |
 | 5 | dm-dt section + CNN tutorial | ~1 day |
 | 6 | Feature table generator script, changelog page | ~0.5 day |
-| 7 | **Re-enable CI**: remove `branches-ignore` from `.github/workflows/test.yml`; add a separate lightweight `docs-build` CI job that runs `mkdocs build --strict` on every PR to catch broken links and missing references | ~0.5 day |
+| 7 | GitHub Actions `docs-deploy` workflow: `mkdocs gh-deploy` on push to `documentation` branch; add `mkdocs build --strict` check on PRs | ~0.5 day |

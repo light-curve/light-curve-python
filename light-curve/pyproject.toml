@@ -70,6 +70,11 @@ test = [
     "polars",
     "cesium",
 ]
+# Documentation build
+docs = [
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.25",
+]
 # Development environment for free-threaded Python builds
 dev-free-threading = [
     { include-group = "test-base" },

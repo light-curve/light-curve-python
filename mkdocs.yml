@@ -1,0 +1,73 @@
+site_name: light-curve
+site_url: https://light-curve.snad.space/
+repo_url: https://github.com/light-curve/light-curve-python
+repo_name: light-curve/light-curve-python
+edit_uri: edit/documentation/docs/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: deep-orange
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: deep-orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - content.action.edit
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [light-curve]
+          load_external_modules: true
+          options:
+            docstring_style: numpy
+            show_source: true
+            show_bases: true
+            show_signature_annotations: false
+            force_inspection: true
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.arithmatex:
+      generic: true
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Features:
+    - Overview: features/index.md
+    - API reference: features/api.md
+  - Embeddings:
+    - Overview: embed/index.md
+    - API reference: embed/api.md
+  - dm-dt maps:
+    - Overview: dmdt/index.md
+    - API reference: dmdt/api.md
+  - Developer:
+    - Contributing: developer/contributing.md
+    - Changelog: developer/changelog.md
