@@ -1,0 +1,116 @@
+/* ── Hero cards ──────────────────────────────────────────────────────── */
+
+.lc-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.2rem;
+  margin: 2rem 0;
+}
+
+.lc-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  text-decoration: none !important;
+  color: inherit !important;
+  transition: box-shadow 0.25s, transform 0.25s;
+}
+
+.lc-card:hover {
+  box-shadow: 0 4px 24px rgba(0,0,0,.15);
+  transform: translateY(-3px);
+}
+
+.lc-card-svg-wrap {
+  background: var(--md-primary-fg-color--dark);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.2rem;
+  height: 130px;
+}
+
+.lc-card-body {
+  padding: 1rem 1.2rem 1.2rem;
+}
+
+.lc-card-body h3 {
+  margin: 0 0 .4rem;
+  font-size: 1rem;
+  color: var(--md-primary-fg-color);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.lc-card-body p {
+  margin: 0 0 .6rem;
+  font-size: .85rem;
+  color: var(--md-default-fg-color--light);
+}
+
+.lc-card-body a {
+  font-size: .85rem;
+  font-weight: 600;
+}
+
+/* ── Features SVG ────────────────────────────────────────────────────── */
+
+.lc-svg-features .lc-amplitude {
+  opacity: 0;
+  transition: opacity 0.45s ease;
+}
+
+.lc-card:hover .lc-svg-features .lc-amplitude {
+  opacity: 1;
+}
+
+/* ── Embeddings SVG ──────────────────────────────────────────────────── */
+
+.lc-svg-embed .lc-conn {
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.lc-card:hover .lc-svg-embed .lc-conn {
+  stroke-dashoffset: 0;
+}
+
+.lc-svg-embed .lc-vec-text {
+  opacity: 0;
+  transition: opacity 0.4s ease 0.5s;
+}
+
+.lc-card:hover .lc-svg-embed .lc-vec-text {
+  opacity: 1;
+}
+
+/* ── dm-dt SVG ───────────────────────────────────────────────────────── */
+
+.lc-svg-dmdt .lc-cell-hover {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.lc-card:hover .lc-svg-dmdt .lc-cell-hover:nth-child(1) { opacity: 1; transition-delay: 0.00s; }
+.lc-card:hover .lc-svg-dmdt .lc-cell-hover:nth-child(2) { opacity: 1; transition-delay: 0.07s; }
+.lc-card:hover .lc-svg-dmdt .lc-cell-hover:nth-child(3) { opacity: 1; transition-delay: 0.14s; }
+.lc-card:hover .lc-svg-dmdt .lc-cell-hover:nth-child(4) { opacity: 1; transition-delay: 0.21s; }
+.lc-card:hover .lc-svg-dmdt .lc-cell-hover:nth-child(5) { opacity: 1; transition-delay: 0.28s; }
+.lc-card:hover .lc-svg-dmdt .lc-cell-hover:nth-child(6) { opacity: 1; transition-delay: 0.35s; }
+.lc-card:hover .lc-svg-dmdt .lc-cell-hover:nth-child(7) { opacity: 1; transition-delay: 0.42s; }
+.lc-card:hover .lc-svg-dmdt .lc-cell-hover:nth-child(8) { opacity: 1; transition-delay: 0.49s; }
+
+/* reduced-motion: no animation, just static */
+@media (prefers-reduced-motion: reduce) {
+  .lc-svg-features .lc-amplitude,
+  .lc-svg-embed .lc-conn,
+  .lc-svg-embed .lc-vec-text,
+  .lc-svg-dmdt .lc-cell-hover {
+    opacity: 1 !important;
+    stroke-dashoffset: 0 !important;
+    transition: none !important;
+  }
+}
