@@ -238,3 +238,23 @@ jobs:
           maturin build -i python3.10
           maturin build -i python3.13t
           maturin build -i python3.14t
+
+  docs-build:
+    if: github.head_ref != 'documentation'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install light-curve (pre-built wheel)
+        run: pip install 'light-curve[full]'
+
+      - name: Install docs dependencies
+        run: pip install mkdocs-material "mkdocstrings[python]" numpy mkdocs-jupyter
+
+      - name: Build docs (strict)
+        run: mkdocs build --strict

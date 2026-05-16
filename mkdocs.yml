@@ -39,6 +39,10 @@ plugins:
           load_external_modules: true
           options:
             docstring_style: numpy
+            docstring_options:
+              warn_unknown_params: false
+              warn_missing_types: false
+              warnings: false
             show_source: false
             show_bases: true
             show_signature_annotations: false
