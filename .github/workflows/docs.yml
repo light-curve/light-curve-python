@@ -30,7 +30,7 @@ jobs:
         run: pip install 'light-curve[full]'
 
       - name: Install docs dependencies
-        run: pip install mkdocs-material "mkdocstrings[python]" numpy
+        run: pip install mkdocs-material "mkdocstrings[python]" numpy mkdocs-jupyter
 
       - name: Build and deploy
         run: mkdocs gh-deploy --force

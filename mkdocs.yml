@@ -30,6 +30,9 @@ theme:
 
 plugins:
   - search
+  - mkdocs-jupyter:
+      execute: false
+      include_source: true
   - mkdocstrings:
       handlers:
         python:
@@ -73,6 +76,9 @@ nav:
   - Installation: installation.md
   - Features:
     - Overview: features/index.md
+    - Basics: features/basics.ipynb
+    - Periodogram: features/periodogram.ipynb
+    - Parametric fits: features/fitting.ipynb
     - API reference: features/api.md
   - Embeddings:
     - Overview: embed/index.md
