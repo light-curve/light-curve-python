@@ -82,6 +82,7 @@ nav:
     - API reference: features/api.md
   - Embeddings:
     - Overview: embed/index.md
+    - Tutorial: embed/tutorial.ipynb
     - API reference: embed/api.md
   - dm-dt maps:
     - Overview: dmdt/index.md
