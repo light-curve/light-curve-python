@@ -44,7 +44,7 @@ pip install 'light-curve[full]'
 </div>
 <div class="lc-card-body">
 <h3><a href="features/">Hand-crafted features</a></h3>
-<p>40+ scalar extractors for variability characterisation — amplitude, scatter, slope, periodogram peaks, parametric light-curve fits. Every extractor has a documented formula.</p>
+<p>40+ features across 6 categories: statistical, variability &amp; trend, time sampling, Lomb–Scargle periodogram, parametric fits (Bazin, Villar), and multiband. All implemented in Rust for survey-scale throughput.</p>
 </div>
 </div>
 

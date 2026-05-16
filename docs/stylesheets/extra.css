@@ -1,14 +1,19 @@
 /* ── Typography ───────────────────────────────────────────────────── */
 
-/* Slightly larger body text */
 .md-typeset {
-  font-size: .85rem;
+  font-size: 1rem;
   line-height: 1.7;
 }
 
 /* White-mode: give the header a subtle bottom border so it doesn't float */
 [data-md-color-scheme="default"] .md-header {
   border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+
+/* ── Footer: hide the empty/unwanted footer ───────────────────────── */
+
+.md-footer {
+  display: none;
 }
 
 /* ── Hero cards ──────────────────────────────────────────────────── */
@@ -48,8 +53,9 @@
   inset: 0;
 }
 
+/* Fixed dark background so the white SVG elements are always visible */
 .lc-card-svg-wrap {
-  background: var(--md-primary-fg-color--dark);
+  background: #1a237e;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -69,7 +75,7 @@
 
 .lc-card-body p {
   margin: 0;
-  font-size: .85rem;
+  font-size: .9rem;
   color: var(--md-default-fg-color--light);
 }
 
@@ -133,9 +139,8 @@
   }
 }
 
-/* ── API docs: hide notebook cell count badges ───────────────────── */
+/* ── Notebooks: hide cell count badges ───────────────────────────── */
 
-/* Hide the ugly empty/numbered cell labels in rendered notebooks */
 .jp-Cell-inputWrapper .jp-InputPrompt {
   display: none !important;
 }

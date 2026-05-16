@@ -3,12 +3,14 @@ site_url: https://light-curve.snad.space/
 repo_url: https://github.com/light-curve/light-curve-python
 repo_name: light-curve/light-curve-python
 edit_uri: edit/documentation/docs/
-copyright: "© 2021–2025 SNAD Team — <a href='https://github.com/light-curve/light-curve-python/blob/main/LICENSE'>MIT License</a>"
 
 theme:
   name: material
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
   icon:
     repo: fontawesome/brands/github
+    edit: material/pencil
   font:
     text: Inter
     code: JetBrains Mono
@@ -26,13 +28,15 @@ theme:
         icon: material/brightness-4
         name: Switch to light mode
   features:
-    - navigation.tabs
     - navigation.sections
     - navigation.top
     - navigation.indexes
-    - navigation.footer
     - toc.follow
     - content.code.copy
+    - content.action.edit
+
+extra:
+  generator: false
 
 plugins:
   - search
@@ -53,7 +57,7 @@ plugins:
               - "!^_"
             show_source: false
             show_bases: true
-            show_signature_annotations: false
+            show_signature: false
             show_root_heading: true
             heading_level: 3
             force_inspection: true
