@@ -1,26 +1,51 @@
-/* ── Hero cards ──────────────────────────────────────────────────────── */
+/* ── Typography ───────────────────────────────────────────────────── */
+
+/* Slightly larger body text */
+.md-typeset {
+  font-size: .85rem;
+  line-height: 1.7;
+}
+
+/* White-mode: give the header a subtle bottom border so it doesn't float */
+[data-md-color-scheme="default"] .md-header {
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+
+/* ── Hero cards ──────────────────────────────────────────────────── */
 
 .lc-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1.2rem;
   margin: 2rem 0;
 }
 
 .lc-card {
+  position: relative;           /* anchor for the full-card link overlay */
   display: flex;
   flex-direction: column;
   border: 1px solid var(--md-default-fg-color--lightest);
   border-radius: 0.5rem;
   overflow: hidden;
-  text-decoration: none !important;
-  color: inherit !important;
   transition: box-shadow 0.25s, transform 0.25s;
 }
 
 .lc-card:hover {
-  box-shadow: 0 4px 24px rgba(0,0,0,.15);
+  box-shadow: 0 4px 24px rgba(0,0,0,.12);
   transform: translateY(-3px);
+}
+
+/* Full-card click target: the title link's ::after stretches to cover the card */
+.lc-card-body h3 a {
+  color: var(--md-primary-fg-color);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.lc-card-body h3 a::after {
+  content: '';
+  position: absolute;
+  inset: 0;
 }
 
 .lc-card-svg-wrap {
@@ -34,28 +59,21 @@
 
 .lc-card-body {
   padding: 1rem 1.2rem 1.2rem;
+  flex: 1;
 }
 
 .lc-card-body h3 {
-  margin: 0 0 .4rem;
+  margin: 0 0 .5rem;
   font-size: 1rem;
-  color: var(--md-primary-fg-color);
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 
 .lc-card-body p {
-  margin: 0 0 .6rem;
+  margin: 0;
   font-size: .85rem;
   color: var(--md-default-fg-color--light);
 }
 
-.lc-card-body a {
-  font-size: .85rem;
-  font-weight: 600;
-}
-
-/* ── Features SVG ────────────────────────────────────────────────────── */
+/* ── Features SVG ────────────────────────────────────────────────── */
 
 .lc-svg-features .lc-amplitude {
   opacity: 0;
@@ -66,7 +84,7 @@
   opacity: 1;
 }
 
-/* ── Embeddings SVG ──────────────────────────────────────────────────── */
+/* ── Embeddings SVG ──────────────────────────────────────────────── */
 
 .lc-svg-embed .lc-conn {
   stroke-dasharray: 60;
@@ -87,7 +105,7 @@
   opacity: 1;
 }
 
-/* ── dm-dt SVG ───────────────────────────────────────────────────────── */
+/* ── dm-dt SVG ───────────────────────────────────────────────────── */
 
 .lc-svg-dmdt .lc-cell-hover {
   opacity: 0;
@@ -113,4 +131,11 @@
     stroke-dashoffset: 0 !important;
     transition: none !important;
   }
+}
+
+/* ── API docs: hide notebook cell count badges ───────────────────── */
+
+/* Hide the ugly empty/numbered cell labels in rendered notebooks */
+.jp-Cell-inputWrapper .jp-InputPrompt {
+  display: none !important;
 }

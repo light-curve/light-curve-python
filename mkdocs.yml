@@ -3,13 +3,19 @@ site_url: https://light-curve.snad.space/
 repo_url: https://github.com/light-curve/light-curve-python
 repo_name: light-curve/light-curve-python
 edit_uri: edit/documentation/docs/
+copyright: "© 2021–2025 SNAD Team — <a href='https://github.com/light-curve/light-curve-python/blob/main/LICENSE'>MIT License</a>"
 
 theme:
   name: material
+  icon:
+    repo: fontawesome/brands/github
+  font:
+    text: Inter
+    code: JetBrains Mono
   palette:
     - scheme: default
-      primary: indigo
-      accent: deep-orange
+      primary: white
+      accent: indigo
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
@@ -24,9 +30,9 @@ theme:
     - navigation.sections
     - navigation.top
     - navigation.indexes
+    - navigation.footer
     - toc.follow
     - content.code.copy
-    - content.action.edit
 
 plugins:
   - search
@@ -43,12 +49,16 @@ plugins:
               warn_unknown_params: false
               warn_missing_types: false
               warnings: false
+            filters:
+              - "!^_"
             show_source: false
             show_bases: true
             show_signature_annotations: false
             show_root_heading: true
             heading_level: 3
             force_inspection: true
+            inherited_members: false
+            members_order: source
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -83,7 +93,15 @@ nav:
     - Basics: features/basics.ipynb
     - Periodogram: features/periodogram.ipynb
     - Parametric fits: features/fitting.ipynb
-    - API reference: features/api.md
+    - API:
+      - Meta (Extractor, Bins): features/api/meta.md
+      - Statistical: features/api/statistical.md
+      - Variability & trend: features/api/variability.md
+      - Time sampling: features/api/time.md
+      - Periodogram: features/api/periodogram.md
+      - Parametric fits: features/api/fitting.md
+      - Detection-based: features/api/detection.md
+      - Multiband: features/api/multiband.md
   - Embeddings:
     - Overview: embed/index.md
     - Tutorial: embed/tutorial.ipynb
@@ -92,6 +110,6 @@ nav:
     - Overview: dmdt/index.md
     - Tutorial: dmdt/tutorial.ipynb
     - API reference: dmdt/api.md
+  - Changelog: changelog.md
   - Developer:
     - Contributing: developer/contributing.md
-    - Changelog: developer/changelog.md

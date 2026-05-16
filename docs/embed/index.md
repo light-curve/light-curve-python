@@ -1,25 +1,38 @@
 # Light-curve embeddings
 
 `light_curve.embed` provides pretrained neural-network models that map raw photometric
-time series to dense vectors for downstream ML tasks: classification, anomaly detection,
-similarity search.
+time series to dense fixed-length vectors for downstream ML tasks: classification,
+anomaly detection, and similarity search.
 
-Models are distributed as ONNX files on HuggingFace Hub and loaded with `from_hf()`.
-`onnxruntime` and `huggingface_hub` must be installed:
+## Requirements
+
+Inference uses [ONNX Runtime](https://onnxruntime.ai), which you install separately
+because the right variant depends on your hardware:
 
 ```sh
-pip install light-curve onnxruntime huggingface_hub
+pip install onnxruntime          # CPU
+pip install onnxruntime-gpu      # NVIDIA GPU
 ```
+
+Models are hosted on [HuggingFace Hub](https://huggingface.co/light-curve) and downloaded
+automatically by `from_hf()`. To enable automatic downloads:
+
+```sh
+pip install huggingface_hub
+```
+
+If you already have the ONNX model file locally, `huggingface_hub` is not required.
 
 ## Available models
 
 | Model | Bands | Input | Embedding dim | Pretrained on |
 |-------|-------|-------|---------------|---------------|
-| `Astromer1` | single | time, mag | 256 | MACHO |
 | `Astromer2` | single (or per-band) | time, mag | 256 | MACHO |
 | `ATCAT` | 6 (ugrizY jointly) | time, flux, flux\_err, band index | 384 | ELAsTiCC |
 
-## Single-band: Astromer
+`Astromer1` is also available as a legacy model.
+
+## Single-band: Astromer2
 
 [Astromer2](https://ui.adsabs.harvard.edu/abs/2026A%26A...707A.170D/abstract) accepts
 irregularly-sampled `(time, mag)` pairs and returns 256-dimensional embeddings:
@@ -36,9 +49,11 @@ mag  = rng.normal(15, 0.5, 120).astype(np.float64)
 
 embedding = model(time, mag)
 print(embedding.shape)  # (1, 1, 1, 256)
+# squeeze to (256,) for a single object
+vec = embedding.squeeze()
 ```
 
-For multi-band data, pass `bands=["g", "r"]` (or any labels) to get one embedding per band:
+For multi-band data, pass `bands=["g", "r"]` to get one embedding per band:
 
 ```python
 model = Astromer2.from_hf(output="mean", bands=["g", "r"])
@@ -54,7 +69,6 @@ Inputs are flux (AB, zero-point 31.4 by default), flux error, time, and integer 
 (u=0, g=1, r=2, i=3, z=4, Y=5):
 
 ```python
-import numpy as np
 from light_curve.embed import ATCAT
 
 model = ATCAT.from_hf(output="last")
@@ -77,16 +91,12 @@ Set `mag_zp=27.5` for ELAsTiCC/SNANA FITS data, or `mag_zp=8.9` for Jy.
 Pass `ort_session_kwargs` to select an execution provider:
 
 ```python
-model = Astromer2.from_hf(output="mean", ort_session_kwargs={"providers": ["CUDAExecutionProvider"]})
+model = Astromer2.from_hf(
+    output="mean",
+    ort_session_kwargs={"providers": ["CUDAExecutionProvider"]},
+)
 ```
 
-See the [onnxruntime install guide](https://onnxruntime.ai/docs/install/) for `onnxruntime-gpu`
-and other platform-specific packages.
-
-## Loading a local ONNX file
-
-```python
-model = Astromer2.from_onnx_file("path/to/astromer2.onnx", output="mean")
-```
+See the [onnxruntime install guide](https://onnxruntime.ai/docs/install/) for provider options.
 
 See the [API reference](api.md) for full signatures and reduction strategies.

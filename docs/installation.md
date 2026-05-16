@@ -11,21 +11,15 @@
 === "conda"
 
     ```sh
-    conda install -c conda-forge light-curve-python
+    conda install conda-forge::light-curve-python
     ```
 
-The `[full]` extra installs all optional Python dependencies for experimental features.
-`light-curve-python` on conda-forge is an alias for the full package.
+The `[full]` extra adds two packages needed for parametric fitting features:
+**[iminuit](https://iminuit.readthedocs.io/)** (MCMC optimisation) and
+**[scipy](https://scipy.org/)** (least-squares solver).
+Without them, `BazinFit`, `LinexpFit`, and `VillarFit` still work with the compiled Ceres/GSL backends.
 
-Minimum Python version: **3.10**.
-No Rust toolchain or compilation is needed — binary wheels are available for all major platforms.
-
-## Extras
-
-| Extra | What it adds |
-|-------|-------------|
-| *(none)* | Core feature extractors only |
-| `full` | Experimental features (`RainbowFit`, multiband features, detection-based features) |
+Minimum Python version: **3.10**. Binary wheels are provided for all major platforms — no Rust toolchain required.
 
 ## Platform support
 
@@ -35,25 +29,36 @@ No Rust toolchain or compilation is needed — binary wheels are available for a
 | **aarch64** | PyPI | PyPI | PyPI (macOS 14+), conda | not tested |
 | **i686 / ppc64le** | build from source | — | — | — |
 
-- **MKL**: Intel MKL-accelerated periodogram on Linux x86-64 (PyPI and conda).
-- **Windows conda**: Excludes GSL, so the `"lmsder"` solver for `BazinFit`/`VillarFit` is unavailable. PyPI wheels on Windows include full solver support.
-- **macOS**: Wheels require macOS 14+ (aarch64) or 15+ (x86-64). Open an issue if you need older macOS support.
+Notes:
 
-## Optional Python dependencies
+- **MKL**: Linux x86-64 PyPI wheels use Intel MKL for a significantly faster periodogram. Conda and other platforms use the pure-Rust [RustFFT](https://crates.io/crates/rustfft) backend.
+- **Windows conda**: Excludes GSL, so the `"lmsder"` fitting backend is unavailable. PyPI wheels on Windows include GSL.
+- **macOS**: Requires macOS 14+ (aarch64) or 15+ (x86-64). Open an [issue](https://github.com/light-curve/light-curve-python/issues) if you need support for an older version.
 
-Some use cases require additional packages:
+## Embeddings (`light_curve.embed`)
 
-| Use case | Package |
-|---------|---------|
-| `.many()` with nested-pandas input | `pip install nested-pandas` |
-| `.many()` with PyArrow input | `pip install pyarrow` |
-| `.many()` with Polars input | `pip install polars` |
-| Embeddings (`light_curve.EmbeddingSession`) | `pip install onnxruntime huggingface_hub` |
+The embedding models use [ONNX Runtime](https://onnxruntime.ai) for inference. You must install the
+runtime yourself because the right package depends on your hardware:
+
+| Hardware | Package |
+|----------|---------|
+| CPU | `pip install onnxruntime` |
+| NVIDIA GPU | `pip install onnxruntime-gpu` |
+| Other | see [onnxruntime.ai/docs/install](https://onnxruntime.ai/docs/install/) |
+
+Models are stored on [HuggingFace Hub](https://huggingface.co/light-curve) and downloaded
+automatically on first use. To enable automatic downloads, install:
+
+```sh
+pip install huggingface_hub
+```
+
+If you already have the ONNX file locally, `huggingface_hub` is not needed.
 
 ## Build from source
 
 Building requires a **Rust toolchain** (≥ 1.85, install via [rustup](https://rustup.rs/))
-and **CMake** (for the Ceres solver). GSL is optional but enables the `"lmsder"` solver.
+and **CMake** (for the Ceres solver). GSL is optional but enables the `"lmsder"` fitting backend.
 
 ```sh
 git clone https://github.com/light-curve/light-curve-python
@@ -63,6 +68,4 @@ maturin develop --extras=dev      # dev build with test deps
 maturin develop --release         # optimised build
 ```
 
-After Rust changes, re-run `maturin develop`. Python-only changes need no rebuild.
-
-See the [Contributing](developer/contributing.md) page for the full developer guide.
+See [Contributing](developer/contributing.md) for the full developer guide.
