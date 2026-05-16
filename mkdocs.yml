@@ -34,6 +34,7 @@ theme:
     - toc.follow
     - content.code.copy
     - content.action.edit
+    - header.autohide
 
 extra:
   generator: false
@@ -92,8 +93,8 @@ watch:
 nav:
   - Home: index.md
   - Installation: installation.md
-  - Features:
-    - Overview: features/index.md
+  - Hand-Crafted Features:
+    - features/index.md
     - Basics: features/basics.ipynb
     - Periodogram: features/periodogram.ipynb
     - Parametric fits: features/fitting.ipynb
@@ -106,12 +107,12 @@ nav:
       - Parametric fits: features/api/fitting.md
       - Detection-based: features/api/detection.md
       - Multiband: features/api/multiband.md
-  - Embeddings:
-    - Overview: embed/index.md
+  - ML Embeddings:
+    - embed/index.md
     - Tutorial: embed/tutorial.ipynb
     - API reference: embed/api.md
-  - dm-dt maps:
-    - Overview: dmdt/index.md
+  - dm–dt maps:
+    - dmdt/index.md
     - Tutorial: dmdt/tutorial.ipynb
     - API reference: dmdt/api.md
   - Changelog: changelog.md

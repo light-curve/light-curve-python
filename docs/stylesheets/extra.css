@@ -10,10 +10,15 @@
   border-bottom: 1px solid var(--md-default-fg-color--lightest);
 }
 
+/* Sidebar navigation font size (not covered by .md-typeset) */
+.md-nav {
+  font-size: .85rem;
+}
+
 /* ── Footer: hide the empty/unwanted footer ───────────────────────── */
 
 .md-footer {
-  display: none;
+  display: none !important;
 }
 
 /* ── Hero cards ──────────────────────────────────────────────────── */
@@ -55,7 +60,7 @@
 
 /* Fixed dark background so the white SVG elements are always visible */
 .lc-card-svg-wrap {
-  background: #1a237e;
+  background: #1a237e !important;
   display: flex;
   justify-content: center;
   align-items: center;
