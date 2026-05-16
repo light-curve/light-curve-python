@@ -86,6 +86,7 @@ nav:
     - API reference: embed/api.md
   - dm-dt maps:
     - Overview: dmdt/index.md
+    - Tutorial: dmdt/tutorial.ipynb
     - API reference: dmdt/api.md
   - Developer:
     - Contributing: developer/contributing.md
