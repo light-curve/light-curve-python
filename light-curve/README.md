@@ -1056,10 +1056,8 @@ We no longer publish PyPy wheels ([#345](https://github.com/light-curve/light-cu
 or the PPC64le CPython glibc wheel ([#479](https://github.com/light-curve/light-curve-python/issues/479));
 please open an issue if you need either.
 
-Free-threaded Python
-([experimental in Python 3.13](https://docs.python.org/3.13/whatsnew/3.13.html#free-threaded-cpython),
-[officially supported in Python 3.14+](https://docs.python.org/3.14/whatsnew/3.14.html#whatsnew314-pep779))
-is supported when built from source.
+Free-threaded Python is supported when built from source for Python 3.14+
+([officially supported in Python 3.14+](https://docs.python.org/3.14/whatsnew/3.14.html#whatsnew314-pep779)).
 No pre-built distributions are currently provided; please comment on the relevant issues if you need them:
 [PyPI binary wheel issue](https://github.com/light-curve/light-curve-python/issues/500),
 [conda-forge package issue](https://github.com/conda-forge/light-curve-python-feedstock/issues/11).
