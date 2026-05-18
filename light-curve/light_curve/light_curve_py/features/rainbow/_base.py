@@ -15,11 +15,8 @@ from light_curve.light_curve_py.minuit_ml import MaximumLikelihood
 __all__ = ["BaseRainbowFit"]
 
 
-# CODATA 2018, grab from astropy
-planck_constant = 6.62607004e-27  # erg s
-speed_of_light = 2.99792458e10  # cm/s
-boltzman_constant = 1.380649e-16  # erg/K
 sigma_sb = 5.6703744191844314e-05  # erg/(cm^2 s K^4)
+speed_of_light = 2.99792458e10  # cm/s
 
 
 IMINUIT_IMPORT_ERROR = (
@@ -69,6 +66,12 @@ class BaseRainbowFit(BaseMultiBandFeature):
         """Temperature parameter names."""
         return NotImplementedError
 
+    @staticmethod
+    @abstractmethod
+    def _spectral_parameter_names() -> List[str]:
+        """Spectral model parameter names."""
+        return NotImplementedError
+
     def __post_init__(self) -> None:
         super().__post_init__()
 
@@ -81,6 +84,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
             common=self._common_parameter_names(),
             bol=self._bolometric_parameter_names(),
             temp=self._temperature_parameter_names(),
+            spec=self._spectral_parameter_names(),
             bands=self.bands,
             with_baseline=self.with_baseline,
         )
@@ -207,14 +211,6 @@ class BaseRainbowFit(BaseMultiBandFeature):
             cov[:, i] *= scale
             cov[i, :] *= scale
 
-    @staticmethod
-    def planck_nu(wave_cm, T):
-        """Planck function in frequency units."""
-        nu = speed_of_light / wave_cm
-        return (
-            (2 * planck_constant / speed_of_light**2) * nu**3 / np.expm1(planck_constant * nu / (boltzman_constant * T))
-        )
-
     def _lsq_model_no_baseline(self, x, *params):
         """Model function for the fit."""
         t, _band_idx, wave_cm = x
@@ -228,7 +224,8 @@ class BaseRainbowFit(BaseMultiBandFeature):
         # peak_nu =  2.821 * boltzman_constant * temp / planck_constant # Wien displacement law
         # norm = self.planck_nu(speed_of_light / peak_nu, temp) # Peak = 1 normalization
 
-        planck = self.planck_nu(wave_cm, temp) / norm
+        spectral = self.spectral_func(wave_cm, temp, params)
+        planck = spectral / norm
 
         flux = planck * bol
 
