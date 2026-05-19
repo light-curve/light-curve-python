@@ -47,8 +47,7 @@ jobs:
           python -m venv .venv
           source .venv/bin/activate
           pip install maturin
-          maturin --version
-          cd light-curve && maturin develop --extras=full
+          cd light-curve && maturin develop --extras=full -q
 
       - name: Install docs dependencies
         run: |
