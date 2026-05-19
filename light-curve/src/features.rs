@@ -64,40 +64,42 @@ macro_const! {
 
     Parameters
     ----------
-    t : numpy.ndarray of np.float32 or np.float64 dtype
-        Time moments
 
-    m : numpy.ndarray
-        Signal in magnitude or fluxes. Refer to the feature description to
+    `t` : numpy.ndarray of float32 or float64
+    :   Time moments
+
+    `m` : numpy.ndarray
+    :   Signal in magnitude or fluxes. Refer to the feature description to
         decide which would work better in your case
 
-    sigma : numpy.ndarray, optional
-        Observation error, if None it is assumed to be unity
+    `sigma` : numpy.ndarray, optional
+    :   Observation error, if None it is assumed to be unity
 
-    fill_value : float or None, optional
-        Value to fill invalid feature values, for example if count of
+    `fill_value` : float or None, optional
+    :   Value to fill invalid feature values, for example if count of
         observations is not enough to find a proper value.
         None causes exception for invalid features
 
-    sorted : bool or None, optional
-        Specifies if input array are sorted by time moments.
+    `sorted` : bool or None, optional
+    :   Specifies if input array are sorted by time moments.
         True is for certainly sorted, False is for unsorted.
         If None is specified than sorting is checked and an exception is
         raised for unsorted `t`
 
-    check : bool, optional
-        Check all input arrays for NaNs, `t` and `m` for infinite values
+    `check` : bool, optional
+    :   Check all input arrays for NaNs, `t` and `m` for infinite values
 
-    cast : bool, optional
-        Allows non-numpy input and casting of arrays to a common dtype.
+    `cast` : bool, optional
+    :   Allows non-numpy input and casting of arrays to a common dtype.
         If `False`, inputs must be `np.ndarray` instances with matched dtypes.
         Casting provides more flexibility with input types at the cost of
         performance.
 
     Returns
     -------
-    ndarray of np.float32 or np.float64
-        Extracted feature array"#;
+
+    ndarray of float32 or float64
+    :   Extracted feature array"#;
 }
 
 macro_const! {
@@ -122,33 +124,34 @@ many(self, lcs, *, fill_value=None, sorted=None, check=True, cast=False, n_jobs=
 
     Parameters
     ----------
-    lcs : list of (t, m, sigma) or Arrow array
-        Either a list of light curves packed into three-tuples (all numpy.ndarray
+
+    `lcs` : list of (t, m, sigma) or Arrow array
+    :   Either a list of light curves packed into three-tuples (all numpy.ndarray
         of the same dtype), or an Arrow array/chunked array of type
         List<Struct<...>> where the selected fields share the same float dtype
         (float32 or float64). Arrow input is auto-detected via the
-        __arrow_c_array__ / __arrow_c_stream__ protocol and enables zero-copy
+        `__arrow_c_array__` / `__arrow_c_stream__` protocol and enables zero-copy
         data access from pyarrow, polars, and other Arrow-compatible libraries.
 
-    arrow_fields : list of (str or int)
-        Required when lcs is an Arrow array. Field names or indices specifying
+    `arrow_fields` : list of (str or int)
+    :   Required when lcs is an Arrow array. Field names or indices specifying
         which struct fields to use as t, m, and optionally sigma. Must contain
         2 elements [t, m] or 3 elements [t, m, sigma]. Each element may be a
         field name (str) or a zero-based positional index (int); all elements
         must be of the same type. Ignored for non-Arrow input.
 
-    fill_value : float or None, optional
-        Fill invalid values by this or raise an exception if None
+    `fill_value` : float or None, optional
+    :   Fill invalid values by this or raise an exception if None
 
-    sorted : bool or None, optional
-        Specifies if input array are sorted by time moments, see __call__
+    `sorted` : bool or None, optional
+    :   Specifies if input array are sorted by time moments, see `__call__`
         documentation for details
 
-    check : bool, optional
-        Check all input arrays for NaNs, `t` and `m` for infinite values
+    `check` : bool, optional
+    :   Check all input arrays for NaNs, `t` and `m` for infinite values
 
-    n_jobs : int
-        Number of tasks to run in paralell. Default is -1 which means run as
+    `n_jobs` : int
+    :   Number of tasks to run in paralell. Default is -1 which means run as
         many jobs as CPU count. See rayon rust crate documentation for
         details"#;
 }
@@ -1076,21 +1079,23 @@ macro_const! {
 
     Parameters
     ----------
-    t : np.ndarray of np.float32 or np.float64
-        Time moments, can be unsorted
 
-    params : np.ndaarray of np.float32 or np.float64
-        Parameters of the model, this array can be longer than actual parameter
+    `t` : np.ndarray of float32 or float64
+    :   Time moments, can be unsorted
+
+    `params` : np.ndarray of float32 or float64
+    :   Parameters of the model, this array can be longer than actual parameter
         list, the beginning part of the array will be used in this case, see
         Examples section in the class documentation.
 
-    cast : bool, optional
-        Cast inputs to np.ndarray of the same dtype
+    `cast` : bool, optional
+    :   Cast inputs to np.ndarray of the same dtype
 
     Returns
     -------
-    np.ndarray of np.float32 or np.float64
-        Array of model values corresponded to the given time moments
+
+    np.ndarray of float32 or float64
+    :   Array of model values corresponded to the given time moments
 "#;
 }
 
