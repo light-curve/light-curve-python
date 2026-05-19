@@ -141,7 +141,16 @@ many(self, lcs, *, fill_value=None, sorted=None, check=True, cast=False, n_jobs=
         details"#;
 }
 
-const COMMON_FEATURE_DOC: &str = formatcp!("\n{}\n", ATTRIBUTES_DOC);
+const METHODS_DOC: &str = formatcp!(
+    r#"Methods
+-------
+{}
+{}"#,
+    METHOD_CALL_DOC,
+    METHOD_MANY_DOC,
+);
+
+const COMMON_FEATURE_DOC: &str = formatcp!("\n{}\n\n{}\n", ATTRIBUTES_DOC, METHODS_DOC);
 
 fn transform_parameter_doc(default: StockTransformer) -> String {
     let default_name: &str = default.into();
@@ -1409,6 +1418,8 @@ transform : bool or None, optional
 supported_algorithms : list of str
     Available argument values for the constructor
 
+{methods}
+
 {model}
 Examples
 --------
@@ -1431,6 +1442,7 @@ Examples
                     ceres_args = ceres_args,
                     lmsder_niter = lmsder_niter,
                     attr = ATTRIBUTES_DOC,
+                    methods = METHODS_DOC,
                     model = FIT_METHOD_MODEL_DOC,
                     feature = stringify!($name),
                     nparam = $nparam,
