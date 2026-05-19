@@ -1,18 +1,6 @@
-/* ── Typography ───────────────────────────────────────────────────── */
-
-.md-typeset {
-  font-size: 1rem;
-  line-height: 1.7;
-}
-
 /* White-mode: give the header a subtle bottom border so it doesn't float */
 [data-md-color-scheme="default"] .md-header {
   border-bottom: 1px solid var(--md-default-fg-color--lightest);
-}
-
-/* Sidebar navigation font size (not covered by .md-typeset) */
-.md-nav {
-  font-size: .85rem;
 }
 
 /* ── Footer: hide the empty/unwanted footer ───────────────────────── */
