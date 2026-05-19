@@ -16,18 +16,34 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          submodules: true
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "light-curve"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgsl-dev
 
       - name: Configure git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Install light-curve (pre-built wheel)
-        run: pip install 'light-curve[full]'
+      - name: Install light-curve from source
+        working-directory: light-curve
+        run: |
+          pip install maturin
+          maturin develop --extras=full -q
 
       - name: Install docs dependencies
         run: pip install mkdocs-material "mkdocstrings[python]" numpy mkdocs-jupyter
