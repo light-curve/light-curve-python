@@ -1,6 +1,7 @@
 ---
 hide:
   - toc
+  - navigation
 ---
 
 # light-curve
