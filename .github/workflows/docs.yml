@@ -40,10 +40,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Install light-curve from source
-        working-directory: light-curve
-        run: |
-          pip install maturin
-          maturin develop --extras=full -q
+        run: pip install -e "light-curve[full]"
 
       - name: Install docs dependencies
         run: pip install mkdocs-material "mkdocstrings[python]" numpy mkdocs-jupyter
