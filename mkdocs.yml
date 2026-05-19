@@ -117,10 +117,10 @@ nav:
   - ML Embeddings:
     - embed/index.md
     - Tutorial: embed/tutorial.ipynb
-    - API reference: embed/api.md
+    - API: embed/api.md
   - dm–dt maps:
     - dmdt/index.md
     - Tutorial: dmdt/tutorial.ipynb
-    - API reference: dmdt/api.md
+    - API: dmdt/api.md
   - Changelog: changelog.md
   - Contribute: developer/contributing.md

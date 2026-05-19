@@ -1,4 +1,4 @@
-# Embeddings API
+# ML Embeddings API
 
 ::: light_curve.embed.EmbeddingSession
 ::: light_curve.embed.SingleBandModel
