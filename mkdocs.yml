@@ -122,5 +122,4 @@ nav:
     - Tutorial: dmdt/tutorial.ipynb
     - API reference: dmdt/api.md
   - Changelog: changelog.md
-  - Developer:
-    - Contributing: developer/contributing.md
+  - Contribute: developer/contributing.md
