@@ -951,6 +951,7 @@ Parameters
 ----------
 *features : iterable
     Feature objects
+
 transform : None, optional
     Not implemented for Extractor, transform individual features instead
 {}
@@ -1077,10 +1078,12 @@ macro_const! {
     ----------
     t : np.ndarray of np.float32 or np.float64
         Time moments, can be unsorted
+
     params : np.ndaarray of np.float32 or np.float64
         Parameters of the model, this array can be longer than actual parameter
         list, the beginning part of the array will be used in this case, see
         Examples section in the class documentation.
+
     cast : bool, optional
         Cast inputs to np.ndarray of the same dtype
 
@@ -1397,22 +1400,28 @@ Parameters
 algorithm : str
     Non-linear least-square algorithm, supported values are:
     {supported_algo}.
+
 mcmc_niter : int, optional
     Number of MCMC iterations, default is {mcmc_niter}
-{ceres_args}{lmsder_niter}init : list or None, optional
+
+{ceres_args}{lmsder_niter}
+init : list or None, optional
     Initial conditions, must be `None` or a `list` of `float`s or `None`s.
     The length of the list must be {nparam}, `None` values will be replaced
     with some defauls values. It is supported by MCMC only
+
 bounds : list of tuples or None, optional
     Boundary conditions, must be `None` or a `list` of `tuple`s of `float`s or
     `None`s. The length of the list must be {nparam}, boundary conditions must
     include initial conditions, `None` values will be replaced with some broad
     defaults. It is supported by MCMC only
+
 ln_prior : str or list of ln_prior.LnPrior1D or None, optional
     Prior for MCMC, None means no prior. It is specified by a string literal
     or a list of {nparam} `ln_prior.LnPrior1D` objects, see `ln_prior`
     submodule for corresponding functions. Available string literals are:
     {ln_prior}
+
 transform : bool or None, optional
     If `False` or `None` (default) output is not transformed. If `True` output
     is transformed as following:
@@ -1511,6 +1520,7 @@ Parameters
 ----------
 nstd : positive float
     N, default is {nstd_default:.1}
+
 {transform}
 {footer}"#,
             header = lcf::BeyondNStd::<f64>::doc().trim_start(),
@@ -1612,10 +1622,13 @@ Parameters
 ----------
 features : iterable
     Features to extract from binned time-series
+
 window : positive float
     Width of binning interval in units of time
+
 offset : float
     Zero time moment
+
 transform : None
     Not supported, apply transformations to individual features
 {footer}
@@ -1678,6 +1691,7 @@ Parameters
 ----------
 quantile : positive float
     Range is (100% * quantile, 100% * (1 - quantile)). Default quantile is {quantile_default:.2}
+
 {transform}
 {footer}"#,
             header = lcf::InterPercentileRange::doc().trim_start(),
@@ -1776,9 +1790,11 @@ Parameters
 quantile_numerator: positive float
     Numerator is inter-percentile range (100% * q, 100% (1 - q)).
     Default value is {quantile_numerator_default:.2}
+
 quantile_denominator: positive float
     Denominator is inter-percentile range (100% * q, 100% (1 - q)).
     Default value is {quantile_denominator_default:.2}
+
 {transform}
 {footer}"#,
             header = lcf::MagnitudePercentageRatio::doc().trim_start(),
@@ -1844,6 +1860,7 @@ Parameters
 ----------
 quantile : positive float
     Relative range size, default is {quantile_default:.2}
+
 {transform}
 {footer}"#,
             header = lcf::MedianBufferRangePercentage::<f64>::doc(),
@@ -1906,6 +1923,7 @@ Parameters
 ----------
 quantile : positive float
     Relative range size, default is {quantile_default:.2}
+
 {transform}
 {footer}"#,
             header = lcf::PercentDifferenceMagnitudePercentile::doc(),
@@ -2248,10 +2266,13 @@ Parameters
 ----------
 peaks : int or None, optional
     Number of peaks to find, default is {default_peaks}
+
 resolution : float or None, optional
     Resolution of frequency grid, default is {default_resolution}
+
 max_freq_factor : float or None, optional
     Mulitplier for Nyquist frequency, default is {default_max_freq_factor}
+
 nyquist : str or float or None, optional
     Type of Nyquist frequency. Could be one of:
      - 'average': "Average" Nyquist frequency
@@ -2260,6 +2281,7 @@ nyquist : str or float or None, optional
      - float: Nyquist frequency is defined by given quantile of time
         intervals between observations
     Default is '{default_nyquist}'
+
 freqs : array-like or None, optional
     Explicid and fixed frequency grid (angular frequency, radians/time unit).
     If given, `resolution`, `max_freq_factor` and `nyquist` are being
@@ -2269,18 +2291,22 @@ freqs : array-like or None, optional
     For `fast=False` any grid is accepted, but linear grids, like
     np.linspace(min_freq, max_freq, n), apply some computational
     optimisations.
+
 fast : bool or None, optional
     Use "Fast" (approximate and FFT-based) or direct periodogram algorithm,
     default is {default_fast}
+
 features : iterable or None, optional
     Features extracted from the periodogram power spectrum, treating it as a
     time-series (frequency as time, power as magnitude).
     Default is None which means no additional spectrum features.
+
 phase_features : iterable or None, optional
     Features to extract from the light curve phase-folded at the best period.
     Phase runs from 0 to 1 with phase 0 at the magnitude minimum.
     Feature names are prefixed with `period_folded_`.
     Default is None which means no phase features.
+
 normalization : str, optional
     Normalization of the periodogram power. Affects `power()`,
     `freq_power()`, and feature extraction via `__call__()`.
@@ -2296,6 +2322,7 @@ normalization : str, optional
      - 'log': -ln(1 - P_std), values in [0, inf).
        Matches astropy's 'log' normalization
     Default is 'psd'
+
 transform : None, optional
     Not supported for Periodogram, peaks are not transformed, but you still
     may apply transformation for the underlying features with thier
@@ -2309,8 +2336,10 @@ freq_power(t, m, *, cast=False)
     ----------
     t : np.ndarray of np.float32 or np.float64
         Time array
+
     m : np.ndarray of np.float32 or np.float64
         Magnitude (flux) array
+
     cast : bool, optional
         Cast inputs to np.ndarray objects of the same dtype
 
@@ -2318,6 +2347,7 @@ freq_power(t, m, *, cast=False)
     -------
     freq : np.ndarray of np.float32 or np.float64
         Frequency grid
+
     power : np.ndarray of np.float32 or np.float64
         Periodogram power
 
@@ -2328,8 +2358,10 @@ power(t, m, *, cast=False)
     ----------
     t : np.ndarray of np.float32 or np.float64
         Time array
+
     m : np.ndarray of np.float32 or np.float64
         Magnitude (flux) array
+
     cast : bool, optional
         Cast inputs to np.ndarray objects of the same dtype
 
