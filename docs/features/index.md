@@ -4,14 +4,14 @@
 All share a common interface: callable objects with `.names` and `.descriptions` attributes.
 
 ```python
-import light_curve as lc
+import light_curve as licu
 import numpy as np
 
 t = np.array([0.0, 1.2, 3.5, 7.1, 9.0])
 m = np.array([15.1, 15.3, 14.9, 15.0, 15.2])
 err = np.array([0.05, 0.05, 0.05, 0.05, 0.05])
 
-ext = lc.Extractor(lc.Amplitude(), lc.BeyondNStd(nstd=1), lc.LinearFit())
+ext = licu.Extractor(licu.Amplitude(), licu.BeyondNStd(nstd=1), licu.LinearFit())
 result = ext(t, m, err)
 print(dict(zip(ext.names, result)))
 ```

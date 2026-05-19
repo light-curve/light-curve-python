@@ -135,7 +135,7 @@ pip install 'light-curve[full]'
 ## Quick start
 
 ```python
-import light_curve as lc
+import light_curve as licu
 import numpy as np
 
 rng = np.random.default_rng(0)
@@ -143,7 +143,7 @@ t   = np.sort(rng.uniform(0, 100, 100))
 m   = 15.0 + 0.01 * t + rng.normal(0, 0.1, 100)
 err = np.full(100, 0.1)
 
-ext = lc.Extractor(lc.Amplitude(), lc.BeyondNStd(nstd=1), lc.LinearFit())
+ext = licu.Extractor(licu.Amplitude(), licu.BeyondNStd(nstd=1), licu.LinearFit())
 result = ext(t, m, err)
 print(dict(zip(ext.names, result)))
 # {'amplitude': 0.67, 'beyond_1_std': 0.35, 'linear_fit_slope': 0.010, ...}
@@ -153,5 +153,5 @@ Use `.many()` for batch processing of many light curves with reduced Python–Ru
 
 ```python
 light_curves = [(t1, m1, err1), (t2, m2, err2), ...]
-amplitudes = lc.Amplitude().many(light_curves)   # shape (N,)
+amplitudes = licu.Amplitude().many(light_curves)   # shape (N,)
 ```

@@ -3,6 +3,33 @@
   border-bottom: 1px solid var(--md-default-fg-color--lightest);
 }
 
+/* ── Fix >>> doctest blocks (Markdown reads >>> as 3-level blockquote) ── */
+
+.md-typeset blockquote > blockquote > blockquote {
+  background: var(--md-code-bg-color);
+  border: none;
+  border-radius: 0.2rem;
+  padding: 0.5em 0.8em;
+  margin: 0;
+}
+
+.md-typeset blockquote > blockquote > blockquote p {
+  font-family: var(--md-code-font-family, monospace);
+  font-size: 0.85em;
+  white-space: pre-wrap;
+  margin: 0;
+  color: var(--md-code-fg-color);
+}
+
+.md-typeset blockquote:has(> blockquote > blockquote),
+.md-typeset blockquote > blockquote:has(> blockquote) {
+  border: none;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
 /* ── Footer: hide the empty/unwanted footer ───────────────────────── */
 
 .md-footer {

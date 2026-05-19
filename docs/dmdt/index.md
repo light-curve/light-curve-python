@@ -12,10 +12,10 @@ can be fed directly into a CNN.
 ## Basic usage
 
 ```python
-import light_curve as lc
+import light_curve as licu
 import numpy as np
 
-dmdt = lc.DmDt.from_borders(
+dmdt = licu.DmDt.from_borders(
     min_lgdt=0,       # log10(dt_min) in days
     max_lgdt=2,       # log10(dt_max) in days
     max_abs_dm=1,     # maximum |dm| in magnitudes
