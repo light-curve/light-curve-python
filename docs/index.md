@@ -1,3 +1,8 @@
+---
+hide:
+  - toc
+---
+
 # light-curve
 
 **High-performance time-series feature extraction for astrophysics.**

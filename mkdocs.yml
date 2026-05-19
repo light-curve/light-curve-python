@@ -64,6 +64,7 @@ plugins:
             force_inspection: true
             inherited_members: false
             members_order: source
+            members: false
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -76,15 +77,19 @@ markdown_extensions:
   - admonition
   - attr_list
   - md_in_html
+  - toc:
+      toc_depth: 3
   - pymdownx.arithmatex:
       generic: true
 
 extra_css:
   - stylesheets/extra.css
+  - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css
 
 extra_javascript:
-  - javascripts/mathjax.js
-  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+  - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js
+  - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js
+  - javascripts/katex.js
 
 watch:
   - CHANGELOG.md

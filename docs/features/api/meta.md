@@ -11,9 +11,3 @@ Combines multiple feature extractors and evaluates them in a single pass.
 ## Bins
 
 ::: light_curve.Bins
-
----
-
-## JSONDeserializedFeature
-
-::: light_curve.JSONDeserializedFeature

@@ -84,6 +84,18 @@
   color: var(--md-default-fg-color--light);
 }
 
+/* Fix SVG size — Material's global svg rule shrinks all svgs to 1.2rem */
+.lc-card-svg-wrap svg {
+  width: 100% !important;
+  height: auto !important;
+  display: block !important;
+}
+
+/* Increase max content width for large screens */
+.md-grid {
+  max-width: 87.5rem;
+}
+
 /* ── Features SVG ────────────────────────────────────────────────── */
 
 .lc-svg-features .lc-amplitude {
