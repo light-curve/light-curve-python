@@ -1,4 +1,4 @@
-# dm-dt maps
+# Overview
 
 A dm-dt map is a 2D histogram of magnitude differences (dm) versus log-time differences
 (lg dt) for all pairs of observations in a light curve.
