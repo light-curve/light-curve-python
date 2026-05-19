@@ -107,6 +107,7 @@ nav:
     - Parametric fits: features/fitting.ipynb
     - API:
       - features/api/index.md
+      - Base class: features/api/base.md
       - Meta (Extractor, Bins): features/api/meta.md
       - Statistical: features/api/statistical.md
       - Variability & trend: features/api/variability.md
