@@ -58,7 +58,8 @@ names : list of str
 descriptions : list of str
     Feature descriptions"#;
 
-const METHOD_CALL_DOC: &str = r#"__call__(self, t, m, sigma=None, *, fill_value=None, sorted=None, check=True, cast=False)
+macro_const! {
+    const METHOD_CALL_DOC: &str = r#"__call__(self, t, m, sigma=None, *, fill_value=None, sorted=None, check=True, cast=False)
     Extract features and return them as a numpy array
 
     Parameters
@@ -90,6 +91,7 @@ const METHOD_CALL_DOC: &str = r#"__call__(self, t, m, sigma=None, *, fill_value=
     -------
     ndarray of np.float32 or np.float64
         Extracted feature array"#;
+}
 
 macro_const! {
     const METHOD_MANY_DOC: &str = r#"
@@ -139,16 +141,7 @@ many(self, lcs, *, fill_value=None, sorted=None, check=True, cast=False, n_jobs=
         details"#;
 }
 
-const METHODS_DOC: &str = formatcp!(
-    r#"Methods
--------
-{}
-{}"#,
-    METHOD_CALL_DOC,
-    METHOD_MANY_DOC,
-);
-
-const COMMON_FEATURE_DOC: &str = formatcp!("\n{}\n\n{}\n", ATTRIBUTES_DOC, METHODS_DOC);
+const COMMON_FEATURE_DOC: &str = formatcp!("\n{}\n", ATTRIBUTES_DOC);
 
 fn transform_parameter_doc(default: StockTransformer) -> String {
     let default_name: &str = default.into();
@@ -682,6 +675,7 @@ impl PyFeatureEvaluator {
 
 #[pymethods]
 impl PyFeatureEvaluator {
+    #[doc = METHOD_CALL_DOC!()]
     #[allow(clippy::too_many_arguments)]
     #[pyo3(signature = (
         t,
@@ -1415,8 +1409,6 @@ transform : bool or None, optional
 supported_algorithms : list of str
     Available argument values for the constructor
 
-{methods}
-
 {model}
 Examples
 --------
@@ -1439,7 +1431,6 @@ Examples
                     ceres_args = ceres_args,
                     lmsder_niter = lmsder_niter,
                     attr = ATTRIBUTES_DOC,
-                    methods = METHODS_DOC,
                     model = FIT_METHOD_MODEL_DOC,
                     feature = stringify!($name),
                     nparam = $nparam,
