@@ -34,13 +34,22 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgsl-dev
 
+      - name: Create virtual environment
+        run: |
+          python -m venv .venv
+          echo "VIRTUAL_ENV=$(pwd)/.venv" >> $GITHUB_ENV
+          echo "$(pwd)/.venv/bin" >> $GITHUB_PATH
+
       - name: Configure git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Install light-curve from source
-        run: pip install -e "light-curve[full]"
+        working-directory: light-curve
+        run: |
+          pip install maturin
+          maturin develop --extras=full -q
 
       - name: Install docs dependencies
         run: pip install mkdocs-material "mkdocstrings[python]" numpy mkdocs-jupyter
