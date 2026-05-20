@@ -150,21 +150,84 @@ many(self, lcs, *, fill_value=None, sorted=None, check=True, cast=False, n_jobs=
 
 const COMMON_FEATURE_DOC: &str = formatcp!("\n{}\n\n{}\n", ATTRIBUTES_DOC, METHODS_DOC);
 
-/// Insert a blank line before every standalone `$$` line so that
-/// pymdownx.arithmatex can recognise them as display math blocks before
-/// Markdown's inline parser runs and mangles `*` characters.
+/// Prepare upstream Rust doc strings for MkDocs/Arithmatex rendering.
+///
+/// Arithmatex uses a BlockProcessor that receives one Markdown block at a time
+/// (text between blank lines). A `$$...equation...\n$$` block must therefore
+/// have NO blank lines inside it, but MUST have blank lines before the opening
+/// `$$` and after the closing `$$`.
+///
+/// This function:
+/// 1. Adds a blank line before an opening `$$` when the previous line was not
+///    already blank.
+/// 2. Adds a blank line after a closing `$$` when the next line is not already
+///    blank.
+/// 3. Trims leading whitespace (replaces the old `.trim_start()` call).
 fn prepare_upstream_doc(s: &str) -> String {
-    let mut result = String::with_capacity(s.len() + 32);
-    let mut prev_blank = true;
-    for line in s.lines() {
-        if line.trim() == "$$" && !prev_blank {
-            result.push('\n');
+    // Split into lines and skip leading blank lines
+    let raw_lines: Vec<&str> = s.lines().collect();
+    let start = raw_lines
+        .iter()
+        .position(|l| !l.trim().is_empty())
+        .unwrap_or(0);
+    let raw_lines = &raw_lines[start..];
+
+    // Dedent: compute the minimum leading-space count across all non-empty lines.
+    // This prevents indented `$$` from being parsed as a Markdown code block.
+    let indent = raw_lines
+        .iter()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| l.len() - l.trim_start().len())
+        .min()
+        .unwrap_or(0);
+
+    // Build a vec of dedented lines for processing
+    let lines: Vec<&str> = raw_lines
+        .iter()
+        .map(|l| {
+            if l.trim().is_empty() {
+                ""
+            } else {
+                &l[indent..]
+            }
+        })
+        .collect();
+
+    let mut result = String::with_capacity(s.len() + 64);
+    let mut in_math = false;
+
+    for (i, &line) in lines.iter().enumerate() {
+        let trimmed = line.trim();
+
+        if trimmed == "$$" {
+            if !in_math {
+                // Opening $$: insert blank line before if previous line is non-blank.
+                let prev_blank = i == 0 || lines[i - 1].trim().is_empty();
+                if !prev_blank {
+                    result.push('\n');
+                }
+                in_math = true;
+            } else {
+                // Closing $$: output first, then insert blank line after if the
+                // next line is non-blank (keeps math in its own block for Arithmatex).
+                in_math = false;
+                result.push_str(line);
+                result.push('\n');
+                let next_blank = i + 1 >= lines.len() || lines[i + 1].trim().is_empty();
+                if !next_blank {
+                    result.push('\n');
+                }
+                continue;
+            }
         }
+
         result.push_str(line);
         result.push('\n');
-        prev_blank = line.trim().is_empty();
     }
-    if !s.ends_with('\n') {
+
+    // Preserve original trailing-newline behaviour
+    let trimmed_s = s.trim_end();
+    if !trimmed_s.ends_with('\n') && result.ends_with('\n') {
         result.pop();
     }
     result
@@ -178,7 +241,7 @@ fn transform_parameter_doc(default: StockTransformer) -> String {
         fmt(&format_args!("``'{name}'`` - {doc}"))
     });
     format!(
-        r#"transform : str or bool or None, optional
+        r#"transform : str or bool or None, default None
     Transformer to apply to the feature values. If str, must be one of:
 
      - ``'default'`` - use default transformer for the feature, same as giving
@@ -194,8 +257,39 @@ type PyLightCurve<'a, T> = (Arr<'a, T>, Arr<'a, T>, Option<Arr<'a, T>>);
 
 /// Base class for all feature extractors.
 ///
-/// Provides the common extraction interface: `__call__` for single light
-/// curves and `many` for parallel batch processing.
+/// All feature classes inherit from this base and share the same extraction
+/// interface.
+///
+/// Call signature
+/// --------------
+/// ``extractor(t, m, sigma=None, *, fill_value=None, sorted=None, check=True, cast=False)``
+///
+/// Extract features from a single light curve and return them as a numpy array.
+///
+/// Parameters
+/// ----------
+/// t : numpy.ndarray of float32 or float64
+///     Time moments
+///
+/// m : numpy.ndarray
+///     Signal in magnitudes or fluxes.  Refer to the feature description to
+///     decide which would work better in your case
+///
+/// sigma : numpy.ndarray, optional
+///     Observation error.  If ``None``, assumed to be unity
+///
+/// fill_value : float or None, optional
+///     Value to fill invalid feature values, or raise if ``None``
+///
+/// sorted : bool or None, optional
+///     Whether ``t`` is sorted.  ``True`` — sorted, ``False`` — unsorted,
+///     ``None`` — check and raise if unsorted
+///
+/// check : bool, optional
+///     Check arrays for NaNs and infinite values (default ``True``)
+///
+/// cast : bool, optional
+///     Allow non-numpy input and dtype casting (default ``False``)
 #[derive(Serialize, Deserialize, Clone)]
 #[pyclass(
     subclass,
@@ -1379,13 +1473,14 @@ macro_rules! fit_evaluator {
             fn __doc__() -> String {
                 #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
                 let ceres_args = format!(
-                    r#"ceres_niter : int, optional
-    Number of Ceres iterations, default is {niter}
-ceres_loss_reg : float, optional
-    Ceres loss regularization, default is to use square norm as is, if set to
-    a number, the loss function is regularized to descriminate outlier
-    residuals larger than this value.
-    Default is None which means no regularization.
+                    r#"ceres_niter : int, default {niter}
+    Number of Ceres iterations
+
+ceres_loss_reg : float or None, default None
+    Ceres loss regularization. If set to a number, the loss function is
+    regularized to discriminate outlier residuals larger than this value.
+    ``None`` means no regularization.
+
 "#,
                     niter = lcf::CeresCurveFit::default_niterations()
                 );
@@ -1393,8 +1488,9 @@ ceres_loss_reg : float, optional
                 let ceres_args = "";
                 #[cfg(feature = "gsl")]
                 let lmsder_niter = format!(
-                    r#"lmsder_niter : int, optional
-    Number of LMSDER iterations, default is {}
+                    r#"lmsder_niter : int, default {}
+    Number of LMSDER iterations
+
 "#,
                     lcf::LmsderCurveFit::default_niterations()
                 );
@@ -1415,38 +1511,40 @@ algorithm : str
     Non-linear least-square algorithm, supported values are:
     {supported_algo}.
 
-mcmc_niter : int, optional
-    Number of MCMC iterations, default is {mcmc_niter}
+mcmc_niter : int, default {mcmc_niter}
+    Number of MCMC iterations
 
 {ceres_args}{lmsder_niter}
-init : list or None, optional
-    Initial conditions, must be `None` or a `list` of `float`s or `None`s.
-    The length of the list must be {nparam}, `None` values will be replaced
-    with some defauls values. It is supported by MCMC only
+init : list or None, default None
+    Initial conditions, must be ``None`` or a ``list`` of ``float``s or ``None``s.
+    The length of the list must be {nparam}; ``None`` values will be replaced
+    with some default values. Supported by MCMC only.
 
-bounds : list of tuples or None, optional
-    Boundary conditions, must be `None` or a `list` of `tuple`s of `float`s or
-    `None`s. The length of the list must be {nparam}, boundary conditions must
-    include initial conditions, `None` values will be replaced with some broad
-    defaults. It is supported by MCMC only
+bounds : list of tuples or None, default None
+    Boundary conditions, must be ``None`` or a ``list`` of ``tuple``s of ``float``s or
+    ``None``s. The length of the list must be {nparam}; boundary conditions must
+    include initial conditions; ``None`` values will be replaced with some broad
+    defaults. Supported by MCMC only.
 
-ln_prior : str or list of ln_prior.LnPrior1D or None, optional
-    Prior for MCMC, None means no prior. It is specified by a string literal
-    or a list of {nparam} `ln_prior.LnPrior1D` objects, see `ln_prior`
+ln_prior : str or list of ln_prior.LnPrior1D or None, default None
+    Prior for MCMC, ``None`` means no prior. Specified by a string literal
+    or a list of {nparam} ``ln_prior.LnPrior1D`` objects; see the ``ln_prior``
     submodule for corresponding functions. Available string literals are:
     {ln_prior}
 
-transform : bool or None, optional
-    If `False` or `None` (default) output is not transformed. If `True` output
-    is transformed as following:
-     - Half-amplitude A is transformed as `zp - 2.5 lg(2*A)`, zp = 8.9,
+transform : bool or None, default None
+    If ``False`` or ``None`` output is not transformed. If ``True`` output
+    is transformed as follows:
+
+     - Half-amplitude A is transformed as ``zp - 2.5 lg(2*A)``, zp = 8.9,
        so that the amplitude is assumed to be the object peak flux in Jy.
-     - baseline flux is normalised by A: baseline -> baseline / A
-     - reference time is removed
-     - goodness of fit is transformed as `ln(reduced chi^2 + 1)` to reduce
+     - Baseline flux is normalised by A: baseline → baseline / A
+     - Reference time is removed
+     - Goodness of fit is transformed as ``ln(reduced chi^2 + 1)`` to reduce
        its spread
-     - other parameters are not transformed
-    See `names` and `descriptions` attributes an object for the list and order
+     - Other parameters are not transformed
+
+    See ``names`` and ``descriptions`` attributes for the list and order
     of features.
 
 {attr}
@@ -2278,69 +2376,65 @@ impl Periodogram {
             r#"{intro}
 Parameters
 ----------
-peaks : int or None, optional
-    Number of peaks to find, default is {default_peaks}
+peaks : int or None, default {default_peaks}
+    Number of peaks to find
 
-resolution : float or None, optional
-    Resolution of frequency grid, default is {default_resolution}
+resolution : float or None, default {default_resolution}
+    Resolution of frequency grid
 
-max_freq_factor : float or None, optional
-    Mulitplier for Nyquist frequency, default is {default_max_freq_factor}
+max_freq_factor : float or None, default {default_max_freq_factor}
+    Mulitplier for Nyquist frequency
 
-nyquist : str or float or None, optional
+nyquist : str or float or None, default '{default_nyquist}'
     Type of Nyquist frequency. Could be one of:
-     - 'average': "Average" Nyquist frequency
-     - 'median': Nyquist frequency is defined by median time interval
-        between observations
+
+     - ``'average'``: "Average" Nyquist frequency
+     - ``'median'``: Nyquist frequency is defined by median time interval
+       between observations
      - float: Nyquist frequency is defined by given quantile of time
-        intervals between observations
-    Default is '{default_nyquist}'
+       intervals between observations
 
-freqs : array-like or None, optional
-    Explicid and fixed frequency grid (angular frequency, radians/time unit).
-    If given, `resolution`, `max_freq_factor` and `nyquist` are being
-    ignored.
-    For `fast=True` the only supported type of the grid is
-    np.linspace(0.0, max_freq, 2**k+1), where k is an integer.
-    For `fast=False` any grid is accepted, but linear grids, like
-    np.linspace(min_freq, max_freq, n), apply some computational
-    optimisations.
+freqs : array-like or None, default None
+    Explicit and fixed frequency grid (angular frequency, radians/time unit).
+    If given, ``resolution``, ``max_freq_factor`` and ``nyquist`` are ignored.
+    For ``fast=True`` the only supported type of the grid is
+    ``np.linspace(0.0, max_freq, 2**k+1)``, where k is an integer.
+    For ``fast=False`` any grid is accepted, but linear grids apply some
+    computational optimisations.
 
-fast : bool or None, optional
-    Use "Fast" (approximate and FFT-based) or direct periodogram algorithm,
-    default is {default_fast}
+fast : bool or None, default {default_fast}
+    Use "Fast" (approximate and FFT-based) or direct periodogram algorithm
 
-features : iterable or None, optional
+features : iterable or None, default None
     Features extracted from the periodogram power spectrum, treating it as a
     time-series (frequency as time, power as magnitude).
-    Default is None which means no additional spectrum features.
+    ``None`` means no additional spectrum features.
 
-phase_features : iterable or None, optional
+phase_features : iterable or None, default None
     Features to extract from the light curve phase-folded at the best period.
     Phase runs from 0 to 1 with phase 0 at the magnitude minimum.
-    Feature names are prefixed with `period_folded_`.
-    Default is None which means no phase features.
+    Feature names are prefixed with ``period_folded_``.
+    ``None`` means no phase features.
 
-normalization : str, optional
-    Normalization of the periodogram power. Affects `power()`,
-    `freq_power()`, and feature extraction via `__call__()`.
+normalization : str, default 'psd'
+    Normalization of the periodogram power. Affects ``power()``,
+    ``freq_power()``, and feature extraction via ``__call__()``.
     Let P be the raw power and n the number of observations.
     Must be one of:
-     - 'psd': Raw power P, unnormalized (default). Consistent with
-       scipy.signal.lombscargle(normalize=False) on variance-normalized
-       data, but differs from astropy's 'psd' convention
-     - 'standard': P_std = P * 2 / (n - 1), values in [0, 1].
-       Matches astropy's 'standard' normalization
-     - 'model': P_std / (1 - P_std), values in [0, inf).
-       Matches astropy's 'model' normalization
-     - 'log': -ln(1 - P_std), values in [0, inf).
-       Matches astropy's 'log' normalization
-    Default is 'psd'
 
-transform : None, optional
-    Not supported for Periodogram, peaks are not transformed, but you still
-    may apply transformation for the underlying features with thier
-    constructors
+     - ``'psd'``: Raw power P, unnormalized. Consistent with
+       ``scipy.signal.lombscargle(normalize=False)`` on variance-normalized
+       data, but differs from astropy's ``'psd'`` convention
+     - ``'standard'``: P_std = P * 2 / (n - 1), values in [0, 1].
+       Matches astropy's ``'standard'`` normalization
+     - ``'model'``: P_std / (1 - P_std), values in [0, inf).
+       Matches astropy's ``'model'`` normalization
+     - ``'log'``: -ln(1 - P_std), values in [0, inf).
+       Matches astropy's ``'log'`` normalization
+
+transform : None, default None
+    Not supported for Periodogram. Peaks are not transformed, but you may
+    apply transformation for the underlying features via their constructors
 
 {common}
 freq_power(t, m, *, cast=False)
