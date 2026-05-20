@@ -31,6 +31,37 @@ class _PyExtractor(BaseSingleBandFeature):
 
 
 class Extractor:
+    """Combine multiple feature extractors into a single callable.
+
+    Pass any number of feature objects; the result behaves like a single
+    feature whose output is the concatenation of all individual outputs.
+    Use :meth:`__call__` for a single light curve or :meth:`many` for batch
+    processing. Especially efficient for cheap features because it avoids
+    repeated passes over the data and reduces Python–Rust call overhead.
+
+    Parameters
+    ----------
+    *features : feature objects
+        Any mix of Rust-backed or pure-Python feature instances.
+
+    Attributes
+    ----------
+    names : list of str
+        Concatenated feature names from all sub-features.
+    descriptions : list of str
+        Concatenated descriptions from all sub-features.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from light_curve import Extractor, Amplitude, StandardDeviation
+    >>> ext = Extractor(Amplitude(), StandardDeviation())
+    >>> t = np.array([0.0, 1.0, 2.0, 3.0, 4.0])
+    >>> m = np.array([15.1, 14.9, 15.2, 15.0, 14.8])
+    >>> ext(t, m)  # doctest: +SKIP
+    array([...])
+    """
+
     def __new__(cls, *args: Collection[Union[BaseSingleBandFeature, _RustBaseFeature]]):
         if len(args) > 0 and all(isinstance(feature, _RustBaseFeature) for feature in args):
             return _RustExtractor(*args)
