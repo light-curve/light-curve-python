@@ -152,29 +152,29 @@ def test_noisy_all_functions_combination():
 
     bazin_parameters = [
         60000.0,  # reference_time
-        1.0, # amplitude
-        5.0, # rise_time
-        30.0, # fall_time
+        1.0,  # amplitude
+        5.0,  # rise_time
+        30.0,  # fall_time
     ]
 
     sigmoid_parameters = [
         60000.0,  # reference_time
-        1.0, # amplitude
-        5.0, # rise_time
+        1.0,  # amplitude
+        5.0,  # rise_time
     ]
 
     linexp_parameters = [
         60000.0,  # reference_time
-        1, # amplitude
-        -20, # rise_time
+        1,  # amplitude
+        -20,  # rise_time
     ]
 
     doublexp_parameters = [
         60000.0,  # reference_time
-        10, # amplitude
-        5, # time1
-        10, # time2
-        0.1, #p
+        10,  # amplitude
+        5,  # time1
+        10,  # time2
+        0.1,  # p
     ]
 
     bolometric_names = [
@@ -196,13 +196,13 @@ def test_noisy_all_functions_combination():
     # ======================================================
 
     Tsigmoid_parameters = [
-        5e3, # Tmin
-        15e3, # Tmax
-        10, # t_color
+        5e3,  # Tmin
+        15e3,  # Tmax
+        10,  # t_color
     ]
 
     constant_parameters = [
-        1e4, # Temperature
+        1e4,  # Temperature
     ]
 
     temperature_names = [
@@ -222,10 +222,10 @@ def test_noisy_all_functions_combination():
     BB_parameters = []
 
     UV_BB_parameters = [
-        3.0, # log_intensity
-        750.0, # lambda_scale
+        3.0,  # log_intensity
+        750.0,  # lambda_scale
     ]
-    
+
     spectral_names = [
         "planck",
         "blanketed",
