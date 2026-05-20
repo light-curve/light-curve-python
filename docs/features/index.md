@@ -98,8 +98,8 @@ See the [API reference](api/statistical.md) for full signatures, parameters, and
 
 | Feature | Description | Outputs |
 |---------|-------------|---------|
-| [`ColorOfMedian`](api/multiband.md#light_curve.ColorOfMedian) | Difference between median magnitudes of two bands | 1 |
-| [`RainbowFit`](api/multiband.md#light_curve.RainbowFit) | Multiband blackbody fit (Russeil+23) — bolometric flux + temperature evolution | 8 |
+| [`ColorOfMedian`](multiband/api.md#light_curve.ColorOfMedian) | Difference between median magnitudes of two bands | 1 |
+| [`RainbowFit`](multiband/api.md#light_curve.RainbowFit) | Multiband blackbody fit (Russeil+23) — bolometric flux + temperature evolution | 8 |
 
 ### Meta
 

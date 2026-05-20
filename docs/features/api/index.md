@@ -61,4 +61,4 @@ np.stack([extractor(*lc, fill_value=fill_value, sorted=sorted, check=check)
 | [Periodogram](periodogram.md) | Periodogram |
 | [Parametric fits](fitting.md) | BazinFit, VillarFit |
 | [Detection-based](detection.md) | Duration, MaximumTimeInterval, … |
-| [Multiband](multiband.md) | MultibandFeature |
+| [Multiband](../multiband/api.md) | ColorOfMedian, RainbowFit |
