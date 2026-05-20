@@ -25,8 +25,8 @@ def test_noisy_with_baseline():
     Tmax = 15e3
     t_color = 10
 
-    intensity = 3.0
-    l0 = 500.0
+    log_intensity = 3.0
+    lambda_scale = 500.0
 
     baselines = {b: 0.3 * amplitude + rng.exponential(scale=0.3 * amplitude) for b in band_wave_aa}
 
@@ -38,8 +38,8 @@ def test_noisy_with_baseline():
         Tmin,
         Tmax,
         t_color,
-        intensity,
-        l0,
+        log_intensity,
+        lambda_scale,
         *baselines.values(),
         1.0,
     ]
@@ -151,30 +151,30 @@ def test_noisy_all_functions_combination():
     # ======================================================
 
     bazin_parameters = [
-        60000.0,
-        1.0,
-        5.0,
-        30.0,
+        60000.0,  # reference_time
+        1.0, # amplitude
+        5.0, # rise_time
+        30.0, # fall_time
     ]
 
     sigmoid_parameters = [
-        60000.0,
-        1.0,
-        5.0,
+        60000.0,  # reference_time
+        1.0, # amplitude
+        5.0, # rise_time
     ]
 
     linexp_parameters = [
-        60000.0,
-        1,
-        -20,
+        60000.0,  # reference_time
+        1, # amplitude
+        -20, # rise_time
     ]
 
     doublexp_parameters = [
-        60000.0,
-        10,
-        5,
-        10,
-        0.1,
+        60000.0,  # reference_time
+        10, # amplitude
+        5, # time1
+        10, # time2
+        0.1, #p
     ]
 
     bolometric_names = [
@@ -196,13 +196,13 @@ def test_noisy_all_functions_combination():
     # ======================================================
 
     Tsigmoid_parameters = [
-        5e3,
-        15e3,
-        10,
+        5e3, # Tmin
+        15e3, # Tmax
+        10, # t_color
     ]
 
     constant_parameters = [
-        1e4,
+        1e4, # Temperature
     ]
 
     temperature_names = [
@@ -219,14 +219,21 @@ def test_noisy_all_functions_combination():
     # Spectral models
     # ======================================================
 
+    BB_parameters = []
+
+    UV_BB_parameters = [
+        3.0, # log_intensity
+        750.0, # lambda_scale
+    ]
+    
     spectral_names = [
         "planck",
         "blanketed",
     ]
 
     spectral_params = [
-        [],
-        [3.0, 750.0],  # intensity, l0
+        BB_parameters,
+        UV_BB_parameters,
     ]
 
     # ======================================================

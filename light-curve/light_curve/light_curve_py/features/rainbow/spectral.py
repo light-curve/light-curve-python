@@ -82,38 +82,38 @@ class BlanketedPlanckSpectralTerm(BaseSpectralTerm):
 
     @staticmethod
     def parameter_names():
-        return ["intensity", "l0"]
+        return ["log_intensity", "lambda_scale"]
 
     @staticmethod
     def parameter_scalings():
         return [None, None]
 
     @staticmethod
-    def value(wave_cm, T, intensity, l0):
+    def value(wave_cm, T, log_intensity, lambda_scale):
         base = PlanckSpectralTerm.value(wave_cm, T)
 
-        # l0 is expressed in Angstrom
-        l0_cm = l0 * 1e-8
+        # lambda_scale is expressed in Angstrom
+        lambda_scale_cm = lambda_scale * 1e-8
 
-        tau = 10**intensity * np.exp(-wave_cm / l0_cm)
+        tau = 10**log_intensity * np.exp(-wave_cm / lambda_scale_cm)
 
         return base * np.exp(-tau)
 
     @staticmethod
     def initial_guesses(t, m, sigma, band):
         return {
-            "intensity": 1.0,
-            "l0": 100.0,
+            "log_intensity": 1.5,
+            "lambda_scale": 100.0,
         }
 
     @staticmethod
     def limits(t, m, sigma, band):
-        # l0 and intensity are degenerate. Putting either to ~0 leads to a classical BB.
-        # We prevent intensity to go to 0, because the blanketing is more physically realistic
-        # at low l0 high intensity rather than high l0 low intensity.
+        # lambda_scale and log_intensity are degenerate. Putting either to ~0 leads to a classical BB.
+        # We prevent log_intensity to go to 0, because the blanketing is more physically realistic
+        # at low lambda_scale high log_intensity rather than high lambda_scale low log_intensity.
         return {
-            "intensity": (1.5, 6.0),
-            "l0": (100.0, 2000.0),
+            "log_intensity": (1.5, 6.0),
+            "lambda_scale": (100.0, 2000.0),
         }
 
 
