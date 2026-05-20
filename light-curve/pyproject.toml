@@ -75,6 +75,11 @@ docs = [
     "mkdocs-material>=9.5",
     "mkdocstrings[python]>=0.25",
     "mkdocs-jupyter>=0.24",
+    "numpy",
+    "matplotlib",
+    "astropy",
+    "pyarrow",
+    "iminuit>=2.21,<3",
 ]
 # Development environment for free-threaded Python builds
 dev-free-threading = [
