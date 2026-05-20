@@ -9,17 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `Periodogram` now accepts a `phase_features` argument: features extracted from the light curve
-  phase-folded at the best period
-  ([#701](https://github.com/light-curve/light-curve-python/pull/701)).
-- New feature `Chi2Pvar`: probability of variability from the chi-squared test
-  ([#701](https://github.com/light-curve/light-curve-python/pull/701)).
-- New feature `LaflerKinmanStringLength`: smoothness of the light curve
-  ([#701](https://github.com/light-curve/light-curve-python/pull/701)).
+--
 
 ### Changed
 
-- **Breaking** Underlying `nuts-rs` crate has updated, so specific non-linear optimization results may change https://github.com/light-curve/light-curve-python/pull/701
+--
 
 ### Deprecated
 
@@ -36,6 +30,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 --
+
+## [0.12.4] 2026-05-20
+
+### Added
+
+- `Periodogram` now accepts a `phase_features` argument: features extracted from the light curve
+  phase-folded at the best period
+  ([#701](https://github.com/light-curve/light-curve-python/pull/701)).
+- New feature `Chi2Pvar`: probability of variability from the chi-squared test
+  ([#701](https://github.com/light-curve/light-curve-python/pull/701)).
+- New feature `LaflerKinmanStringLength`: smoothness of the light curve
+  ([#701](https://github.com/light-curve/light-curve-python/pull/701)).
+- `RainbowFit` now supports parameterized SED models. Two models are built in: black-body
+  (default, preserves old behavior) and UV-extincted black-body
+  ([#705](https://github.com/light-curve/light-curve-python/pull/705)).
+
+### Changed
+
+- **Breaking** The underlying `nuts-rs` crate has been updated, so specific non-linear optimization
+  results may change ([#701](https://github.com/light-curve/light-curve-python/pull/701)).
 
 ## [0.12.3] 2026-05-14
 
