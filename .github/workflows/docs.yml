@@ -42,18 +42,13 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Install light-curve from source
+      - name: Install from source with docs dependencies
         run: |
           python -m venv .venv
           source .venv/bin/activate
-          pip install maturin
+          pip install --upgrade pip maturin
           cd light-curve && maturin develop --extras=full -q
-
-      - name: Install docs dependencies
-        run: |
-          source .venv/bin/activate
-          pip install --upgrade pip
-          pip install --dependency-groups docs light-curve/
+          pip install --dependency-groups docs .
 
       - name: Build and deploy
         run: |
