@@ -79,6 +79,8 @@ docs = [
     "matplotlib",
     "astropy",
     "pyarrow",
+    "huggingface-hub",
+    "onnxruntime<2",
 ]
 # Development environment for free-threaded Python builds
 dev-free-threading = [
