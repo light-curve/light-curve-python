@@ -179,10 +179,10 @@ markers = [
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py{310,311,312,313,313t,314,314t}-{base,test}
+envlist = py{310,311,312,313,314,314t}-{base,test}
 isolated_build = True
 
-[testenv:py{310,311,312,313,313t,314,314t}-base]
+[testenv:py{310,311,312,313,314,314t}-base]
 change_dir = {envtmpdir}
 extras =
 commands =
@@ -198,7 +198,7 @@ commands =
 set_env =
     CARGO_TARGET_DIR = {tox_root}/target
 
-[testenv:py{313,314}t-test]
+[testenv:py314t-test]
 dependency_groups = dev-free-threading
 commands =
     pytest README.md tests/ light_curve/ \
