@@ -43,7 +43,8 @@ extra:
 plugins:
   - search
   - mkdocs-jupyter:
-      execute: false
+      execute: true
+      allow_errors: false
       include_source: true
   - mkdocstrings:
       handlers:
@@ -105,6 +106,7 @@ nav:
     - Basics: features/basics.ipynb
     - Periodogram: features/periodogram.ipynb
     - Parametric fits: features/fitting.ipynb
+    - Multiband: features/multiband/tutorial.ipynb
     - API:
       - features/api/index.md
       - Base class: features/api/base.md
@@ -115,7 +117,7 @@ nav:
       - Periodogram: features/api/periodogram.md
       - Parametric fits: features/api/fitting.md
       - Detection-based: features/api/detection.md
-      - Multiband: features/api/multiband.md
+      - Multiband: features/multiband/api.md
   - ML Embeddings:
     - embed/index.md
     - Tutorial: embed/tutorial.ipynb
