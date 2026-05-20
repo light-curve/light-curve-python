@@ -52,7 +52,7 @@ jobs:
       - name: Install docs dependencies
         run: |
           source .venv/bin/activate
-          pip install mkdocs-material "mkdocstrings[python]" numpy mkdocs-jupyter
+          pip install mkdocs-material "mkdocstrings[python]" numpy mkdocs-jupyter matplotlib astropy pyarrow
 
       - name: Build and deploy
         run: |
