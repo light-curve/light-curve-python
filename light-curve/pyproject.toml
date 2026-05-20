@@ -81,6 +81,8 @@ docs = [
     "pyarrow",
     "huggingface-hub",
     "onnxruntime<2",
+    "polars",
+    "nested-pandas",
 ]
 # Development environment for free-threaded Python builds
 dev-free-threading = [
