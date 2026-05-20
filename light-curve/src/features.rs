@@ -70,24 +70,24 @@ macro_const! {
         Signal in magnitude or fluxes. Refer to the feature description to
         decide which would work better in your case
 
-    sigma : numpy.ndarray, optional
+    sigma : numpy.ndarray, default None
         Observation error, if None it is assumed to be unity
 
-    fill_value : float or None, optional
+    fill_value : float or None, default None
         Value to fill invalid feature values, for example if count of
         observations is not enough to find a proper value.
         None causes exception for invalid features
 
-    sorted : bool or None, optional
+    sorted : bool or None, default None
         Specifies if input array are sorted by time moments.
         True is for certainly sorted, False is for unsorted.
         If None is specified than sorting is checked and an exception is
         raised for unsorted t
 
-    check : bool, optional
+    check : bool, default True
         Check all input arrays for NaNs, t and m for infinite values
 
-    cast : bool, optional
+    cast : bool, default False
         Allows non-numpy input and casting of arrays to a common dtype.
         If False, inputs must be np.ndarray instances with matched dtypes.
         Casting provides more flexibility with input types at the cost of
@@ -126,19 +126,19 @@ macro_const! {
         field name (str) or a zero-based positional index (int); all elements
         must be of the same type. Ignored for non-Arrow input.
 
-    fill_value : float or None, optional
+    fill_value : float or None, default None
         Fill invalid values by this or raise an exception if None
 
-    sorted : bool or None, optional
+    sorted : bool or None, default None
         Specifies if input array are sorted by time moments, see ``__call__``
         documentation for details
 
-    check : bool, optional
+    check : bool, default True
         Check all input arrays for NaNs, t and m for infinite values
 
-    n_jobs : int
-        Number of tasks to run in parallel. Default is -1 which means run as
-        many jobs as CPU count. See rayon rust crate documentation for details"#;
+    n_jobs : int, default -1
+        Number of tasks to run in parallel. -1 means run as many jobs as CPU
+        count. See rayon rust crate documentation for details"#;
 }
 
 const METHODS_DOC: &str = r#"Methods
@@ -275,21 +275,21 @@ type PyLightCurve<'a, T> = (Arr<'a, T>, Arr<'a, T>, Option<Arr<'a, T>>);
 ///     Signal in magnitudes or fluxes.  Refer to the feature description to
 ///     decide which would work better in your case
 ///
-/// sigma : numpy.ndarray, optional
+/// sigma : numpy.ndarray, default None
 ///     Observation error.  If ``None``, assumed to be unity
 ///
-/// fill_value : float or None, optional
+/// fill_value : float or None, default None
 ///     Value to fill invalid feature values, or raise if ``None``
 ///
-/// sorted : bool or None, optional
+/// sorted : bool or None, default None
 ///     Whether ``t`` is sorted.  ``True`` — sorted, ``False`` — unsorted,
 ///     ``None`` — check and raise if unsorted
 ///
-/// check : bool, optional
-///     Check arrays for NaNs and infinite values (default ``True``)
+/// check : bool, default True
+///     Check arrays for NaNs and infinite values
 ///
-/// cast : bool, optional
-///     Allow non-numpy input and dtype casting (default ``False``)
+/// cast : bool, default False
+///     Allow non-numpy input and dtype casting
 #[derive(Serialize, Deserialize, Clone)]
 #[pyclass(
     subclass,
@@ -1630,8 +1630,8 @@ impl BeyondNStd {
 
 Parameters
 ----------
-nstd : positive float
-    N, default is {nstd_default:.1}
+nstd : positive float, default {nstd_default:.1}
+    N — how many standard deviations from the mean
 
 {transform}
 {footer}"#,
@@ -1741,7 +1741,7 @@ window : positive float
 offset : float
     Zero time moment
 
-transform : None, optional
+transform : None, default None
     Not supported, apply transformations to individual features
 {footer}
 "#,
@@ -1801,8 +1801,8 @@ impl InterPercentileRange {
 
 Parameters
 ----------
-quantile : positive float
-    Range is (100% * quantile, 100% * (1 - quantile)). Default quantile is {quantile_default:.2}
+quantile : positive float, default {quantile_default:.2}
+    Range is (100% × quantile, 100% × (1 - quantile))
 
 {transform}
 {footer}"#,
@@ -1899,13 +1899,11 @@ impl MagnitudePercentageRatio {
 
 Parameters
 ----------
-quantile_numerator: positive float
-    Numerator is inter-percentile range (100% * q, 100% (1 - q)).
-    Default value is {quantile_numerator_default:.2}
+quantile_numerator : positive float, default {quantile_numerator_default:.2}
+    Numerator inter-percentile range is (100% × q, 100% × (1 - q))
 
-quantile_denominator: positive float
-    Denominator is inter-percentile range (100% * q, 100% (1 - q)).
-    Default value is {quantile_denominator_default:.2}
+quantile_denominator : positive float, default {quantile_denominator_default:.2}
+    Denominator inter-percentile range is (100% × q, 100% × (1 - q))
 
 {transform}
 {footer}"#,
@@ -1970,8 +1968,8 @@ impl MedianBufferRangePercentage {
 
 Parameters
 ----------
-quantile : positive float
-    Relative range size, default is {quantile_default:.2}
+quantile : positive float, default {quantile_default:.2}
+    Relative range size
 
 {transform}
 {footer}"#,
@@ -2033,8 +2031,8 @@ impl PercentDifferenceMagnitudePercentile {
 
 Parameters
 ----------
-quantile : positive float
-    Relative range size, default is {quantile_default:.2}
+quantile : positive float, default {quantile_default:.2}
+    Relative range size
 
 {transform}
 {footer}"#,
