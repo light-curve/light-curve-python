@@ -60,6 +60,7 @@ plugins:
               warn_missing_types: false
               warnings: false
             filters:
+              - "^_FeatureEvaluator"
               - "!^_"
             show_source: false
             show_bases: true

@@ -1,5 +1,20 @@
 # API Reference
 
+## Feature pages
+
+| Page | Contents |
+|---|---|
+| [Meta](meta.md) | `Extractor`, `Bins` |
+| [Statistical](statistical.md) | Amplitude, BeyondNStd, Cusum, Kurtosis, LinearFit, Mean, Skew, … |
+| [Variability & trend](variability.md) | EtaE, ExcessVariance, ReducedChi2, … |
+| [Time sampling](time.md) | ObservationCount, TimeMean, TimeStandardDeviation |
+| [Periodogram](periodogram.md) | Periodogram |
+| [Parametric fits](fitting.md) | BazinFit, VillarFit |
+| [Detection-based](detection.md) | Duration, MaximumTimeInterval, … |
+| [Multiband](../multiband/api.md) | ColorOfMedian, RainbowFit |
+
+---
+
 All feature extractor classes share the same calling interface: `__call__` for a single light curve and `many` for a batch.
 
 ## Common attributes
@@ -101,18 +116,3 @@ t = np.sort(np.random.default_rng(0).uniform(0, 100, 100))
 m = np.random.default_rng(1).normal(15, 0.2, 100)
 assert np.allclose(original(t, m), restored(t, m))
 ```
-
----
-
-## Feature pages
-
-| Page | Contents |
-|---|---|
-| [Meta](meta.md) | `Extractor`, `Bins` |
-| [Statistical](statistical.md) | Amplitude, BeyondNStd, Cusum, Kurtosis, LinearFit, Mean, Skew, … |
-| [Variability & trend](variability.md) | EtaE, ExcessVariance, ReducedChi2, … |
-| [Time sampling](time.md) | ObservationCount, TimeMean, TimeStandardDeviation |
-| [Periodogram](periodogram.md) | Periodogram |
-| [Parametric fits](fitting.md) | BazinFit, VillarFit |
-| [Detection-based](detection.md) | Duration, MaximumTimeInterval, … |
-| [Multiband](../multiband/api.md) | ColorOfMedian, RainbowFit |

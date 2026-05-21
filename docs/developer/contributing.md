@@ -65,7 +65,7 @@ pre-commit run --all-files
 
 | Feature | Default | Effect |
 |---------|---------|--------|
-| `abi3` | ✓ | Stable CPython ABI3 — disable for PyPy or free-threaded builds |
+| `abi3` | ✓ | Stable CPython ABI3 — disable for PyPy or free-threaded builds (requires Python 3.14t+) |
 | `ceres-source` | ✓ | Build Ceres solver from source (requires C++ compiler + CMake) |
 | `ceres-system` | | Link against system-installed Ceres instead of building from source |
 | `gsl` | ✓ | Enable GSL backend for `BazinFit`/`VillarFit` (requires `libgsl-dev`) |
@@ -124,6 +124,15 @@ mkdocs serve   # live preview at http://127.0.0.1:8000
 
 The API reference prose (parameter descriptions, equations) is read from the Python
 docstrings, so updating those in the source is enough — no manual copy-paste needed.
+
+## Free-threaded Python
+
+Free-threaded CPython (PEP 703) is supported from **Python 3.14t** onward.
+Python 3.13t is not supported. To build for free-threaded Python, use
+`--group dev-free-threading` instead of `--group dev` when installing dependencies
+(avoids packages that don't yet support free threading: iminuit, polars, cesium).
+
+Pre-built free-threaded wheels are not yet published to PyPI.
 
 ## Publishing a release
 

@@ -84,6 +84,8 @@ docs = [
     "onnxruntime<2",
     "polars",
     "nested-pandas",
+    "s3fs",
+    "universal-pathlib",
 ]
 # Development environment for free-threaded Python builds
 dev-free-threading = [
