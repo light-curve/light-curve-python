@@ -196,6 +196,15 @@
   .lc-dmdt-s1, .lc-dmdt-s2, .lc-dmdt-s3 { opacity: 0.9 !important; animation: none; }
 }
 
+/* ── Navigation links: underline for clarity ─────────────────────── */
+
+.md-nav__link,
+.md-tabs__link {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+
 /* ── Notebooks: hide cell count badges ───────────────────────────── */
 
 .jp-Cell-inputWrapper .jp-InputPrompt {
