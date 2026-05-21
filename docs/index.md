@@ -8,8 +8,9 @@ hide:
 
 **High-performance time-series feature extraction for astrophysics.**
 
-`light-curve` is a Python/Rust library for extracting features from photometric light curves —
-fast enough for millions of objects, flexible enough for survey-scale ML pipelines.
+`light-curve` is a Python package for analyzing photometric light curves at the scale of millions of objects.
+It provides multiple tools for ML pre-processing pipelines as well as 40+ statistical and variability features
+for filtering, classification, and catalog analysis.
 
 ```sh title="Install"
 pip install 'light-curve[full]'
