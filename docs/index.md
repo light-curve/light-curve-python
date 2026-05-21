@@ -43,16 +43,16 @@ pip install 'light-curve[full]'
   <circle cx="158" cy="41" r="2.5" fill="white" opacity="0.9"/>
   <circle cx="168" cy="38" r="2.5" fill="white" opacity="0.9"/>
   <circle cx="178" cy="46" r="2.5" fill="white" opacity="0.9"/>
-  <!-- Annotations: mean line, A bracket, P bracket — fade in on hover -->
-  <g class="lc-annotation">
-  <!-- Mean line -->
+  <!-- Step 1: mean line + A bracket (appear first on hover) -->
+  <g class="lc-feat-s1">
   <line x1="8" y1="60" x2="178" y2="60" stroke="white" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/>
-  <!-- Half-amplitude A: vertical bracket from mean (y=60) to peak (y=38) -->
   <line x1="189" y1="38" x2="189" y2="60" stroke="#ffcc80" stroke-width="1.5"/>
   <line x1="186" y1="38" x2="192" y2="38" stroke="#ffcc80" stroke-width="1.5"/>
   <line x1="186" y1="60" x2="192" y2="60" stroke="#ffcc80" stroke-width="1.5"/>
   <text x="198" y="52" fill="#ffcc80" font-size="10" font-family="monospace" font-weight="bold">A</text>
-  <!-- Period P: horizontal bracket between consecutive bright peaks (peak-to-peak) -->
+  </g>
+  <!-- Step 2: period P bracket (appears after A) -->
+  <g class="lc-feat-s2">
   <line x1="78" y1="28" x2="168" y2="28" stroke="#80deea" stroke-width="1.2"/>
   <line x1="78"  y1="24" x2="78"  y2="32" stroke="#80deea" stroke-width="1.2"/>
   <line x1="168" y1="24" x2="168" y2="32" stroke="#80deea" stroke-width="1.2"/>
@@ -82,8 +82,8 @@ pip install 'light-curve[full]'
   <circle cx="48" cy="42" r="2.2" fill="white" opacity="0.85"/>
   <circle cx="52" cy="55" r="2.2" fill="white" opacity="0.85"/>
   <!-- Arrow: LC → network -->
-  <line x1="57" y1="55" x2="66" y2="55" stroke="white" stroke-width="1.1" opacity="0.5"/>
-  <polygon points="66,52 66,58 70,55" fill="white" opacity="0.5"/>
+  <line x1="57" y1="55" x2="62" y2="55" stroke="white" stroke-width="1.1" opacity="0.5"/>
+  <polygon points="62,52 62,58 67,55" fill="white" opacity="0.5"/>
   <!-- Layer 1: input nodes -->
   <circle cx="74" cy="28" r="5.5" fill="white" opacity="0.6"/>
   <circle cx="74" cy="55" r="5.5" fill="white" opacity="0.75"/>

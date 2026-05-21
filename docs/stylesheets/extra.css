@@ -76,11 +76,8 @@
 /* Fixed dark background so the white SVG elements are always visible */
 .lc-card-svg-wrap {
   background: #1a237e !important;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 1.2rem;
-  height: 130px;
+  aspect-ratio: 240 / 110;
+  overflow: hidden;
 }
 
 .lc-card-body {
@@ -102,7 +99,7 @@
 /* Fix SVG size — Material's global svg rule shrinks all svgs to 1.2rem */
 .lc-card-svg-wrap svg {
   width: 100% !important;
-  height: auto !important;
+  height: 100% !important;
   display: block !important;
 }
 
@@ -111,44 +108,59 @@
   max-width: 87.5rem;
 }
 
-/* ── Features SVG: annotations appear on hover ───────────────────── */
+/* ── Features SVG: A annotation, then P — looped on hover ───────────── */
 
-.lc-svg-features .lc-annotation {
-  opacity: 0;
-  transition: opacity 0.4s ease;
+.lc-svg-features .lc-feat-s1,
+.lc-svg-features .lc-feat-s2 { opacity: 0; }
+
+@keyframes feat-step1 {
+  0%        { opacity: 0; }
+  8%, 55%   { opacity: 1; }
+  63%, 100% { opacity: 0; }
+}
+@keyframes feat-step2 {
+  0%, 40%   { opacity: 0; }
+  48%, 55%  { opacity: 1; }
+  63%, 100% { opacity: 0; }
 }
 
-.lc-card:hover .lc-svg-features .lc-annotation {
-  opacity: 1;
-}
+.lc-card:hover .lc-svg-features .lc-feat-s1 { animation: feat-step1 4s linear infinite; }
+.lc-card:hover .lc-svg-features .lc-feat-s2 { animation: feat-step2 4s linear infinite; }
 
-/* ── Embeddings SVG: connections draw on hover ───────────────────── */
+/* ── Embeddings SVG: connections draw then vector text — looped on hover */
 
 .lc-svg-embed .lc-conn-a,
 .lc-svg-embed .lc-conn-b {
   stroke-dasharray: 55;
   stroke-dashoffset: 55;
-  opacity: 0.75;
-  transition: stroke-dashoffset 0.25s ease;
-}
-
-.lc-card:hover .lc-svg-embed .lc-conn-a {
-  stroke-dashoffset: 0;
-}
-
-.lc-card:hover .lc-svg-embed .lc-conn-b {
-  stroke-dashoffset: 0;
-  transition-delay: 0.25s;
-}
-
-.lc-svg-embed .lc-vec-text {
   opacity: 0;
-  transition: opacity 0.25s ease 0.5s;
+}
+.lc-svg-embed .lc-vec-text { opacity: 0; }
+
+@keyframes embed-conn-a {
+  0%        { stroke-dashoffset: 55; opacity: 0; }
+  5%        { stroke-dashoffset: 55; opacity: 0.75; }
+  35%       { stroke-dashoffset: 0;  opacity: 0.75; }
+  65%       { stroke-dashoffset: 0;  opacity: 0.75; }
+  75%, 100% { stroke-dashoffset: 55; opacity: 0; }
+}
+@keyframes embed-conn-b {
+  0%, 25%   { stroke-dashoffset: 55; opacity: 0; }
+  30%       { stroke-dashoffset: 55; opacity: 0.75; }
+  55%       { stroke-dashoffset: 0;  opacity: 0.75; }
+  65%       { stroke-dashoffset: 0;  opacity: 0.75; }
+  75%, 100% { stroke-dashoffset: 55; opacity: 0; }
+}
+@keyframes embed-vec {
+  0%, 60%   { opacity: 0; }
+  68%       { opacity: 1; }
+  72%       { opacity: 1; }
+  80%, 100% { opacity: 0; }
 }
 
-.lc-card:hover .lc-svg-embed .lc-vec-text {
-  opacity: 1;
-}
+.lc-card:hover .lc-svg-embed .lc-conn-a   { animation: embed-conn-a 5s linear infinite; }
+.lc-card:hover .lc-svg-embed .lc-conn-b   { animation: embed-conn-b 5s linear infinite; }
+.lc-card:hover .lc-svg-embed .lc-vec-text { animation: embed-vec    5s linear infinite; }
 
 /* ── dm-dt SVG: point-pair → pixel animation on hover ────────────── */
 
@@ -174,13 +186,14 @@
 .lc-card:hover .lc-dmdt-s2 { animation: dmdt-step2 3s linear infinite; }
 .lc-card:hover .lc-dmdt-s3 { animation: dmdt-step3 3s linear infinite; }
 
-/* reduced-motion: show everything statically */
+/* reduced-motion: show all annotations statically */
 @media (prefers-reduced-motion: reduce) {
-  .lc-svg-features .lc-annotation { opacity: 1 !important; transition: none; }
+  .lc-svg-features .lc-feat-s1,
+  .lc-svg-features .lc-feat-s2 { opacity: 1 !important; animation: none; }
   .lc-svg-embed .lc-conn-a,
-  .lc-svg-embed .lc-conn-b { stroke-dashoffset: 0 !important; transition: none; }
-  .lc-svg-embed .lc-vec-text { opacity: 1 !important; transition: none; }
-  .lc-dmdt-s1, .lc-dmdt-s2, .lc-dmdt-s3 { opacity: 0.9; animation: none; }
+  .lc-svg-embed .lc-conn-b { stroke-dashoffset: 0 !important; opacity: 0.75 !important; animation: none; }
+  .lc-svg-embed .lc-vec-text { opacity: 1 !important; animation: none; }
+  .lc-dmdt-s1, .lc-dmdt-s2, .lc-dmdt-s3 { opacity: 0.9 !important; animation: none; }
 }
 
 /* ── Notebooks: hide cell count badges ───────────────────────────── */
