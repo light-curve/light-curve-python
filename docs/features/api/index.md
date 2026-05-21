@@ -2,6 +2,23 @@
 
 All feature extractor classes share the same calling interface: `__call__` for a single light curve and `many` for a batch.
 
+## Common attributes
+
+Every extractor exposes two read-only attributes:
+
+| Attribute | Type | Description |
+|---|---|---|
+| `names` | `list[str]` | Output column names, one per extracted value |
+| `descriptions` | `list[str]` | Human-readable description of each output |
+
+```python
+import light_curve as lc
+
+ext = lc.Extractor(lc.Amplitude(), lc.LinearFit())
+print(ext.names)        # ['amplitude', 'linear_fit_slope', ...]
+print(ext.descriptions) # ['Half amplitude of magnitude sample', ...]
+```
+
 ## Common interface
 
 ### `__call__` — single light curve
@@ -47,6 +64,43 @@ np.stack([extractor(*lc, fill_value=fill_value, sorted=sorted, check=check)
 | `n_jobs` | `int` | Parallel workers; `-1` uses all CPU cores |
 
 **Returns** `np.ndarray` of shape `(N, n_features)`.
+
+## JSON serialization
+
+Every extractor can be serialized to and from JSON, which preserves the class type and all constructor parameters.
+
+### `to_json()` — serialize
+
+```python
+s = extractor.to_json()  # returns str
+```
+
+### `feature_from_json()` — deserialize
+
+```python
+import light_curve as lc
+
+extractor = lc.feature_from_json(s)
+```
+
+Returns a `JSONDeserializedFeature` that behaves identically to the original extractor (same `names`, `descriptions`, and `__call__` / `many` interface).
+
+**Round-trip example:**
+
+```python
+import light_curve as lc
+import numpy as np
+
+original = lc.Extractor(lc.Amplitude(), lc.LinearFit())
+s = original.to_json()
+
+restored = lc.feature_from_json(s)
+assert restored.names == original.names
+
+t = np.sort(np.random.default_rng(0).uniform(0, 100, 100))
+m = np.random.default_rng(1).normal(15, 0.2, 100)
+assert np.allclose(original(t, m), restored(t, m))
+```
 
 ---
 
