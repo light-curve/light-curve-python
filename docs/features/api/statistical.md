@@ -12,6 +12,10 @@
 
 ---
 
+::: light_curve.Chi2Pvar
+
+---
+
 ::: light_curve.Cusum
 
 ---

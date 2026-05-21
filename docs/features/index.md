@@ -33,6 +33,7 @@ See the [API reference](api/statistical.md) for full signatures, parameters, and
 | [`Amplitude`](api/statistical.md#light_curve.Amplitude) | Half peak-to-peak amplitude | 1 |
 | [`AndersonDarlingNormal`](api/statistical.md#light_curve.AndersonDarlingNormal) | Unbiased Anderson–Darling normality test statistic | 1 |
 | [`BeyondNStd`](api/statistical.md#light_curve.BeyondNStd) | Fraction of observations beyond \(n\,\sigma_m\) from \(\langle m \rangle\) | 1 |
+| [`Chi2Pvar`](api/statistical.md#light_curve.Chi2Pvar) | Probability of variability from the \(\chi^2\) test | 1 |
 | [`Cusum`](api/statistical.md#light_curve.Cusum) | Range of cumulative sums | 1 |
 | [`ExcessVariance`](api/statistical.md#light_curve.ExcessVariance) | Measure of intrinsic variability amplitude | 1 |
 | [`InterPercentileRange`](api/statistical.md#light_curve.InterPercentileRange) | \(Q(1-p) - Q(p)\) inter-percentile range | 1 |
@@ -77,7 +78,8 @@ See the [API reference](api/statistical.md) for full signatures, parameters, and
 
 | Feature | Description | Outputs |
 |---------|-------------|---------|
-| [`Periodogram`](api/periodogram.md#light_curve.Periodogram) | Lomb–Scargle periodogram: period and power of the strongest peaks | ≥2 |
+| [`LaflerKinmanStringLength`](api/periodogram.md#light_curve.LaflerKinmanStringLength) | Lafler–Kinman string-length smoothness statistic for a phase-folded light curve | 1 |
+| [`Periodogram`](api/periodogram.md#light_curve.Periodogram) | Lomb–Scargle periodogram: period and power of the strongest peaks; supports `phase_features` to extract features from the phase-folded light curve at the best period | ≥2 |
 
 ### Parametric fits (transients, flux only)
 
