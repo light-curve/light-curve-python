@@ -4,11 +4,15 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
-      - documentation
+      - main
 
 permissions:
   contents: write
   pull-requests: write
+
+concurrency:
+  group: gh-pages
+  cancel-in-progress: false
 
 jobs:
   deploy:
