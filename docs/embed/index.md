@@ -23,7 +23,7 @@ If you already have the ONNX model file locally, `huggingface_hub` is not requir
 
 | Model | Bands | Input | Embedding dim | Pretrained on |
 |-------|-------|-------|---------------|---------------|
-| `Astromer1` | single | time, mag | 256 | MACHO R-band |
+| `Astromer1` | single (or per-band) | time, mag | 256 | MACHO R-band |
 | `Astromer2` | single (or per-band) | time, mag | 256 | MACHO (1.5 M light curves) |
 | `ATCAT` | 6 (ugrizY jointly) | time, flux, flux\_err, band index | 384 | ELAsTiCC |
 
