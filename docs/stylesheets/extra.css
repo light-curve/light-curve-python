@@ -116,12 +116,12 @@
 @keyframes feat-step1 {
   0%        { opacity: 0; }
   8%, 55%   { opacity: 1; }
-  63%, 100% { opacity: 0; }
+  72%, 100% { opacity: 0; }
 }
 @keyframes feat-step2 {
-  0%, 40%   { opacity: 0; }
-  48%, 55%  { opacity: 1; }
-  63%, 100% { opacity: 0; }
+  0%, 44%   { opacity: 0; }
+  47%, 55%  { opacity: 1; }
+  72%, 100% { opacity: 0; }
 }
 
 .lc-card:hover .lc-svg-features .lc-feat-s1 { animation: feat-step1 4s linear infinite; }
@@ -140,27 +140,27 @@
 @keyframes embed-conn-a {
   0%        { stroke-dashoffset: 55; opacity: 0; }
   5%        { stroke-dashoffset: 55; opacity: 0.75; }
-  35%       { stroke-dashoffset: 0;  opacity: 0.75; }
+  18%       { stroke-dashoffset: 0;  opacity: 0.75; }
   65%       { stroke-dashoffset: 0;  opacity: 0.75; }
   75%, 100% { stroke-dashoffset: 55; opacity: 0; }
 }
 @keyframes embed-conn-b {
-  0%, 25%   { stroke-dashoffset: 55; opacity: 0; }
-  30%       { stroke-dashoffset: 55; opacity: 0.75; }
-  55%       { stroke-dashoffset: 0;  opacity: 0.75; }
+  0%, 15%   { stroke-dashoffset: 55; opacity: 0; }
+  18%       { stroke-dashoffset: 55; opacity: 0.75; }
+  28%       { stroke-dashoffset: 0;  opacity: 0.75; }
   65%       { stroke-dashoffset: 0;  opacity: 0.75; }
   75%, 100% { stroke-dashoffset: 55; opacity: 0; }
 }
 @keyframes embed-vec {
-  0%, 60%   { opacity: 0; }
+  0%, 58%   { opacity: 0; }
+  65%       { opacity: 1; }
   68%       { opacity: 1; }
-  72%       { opacity: 1; }
-  80%, 100% { opacity: 0; }
+  75%, 100% { opacity: 0; }
 }
 
-.lc-card:hover .lc-svg-embed .lc-conn-a   { animation: embed-conn-a 5s linear infinite; }
-.lc-card:hover .lc-svg-embed .lc-conn-b   { animation: embed-conn-b 5s linear infinite; }
-.lc-card:hover .lc-svg-embed .lc-vec-text { animation: embed-vec    5s linear infinite; }
+.lc-card:hover .lc-svg-embed .lc-conn-a   { animation: embed-conn-a 4s linear infinite; }
+.lc-card:hover .lc-svg-embed .lc-conn-b   { animation: embed-conn-b 4s linear infinite; }
+.lc-card:hover .lc-svg-embed .lc-vec-text { animation: embed-vec    4s linear infinite; }
 
 /* ── dm-dt SVG: point-pair → pixel animation on hover ────────────── */
 

@@ -162,12 +162,12 @@ pip install 'light-curve[full]'
   <rect x="168" y="14" width="16" height="16" fill="white" opacity="0.02" rx="1"/>
   <!-- Axis label -->
   <text x="137" y="95" fill="white" font-size="8" opacity="0.6" text-anchor="middle">lg Δt →</text>
-  <!-- Step 1 (orange): pair p1(12,48)–p2(27,72) → cell col0,row0(large+Δm) at (96,14) -->
+  <!-- Step 1 (orange): pair p1(12,48)–p2(27,72) → dimming, small Δt → col0,row4(large+Δm) at (96,68) -->
   <g class="lc-dmdt-s1">
     <line x1="12" y1="48" x2="27" y2="72" stroke="#ff8f00" stroke-width="2.5"/>
     <circle cx="12" cy="48" r="4" fill="#ff8f00"/>
     <circle cx="27" cy="72" r="4" fill="#ff8f00"/>
-    <rect x="96" y="14" width="16" height="16" fill="#ff8f00" rx="1"/>
+    <rect x="96" y="68" width="16" height="16" fill="#ff8f00" rx="1"/>
   </g>
   <!-- Step 2 (cyan): pair p1(12,48)–p4(57,38) → cell col2,row2(small+Δm) at (132,32) -->
   <g class="lc-dmdt-s2">
