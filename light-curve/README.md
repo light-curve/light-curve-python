@@ -17,34 +17,40 @@ time-series feature extraction for astrophysics.
 pip install 'light-curve[full]'
 ```
 
-<!-- name: test_feature_evaluators_basic -->
-
+<!-- name: test_quickstart -->
 ```python
 import light_curve as lc
 import numpy as np
 
 rng = np.random.default_rng(0)
-n = 100  # observations per light curve
+t = np.sort(rng.uniform(0, 100, 100))
+m = 15.0 + 0.01 * t + rng.normal(0, 0.1, 100)
+err = np.full(100, 0.1)
 
-# Observation times in days (unevenly sampled, must be sorted)
-t = np.sort(rng.uniform(0, 100, n))
-# Magnitudes with a slight linear fade and measurement noise
-m = 15.0 + 0.01 * t + rng.normal(0, 0.1, n)
-err = np.full(n, 0.1)
-
-# Combine features into a single extractor evaluated in one pass
+# Statistical and variability feature extraction
 extractor = lc.Extractor(lc.Amplitude(), lc.BeyondNStd(nstd=1), lc.LinearFit())
-
 result = extractor(t, m, err)
 print('\n'.join(f"{name} = {value:.4f}" for name, value in zip(extractor.names, result)))
 
-# Extract a feature from 1000 light curves in parallel
-light_curves = [
-    (np.sort(rng.uniform(0, 100, n)), 15.0 + rng.normal(0, 0.2, n), np.full(n, 0.1))
-    for _ in range(1000)
-]
-amplitudes = lc.Amplitude().many(light_curves)
-print(f"Amplitude: mean = {np.mean(amplitudes):.3f} mag, std = {np.std(amplitudes):.3f} mag")
+# dm-dt map — 2D histogram of Δmag vs log-Δt for CNN classifiers
+dmdt = lc.DmDt.from_borders(min_lgdt=0, max_lgdt=2, max_abs_dm=1.0, lgdt_size=16, dm_size=16, norm=[])
+matrix = dmdt.points(t, m)
+print(f"dm-dt map shape: {matrix.shape}")  # (16, 16)
+```
+
+Embed the light curve with a pretrained Astromer2 transformer (model downloads on first use):
+
+```python
+from light_curve.embed import Astromer2
+import numpy as np
+
+rng = np.random.default_rng(0)
+t = np.sort(rng.uniform(0, 100, 100))
+m = 15.0 + 0.01 * t + rng.normal(0, 0.1, 100)
+
+model = Astromer2.from_hf(output="mean")   # cached after first download
+embedding = model(t, m).squeeze()           # shape (256,)
+print(f"Embedding shape: {embedding.shape}")
 ```
 
 The package provides:

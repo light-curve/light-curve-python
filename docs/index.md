@@ -197,30 +197,24 @@ pip install 'light-curve[full]'
 ## Quick start
 
 ```python
-import light_curve as licu
+import light_curve as lc
+from light_curve.embed import Astromer2
 import numpy as np
 
 rng = np.random.default_rng(0)
-t   = np.sort(rng.uniform(0, 100, 100))
-m   = 15.0 + 0.01 * t + rng.normal(0, 0.1, 100)
+t = np.sort(rng.uniform(0, 100, 100))
+m = 15.0 + 0.01 * t + rng.normal(0, 0.1, 100)
 err = np.full(100, 0.1)
 
-ext = licu.Extractor(licu.Amplitude(), licu.BeyondNStd(nstd=1), licu.LinearFit())
-result = ext(t, m, err)
-print(dict(zip(ext.names, result)))
-# {'amplitude': 0.67, 'beyond_1_std': 0.35, 'linear_fit_slope': 0.010, ...}
-```
+# Feature extraction
+extractor = lc.Extractor(lc.Amplitude(), lc.BeyondNStd(nstd=1), lc.LinearFit())
+result = extractor(t, m, err)
 
-Use `.many()` for batch processing of many light curves with reduced Python–Rust overhead:
+# ML embedding with pretrained Astromer2 (downloads on first use)
+model = Astromer2.from_hf(output="mean")
+embedding = model(t, m).squeeze()   # shape (256,)
 
-```python
-import light_curve as licu
-import numpy as np
-
-rng = np.random.default_rng(0)
-light_curves = [
-    (np.sort(rng.uniform(0, 100, 100)), rng.normal(15.0, 0.2, 100), np.full(100, 0.1))
-    for _ in range(1000)
-]
-amplitudes = licu.Amplitude().many(light_curves)   # shape (1000,)
+# dm-dt map for CNN-based variability classifiers
+dmdt = lc.DmDt.from_borders(min_lgdt=0, max_lgdt=2, max_abs_dm=1.0, lgdt_size=16, dm_size=16, norm=[])
+matrix = dmdt.points(t, m)   # shape (16, 16)
 ```
