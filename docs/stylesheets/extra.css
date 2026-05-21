@@ -115,13 +115,13 @@
 
 @keyframes feat-step1 {
   0%        { opacity: 0; }
-  8%, 55%   { opacity: 1; }
+  12%, 55%   { opacity: 1; }
   72%, 100% { opacity: 0; }
 }
 @keyframes feat-step2 {
-  0%, 44%   { opacity: 0; }
-  47%, 55%  { opacity: 1; }
-  72%, 100% { opacity: 0; }
+  0%, 30%   { opacity: 0; }
+  37%, 60%  { opacity: 1; }
+  70%, 100% { opacity: 0; }
 }
 
 .lc-card:hover .lc-svg-features .lc-feat-s1 { animation: feat-step1 4s linear infinite; }
@@ -142,20 +142,20 @@
   5%        { stroke-dashoffset: 55; opacity: 0.75; }
   18%       { stroke-dashoffset: 0;  opacity: 0.75; }
   65%       { stroke-dashoffset: 0;  opacity: 0.75; }
-  75%, 100% { stroke-dashoffset: 55; opacity: 0; }
+  85%, 100% { stroke-dashoffset: 55; opacity: 0; }
 }
 @keyframes embed-conn-b {
   0%, 15%   { stroke-dashoffset: 55; opacity: 0; }
   18%       { stroke-dashoffset: 55; opacity: 0.75; }
   28%       { stroke-dashoffset: 0;  opacity: 0.75; }
   65%       { stroke-dashoffset: 0;  opacity: 0.75; }
-  75%, 100% { stroke-dashoffset: 55; opacity: 0; }
+  85%, 100% { stroke-dashoffset: 55; opacity: 0; }
 }
 @keyframes embed-vec {
-  0%, 58%   { opacity: 0; }
+  0%, 28%   { opacity: 0; }
   65%       { opacity: 1; }
   68%       { opacity: 1; }
-  75%, 100% { opacity: 0; }
+  85%, 100% { opacity: 0; }
 }
 
 .lc-card:hover .lc-svg-embed .lc-conn-a   { animation: embed-conn-a 4s linear infinite; }
