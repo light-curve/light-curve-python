@@ -112,62 +112,52 @@
 }
 
 /* ── Features SVG ────────────────────────────────────────────────── */
+/* Annotations (A, P) are always visible — no hover-based hide/show */
 
-.lc-svg-features .lc-amplitude {
-  opacity: 0;
-  transition: opacity 0.45s ease;
+/* ── Embeddings SVG: forward-pass pulse animation ────────────────── */
+
+@keyframes conn-flow {
+  0%, 100% { opacity: 0.22; }
+  40%, 60% { opacity: 0.80; }
 }
 
-.lc-card:hover .lc-svg-features .lc-amplitude {
-  opacity: 1;
+.lc-conn-a {
+  opacity: 0.22;
+  animation: conn-flow 0.8s ease-in-out 0s infinite;
 }
 
-/* ── Embeddings SVG ──────────────────────────────────────────────── */
-
-.lc-svg-embed .lc-conn {
-  stroke-dasharray: 60;
-  stroke-dashoffset: 60;
-  transition: stroke-dashoffset 0.5s ease;
+.lc-conn-b {
+  opacity: 0.22;
+  animation: conn-flow 0.8s ease-in-out 0.27s infinite;
 }
 
-.lc-card:hover .lc-svg-embed .lc-conn {
-  stroke-dashoffset: 0;
+/* ── dm-dt SVG: cascading cell reveal animation ───────────────────── */
+
+@keyframes cell-reveal {
+  0%, 10% { opacity: 0; }
+  20%, 55% { opacity: 1; }
+  70%, 100% { opacity: 0; }
 }
 
-.lc-svg-embed .lc-vec-text {
-  opacity: 0;
-  transition: opacity 0.4s ease 0.5s;
-}
+/* backwards fill-mode: apply 0% keyframe (opacity:0) during the delay period */
+.lc-ch1 { animation: cell-reveal 4s ease 0.0s infinite backwards; }
+.lc-ch2 { animation: cell-reveal 4s ease 0.5s infinite backwards; }
+.lc-ch3 { animation: cell-reveal 4s ease 1.0s infinite backwards; }
+.lc-ch4 { animation: cell-reveal 4s ease 1.5s infinite backwards; }
+.lc-ch5 { animation: cell-reveal 4s ease 2.0s infinite backwards; }
+.lc-ch6 { animation: cell-reveal 4s ease 2.5s infinite backwards; }
+.lc-ch7 { animation: cell-reveal 4s ease 3.0s infinite backwards; }
+.lc-ch8 { animation: cell-reveal 4s ease 3.5s infinite backwards; }
 
-.lc-card:hover .lc-svg-embed .lc-vec-text {
-  opacity: 1;
-}
-
-/* ── dm-dt SVG ───────────────────────────────────────────────────── */
-
-.lc-svg-dmdt .lc-cell-hover {
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.lc-card:hover .lc-svg-dmdt .lc-cell-hover:nth-child(1) { opacity: 1; transition-delay: 0.00s; }
-.lc-card:hover .lc-svg-dmdt .lc-cell-hover:nth-child(2) { opacity: 1; transition-delay: 0.07s; }
-.lc-card:hover .lc-svg-dmdt .lc-cell-hover:nth-child(3) { opacity: 1; transition-delay: 0.14s; }
-.lc-card:hover .lc-svg-dmdt .lc-cell-hover:nth-child(4) { opacity: 1; transition-delay: 0.21s; }
-.lc-card:hover .lc-svg-dmdt .lc-cell-hover:nth-child(5) { opacity: 1; transition-delay: 0.28s; }
-.lc-card:hover .lc-svg-dmdt .lc-cell-hover:nth-child(6) { opacity: 1; transition-delay: 0.35s; }
-.lc-card:hover .lc-svg-dmdt .lc-cell-hover:nth-child(7) { opacity: 1; transition-delay: 0.42s; }
-.lc-card:hover .lc-svg-dmdt .lc-cell-hover:nth-child(8) { opacity: 1; transition-delay: 0.49s; }
-
-/* reduced-motion: no animation, just static */
+/* reduced-motion: disable all animations, show static state */
 @media (prefers-reduced-motion: reduce) {
-  .lc-svg-features .lc-amplitude,
-  .lc-svg-embed .lc-conn,
-  .lc-svg-embed .lc-vec-text,
-  .lc-svg-dmdt .lc-cell-hover {
-    opacity: 1 !important;
-    stroke-dashoffset: 0 !important;
-    transition: none !important;
+  .lc-conn-a, .lc-conn-b {
+    animation: none;
+    opacity: 0.5;
+  }
+  .lc-ch1, .lc-ch2, .lc-ch3, .lc-ch4,
+  .lc-ch5, .lc-ch6, .lc-ch7, .lc-ch8 {
+    animation: none;
   }
 }
 

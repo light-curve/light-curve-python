@@ -22,30 +22,39 @@ pip install 'light-curve[full]'
 <div class="lc-card">
 <div class="lc-card-svg-wrap">
 <svg class="lc-svg-features" viewBox="0 0 240 110" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <polyline points="8,78 22,58 36,82 50,52 64,72 78,38 92,62 106,78 120,46 134,68 148,82 162,54 176,72 190,62 204,76 218,84" stroke="white" stroke-width="1.8" fill="none" opacity="0.85"/>
-  <circle cx="8"   cy="80"  r="2.8" fill="white" opacity="0.9"/>
-  <circle cx="22"  cy="60"  r="2.8" fill="white" opacity="0.9"/>
-  <circle cx="36"  cy="84"  r="2.8" fill="white" opacity="0.9"/>
-  <circle cx="50"  cy="54"  r="2.8" fill="white" opacity="0.9"/>
-  <circle cx="64"  cy="74"  r="2.8" fill="white" opacity="0.9"/>
-  <circle cx="78"  cy="40"  r="2.8" fill="white" opacity="0.9"/>
-  <circle cx="92"  cy="64"  r="2.8" fill="white" opacity="0.9"/>
-  <circle cx="106" cy="80"  r="2.8" fill="white" opacity="0.9"/>
-  <circle cx="120" cy="48"  r="2.8" fill="white" opacity="0.9"/>
-  <circle cx="134" cy="70"  r="2.8" fill="white" opacity="0.9"/>
-  <circle cx="148" cy="84"  r="2.8" fill="white" opacity="0.9"/>
-  <circle cx="162" cy="56"  r="2.8" fill="white" opacity="0.9"/>
-  <circle cx="176" cy="74"  r="2.8" fill="white" opacity="0.9"/>
-  <circle cx="190" cy="64"  r="2.8" fill="white" opacity="0.9"/>
-  <circle cx="204" cy="78"  r="2.8" fill="white" opacity="0.9"/>
-  <circle cx="218" cy="86"  r="2.8" fill="white" opacity="0.9"/>
-  <g class="lc-amplitude">
-    <line x1="232" y1="38" x2="232" y2="88" stroke="#ffcc80" stroke-width="2"/>
-    <line x1="228" y1="38" x2="236" y2="38" stroke="#ffcc80" stroke-width="2"/>
-    <line x1="228" y1="88" x2="236" y2="88" stroke="#ffcc80" stroke-width="2"/>
-    <text x="195" y="68" fill="#ffcc80" font-size="11" font-family="monospace" font-weight="bold">A</text>
-    <line x1="8" y1="75" x2="218" y2="68" stroke="#ffcc80" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.8"/>
-  </g>
+  <!-- Mean line -->
+  <line x1="8" y1="60" x2="178" y2="60" stroke="white" stroke-width="1" stroke-dasharray="4,3" opacity="0.3"/>
+  <!-- Light curve: sinusoidal, line goes exactly through all data points -->
+  <polyline points="8,60 18,74 28,82 38,79 48,68 58,53 68,41 78,38 88,46 98,60 108,74 118,82 128,79 138,68 148,53 158,41 168,38 178,46"
+            stroke="white" stroke-width="1.8" fill="none" opacity="0.9"/>
+  <circle cx="8"   cy="60" r="2.5" fill="white" opacity="0.9"/>
+  <circle cx="18"  cy="74" r="2.5" fill="white" opacity="0.9"/>
+  <circle cx="28"  cy="82" r="2.5" fill="white" opacity="0.9"/>
+  <circle cx="38"  cy="79" r="2.5" fill="white" opacity="0.9"/>
+  <circle cx="48"  cy="68" r="2.5" fill="white" opacity="0.9"/>
+  <circle cx="58"  cy="53" r="2.5" fill="white" opacity="0.9"/>
+  <circle cx="68"  cy="41" r="2.5" fill="white" opacity="0.9"/>
+  <circle cx="78"  cy="38" r="2.5" fill="white" opacity="0.9"/>
+  <circle cx="88"  cy="46" r="2.5" fill="white" opacity="0.9"/>
+  <circle cx="98"  cy="60" r="2.5" fill="white" opacity="0.9"/>
+  <circle cx="108" cy="74" r="2.5" fill="white" opacity="0.9"/>
+  <circle cx="118" cy="82" r="2.5" fill="white" opacity="0.9"/>
+  <circle cx="128" cy="79" r="2.5" fill="white" opacity="0.9"/>
+  <circle cx="138" cy="68" r="2.5" fill="white" opacity="0.9"/>
+  <circle cx="148" cy="53" r="2.5" fill="white" opacity="0.9"/>
+  <circle cx="158" cy="41" r="2.5" fill="white" opacity="0.9"/>
+  <circle cx="168" cy="38" r="2.5" fill="white" opacity="0.9"/>
+  <circle cx="178" cy="46" r="2.5" fill="white" opacity="0.9"/>
+  <!-- Half-amplitude A: vertical bracket from mean (y=60) to peak (y=38) -->
+  <line x1="189" y1="38" x2="189" y2="60" stroke="#ffcc80" stroke-width="1.5"/>
+  <line x1="186" y1="38" x2="192" y2="38" stroke="#ffcc80" stroke-width="1.5"/>
+  <line x1="186" y1="60" x2="192" y2="60" stroke="#ffcc80" stroke-width="1.5"/>
+  <text x="198" y="52" fill="#ffcc80" font-size="10" font-family="monospace" font-weight="bold">A</text>
+  <!-- Period P: horizontal bracket between consecutive bright peaks (peak-to-peak) -->
+  <line x1="78" y1="28" x2="168" y2="28" stroke="#80deea" stroke-width="1.2"/>
+  <line x1="78"  y1="24" x2="78"  y2="32" stroke="#80deea" stroke-width="1.2"/>
+  <line x1="168" y1="24" x2="168" y2="32" stroke="#80deea" stroke-width="1.2"/>
+  <text x="123" y="20" fill="#80deea" font-size="9" font-family="monospace" font-weight="bold" text-anchor="middle">P</text>
 </svg>
 </div>
 <div class="lc-card-body">
@@ -57,26 +66,49 @@ pip install 'light-curve[full]'
 <div class="lc-card">
 <div class="lc-card-svg-wrap">
 <svg class="lc-svg-embed" viewBox="0 0 240 110" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <polyline points="6,75 14,58 22,80 30,50 38,70 46,40 54,62" stroke="white" stroke-width="1.5" fill="none" opacity="0.7"/>
-  <circle cx="68" cy="30"  r="6" fill="white" opacity="0.55"/>
-  <circle cx="68" cy="55"  r="6" fill="white" opacity="0.75"/>
-  <circle cx="68" cy="80"  r="6" fill="white" opacity="0.55"/>
-  <circle cx="120" cy="20"  r="6" fill="white" opacity="0.45"/>
-  <circle cx="120" cy="42"  r="6" fill="white" opacity="0.7"/>
-  <circle cx="120" cy="62"  r="6" fill="white" opacity="0.7"/>
-  <circle cx="120" cy="82"  r="6" fill="white" opacity="0.45"/>
-  <circle cx="120" cy="100" r="6" fill="white" opacity="0.35"/>
-  <circle cx="172" cy="55"  r="8" fill="white" opacity="0.85"/>
-  <line class="lc-conn" x1="74" y1="55" x2="114" y2="42" stroke="white" stroke-width="1.2" opacity="0.5"/>
-  <line class="lc-conn" x1="74" y1="55" x2="114" y2="62" stroke="white" stroke-width="1.2" opacity="0.5"/>
-  <line class="lc-conn" x1="74" y1="30" x2="114" y2="20" stroke="white" stroke-width="1.2" opacity="0.4"/>
-  <line class="lc-conn" x1="74" y1="80" x2="114" y2="82" stroke="white" stroke-width="1.2" opacity="0.4"/>
-  <line class="lc-conn" x1="126" y1="42" x2="164" y2="55" stroke="white" stroke-width="1.2" opacity="0.5"/>
-  <line class="lc-conn" x1="126" y1="62" x2="164" y2="55" stroke="white" stroke-width="1.2" opacity="0.5"/>
-  <text class="lc-vec-text" x="184" y="40" fill="#ffcc80" font-size="9" font-family="monospace">[0.31,</text>
-  <text class="lc-vec-text" x="184" y="53" fill="#ffcc80" font-size="9" font-family="monospace">-1.20,</text>
-  <text class="lc-vec-text" x="184" y="66" fill="#ffcc80" font-size="9" font-family="monospace"> 0.84,</text>
-  <text class="lc-vec-text" x="184" y="79" fill="#ffcc80" font-size="9" font-family="monospace"> ...]</text>
+  <!-- Light curve: irregular shape, line goes through points -->
+  <polyline points="6,55 12,44 18,36 24,45 30,65 36,72 42,60 48,42 52,55"
+            stroke="white" stroke-width="1.5" fill="none" opacity="0.8"/>
+  <circle cx="6"  cy="55" r="2.2" fill="white" opacity="0.85"/>
+  <circle cx="12" cy="44" r="2.2" fill="white" opacity="0.85"/>
+  <circle cx="18" cy="36" r="2.2" fill="white" opacity="0.85"/>
+  <circle cx="24" cy="45" r="2.2" fill="white" opacity="0.85"/>
+  <circle cx="30" cy="65" r="2.2" fill="white" opacity="0.85"/>
+  <circle cx="36" cy="72" r="2.2" fill="white" opacity="0.85"/>
+  <circle cx="42" cy="60" r="2.2" fill="white" opacity="0.85"/>
+  <circle cx="48" cy="42" r="2.2" fill="white" opacity="0.85"/>
+  <circle cx="52" cy="55" r="2.2" fill="white" opacity="0.85"/>
+  <!-- Arrow: LC → network -->
+  <line x1="57" y1="55" x2="66" y2="55" stroke="white" stroke-width="1.1" opacity="0.5"/>
+  <polygon points="66,52 66,58 70,55" fill="white" opacity="0.5"/>
+  <!-- Layer 1: input nodes -->
+  <circle cx="74" cy="28" r="5.5" fill="white" opacity="0.6"/>
+  <circle cx="74" cy="55" r="5.5" fill="white" opacity="0.75"/>
+  <circle cx="74" cy="82" r="5.5" fill="white" opacity="0.6"/>
+  <!-- Connections L1→L2 (looping animation) -->
+  <line class="lc-conn-a" x1="80" y1="28" x2="114" y2="20" stroke="white" stroke-width="1.1"/>
+  <line class="lc-conn-a" x1="80" y1="28" x2="114" y2="44" stroke="white" stroke-width="1.1"/>
+  <line class="lc-conn-a" x1="80" y1="55" x2="114" y2="44" stroke="white" stroke-width="1.1"/>
+  <line class="lc-conn-a" x1="80" y1="55" x2="114" y2="68" stroke="white" stroke-width="1.1"/>
+  <line class="lc-conn-a" x1="80" y1="82" x2="114" y2="68" stroke="white" stroke-width="1.1"/>
+  <line class="lc-conn-a" x1="80" y1="82" x2="114" y2="90" stroke="white" stroke-width="1.1"/>
+  <!-- Layer 2: hidden nodes -->
+  <circle cx="118" cy="20" r="4.5" fill="white" opacity="0.55"/>
+  <circle cx="118" cy="44" r="4.5" fill="white" opacity="0.7"/>
+  <circle cx="118" cy="68" r="4.5" fill="white" opacity="0.7"/>
+  <circle cx="118" cy="90" r="4.5" fill="white" opacity="0.55"/>
+  <!-- Connections L2→output (looping animation, delayed) -->
+  <line class="lc-conn-b" x1="123" y1="20" x2="149" y2="55" stroke="white" stroke-width="1.1"/>
+  <line class="lc-conn-b" x1="123" y1="44" x2="149" y2="55" stroke="white" stroke-width="1.1"/>
+  <line class="lc-conn-b" x1="123" y1="68" x2="149" y2="55" stroke="white" stroke-width="1.1"/>
+  <line class="lc-conn-b" x1="123" y1="90" x2="149" y2="55" stroke="white" stroke-width="1.1"/>
+  <!-- Output node (embedding) -->
+  <circle cx="155" cy="55" r="6.5" fill="white" opacity="0.85"/>
+  <!-- Output vector (always visible) -->
+  <text x="165" y="38" fill="#ffcc80" font-size="9" font-family="monospace">[0.31,</text>
+  <text x="165" y="51" fill="#ffcc80" font-size="9" font-family="monospace">-1.20,</text>
+  <text x="165" y="64" fill="#ffcc80" font-size="9" font-family="monospace"> 0.84,</text>
+  <text x="165" y="77" fill="#ffcc80" font-size="9" font-family="monospace"> ...]</text>
 </svg>
 </div>
 <div class="lc-card-body">
@@ -114,14 +146,14 @@ pip install 'light-curve[full]'
   <rect x="88" y="12" width="18" height="18" fill="white" opacity="0.25" rx="2"/>
   <rect x="108" y="12" width="18" height="18" fill="white" opacity="0.45" rx="2"/>
   <rect x="128" y="12" width="18" height="18" fill="white" opacity="0.30" rx="2"/>
-  <rect class="lc-cell-hover" x="148" y="72" width="18" height="18" fill="white" opacity="0.06" rx="2"/>
-  <rect class="lc-cell-hover" x="168" y="72" width="18" height="18" fill="white" opacity="0.04" rx="2"/>
-  <rect class="lc-cell-hover" x="148" y="52" width="18" height="18" fill="white" opacity="0.08" rx="2"/>
-  <rect class="lc-cell-hover" x="168" y="52" width="18" height="18" fill="white" opacity="0.06" rx="2"/>
-  <rect class="lc-cell-hover" x="148" y="32" width="18" height="18" fill="white" opacity="0.20" rx="2"/>
-  <rect class="lc-cell-hover" x="168" y="32" width="18" height="18" fill="white" opacity="0.35" rx="2"/>
-  <rect class="lc-cell-hover" x="148" y="12" width="18" height="18" fill="white" opacity="0.55" rx="2"/>
-  <rect class="lc-cell-hover" x="168" y="12" width="18" height="18" fill="white" opacity="0.70" rx="2"/>
+  <rect class="lc-ch1" x="148" y="72" width="18" height="18" fill="white" opacity="0.10" rx="2"/>
+  <rect class="lc-ch2" x="168" y="72" width="18" height="18" fill="white" opacity="0.08" rx="2"/>
+  <rect class="lc-ch3" x="148" y="52" width="18" height="18" fill="white" opacity="0.18" rx="2"/>
+  <rect class="lc-ch4" x="168" y="52" width="18" height="18" fill="white" opacity="0.14" rx="2"/>
+  <rect class="lc-ch5" x="148" y="32" width="18" height="18" fill="white" opacity="0.35" rx="2"/>
+  <rect class="lc-ch6" x="168" y="32" width="18" height="18" fill="white" opacity="0.50" rx="2"/>
+  <rect class="lc-ch7" x="148" y="12" width="18" height="18" fill="white" opacity="0.55" rx="2"/>
+  <rect class="lc-ch8" x="168" y="12" width="18" height="18" fill="white" opacity="0.70" rx="2"/>
 </svg>
 </div>
 <div class="lc-card-body">
