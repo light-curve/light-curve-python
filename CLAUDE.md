@@ -92,3 +92,46 @@ propagation, and prefer owned types only when necessary (borrow when possible).
 3. Optionally add experimental Python version in `light_curve_py/`
 4. Add tests in `tests/`, benchmarks in `tests/test_w_bench.py`
 5. Update README.md feature table and CHANGELOG.md
+
+## Documentation
+
+Docs live on the `documentation` branch (not `main`). The site is built with
+**MkDocs + Material for MkDocs** and deployed to https://light-curve.snad.space/.
+
+### Structure
+
+```
+docs/           — MkDocs source (Markdown + notebooks)
+mkdocs.yml      — MkDocs config (nav, plugins, theme)
+```
+
+Key plugins: `mkdocstrings` (auto API docs from installed package), `mkdocs-jupyter`
+(renders `.ipynb` notebooks as pages, executed at build time).
+
+### Local dev server
+
+```bash
+# From repo root, on the documentation branch:
+python -m venv .venv && source .venv/bin/activate
+pip install maturin
+cd light-curve && maturin develop --extras=full --group=docs -q && cd ..
+mkdocs serve          # live-reload at http://127.0.0.1:8000
+```
+
+Python-only doc changes need no Rust rebuild; re-run `maturin develop` only after Rust changes.
+
+### Deploy
+
+Pushing to `documentation` triggers `.github/workflows/docs.yml`, which runs
+`mkdocs gh-deploy --force` (pushes built site to `gh-pages` branch → GitHub Pages).
+
+### PR checks
+
+`test.yml` runs `mkdocs build --strict` on all PRs (skipped when head branch is
+`documentation` itself) to catch broken links and missing references.
+
+### Adding new features to docs
+
+- Feature table: `docs/features/index.md` (manually maintained, grouped by category)
+- API pages: `docs/features/api/<category>.md` — add `::: light_curve.FeatureName`
+- Multiband features: `docs/features/multiband/api.md`
