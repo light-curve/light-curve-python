@@ -67,45 +67,9 @@ conda install -c conda-forge light-curve-python
 The `full` extra installs optional Python dependencies required by some features
 (`iminuit`, `scipy`).
 
-Binary wheels are available on [PyPI](https://pypi.org/project/light-curve/) and
-[Anaconda](https://anaconda.org/conda-forge/light-curve-python) for common platforms:
-
-| Arch \ OS   | Linux glibc 2.17+ | Linux musl 1.2+                | macOS                 | Windows                     |
-|-------------|-------------------|--------------------------------|-----------------------|-----------------------------|
-| **x86-64**  | PyPI (MKL), conda | PyPI (MKL)                     | PyPI macOS 15+, conda | PyPI, conda (conda: no GSL) |
-| **i686**    | src               | src                            | —                     | not tested                  |
-| **aarch64** | PyPI              | PyPI                           | PyPI macOS 14+, conda | not tested                  |
-| **ppc64le** | src               | not tested (no Rust toolchain) | —                     | —                           |
-
-- **PyPI / conda**: A binary wheel or package is available on pypi.org or anaconda.org.
-  Local building is not required; the only prerequisite is a recent version of `pip` or `conda`.
-  For Linux x86-64, PyPI wheels are built with Intel MKL for improved periodogram performance,
-  which is not the default build option.
-  For Windows x86-64, the conda package excludes GSL support (LMSDER fitting unavailable);
-  PyPI wheels include both Ceres and GSL.
-- **src**: The package has been confirmed to build and pass unit tests locally,
-  but CI does not test or publish packages for this platform.
-  See the [Build from source](#build-from-source) section for details.
-  Please open an issue or pull request if you encounter build problems or would like us to distribute
-  packages for these platforms.
-- **not tested**: Building from source has not been tested.
-  Please report build status via issue, PR, or email.
-
-macOS wheels require relatively recent OS versions; please open an issue if you need support for older macOS
-versions (see https://github.com/light-curve/light-curve-python/issues/376 for details).
-
-We no longer publish PyPy wheels ([#345](https://github.com/light-curve/light-curve-python/issues/345))
-or the PPC64le CPython glibc wheel ([#479](https://github.com/light-curve/light-curve-python/issues/479));
-please open an issue if you need either.
-
-Free-threaded Python is supported when built from source for Python 3.14+
-([officially supported in Python 3.14+](https://docs.python.org/3.14/whatsnew/3.14.html#whatsnew314-pep779)).
-No pre-built distributions are currently provided; please comment on the relevant issues if you need them:
-[PyPI binary wheel issue](https://github.com/light-curve/light-curve-python/issues/500),
-[conda-forge package issue](https://github.com/conda-forge/light-curve-python-feedstock/issues/11).
-Note that for expensive features, the GIL-enabled interpreter with `.many()` achieves performance on par with
-the free-threaded interpreter using Python threads. For inexpensive extractors, `.many()` still reduces
-Rust–Python interaction overhead significantly.
+Binary wheels are available for Linux (x86-64, aarch64), macOS, and Windows.
+For the full platform support table and build-from-source instructions, see the
+[Installation docs](https://light-curve.snad.space/installation/).
 
 ## Developer guide
 
@@ -147,26 +111,6 @@ python -mpytest
 ```
 
 Benchmarks are disabled by default; enable them with `--benchmark-enable`.
-
-### Build from source
-
-The package supports several Cargo features controlling optional C/C++ dependencies:
-
-| Feature | Default | Description |
-|---------|---------|-------------|
-| `abi3` | yes | Stable CPython ABI3 — disable for PyPy or free-threading |
-| `ceres-source` | yes | Build Ceres optimizer from source (requires C++ and CMake) |
-| `ceres-system` | no | Link against system Ceres instead |
-| `mkl` | no | Intel MKL backend for the fast periodogram (recommended for Intel CPUs) |
-| `gsl` | yes | GNU Scientific Library support (requires GSL ≥ 2.5) |
-| `mimalloc` | yes | mimalloc allocator (up to 2× faster for cheap features) |
-
-Minimal build (no system C/C++ dependencies):
-
-```bash
-python -mpip install maturin
-maturin build --release --locked --no-default-features --features=abi3,mimalloc
-```
 
 ## Citation
 
