@@ -1,0 +1,20 @@
+{% extends "_base/class.html.jinja" %}
+
+{% block bases scoped %}
+  {% if config.show_bases and class.bases %}
+    <p class="doc doc-class-bases">
+      Bases: {% for expression in class.bases -%}
+        <code>
+          {%- if expression is string -%}
+            {%- set parts = expression.split('.') -%}
+            <autoref identifier="{{ expression }}" optional>{{ parts[-1] }}</autoref>
+          {%- else -%}
+            {%- with backlink_type = "subclassed-by" -%}
+              {%- include "expression.html.jinja" with context -%}
+            {%- endwith -%}
+          {%- endif -%}
+        </code>{% if not loop.last %}, {% endif %}
+      {% endfor -%}
+    </p>
+  {% endif %}
+{% endblock bases %}
