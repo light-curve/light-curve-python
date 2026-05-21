@@ -45,7 +45,7 @@ jobs:
             "onnxruntime<2" huggingface-hub
 
       - name: Deploy preview
-        run: mike deploy --push --no-redirect "pr-${{ github.event.number }}"
+        run: mike deploy --push "pr-${{ github.event.number }}"
 
       - name: Post preview link
         uses: actions/github-script@v7

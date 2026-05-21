@@ -6,20 +6,16 @@ anomaly detection, and similarity search.
 
 ## Requirements
 
-Inference uses [ONNX Runtime](https://onnxruntime.ai), which you install separately
-because the right variant depends on your hardware:
+Install `light-curve` together with its ML embedding dependencies so all versions
+resolve jointly:
 
 ```sh
-pip install onnxruntime          # CPU
-pip install onnxruntime-gpu      # NVIDIA GPU
+pip install 'light-curve[full]' onnxruntime huggingface_hub   # CPU
+pip install 'light-curve[full]' onnxruntime-gpu huggingface_hub  # NVIDIA GPU
 ```
 
-Models are hosted on [HuggingFace Hub](https://huggingface.co/light-curve) and downloaded
-automatically by `from_hf()`. To enable automatic downloads:
-
-```sh
-pip install huggingface_hub
-```
+`onnxruntime` is intentionally not bundled in the `light-curve[full]` extra — pick
+the variant that matches your hardware. See the [onnxruntime install guide](https://onnxruntime.ai/docs/install/) for other providers.
 
 If you already have the ONNX model file locally, `huggingface_hub` is not required.
 
@@ -27,10 +23,9 @@ If you already have the ONNX model file locally, `huggingface_hub` is not requir
 
 | Model | Bands | Input | Embedding dim | Pretrained on |
 |-------|-------|-------|---------------|---------------|
-| `Astromer2` | single (or per-band) | time, mag | 256 | MACHO |
+| `Astromer1` | single | time, mag | 256 | MACHO R-band |
+| `Astromer2` | single (or per-band) | time, mag | 256 | MACHO (1.5 M light curves) |
 | `ATCAT` | 6 (ugrizY jointly) | time, flux, flux\_err, band index | 384 | ELAsTiCC |
-
-`Astromer1` is also available as a legacy model.
 
 ## Single-band: Astromer2
 
