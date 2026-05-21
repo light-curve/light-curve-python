@@ -3,17 +3,12 @@ name: Publish Python packages
 on:
   push:
     tags:
-    branches-ignore:
-      - documentation
   pull_request:
-    branches-ignore:
-      - documentation
   repository_dispatch:
   workflow_dispatch:
 
 jobs:
   check-version:
-    if: github.head_ref != 'documentation'
     name: Check the tag corresponds to the crate version
     runs-on: ubuntu-slim
 

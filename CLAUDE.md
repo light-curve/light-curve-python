@@ -95,7 +95,7 @@ propagation, and prefer owned types only when necessary (borrow when possible).
 
 ## Documentation
 
-Docs live on the `documentation` branch (not `main`). The site is built with
+Docs live in `docs/` on the `main` branch. The site is built with
 **MkDocs + Material for MkDocs** and deployed to https://light-curve.snad.space/.
 
 ### Structure
@@ -111,7 +111,6 @@ Key plugins: `mkdocstrings` (auto API docs from installed package), `mkdocs-jupy
 ### Local dev server
 
 ```bash
-# From repo root, on the documentation branch:
 python -m venv .venv && source .venv/bin/activate
 pip install maturin
 cd light-curve && maturin develop --extras=full --group=docs -q && cd ..
@@ -122,13 +121,12 @@ Python-only doc changes need no Rust rebuild; re-run `maturin develop` only afte
 
 ### Deploy
 
-Pushing to `documentation` triggers `.github/workflows/docs.yml`, which runs
-`mkdocs gh-deploy --force` (pushes built site to `gh-pages` branch → GitHub Pages).
+Pushing to `main` triggers `.github/workflows/docs.yml`, which deploys the `dev` version
+to https://light-curve.snad.space/dev/. Pushing a `v*` tag deploys the `latest` version.
 
 ### PR checks
 
-`test.yml` runs `mkdocs build --strict` on all PRs (skipped when head branch is
-`documentation` itself) to catch broken links and missing references.
+`test.yml` runs `mkdocs build --strict` on all PRs to catch broken links and missing references.
 
 ### Adding new features to docs
 

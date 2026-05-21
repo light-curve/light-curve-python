@@ -2,16 +2,11 @@ name: Test
 
 on:
   push:
-    branches-ignore:
-      - documentation
   pull_request:
-    branches-ignore:
-      - documentation
   workflow_dispatch:
 
 jobs:
   py_build_deps:
-    if: github.head_ref != 'documentation'
     outputs:
       output: ${{ steps.extract_from_toml.outputs.output }}
 
@@ -36,7 +31,6 @@ jobs:
 
 
   test:
-    if: github.head_ref != 'documentation'
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -80,7 +74,6 @@ jobs:
         run: tox -e py3${{ matrix.python_minor }}-base,py3${{ matrix.python_minor }}-test
 
   cargo-fmt:
-    if: github.head_ref != 'documentation'
     runs-on: ubuntu-slim
 
     steps:
@@ -93,7 +86,6 @@ jobs:
       - run: cargo fmt --manifest-path=light-curve/Cargo.toml -- --check
 
   cargo-clippy:
-    if: github.head_ref != 'documentation'
     runs-on: ubuntu-latest
 
     steps:
@@ -235,7 +227,6 @@ jobs:
           maturin build -i python3.14t
 
   docs-build:
-    if: github.head_ref != 'documentation'
     runs-on: ubuntu-latest
 
     steps:
