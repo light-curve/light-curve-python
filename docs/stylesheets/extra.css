@@ -211,6 +211,8 @@
 .md-sidebar--primary .md-nav__link[aria-current="page"] {
   color: var(--md-default-fg-color) !important;
   text-decoration: none !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
 }
 
 /* Left sidebar — not clickable on desktop only (on mobile, allows navigating to section index) */
