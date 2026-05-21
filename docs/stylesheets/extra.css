@@ -196,13 +196,27 @@
   .lc-dmdt-s1, .lc-dmdt-s2, .lc-dmdt-s3 { opacity: 0.9 !important; animation: none; }
 }
 
-/* ── Navigation links: underline for clarity ─────────────────────── */
+/* ── Navigation links: underline non-active links, none on selected ── */
 
-.md-nav__link,
-.md-tabs__link {
+/* Sidebar + TOC: thin underline on non-active links */
+.md-nav__link:not(.md-nav__link--active) {
   text-decoration: underline;
   text-underline-offset: 2px;
-  text-decoration-thickness: 1px;
+  text-decoration-thickness: from-font;
+}
+
+/* Top tabs: link color + thin underline on non-active items */
+.md-tabs__link:not(.md-tabs__link--active) {
+  color: var(--md-typeset-a-color);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: from-font;
+}
+
+/* Active/selected: no underline */
+.md-nav__link--active,
+.md-tabs__link--active {
+  text-decoration: none;
 }
 
 /* ── Notebooks: hide cell count badges ───────────────────────────── */
