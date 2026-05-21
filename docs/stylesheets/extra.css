@@ -198,37 +198,46 @@
 
 /* ── Navigation links ──────────────────────────────────────────────── */
 
-/* Left sidebar — non-active: blue + underline */
-.md-sidebar--primary .md-nav__link:not(.md-nav__link--active) {
+/* Left sidebar — non-active links: blue + underline */
+.md-sidebar--primary .md-nav__link:not(.md-nav__link--active):not([aria-current="page"]) {
   color: var(--md-typeset-a-color) !important;
   text-decoration: underline;
   text-underline-offset: 2px;
   text-decoration-thickness: from-font;
 }
 
-/* Left sidebar — active: default text (black), no underline, not clickable */
-.md-sidebar--primary .md-nav__link--active {
+/* Left sidebar — active (both class and aria-current for robustness): black, no underline */
+.md-sidebar--primary .md-nav__link--active,
+.md-sidebar--primary .md-nav__link[aria-current="page"] {
   color: var(--md-default-fg-color) !important;
   text-decoration: none !important;
-  pointer-events: none;
-  cursor: default;
+}
+
+/* Left sidebar — not clickable on desktop only (on mobile, allows navigating to section index) */
+@media screen and (min-width: 76.25em) {
+  .md-sidebar--primary .md-nav__link--active,
+  .md-sidebar--primary .md-nav__link[aria-current="page"] {
+    pointer-events: none;
+    cursor: default;
+  }
 }
 
 /* Right TOC — non-active: underline */
-.md-sidebar--secondary .md-nav__link:not(.md-nav__link--active) {
+.md-sidebar--secondary .md-nav__link:not(.md-nav__link--active):not([aria-current="page"]) {
   text-decoration: underline;
   text-underline-offset: 2px;
   text-decoration-thickness: from-font;
 }
 
 /* Right TOC — active: default text (not blue), no underline */
-.md-sidebar--secondary .md-nav__link--active {
+.md-sidebar--secondary .md-nav__link--active,
+.md-sidebar--secondary .md-nav__link[aria-current="page"] {
   color: var(--md-default-fg-color) !important;
   text-decoration: none;
 }
 
-/* Top tabs — non-active: blue, full opacity (removes Material's fade), same weight, underline */
-.md-tabs__link:not(.md-tabs__link--active) {
+/* Top tabs — non-active: blue, no opacity fade, bold, underline */
+.md-tabs__item:not(.md-tabs__item--active) .md-tabs__link {
   color: var(--md-typeset-a-color) !important;
   opacity: 1 !important;
   font-weight: 700;
@@ -237,8 +246,8 @@
   text-decoration-thickness: from-font;
 }
 
-/* Top tabs — active: default text (black), full opacity, no underline, not clickable */
-.md-tabs__link--active {
+/* Top tabs — active: black, no underline, not clickable */
+.md-tabs__item--active .md-tabs__link {
   color: var(--md-default-fg-color) !important;
   opacity: 1 !important;
   font-weight: 700;
