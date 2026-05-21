@@ -59,6 +59,7 @@ See the [API reference](api/statistical.md) for full signatures, parameters, and
 |---------|-------------|---------|
 | [`Eta`](api/variability.md#light_curve.Eta) | Von Neumann \(\eta\) | 1 |
 | [`EtaE`](api/variability.md#light_curve.EtaE) | \(\eta^e\), adapted for unevenly sampled time series | 1 |
+| [`LaflerKinmanStringLength`](api/variability.md#light_curve.LaflerKinmanStringLength) | Lafler–Kinman string-length smoothness statistic | 1 |
 | [`LinearFit`](api/variability.md#light_curve.LinearFit) | Slope, its error, and reduced \(\chi^2\) of the weighted linear fit | 3 |
 | [`LinearTrend`](api/variability.md#light_curve.LinearTrend) | Slope, its error, and noise level of the unweighted linear fit | 3 |
 | [`MaximumSlope`](api/variability.md#light_curve.MaximumSlope) | Maximum slope between consecutive observations | 1 |
@@ -78,7 +79,6 @@ See the [API reference](api/statistical.md) for full signatures, parameters, and
 
 | Feature | Description | Outputs |
 |---------|-------------|---------|
-| [`LaflerKinmanStringLength`](api/periodogram.md#light_curve.LaflerKinmanStringLength) | Lafler–Kinman string-length smoothness statistic for a phase-folded light curve | 1 |
 | [`Periodogram`](api/periodogram.md#light_curve.Periodogram) | Lomb–Scargle periodogram: period and power of the strongest peaks; supports `phase_features` to extract features from the phase-folded light curve at the best period | ≥2 |
 
 ### Parametric fits (transients, flux only)
