@@ -135,3 +135,9 @@ Pushing to `documentation` triggers `.github/workflows/docs.yml`, which runs
 - Feature table: `docs/features/index.md` (manually maintained, grouped by category)
 - API pages: `docs/features/api/<category>.md` — add `::: light_curve.FeatureName`
 - Multiband features: `docs/features/multiband/api.md`
+
+### Code block style
+
+Every code block in the docs must be **self-contained**: include all imports and any
+variable definitions needed to run it in isolation. Do not rely on variables defined in
+a preceding block on the same page.

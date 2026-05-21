@@ -213,6 +213,13 @@ print(dict(zip(ext.names, result)))
 Use `.many()` for batch processing of many light curves with reduced Python–Rust overhead:
 
 ```python
-light_curves = [(t1, m1, err1), (t2, m2, err2), ...]
-amplitudes = licu.Amplitude().many(light_curves)   # shape (N,)
+import light_curve as licu
+import numpy as np
+
+rng = np.random.default_rng(0)
+light_curves = [
+    (np.sort(rng.uniform(0, 100, 100)), rng.normal(15.0, 0.2, 100), np.full(100, 0.1))
+    for _ in range(1000)
+]
+amplitudes = licu.Amplitude().many(light_curves)   # shape (1000,)
 ```
