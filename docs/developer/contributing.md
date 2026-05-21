@@ -100,19 +100,37 @@ This means every extractor has a Python fallback, but the Rust version takes pre
 5. Add benchmarks in `tests/test_w_bench.py`.
 6. Update `CHANGELOG.md`.
 
-## Free-threaded Python
+## Updating the documentation
 
-Free-threaded CPython (PEP 703, available from Python 3.13t / 3.14t) is supported when
-built from source. The standard `maturin develop` builds work, but use
-`--group dev-free-threading` instead of `--group dev` to avoid packages that don't yet
-support free threading (iminuit, polars, cesium).
+Docs live on the `documentation` branch. After switching to it:
 
-Pre-built free-threaded wheels are not yet published — track progress at
-[#500](https://github.com/light-curve/light-curve-python/issues/500).
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install maturin
+cd light-curve && maturin develop --extras=full --group=docs -q && cd ..
+mkdocs serve   # live preview at http://127.0.0.1:8000
+```
+
+**When adding a new feature extractor**, update the docs on the `documentation` branch:
+
+1. **Feature table** — `docs/features/index.md`: add a row to the appropriate category table (manually maintained).
+2. **API page** — `docs/features/api/<category>.md`: add a `:::` autodoc entry:
+   ```markdown
+   ::: light_curve.NewFeatureName
+       options:
+         heading_level: 3
+   ```
+3. Commit and push to `documentation`; CI deploys automatically to the `dev` version of the site.
+
+The API reference prose (parameter descriptions, equations) is read from the Python
+docstrings, so updating those in the source is enough — no manual copy-paste needed.
 
 ## Publishing a release
 
-1. Update `CHANGELOG.md` with the new version and date.
-2. Update the version in `Cargo.toml` (the Python package version is read from there).
-3. Create and push a git tag: `git tag vX.Y.Z && git push origin vX.Y.Z`.
-4. CI (`publish.yml`) will build wheels via cibuildwheel and upload to PyPI.
+1. Create a `release-vX.Y.Z` branch from `main`.
+2. Update `CHANGELOG.md` with the new version and date.
+3. Update the version in `Cargo.toml` (the Python package version is read from there).
+4. Commit, push the branch, and merge it into `main` via a PR.
+5. Tag the merge commit and push: `git tag vX.Y.Z && git push origin vX.Y.Z`.
+6. CI (`publish.yml`) builds wheels via cibuildwheel and uploads to PyPI.
+7. Once the release appears on PyPI, create a GitHub release from the tag (copy the relevant `CHANGELOG.md` section as the release notes).
