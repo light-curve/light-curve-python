@@ -62,5 +62,5 @@ jobs:
         if: github.ref_type == 'tag'
         run: |
           source .venv/bin/activate
-          mike deploy --push --update-aliases "$GITHUB_REF_NAME" latest
+          mike deploy --push --update-aliases latest
           mike set-default --push latest
