@@ -65,7 +65,7 @@ archivePrefix = {arXiv},
 }
 ```
 
-### Plateau detection
+### OtsuSplit
 
 [Lavrukhina et al. 2023b](https://ui.adsabs.harvard.edu/abs/2023RNAAS...7..199L/abstract) —
 *Automatic Detection of Plateau Phases in Light Curves of Variable Stars*, RNAAS, 7, 199
@@ -91,7 +91,7 @@ archivePrefix = {arXiv},
 }
 ```
 
-### Multiband rainbow model
+### RainbowFit
 
 [Russeil et al. 2024](https://ui.adsabs.harvard.edu/abs/2024A%26A...683A.251R/abstract) —
 *RAINBOW: A Colorful Approach to Multipassband Light-Curve Estimation*, A&A, 683, A251
