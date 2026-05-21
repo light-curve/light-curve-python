@@ -85,18 +85,22 @@ archivePrefix = {arXiv},
 
 ### Multiband rainbow model
 
-[Russeil et al. 2023](https://ui.adsabs.harvard.edu/abs/2023arXiv231002916R/abstract) —
-*Rainbow: A Colorful Approach on Multi-passband Light Curve Estimation*
+[Russeil et al. 2024](https://ui.adsabs.harvard.edu/abs/2024A%26A...683A.251R/abstract) —
+*Rainbow: A Colorful Approach on Multi-passband Light Curve Estimation*, A&A, 683, A251
 
 ```bibtex
-@MISC{2023arXiv231002916R,
+@ARTICLE{2024A&A...683A.251R,
        author = {{Russeil}, E. and {Malanchev}, K.~L. and {Aleo}, P.~D. and {Ishida}, E.~E.~O. and {Pruzhinskaya}, M.~V. and {Gangler}, E. and {Lavrukhina}, A.~D. and {Volnova}, A.~A. and {Voloshina}, A. and {Semenikhin}, T. and {Sreejith}, S. and {Kornilov}, M.~V. and {Korolev}, V.~S.},
         title = "{Rainbow: A Colorful Approach on Multi-passband Light Curve Estimation}",
-         year = 2023,
+      journal = {\aap},
+         year = 2024,
+       volume = {683},
+          eid = {A251},
+        pages = {A251},
 archivePrefix = {arXiv},
        eprint = {2310.02916},
  primaryClass = {astro-ph.IM},
-       adsurl = {https://ui.adsabs.harvard.edu/abs/2023arXiv231002916R},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2024A%26A...683A.251R},
       adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
 ```
