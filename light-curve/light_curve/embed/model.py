@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from collections import Counter
 from enum import IntEnum
 from numbers import Number
-from typing import TYPE_CHECKING, Mapping, Sequence
+from typing import TYPE_CHECKING, Collection, Mapping, Sequence
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -247,20 +247,34 @@ class ImplicitMultiBandModel(EmbeddingSession, ABC):
     with band identity encoded implicitly by the subclass.
 
     Unlike :class:`ExplicitMultiBandModel`, band labels are not mapped to integer
-    indices; the subclass encodes band identity in its own way (e.g. effective
-    wavelength, positional slot).
+    indices; the subclass encodes band identity in its own way (e.g. as effective
+    wavelength or positional slot in a fixed sequence layout).
 
-    Subclasses must define :attr:`band_labels` and call ``super().__call__(...)``
-    at the top of their :meth:`__call__` implementation to trigger band validation.
+    ``band_groups`` controls how the input is split across independent model runs:
+
+    * ``None`` (default) — all observations are fed to the model as one group;
+      output has ``n_band_groups = 1``.
+    * A list of label collections — the model runs once per group using only
+      the observations whose band label appears in that group's collection;
+      output has ``n_band_groups = len(band_groups)``.
+
+    Subclasses must define :attr:`band_labels` (the full set of band labels the
+    model recognises) and implement :meth:`preprocess_lc` and
+    :meth:`predict_tensors`.  :meth:`predict_tensors` must return an array of
+    shape ``(n_subsamples, seq_size, embed_dim)`` — the ``n_band_groups`` axis is
+    added by this class.
 
     Parameters
     ----------
     session :
         ONNX inference session.
+    band_groups : list of collections of str, optional
+        Each element is the set of band labels to include in one independent
+        model run.  ``None`` runs the model once on all observations.
     allow_extra_bands : bool, optional
         If ``False`` (default), :meth:`__call__` raises :exc:`ValueError` when
         the input contains labels absent from :attr:`band_labels`.  Set to
-        ``True`` to silently pass unrecognised observations to the subclass.
+        ``True`` to silently ignore unrecognised observations.
     """
 
     band_labels: frozenset[str]
@@ -269,9 +283,11 @@ class ImplicitMultiBandModel(EmbeddingSession, ABC):
         self,
         session: ort.InferenceSession,
         *,
+        band_groups: Sequence[Collection[str]] | None = None,
         allow_extra_bands: bool = False,
     ) -> None:
         super().__init__(session, reduction=Beginning())
+        self.band_groups = band_groups
         self.allow_extra_bands = allow_extra_bands
 
     def _validate_bands(self, band: ArrayLike) -> None:
@@ -281,7 +297,6 @@ class ImplicitMultiBandModel(EmbeddingSession, ABC):
         if unknown:
             raise ValueError(f"band contains labels not in {sorted(self.band_labels)}: {sorted(unknown)}")
 
-    @abstractmethod
     def __call__(
         self,
         time: ArrayLike,
@@ -305,10 +320,25 @@ class ImplicitMultiBandModel(EmbeddingSession, ABC):
 
         Returns
         -------
-        np.ndarray
-            Embedding array with shape ``(1, 1, 1, embed_dim)``.
+        np.ndarray, shape ``(n_band_groups, n_subsamples, seq_size, embed_dim)``
+            ``n_band_groups`` is 1 when ``band_groups`` is ``None``.
         """
         self._validate_bands(band)
+        time = np.asarray(time, dtype=np.float64)
+        mag = np.asarray(mag, dtype=np.float32)
+        magerr = np.asarray(magerr, dtype=np.float32)
+        band = np.asarray(band)
+
+        if self.band_groups is None:
+            embed = self.predict_tensors(self.preprocess_lc(time, mag, magerr, band))
+            return np.expand_dims(embed, axis=Dim.BAND)
+
+        embeddings = []
+        for group in self.band_groups:
+            mask = np.isin(band, list(group))
+            embed = self.predict_tensors(self.preprocess_lc(time[mask], mag[mask], magerr[mask], band[mask]))
+            embeddings.append(np.expand_dims(embed, axis=Dim.BAND))
+        return np.concatenate(embeddings, axis=Dim.BAND)
 
 
 class ExplicitMultiBandModel(EmbeddingSession, ABC):

@@ -128,36 +128,6 @@ class AstraCLR(ImplicitMultiBandModel):
         """
         return super().from_hf(cls.hf_filename, ort_session_kwargs=ort_session_kwargs)
 
-    def __call__(
-        self,
-        time: ArrayLike,
-        mag: ArrayLike,
-        magerr: ArrayLike,
-        band: ArrayLike,
-    ) -> np.ndarray:
-        """Embed a ZTF (g, r, i) light curve.
-
-        Parameters
-        ----------
-        time : array-like, shape ``(n,)``
-            Observation times in MJD.
-        mag : array-like, shape ``(n,)``
-            Magnitudes.
-        magerr : array-like, shape ``(n,)``
-            Magnitude uncertainties (must be > 0 for inverse-variance weighting).
-        band : array-like, shape ``(n,)``
-            Band labels — must be ``"g"``, ``"r"``, or ``"i"``.
-
-        Returns
-        -------
-        np.ndarray, shape ``(1, 1, 1, 512)``
-            512-dimensional embedding in the standard
-            ``(n_bands, n_subsamples, seq_size, embed_dim)`` layout.
-        """
-        super().__call__(time, mag, magerr, band)
-        inputs = self.preprocess_lc(time, mag, magerr, band)
-        return self.predict_tensors(inputs)
-
     def preprocess_lc(
         self,
         time: ArrayLike,
@@ -238,4 +208,4 @@ class AstraCLR(ImplicitMultiBandModel):
             Embedding in ``(n_bands, n_subsamples, seq_size, embed_dim)`` layout.
         """
         (embedding,) = self.session.run(["mean"], tensors.asdict())
-        return embedding.reshape(1, 1, 1, -1)
+        return embedding.reshape(1, 1, -1)
