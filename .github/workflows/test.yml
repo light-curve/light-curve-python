@@ -35,17 +35,7 @@ jobs:
 
 
   test:
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      fail-fast: false
-      matrix:
-        python_minor: [ '10', '11', '12', '14', '14t' ]
-        os: [ ubuntu-latest ]
-        # Just a single ARM worker to be sure that it works
-        include:
-          - python_minor: '13'
-            os: ubuntu-24.04-arm
+    runs-on: ubuntu-latest
 
     defaults:
       run:
@@ -59,14 +49,31 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-      - name: Set up Python 3.${{ matrix.python_minor }}
+      - name: Set up Python 3.10
         uses: actions/setup-python@v6
         with:
-          python-version: "3.${{ matrix.python_minor }}"
+          python-version: "3.10"
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+          allow-prereleases: true
+      - name: Set up Python 3.14t
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14t"
           allow-prereleases: true
       - uses: Swatinem/rust-cache@v2
         with:
-          shared-key: "${{ runner.os }}_stable-rust_tox-py3${{ matrix.python_minor }}"
+          shared-key: "${{ runner.os }}_stable-rust_tox-x86_64"
           workspaces: "light-curve"
       - name: Install tox
         run: pip install tox
@@ -75,7 +82,39 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgsl-dev
       - name: Run Python tests
-        run: tox -e py3${{ matrix.python_minor }}-base,py3${{ matrix.python_minor }}-test
+        run: tox -e py310-base,py310-test,py311-base,py311-test,py312-base,py312-test,py314-base,py314-test,py314t-base,py314t-test
+
+  test-arm:
+    runs-on: ubuntu-24.04-arm
+
+    defaults:
+      run:
+        working-directory: light-curve
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "${{ runner.os }}_stable-rust_tox-py313"
+          workspaces: "light-curve"
+      - name: Install tox
+        run: pip install tox
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgsl-dev
+      - name: Run Python tests
+        run: tox -e py313-base,py313-test
 
   cargo-fmt:
     runs-on: ubuntu-slim
