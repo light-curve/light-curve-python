@@ -12,13 +12,7 @@ from light_curve.embed.model import ImplicitMultiBandModel
 if TYPE_CHECKING:
     from typing import Self
 
-    import onnxruntime as ort
 
-# ── Preprocessing constants (from astra-infer) ───────────────────────────────
-
-_BANDS = ["g", "r", "i"]
-_SEQ_PER_BAND = {"g": 300, "r": 350, "i": 50}
-_SEQ_LEN = 700  # 300 + 350 + 50
 _MJD_OFFSET = 58_000.0
 _LG_EFF_WAVE = {
     "g": np.log10(4746.48),
@@ -86,14 +80,10 @@ class AstraCLR(ImplicitMultiBandModel):
     https://github.com/TorshaMajumder/astra
     """
 
-    seq_size: int = _SEQ_LEN
+    seq_per_band: list[tuple[str, int]] = [("g", 300), ("r", 350), ("i", 50)]
     hf_repo: str = "light-curve/astra-clr"
     hf_filename: str = "astra_clr.onnx"
     model_outputs: frozenset[str] = frozenset({"mean"})
-    band_labels: frozenset[str] = frozenset(_BANDS)
-
-    def __init__(self, session: ort.InferenceSession) -> None:
-        super().__init__(session)
 
     @classmethod
     def from_hf(
@@ -162,36 +152,29 @@ class AstraCLR(ImplicitMultiBandModel):
         magerr = np.asarray(magerr, dtype=np.float32)
         band = np.asarray(band)
 
-        order = np.argsort(time)
-        time, mag, magerr, band = time[order], mag[order], magerr[order], band[order]
+        norm_mag = np.zeros(self.seq_len, dtype=np.float32)
+        norm_time = np.zeros(self.seq_len, dtype=np.float32)
+        band_info_arr = np.zeros(self.seq_len, dtype=np.float32)
+        mask = np.ones(self.seq_len, dtype=np.float32)  # 1 = padded, 0 = real
+        bool_mask = np.zeros(self.seq_len, dtype=bool)
 
-        norm_mag = np.zeros(_SEQ_LEN, dtype=np.float32)
-        norm_time = np.zeros(_SEQ_LEN, dtype=np.float32)
-        band_info_arr = np.zeros(_SEQ_LEN, dtype=np.float32)
-        mask = np.ones(_SEQ_LEN, dtype=np.float32)  # 1 = padded, 0 = real
-        bool_mask = np.zeros(_SEQ_LEN, dtype=bool)
-
-        offset = 0
-        for b in _BANDS:
-            n = _SEQ_PER_BAND[b]
-            idx = np.where(band == b)[0][:n]
-            n_real = len(idx)
+        for b, _n, offset, t_slot, m_slot, e_slot in self._iterate_band_slots(time, mag, magerr, band):
+            n_real = len(t_slot)
             if n_real > 0:
-                weights = magerr[idx] ** -2
-                weighted_mean = np.average(mag[idx], weights=weights)
-                norm_mag[offset : offset + n_real] = mag[idx] - weighted_mean
-                norm_time[offset : offset + n_real] = time[idx] - _MJD_OFFSET
+                weights = e_slot**-2
+                weighted_mean = np.average(m_slot, weights=weights)
+                norm_mag[offset : offset + n_real] = m_slot - weighted_mean
+                norm_time[offset : offset + n_real] = t_slot - _MJD_OFFSET
                 band_info_arr[offset : offset + n_real] = _LG_EFF_WAVE[b]
                 mask[offset : offset + n_real] = 0.0
                 bool_mask[offset : offset + n_real] = True
-            offset += n
 
         return AstraCLRInputs(
-            input=norm_mag.reshape(1, _SEQ_LEN, 1),
-            times=norm_time.reshape(1, _SEQ_LEN, 1),
-            band_info=band_info_arr.reshape(1, _SEQ_LEN, 1),
-            mask=mask.reshape(1, _SEQ_LEN),
-            bool_mask=bool_mask.reshape(1, _SEQ_LEN),
+            input=norm_mag.reshape(1, self.seq_len, 1),
+            times=norm_time.reshape(1, self.seq_len, 1),
+            band_info=band_info_arr.reshape(1, self.seq_len, 1),
+            mask=mask.reshape(1, self.seq_len),
+            bool_mask=bool_mask.reshape(1, self.seq_len),
         )
 
     def predict_tensors(self, tensors: AstraCLRInputs) -> np.ndarray:

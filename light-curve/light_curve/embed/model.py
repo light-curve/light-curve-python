@@ -248,36 +248,53 @@ class ImplicitMultiBandModel(EmbeddingSession, ABC):
 
     Unlike :class:`ExplicitMultiBandModel`, band labels are not mapped to integer
     indices; the subclass encodes band identity in its own way (e.g. as effective
-    wavelength or positional slot in a fixed sequence layout).
+    wavelength or a fixed positional slot).
+
+    Subclasses must define :attr:`seq_per_band`: an ordered sequence of
+    ``(band_label, n_slots)`` pairs that specifies both the band vocabulary and the
+    number of observation slots reserved for each band in the fixed-length input
+    sequence.  :attr:`band_labels` and :attr:`seq_len` are derived from it
+    automatically.
+
+    The helper :meth:`_iterate_band_slots` sorts observations by time, clips each
+    band to its slot count, and yields per-band data in :attr:`seq_per_band` order
+    together with the corresponding offset into the full sequence — ready to be used
+    inside :meth:`preprocess_lc`.
 
     ``band_groups`` controls how the input is split across independent model runs:
 
     * ``None`` (default) — all observations are fed to the model as one group;
       output has ``n_band_groups = 1``.
-    * A list of label collections — the model runs once per group using only
-      the observations whose band label appears in that group's collection;
-      output has ``n_band_groups = len(band_groups)``.
+    * A list of label collections — the model runs once per group using only the
+      observations whose band label appears in that group; output has
+      ``n_band_groups = len(band_groups)``.
 
-    Subclasses must define :attr:`band_labels` (the full set of band labels the
-    model recognises) and implement :meth:`preprocess_lc` and
-    :meth:`predict_tensors`.  :meth:`predict_tensors` must return an array of
-    shape ``(n_subsamples, seq_size, embed_dim)`` — the ``n_band_groups`` axis is
-    added by this class.
+    :meth:`predict_tensors` must return an array of shape
+    ``(n_subsamples, seq_size, embed_dim)`` — the ``n_band_groups`` axis is added
+    by this class.
 
     Parameters
     ----------
     session :
         ONNX inference session.
     band_groups : list of collections of str, optional
-        Each element is the set of band labels to include in one independent
-        model run.  ``None`` runs the model once on all observations.
+        Each element is the set of band labels to include in one independent model
+        run.  ``None`` runs the model once on all observations.
     allow_extra_bands : bool, optional
-        If ``False`` (default), :meth:`__call__` raises :exc:`ValueError` when
-        the input contains labels absent from :attr:`band_labels`.  Set to
-        ``True`` to silently ignore unrecognised observations.
+        If ``False`` (default), :meth:`__call__` raises :exc:`ValueError` when the
+        input contains labels absent from :attr:`band_labels`.  Set to ``True`` to
+        silently ignore unrecognised observations.
     """
 
-    band_labels: frozenset[str]
+    seq_per_band: Sequence[tuple[str, int]]
+
+    @property
+    def band_labels(self) -> frozenset[str]:
+        return frozenset(b for b, _ in self.seq_per_band)
+
+    @property
+    def seq_len(self) -> int:
+        return sum(n for _, n in self.seq_per_band)
 
     def __init__(
         self,
@@ -296,6 +313,29 @@ class ImplicitMultiBandModel(EmbeddingSession, ABC):
         unknown = set(np.unique(np.asarray(band))) - self.band_labels
         if unknown:
             raise ValueError(f"band contains labels not in {sorted(self.band_labels)}: {sorted(unknown)}")
+
+    def _iterate_band_slots(
+        self,
+        time: np.ndarray,
+        mag: np.ndarray,
+        magerr: np.ndarray,
+        band: np.ndarray,
+    ):
+        """Yield ``(band_label, n_slots, offset, t_slot, m_slot, e_slot)`` per band.
+
+        Observations are sorted by time before slicing.  Each yielded ``t_slot``,
+        ``m_slot``, ``e_slot`` contains at most ``n_slots`` real observations
+        (fewer when fewer are available); the caller is responsible for padding the
+        remainder.  ``offset`` is the start index of this band's block in the
+        full ``seq_len``-length sequence.
+        """
+        order = np.argsort(time)
+        time, mag, magerr, band = time[order], mag[order], magerr[order], band[order]
+        offset = 0
+        for b, n in self.seq_per_band:
+            idx = np.where(band == b)[0][:n]
+            yield b, n, offset, time[idx], mag[idx], magerr[idx]
+            offset += n
 
     def __call__(
         self,
@@ -335,8 +375,10 @@ class ImplicitMultiBandModel(EmbeddingSession, ABC):
 
         embeddings = []
         for group in self.band_groups:
-            mask = np.isin(band, list(group))
-            embed = self.predict_tensors(self.preprocess_lc(time[mask], mag[mask], magerr[mask], band[mask]))
+            group_mask = np.isin(band, list(group))
+            embed = self.predict_tensors(
+                self.preprocess_lc(time[group_mask], mag[group_mask], magerr[group_mask], band[group_mask])
+            )
             embeddings.append(np.expand_dims(embed, axis=Dim.BAND))
         return np.concatenate(embeddings, axis=Dim.BAND)
 
