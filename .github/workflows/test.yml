@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_minor: [ '10', '11', '12', '13', '13t', '14', '14t' ]
+        python_minor: [ '10', '11', '12', '14', '14t' ]
         os: [ ubuntu-latest ]
         # Just a single ARM worker to be sure that it works
         include:
