@@ -2,7 +2,7 @@ site_name: light-curve
 site_url: https://light-curve.snad.space/
 repo_url: https://github.com/light-curve/light-curve-python
 repo_name: light-curve/light-curve-python
-edit_uri: edit/documentation/docs/
+edit_uri: edit/main/docs/
 
 theme:
   name: material
