@@ -9,7 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
---
+- New documentation site with MkDocs + Material for MkDocs at https://light-curve.snad.space/:
+  - Tutorials for feature extraction basics, periodogram, curve fitting, multiband features,
+    dm-dt maps, and light-curve embeddings
+  - Full API reference for all feature extractors, `DmDt`, and embedding models
+  - *Citing & Support* page with BibTeX entries for all related papers
+- CI: each pull request gets a live docs preview deployed to `/pr{N}/`
 
 ### Changed
 
