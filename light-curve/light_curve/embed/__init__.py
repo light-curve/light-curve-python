@@ -1,7 +1,7 @@
 from .astra_clr import AstraCLR
 from .astromer import Astromer1, Astromer2
 from .atcat import ATCAT
-from .model import EmbeddingSession, SingleBandModel
+from .model import EmbeddingSession, ImplicitMultiBandModel, SingleBandModel
 from .reduction import (
     Beginning,
     End,
@@ -18,6 +18,7 @@ __all__ = [
     "ATCAT",
     "Beginning",
     "EmbeddingSession",
+    "ImplicitMultiBandModel",
     "End",
     "MultipleReductions",
     "NonOverlappingWindows",

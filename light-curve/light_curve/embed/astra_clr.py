@@ -7,8 +7,7 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 from light_curve.embed.input_tensors import InputTensors
-from light_curve.embed.model import EmbeddingSession
-from light_curve.embed.reduction import Beginning
+from light_curve.embed.model import ImplicitMultiBandModel
 
 if TYPE_CHECKING:
     from typing import Self
@@ -42,7 +41,7 @@ class AstraCLRInputs(InputTensors):
     mask: np.ndarray = field(kw_only=True)
 
 
-class AstraCLR(EmbeddingSession):
+class AstraCLR(ImplicitMultiBandModel):
     """AstraCLR multiband transformer embedding model.
 
     AstraCLR is a contrastive-learning encoder for ZTF (g, r, i) multi-band
@@ -91,9 +90,10 @@ class AstraCLR(EmbeddingSession):
     hf_repo: str = "light-curve/astra-clr"
     hf_filename: str = "astra_clr.onnx"
     model_outputs: frozenset[str] = frozenset({"mean"})
+    band_labels: frozenset[str] = frozenset(_BANDS)
 
     def __init__(self, session: ort.InferenceSession) -> None:
-        super().__init__(session, reduction=Beginning())
+        super().__init__(session)
 
     @classmethod
     def from_hf(
@@ -154,6 +154,7 @@ class AstraCLR(EmbeddingSession):
             512-dimensional embedding in the standard
             ``(n_bands, n_subsamples, seq_size, embed_dim)`` layout.
         """
+        super().__call__(time, mag, magerr, band)
         inputs = self.preprocess_lc(time, mag, magerr, band)
         return self.predict_tensors(inputs)
 

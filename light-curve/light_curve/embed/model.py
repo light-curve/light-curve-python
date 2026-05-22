@@ -10,7 +10,7 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 from light_curve.embed.input_tensors import InputTensors
-from light_curve.embed.reduction import Reduction, reduction_from_str
+from light_curve.embed.reduction import Beginning, Reduction, reduction_from_str
 from light_curve.light_curve_py.warnings import warn_experimental
 
 if TYPE_CHECKING:
@@ -240,6 +240,75 @@ class SingleBandModel(EmbeddingSession, ABC):
             embed_band = super().__call__(*(arr[band_idx] for arr in arrays))
             embeddings.append(np.expand_dims(embed_band, axis=Dim.BAND))
         return np.concatenate(embeddings, axis=Dim.BAND)
+
+
+class ImplicitMultiBandModel(EmbeddingSession, ABC):
+    """Embedding model that processes all photometric bands in a single forward pass
+    with band identity encoded implicitly by the subclass.
+
+    Unlike :class:`ExplicitMultiBandModel`, band labels are not mapped to integer
+    indices; the subclass encodes band identity in its own way (e.g. effective
+    wavelength, positional slot).
+
+    Subclasses must define :attr:`band_labels` and call ``super().__call__(...)``
+    at the top of their :meth:`__call__` implementation to trigger band validation.
+
+    Parameters
+    ----------
+    session :
+        ONNX inference session.
+    allow_extra_bands : bool, optional
+        If ``False`` (default), :meth:`__call__` raises :exc:`ValueError` when
+        the input contains labels absent from :attr:`band_labels`.  Set to
+        ``True`` to silently pass unrecognised observations to the subclass.
+    """
+
+    band_labels: frozenset[str]
+
+    def __init__(
+        self,
+        session: ort.InferenceSession,
+        *,
+        allow_extra_bands: bool = False,
+    ) -> None:
+        super().__init__(session, reduction=Beginning())
+        self.allow_extra_bands = allow_extra_bands
+
+    def _validate_bands(self, band: ArrayLike) -> None:
+        if self.allow_extra_bands:
+            return
+        unknown = set(np.unique(np.asarray(band))) - self.band_labels
+        if unknown:
+            raise ValueError(f"band contains labels not in {sorted(self.band_labels)}: {sorted(unknown)}")
+
+    @abstractmethod
+    def __call__(
+        self,
+        time: ArrayLike,
+        mag: ArrayLike,
+        magerr: ArrayLike,
+        band: ArrayLike,
+    ) -> np.ndarray:
+        """Embed a multi-band light curve.
+
+        Parameters
+        ----------
+        time : array-like, shape ``(n,)``
+            Observation times.
+        mag : array-like, shape ``(n,)``
+            Magnitudes (or fluxes, depending on the model).
+        magerr : array-like, shape ``(n,)``
+            Measurement uncertainties.
+        band : array-like, shape ``(n,)``
+            Band labels — must be elements of :attr:`band_labels` unless
+            ``allow_extra_bands`` is ``True``.
+
+        Returns
+        -------
+        np.ndarray
+            Embedding array with shape ``(1, 1, 1, embed_dim)``.
+        """
+        self._validate_bands(band)
 
 
 class ExplicitMultiBandModel(EmbeddingSession, ABC):
