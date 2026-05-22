@@ -75,8 +75,9 @@ jobs:
           mike set-default --push latest
 
   preview:
-    # Build from source and push directly to gh-pages/pr{N}/ without touching
-    # versions.json, so the version switcher stays clean.
+    # Build from source and push directly to gh-pages/pr{N}/ without mike,
+    # then register the PR in versions.json so Material shows the correct
+    # version label. Non-PR versions come first, then PRs in ascending order.
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
     runs-on: ubuntu-latest
     defaults:
@@ -129,12 +130,30 @@ jobs:
           mkdocs build --site-dir /tmp/pr-site
 
       - name: Push preview to gh-pages
+        env:
+          PR: ${{ github.event.pull_request.number }}
         run: |
-          PR=${{ github.event.pull_request.number }}
           rm -rf gh-pages-deploy/pr${PR}
           cp -r /tmp/pr-site gh-pages-deploy/pr${PR}
+
+          python3 -c "
+          import json, os, re
+          pr = int(os.environ['PR'])
+          entry = {'version': f'pr{pr}', 'title': f'pr{pr}', 'aliases': []}
+          with open('gh-pages-deploy/versions.json') as f:
+              versions = json.load(f)
+          versions = [v for v in versions if v['version'] != entry['version']]
+          non_pr = [v for v in versions if not re.fullmatch(r'pr\d+', v['version'])]
+          prs    = [v for v in versions if     re.fullmatch(r'pr\d+', v['version'])]
+          prs.append(entry)
+          prs.sort(key=lambda v: int(v['version'][2:]))
+          with open('gh-pages-deploy/versions.json', 'w') as f:
+              json.dump(non_pr + prs, f, indent=2)
+              f.write('\n')
+          "
+
           cd gh-pages-deploy
-          git add pr${PR}
+          git add pr${PR} versions.json
           git diff --cached --quiet && echo "No changes" || git commit -m "docs: update PR #${PR} preview"
           git push
 
@@ -186,10 +205,35 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Delete PR preview
+        env:
+          PR: ${{ github.event.pull_request.number }}
         run: |
-          PR=${{ github.event.pull_request.number }}
+          changed=false
+
           if [ -d pr${PR} ]; then
             git rm -rf pr${PR}
+            changed=true
+          fi
+
+          python3 -c "
+          import json, os, sys
+          pr_version = f'pr{int(os.environ[\"PR\"])}'
+          with open('versions.json') as f:
+              versions = json.load(f)
+          filtered = [v for v in versions if v['version'] != pr_version]
+          if len(filtered) == len(versions):
+              sys.exit(0)
+          with open('versions.json', 'w') as f:
+              json.dump(filtered, f, indent=2)
+              f.write('\n')
+          "
+
+          if ! git diff --quiet versions.json; then
+            git add versions.json
+            changed=true
+          fi
+
+          if [ "$changed" = true ]; then
             git commit -m "docs: remove PR #${PR} preview"
             git push
           fi
