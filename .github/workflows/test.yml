@@ -236,11 +236,13 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install light-curve (pre-built wheel)
-        run: pip install 'light-curve[full]'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
 
-      - name: Install docs dependencies
-        run: pip install mkdocs-material "mkdocstrings[python]" numpy mkdocs-jupyter
+      - name: Install light-curve (pre-built wheel) and docs dependencies
+        run: |
+          pip install 'light-curve[full]'
+          cd light-curve && uv pip install --system --group docs
 
       - name: Build docs (strict)
         run: mkdocs build --strict
