@@ -793,26 +793,30 @@ py_dmdt_batches!(
 ///     Ascending array of dt grid edges
 /// dm : np.array of float64
 ///     Ascending array of dm grid edges
-/// dt_type : str, optional
+/// dt_type : str, default 'auto'
 ///     Type of `dt` grid, one of:
-///     - 'auto' (default) means check if grid is linear or logarithmic one,
-///       which allows some speed-up
-///     - 'linear' says to build a linear grid from the first and last values
+///
+///     - ``'auto'``: check if grid is linear or logarithmic, which allows
+///       some speed-up
+///     - ``'linear'``: build a linear grid from the first and last values
 ///       of `dt`, using the same number of edges
-///     - 'log' is the same as 'linear' but for building logarithmic grid
-///     - 'asis' means using the given array as a grid
-/// dm_type : str, optional
-///     Type of `dm` grid, see `dt_type` for details
-/// norm : list of str, optional
-///     Types of normalisation, cab be any combination of "dt" and "max",
-///     default is an empty list `[]` which means no normalisation
-/// n_jobs : int, optional
-///     Number of parallel threads to run bulk methods such as `points_many()`
-///     or `gausses_batches()` default is `-1` which means to use as many
-///     threads as CPU cores
-/// approx_erf : bool, optional
-///     Use approximation normal CDF in `gausses*` methods, reduces accuracy,
-///     but has better performance, default is `False`
+///     - ``'log'``: same as ``'linear'`` but for a logarithmic grid
+///     - ``'asis'``: use the given array as-is
+///
+/// dm_type : str, default 'auto'
+///     Type of `dm` grid, see ``dt_type`` for details
+///
+/// norm : list of str, default []
+///     Types of normalisation; any combination of ``"dt"`` and ``"max"``.
+///     An empty list means no normalisation.
+///
+/// n_jobs : int, default -1
+///     Number of parallel threads for bulk methods such as ``points_many()``
+///     or ``gausses_batches()``.  ``-1`` means as many threads as CPU cores.
+///
+/// approx_erf : bool, default False
+///     Use approximate normal CDF in ``gausses*`` methods; reduces accuracy
+///     but improves performance.
 ///
 /// Attributes
 /// ----------
@@ -1143,10 +1147,11 @@ impl DmDt {
     /// cast : bool
     ///     If `False` allow np.ndarray input only, `True` allows casting.
     ///     Casting provides more flexibility with input types at the cost of
-    //      performance.
+    ///     performance.
     ///
     /// Returns
-    /// 1d-array of float
+    /// -------
+    /// result : 1d-array of float
     ///
     #[pyo3(signature=(t, *, sorted=None, cast=false))]
     fn count_dt<'py>(
@@ -1177,7 +1182,8 @@ impl DmDt {
     ///     `True` guarantees that `t` is sorted
     ///
     /// Returns
-    /// 1d-array of float
+    /// -------
+    /// result : 1d-array of float
     ///
     #[pyo3(signature = (t_, sorted=None))]
     fn count_dt_many<'py>(

@@ -3,7 +3,6 @@ name: Publish Python packages
 on:
   push:
     tags:
-    push:
   pull_request:
   repository_dispatch:
   workflow_dispatch:

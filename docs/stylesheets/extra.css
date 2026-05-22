@@ -1,0 +1,271 @@
+/* White-mode: give the header a subtle bottom border so it doesn't float */
+[data-md-color-scheme="default"] .md-header {
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+
+/* ── Fix >>> doctest blocks (Markdown reads >>> as 3-level blockquote) ── */
+
+.md-typeset blockquote > blockquote > blockquote {
+  background: var(--md-code-bg-color);
+  border: none;
+  border-radius: 0.2rem;
+  padding: 0.5em 0.8em;
+  margin: 0;
+}
+
+.md-typeset blockquote > blockquote > blockquote p {
+  font-family: var(--md-code-font-family, monospace);
+  font-size: 0.85em;
+  white-space: pre-wrap;
+  margin: 0;
+  color: var(--md-code-fg-color);
+}
+
+.md-typeset blockquote:has(> blockquote > blockquote),
+.md-typeset blockquote > blockquote:has(> blockquote) {
+  border: none;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* ── Footer: hide the empty/unwanted footer ───────────────────────── */
+
+.md-footer {
+  display: none !important;
+}
+
+/* ── Hero cards ──────────────────────────────────────────────────── */
+
+.lc-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.2rem;
+  margin: 2rem 0;
+}
+
+.lc-card {
+  position: relative;           /* anchor for the full-card link overlay */
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  transition: box-shadow 0.25s, transform 0.25s;
+}
+
+.lc-card:hover {
+  box-shadow: 0 4px 24px rgba(0,0,0,.12);
+  transform: translateY(-3px);
+}
+
+/* Full-card click target: the title link's ::after stretches to cover the card */
+.lc-card-body h3 a {
+  color: var(--md-default-fg-color);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.lc-card-body h3 a::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+/* Fixed dark background so the white SVG elements are always visible */
+.lc-card-svg-wrap {
+  background: #1a237e !important;
+  aspect-ratio: 240 / 110;
+  overflow: hidden;
+}
+
+.lc-card-body {
+  padding: 1rem 1.2rem 1.2rem;
+  flex: 1;
+}
+
+.lc-card-body h3 {
+  margin: 0 0 .5rem;
+  font-size: 1rem;
+}
+
+.lc-card-body p {
+  margin: 0;
+  font-size: .9rem;
+  color: var(--md-default-fg-color--light);
+}
+
+/* Fix SVG size — Material's global svg rule shrinks all svgs to 1.2rem */
+.lc-card-svg-wrap svg {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+}
+
+/* Increase max content width for large screens */
+.md-grid {
+  max-width: 87.5rem;
+}
+
+/* ── Features SVG: A annotation, then P — looped on hover ───────────── */
+
+.lc-svg-features .lc-feat-s1,
+.lc-svg-features .lc-feat-s2 { opacity: 0; }
+
+@keyframes feat-step1 {
+  0%        { opacity: 0; }
+  12%, 55%   { opacity: 1; }
+  72%, 100% { opacity: 0; }
+}
+@keyframes feat-step2 {
+  0%, 30%   { opacity: 0; }
+  37%, 60%  { opacity: 1; }
+  70%, 100% { opacity: 0; }
+}
+
+.lc-card:hover .lc-svg-features .lc-feat-s1 { animation: feat-step1 4s linear infinite; }
+.lc-card:hover .lc-svg-features .lc-feat-s2 { animation: feat-step2 4s linear infinite; }
+
+/* ── Embeddings SVG: connections draw then vector text — looped on hover */
+
+.lc-svg-embed .lc-conn-a,
+.lc-svg-embed .lc-conn-b {
+  stroke-dasharray: 55;
+  stroke-dashoffset: 55;
+  opacity: 0;
+}
+.lc-svg-embed .lc-vec-text { opacity: 0; }
+
+@keyframes embed-conn-a {
+  0%        { stroke-dashoffset: 55; opacity: 0; }
+  5%        { stroke-dashoffset: 55; opacity: 0.75; }
+  18%       { stroke-dashoffset: 0;  opacity: 0.75; }
+  65%       { stroke-dashoffset: 0;  opacity: 0.75; }
+  85%, 100% { stroke-dashoffset: 55; opacity: 0; }
+}
+@keyframes embed-conn-b {
+  0%, 15%   { stroke-dashoffset: 55; opacity: 0; }
+  18%       { stroke-dashoffset: 55; opacity: 0.75; }
+  28%       { stroke-dashoffset: 0;  opacity: 0.75; }
+  65%       { stroke-dashoffset: 0;  opacity: 0.75; }
+  85%, 100% { stroke-dashoffset: 55; opacity: 0; }
+}
+@keyframes embed-vec {
+  0%, 28%   { opacity: 0; }
+  65%       { opacity: 1; }
+  68%       { opacity: 1; }
+  85%, 100% { opacity: 0; }
+}
+
+.lc-card:hover .lc-svg-embed .lc-conn-a   { animation: embed-conn-a 4s linear infinite; }
+.lc-card:hover .lc-svg-embed .lc-conn-b   { animation: embed-conn-b 4s linear infinite; }
+.lc-card:hover .lc-svg-embed .lc-vec-text { animation: embed-vec    4s linear infinite; }
+
+/* ── dm-dt SVG: point-pair → pixel animation on hover ────────────── */
+
+.lc-dmdt-s1, .lc-dmdt-s2, .lc-dmdt-s3 { opacity: 0; }
+
+@keyframes dmdt-step1 {
+  0%        { opacity: 0; }
+  8%, 25%   { opacity: 0.9; }
+  33%, 100% { opacity: 0; }
+}
+@keyframes dmdt-step2 {
+  0%, 33%   { opacity: 0; }
+  41%, 58%  { opacity: 0.9; }
+  66%, 100% { opacity: 0; }
+}
+@keyframes dmdt-step3 {
+  0%, 66%   { opacity: 0; }
+  74%, 91%  { opacity: 0.9; }
+  99%, 100% { opacity: 0; }
+}
+
+.lc-card:hover .lc-dmdt-s1 { animation: dmdt-step1 3s linear infinite; }
+.lc-card:hover .lc-dmdt-s2 { animation: dmdt-step2 3s linear infinite; }
+.lc-card:hover .lc-dmdt-s3 { animation: dmdt-step3 3s linear infinite; }
+
+/* reduced-motion: show all annotations statically */
+@media (prefers-reduced-motion: reduce) {
+  .lc-svg-features .lc-feat-s1,
+  .lc-svg-features .lc-feat-s2 { opacity: 1 !important; animation: none; }
+  .lc-svg-embed .lc-conn-a,
+  .lc-svg-embed .lc-conn-b { stroke-dashoffset: 0 !important; opacity: 0.75 !important; animation: none; }
+  .lc-svg-embed .lc-vec-text { opacity: 1 !important; animation: none; }
+  .lc-dmdt-s1, .lc-dmdt-s2, .lc-dmdt-s3 { opacity: 0.9 !important; animation: none; }
+}
+
+/* ── Navigation links ──────────────────────────────────────────────── */
+
+/* Left sidebar — non-active links: blue + underline */
+.md-sidebar--primary .md-nav__link:not(.md-nav__link--active):not([aria-current="page"]) {
+  color: var(--md-typeset-a-color) !important;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: from-font;
+}
+
+/* Left sidebar — active (both class and aria-current for robustness): black, no underline */
+.md-sidebar--primary .md-nav__link--active,
+.md-sidebar--primary .md-nav__link[aria-current="page"] {
+  color: var(--md-default-fg-color) !important;
+  text-decoration: none !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+}
+
+/* Section container div also carries md-nav__link — prevent its text-decoration from bleeding
+   through to the active child <a> (CSS text-decoration on a parent overrides child's none) */
+.md-sidebar--primary .md-nav__container {
+  text-decoration: none !important;
+}
+
+/* Left sidebar — not clickable on desktop only (on mobile, allows navigating to section index) */
+@media screen and (min-width: 76.25em) {
+  .md-sidebar--primary .md-nav__link--active,
+  .md-sidebar--primary .md-nav__link[aria-current="page"] {
+    pointer-events: none;
+    cursor: default;
+  }
+}
+
+/* Right TOC — non-active: underline */
+.md-sidebar--secondary .md-nav__link:not(.md-nav__link--active):not([aria-current="page"]) {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: from-font;
+}
+
+/* Right TOC — active: default text (not blue), no underline */
+.md-sidebar--secondary .md-nav__link--active,
+.md-sidebar--secondary .md-nav__link[aria-current="page"] {
+  color: var(--md-default-fg-color) !important;
+  text-decoration: none;
+}
+
+/* Top tabs — non-active: blue, no opacity fade, bold, underline */
+.md-tabs__item:not(.md-tabs__item--active) .md-tabs__link {
+  color: var(--md-typeset-a-color) !important;
+  opacity: 1 !important;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: from-font;
+}
+
+/* Top tabs — active: black, no underline, not clickable */
+.md-tabs__item--active .md-tabs__link {
+  color: var(--md-default-fg-color) !important;
+  opacity: 1 !important;
+  font-weight: 700;
+  text-decoration: none !important;
+  pointer-events: none;
+  cursor: default;
+}
+
+/* ── Notebooks: hide cell count badges ───────────────────────────── */
+
+.jp-Cell-inputWrapper .jp-InputPrompt {
+  display: none !important;
+}

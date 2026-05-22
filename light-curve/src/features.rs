@@ -58,58 +58,55 @@ names : list of str
 descriptions : list of str
     Feature descriptions"#;
 
-const METHOD_CALL_DOC: &str = r#"__call__(self, t, m, sigma=None, *, fill_value=None, sorted=None, check=True, cast=False)
-    Extract features and return them as a numpy array
+macro_const! {
+    const METHOD_CALL_DOC: &str = r#"Extract features and return them as a numpy array
 
     Parameters
     ----------
-    t : numpy.ndarray of np.float32 or np.float64 dtype
+    t : numpy.ndarray of float32 or float64
         Time moments
+
     m : numpy.ndarray
         Signal in magnitude or fluxes. Refer to the feature description to
         decide which would work better in your case
-    sigma : numpy.ndarray, optional
+
+    sigma : numpy.ndarray, default None
         Observation error, if None it is assumed to be unity
-    fill_value : float or None, optional
+
+    fill_value : float or None, default None
         Value to fill invalid feature values, for example if count of
         observations is not enough to find a proper value.
         None causes exception for invalid features
-    sorted : bool or None, optional
+
+    sorted : bool or None, default None
         Specifies if input array are sorted by time moments.
         True is for certainly sorted, False is for unsorted.
         If None is specified than sorting is checked and an exception is
-        raised for unsorted `t`
-    check : bool, optional
-        Check all input arrays for NaNs, `t` and `m` for infinite values
-    cast : bool, optional
+        raised for unsorted t
+
+    check : bool, default True
+        Check all input arrays for NaNs, t and m for infinite values
+
+    cast : bool, default False
         Allows non-numpy input and casting of arrays to a common dtype.
-        If `False`, inputs must be `np.ndarray` instances with matched dtypes.
+        If False, inputs must be np.ndarray instances with matched dtypes.
         Casting provides more flexibility with input types at the cost of
         performance.
+
     Returns
     -------
-    ndarray of np.float32 or np.float64
+    ndarray of float32 or float64
         Extracted feature array"#;
+}
 
 macro_const! {
-    const METHOD_MANY_DOC: &str = r#"
-many(self, lcs, *, fill_value=None, sorted=None, check=True, cast=False, n_jobs=-1)
-    Parallel light curve feature extraction
+    const METHOD_MANY_DOC: &str = r#"Extract features from multiple light curves in parallel
 
     It is a parallel executed equivalent of
+
     >>> def many(self, lcs, *, fill_value=None, sorted=None, check=True):
-    ...     return np.stack(
-    ...         [
-    ...             self(
-    ...                 *lc,
-    ...                 fill_value=fill_value,
-    ...                 sorted=sorted,
-    ...                 check=check,
-    ...                 cast=False,
-    ...             )
-    ...             for lc in lcs
-    ...         ]
-    ...     )
+    ...     return np.stack([self(*lc, fill_value=fill_value, sorted=sorted,
+    ...                          check=check, cast=False) for lc in lcs])
 
     Parameters
     ----------
@@ -118,58 +115,181 @@ many(self, lcs, *, fill_value=None, sorted=None, check=True, cast=False, n_jobs=
         of the same dtype), or an Arrow array/chunked array of type
         List<Struct<...>> where the selected fields share the same float dtype
         (float32 or float64). Arrow input is auto-detected via the
-        __arrow_c_array__ / __arrow_c_stream__ protocol and enables zero-copy
-        data access from pyarrow, polars, and other Arrow-compatible libraries.
+        ``__arrow_c_array__`` / ``__arrow_c_stream__`` protocol and enables
+        zero-copy data access from pyarrow, polars, and other Arrow-compatible
+        libraries.
+
     arrow_fields : list of (str or int)
         Required when lcs is an Arrow array. Field names or indices specifying
         which struct fields to use as t, m, and optionally sigma. Must contain
         2 elements [t, m] or 3 elements [t, m, sigma]. Each element may be a
         field name (str) or a zero-based positional index (int); all elements
         must be of the same type. Ignored for non-Arrow input.
-    fill_value : float or None, optional
+
+    fill_value : float or None, default None
         Fill invalid values by this or raise an exception if None
-    sorted : bool or None, optional
-        Specifies if input array are sorted by time moments, see __call__
+
+    sorted : bool or None, default None
+        Specifies if input array are sorted by time moments, see ``__call__``
         documentation for details
-    check : bool, optional
-        Check all input arrays for NaNs, `t` and `m` for infinite values
-    n_jobs : int
-        Number of tasks to run in paralell. Default is -1 which means run as
-        many jobs as CPU count. See rayon rust crate documentation for
-        details"#;
+
+    check : bool, default True
+        Check all input arrays for NaNs, t and m for infinite values
+
+    n_jobs : int, default -1
+        Number of tasks to run in parallel. -1 means run as many jobs as CPU
+        count. See rayon rust crate documentation for details"#;
 }
 
-const METHODS_DOC: &str = formatcp!(
-    r#"Methods
+const METHODS_DOC: &str = r#"Methods
 -------
-{}
-{}"#,
-    METHOD_CALL_DOC,
-    METHOD_MANY_DOC,
-);
+__call__(self, t, m, sigma=None, *, fill_value=None, sorted=None, check=True, cast=False)
+    Extract features and return them as a numpy array
+many(self, lcs, *, fill_value=None, sorted=None, check=True, cast=False, n_jobs=-1)
+    Extract features from multiple light curves in parallel"#;
 
 const COMMON_FEATURE_DOC: &str = formatcp!("\n{}\n\n{}\n", ATTRIBUTES_DOC, METHODS_DOC);
+
+/// Prepare upstream Rust doc strings for MkDocs/Arithmatex rendering.
+///
+/// Arithmatex uses a BlockProcessor that receives one Markdown block at a time
+/// (text between blank lines). A `$$...equation...\n$$` block must therefore
+/// have NO blank lines inside it, but MUST have blank lines before the opening
+/// `$$` and after the closing `$$`.
+///
+/// This function:
+/// 1. Adds a blank line before an opening `$$` when the previous line was not
+///    already blank.
+/// 2. Adds a blank line after a closing `$$` when the next line is not already
+///    blank.
+/// 3. Trims leading whitespace (replaces the old `.trim_start()` call).
+fn prepare_upstream_doc(s: &str) -> String {
+    // Split into lines and skip leading blank lines
+    let raw_lines: Vec<&str> = s.lines().collect();
+    let start = raw_lines
+        .iter()
+        .position(|l| !l.trim().is_empty())
+        .unwrap_or(0);
+    let raw_lines = &raw_lines[start..];
+
+    // Dedent: compute the minimum leading-space count across all non-empty lines.
+    // This prevents indented `$$` from being parsed as a Markdown code block.
+    let indent = raw_lines
+        .iter()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| l.len() - l.trim_start().len())
+        .min()
+        .unwrap_or(0);
+
+    // Build a vec of dedented lines for processing
+    let lines: Vec<&str> = raw_lines
+        .iter()
+        .map(|l| {
+            if l.trim().is_empty() {
+                ""
+            } else {
+                &l[indent..]
+            }
+        })
+        .collect();
+
+    let mut result = String::with_capacity(s.len() + 64);
+    let mut in_math = false;
+
+    for (i, &line) in lines.iter().enumerate() {
+        let trimmed = line.trim();
+
+        if trimmed == "$$" {
+            if !in_math {
+                // Opening $$: insert blank line before if previous line is non-blank.
+                let prev_blank = i == 0 || lines[i - 1].trim().is_empty();
+                if !prev_blank {
+                    result.push('\n');
+                }
+                in_math = true;
+            } else {
+                // Closing $$: output first, then insert blank line after if the
+                // next line is non-blank (keeps math in its own block for Arithmatex).
+                in_math = false;
+                result.push_str(line);
+                result.push('\n');
+                let next_blank = i + 1 >= lines.len() || lines[i + 1].trim().is_empty();
+                if !next_blank {
+                    result.push('\n');
+                }
+                continue;
+            }
+        }
+
+        result.push_str(line);
+        result.push('\n');
+    }
+
+    // Preserve original trailing-newline behaviour
+    let trimmed_s = s.trim_end();
+    if !trimmed_s.ends_with('\n') && result.ends_with('\n') {
+        result.pop();
+    }
+    result
+}
 
 fn transform_parameter_doc(default: StockTransformer) -> String {
     let default_name: &str = default.into();
     let variants = StockTransformer::all_variants().format_with("\n     - ", |variant, fmt| {
         let name: &str = variant.into();
         let doc = variant.doc().trim();
-        fmt(&format_args!("'{name}' - {doc}"))
+        fmt(&format_args!("``'{name}'`` - {doc}"))
     });
     format!(
-        r#"transform : str or bool or None
+        r#"transform : str or bool or None, default None
     Transformer to apply to the feature values. If str, must be one of:
-     - 'default' - use default transformer for the feature, it same as giving
-       True. The default for this feature is '{default_name}'
+
+     - ``'default'`` - use default transformer for the feature, same as giving
+       True. The default for this feature is ``'{default_name}'``
      - {variants}
-    If bool, must be True to use default transformer or False to disable.
-    If None, no transformation is applied"#,
+
+    If bool, True uses the default transformer, False disables it.
+    If None, no transformation is applied (default)"#,
     )
 }
 
 type PyLightCurve<'a, T> = (Arr<'a, T>, Arr<'a, T>, Option<Arr<'a, T>>);
 
+/// Base class for all feature extractors.
+///
+/// All feature classes inherit from this base and share the same extraction
+/// interface.
+///
+/// Call signature
+/// --------------
+/// ``extractor(t, m, sigma=None, *, fill_value=None, sorted=None, check=True, cast=False)``
+///
+/// Extract features from a single light curve and return them as a numpy array.
+///
+/// Parameters
+/// ----------
+/// t : numpy.ndarray of float32 or float64
+///     Time moments
+///
+/// m : numpy.ndarray
+///     Signal in magnitudes or fluxes.  Refer to the feature description to
+///     decide which would work better in your case
+///
+/// sigma : numpy.ndarray, default None
+///     Observation error.  If ``None``, assumed to be unity
+///
+/// fill_value : float or None, default None
+///     Value to fill invalid feature values, or raise if ``None``
+///
+/// sorted : bool or None, default None
+///     Whether ``t`` is sorted.  ``True`` — sorted, ``False`` — unsorted,
+///     ``None`` — check and raise if unsorted
+///
+/// check : bool, default True
+///     Check arrays for NaNs and infinite values
+///
+/// cast : bool, default False
+///     Allow non-numpy input and dtype casting
 #[derive(Serialize, Deserialize, Clone)]
 #[pyclass(
     subclass,
@@ -682,6 +802,7 @@ impl PyFeatureEvaluator {
 
 #[pymethods]
 impl PyFeatureEvaluator {
+    #[doc = METHOD_CALL_DOC!()]
     #[allow(clippy::too_many_arguments)]
     #[pyo3(signature = (
         t,
@@ -936,11 +1057,12 @@ Parameters
 ----------
 *features : iterable
     Feature objects
+
 transform : None, optional
     Not implemented for Extractor, transform individual features instead
 {}
 "#,
-            FeatureExtractor::<f64, Feature<f64>>::doc().trim_start(),
+            prepare_upstream_doc(FeatureExtractor::<f64, Feature<f64>>::doc()),
             COMMON_FEATURE_DOC,
         )
     }
@@ -1001,7 +1123,7 @@ Parameters
 ----------
 {transform_variant}
 {footer}"#,
-                    header = <$eval>::doc().trim_start(),
+                    header = prepare_upstream_doc(<$eval>::doc()),
                     transform_variant = transform_parameter_doc(Self::DEFAULT_TRANSFORMER),
                     footer = COMMON_FEATURE_DOC
                 )
@@ -1060,19 +1182,23 @@ macro_const! {
 
     Parameters
     ----------
-    t : np.ndarray of np.float32 or np.float64
-        Time moments, can be unsorted
-    params : np.ndaarray of np.float32 or np.float64
-        Parameters of the model, this array can be longer than actual parameter
+
+    `t` : np.ndarray of float32 or float64
+    :   Time moments, can be unsorted
+
+    `params` : np.ndarray of float32 or float64
+    :   Parameters of the model, this array can be longer than actual parameter
         list, the beginning part of the array will be used in this case, see
         Examples section in the class documentation.
-    cast : bool, optional
-        Cast inputs to np.ndarray of the same dtype
+
+    `cast` : bool, optional
+    :   Cast inputs to np.ndarray of the same dtype
 
     Returns
     -------
-    np.ndarray of np.float32 or np.float64
-        Array of model values corresponded to the given time moments
+
+    np.ndarray of float32 or float64
+    :   Array of model values corresponded to the given time moments
 "#;
 }
 
@@ -1347,13 +1473,14 @@ macro_rules! fit_evaluator {
             fn __doc__() -> String {
                 #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
                 let ceres_args = format!(
-                    r#"ceres_niter : int, optional
-    Number of Ceres iterations, default is {niter}
-ceres_loss_reg : float, optional
-    Ceres loss regularization, default is to use square norm as is, if set to
-    a number, the loss function is regularized to descriminate outlier
-    residuals larger than this value.
-    Default is None which means no regularization.
+                    r#"ceres_niter : int, default {niter}
+    Number of Ceres iterations
+
+ceres_loss_reg : float or None, default None
+    Ceres loss regularization. If set to a number, the loss function is
+    regularized to discriminate outlier residuals larger than this value.
+    ``None`` means no regularization.
+
 "#,
                     niter = lcf::CeresCurveFit::default_niterations()
                 );
@@ -1361,8 +1488,9 @@ ceres_loss_reg : float, optional
                 let ceres_args = "";
                 #[cfg(feature = "gsl")]
                 let lmsder_niter = format!(
-                    r#"lmsder_niter : int, optional
-    Number of LMSDER iterations, default is {}
+                    r#"lmsder_niter : int, default {}
+    Number of LMSDER iterations
+
 "#,
                     lcf::LmsderCurveFit::default_niterations()
                 );
@@ -1382,33 +1510,41 @@ Parameters
 algorithm : str
     Non-linear least-square algorithm, supported values are:
     {supported_algo}.
-mcmc_niter : int, optional
-    Number of MCMC iterations, default is {mcmc_niter}
-{ceres_args}{lmsder_niter}init : list or None, optional
-    Initial conditions, must be `None` or a `list` of `float`s or `None`s.
-    The length of the list must be {nparam}, `None` values will be replaced
-    with some defauls values. It is supported by MCMC only
-bounds : list of tuples or None, optional
-    Boundary conditions, must be `None` or a `list` of `tuple`s of `float`s or
-    `None`s. The length of the list must be {nparam}, boundary conditions must
-    include initial conditions, `None` values will be replaced with some broad
-    defaults. It is supported by MCMC only
-ln_prior : str or list of ln_prior.LnPrior1D or None, optional
-    Prior for MCMC, None means no prior. It is specified by a string literal
-    or a list of {nparam} `ln_prior.LnPrior1D` objects, see `ln_prior`
+
+mcmc_niter : int, default {mcmc_niter}
+    Number of MCMC iterations
+
+{ceres_args}{lmsder_niter}
+init : list or None, default None
+    Initial conditions, must be ``None`` or a ``list`` of ``float``s or ``None``s.
+    The length of the list must be {nparam}; ``None`` values will be replaced
+    with some default values. Supported by MCMC only.
+
+bounds : list of tuples or None, default None
+    Boundary conditions, must be ``None`` or a ``list`` of ``tuple``s of ``float``s or
+    ``None``s. The length of the list must be {nparam}; boundary conditions must
+    include initial conditions; ``None`` values will be replaced with some broad
+    defaults. Supported by MCMC only.
+
+ln_prior : str or list of ln_prior.LnPrior1D or None, default None
+    Prior for MCMC, ``None`` means no prior. Specified by a string literal
+    or a list of {nparam} ``ln_prior.LnPrior1D`` objects; see the ``ln_prior``
     submodule for corresponding functions. Available string literals are:
     {ln_prior}
-transform : bool or None, optional
-    If `False` or `None` (default) output is not transformed. If `True` output
-    is transformed as following:
-     - Half-amplitude A is transformed as `zp - 2.5 lg(2*A)`, zp = 8.9,
+
+transform : bool or None, default None
+    If ``False`` or ``None`` output is not transformed. If ``True`` output
+    is transformed as follows:
+
+     - Half-amplitude A is transformed as ``zp - 2.5 lg(2*A)``, zp = 8.9,
        so that the amplitude is assumed to be the object peak flux in Jy.
-     - baseline flux is normalised by A: baseline -> baseline / A
-     - reference time is removed
-     - goodness of fit is transformed as `ln(reduced chi^2 + 1)` to reduce
+     - Baseline flux is normalised by A: baseline → baseline / A
+     - Reference time is removed
+     - Goodness of fit is transformed as ``ln(reduced chi^2 + 1)`` to reduce
        its spread
-     - other parameters are not transformed
-    See `names` and `descriptions` attributes an object for the list and order
+     - Other parameters are not transformed
+
+    See ``names`` and ``descriptions`` attributes for the list and order
     of features.
 
 {attr}
@@ -1432,7 +1568,7 @@ Examples
 >>> # So we can use as a `params` array of the static `.model()` method
 >>> model = {feature}.model(t, result)
 "#,
-                    intro = <$eval>::doc().trim_start(),
+                    intro = prepare_upstream_doc(<$eval>::doc()),
                     names_descriptions = names_descriptions,
                     supported_algo = Self::supported_algorithms_str(),
                     mcmc_niter = lcf::McmcCurveFit::default_niterations(),
@@ -1494,11 +1630,12 @@ impl BeyondNStd {
 
 Parameters
 ----------
-nstd : positive float
-    N, default is {nstd_default:.1}
+nstd : positive float, default {nstd_default:.1}
+    N — how many standard deviations from the mean
+
 {transform}
 {footer}"#,
-            header = lcf::BeyondNStd::<f64>::doc().trim_start(),
+            header = prepare_upstream_doc(lcf::BeyondNStd::<f64>::doc()),
             nstd_default = lcf::BeyondNStd::<f64>::default_nstd(),
             transform = transform_parameter_doc(Self::DEFAULT_TRANSFORMER),
             footer = COMMON_FEATURE_DOC,
@@ -1597,15 +1734,18 @@ Parameters
 ----------
 features : iterable
     Features to extract from binned time-series
+
 window : positive float
     Width of binning interval in units of time
+
 offset : float
     Zero time moment
-transform : None
+
+transform : None, default None
     Not supported, apply transformations to individual features
 {footer}
 "#,
-            header = lcf::Bins::<f64, Feature<f64>>::doc().trim_start(),
+            header = prepare_upstream_doc(lcf::Bins::<f64, Feature<f64>>::doc()),
             footer = COMMON_FEATURE_DOC,
         )
     }
@@ -1661,11 +1801,12 @@ impl InterPercentileRange {
 
 Parameters
 ----------
-quantile : positive float
-    Range is (100% * quantile, 100% * (1 - quantile)). Default quantile is {quantile_default:.2}
+quantile : positive float, default {quantile_default:.2}
+    Range is (100% × quantile, 100% × (1 - quantile))
+
 {transform}
 {footer}"#,
-            header = lcf::InterPercentileRange::doc().trim_start(),
+            header = prepare_upstream_doc(lcf::InterPercentileRange::doc()),
             quantile_default = lcf::InterPercentileRange::default_quantile(),
             transform = transform_parameter_doc(Self::DEFAULT_TRANSFORMER),
             footer = COMMON_FEATURE_DOC
@@ -1758,15 +1899,15 @@ impl MagnitudePercentageRatio {
 
 Parameters
 ----------
-quantile_numerator: positive float
-    Numerator is inter-percentile range (100% * q, 100% (1 - q)).
-    Default value is {quantile_numerator_default:.2}
-quantile_denominator: positive float
-    Denominator is inter-percentile range (100% * q, 100% (1 - q)).
-    Default value is {quantile_denominator_default:.2}
+quantile_numerator : positive float, default {quantile_numerator_default:.2}
+    Numerator inter-percentile range is (100% × q, 100% × (1 - q))
+
+quantile_denominator : positive float, default {quantile_denominator_default:.2}
+    Denominator inter-percentile range is (100% × q, 100% × (1 - q))
+
 {transform}
 {footer}"#,
-            header = lcf::MagnitudePercentageRatio::doc().trim_start(),
+            header = prepare_upstream_doc(lcf::MagnitudePercentageRatio::doc()),
             quantile_numerator_default =
                 lcf::MagnitudePercentageRatio::default_quantile_numerator(),
             quantile_denominator_default =
@@ -1827,11 +1968,12 @@ impl MedianBufferRangePercentage {
 
 Parameters
 ----------
-quantile : positive float
-    Relative range size, default is {quantile_default:.2}
+quantile : positive float, default {quantile_default:.2}
+    Relative range size
+
 {transform}
 {footer}"#,
-            header = lcf::MedianBufferRangePercentage::<f64>::doc(),
+            header = prepare_upstream_doc(lcf::MedianBufferRangePercentage::<f64>::doc()),
             quantile_default = lcf::MedianBufferRangePercentage::<f64>::default_quantile(),
             transform = transform_parameter_doc(Self::DEFAULT_TRANSFORMER),
             footer = COMMON_FEATURE_DOC
@@ -1889,11 +2031,12 @@ impl PercentDifferenceMagnitudePercentile {
 
 Parameters
 ----------
-quantile : positive float
-    Relative range size, default is {quantile_default:.2}
+quantile : positive float, default {quantile_default:.2}
+    Relative range size
+
 {transform}
 {footer}"#,
-            header = lcf::PercentDifferenceMagnitudePercentile::doc(),
+            header = prepare_upstream_doc(lcf::PercentDifferenceMagnitudePercentile::doc()),
             quantile_default = lcf::PercentDifferenceMagnitudePercentile::default_quantile(),
             transform = transform_parameter_doc(Self::DEFAULT_TRANSFORMER),
             footer = COMMON_FEATURE_DOC
@@ -2231,60 +2374,65 @@ impl Periodogram {
             r#"{intro}
 Parameters
 ----------
-peaks : int or None, optional
-    Number of peaks to find, default is {default_peaks}
-resolution : float or None, optional
-    Resolution of frequency grid, default is {default_resolution}
-max_freq_factor : float or None, optional
-    Mulitplier for Nyquist frequency, default is {default_max_freq_factor}
-nyquist : str or float or None, optional
+peaks : int or None, default {default_peaks}
+    Number of peaks to find
+
+resolution : float or None, default {default_resolution}
+    Resolution of frequency grid
+
+max_freq_factor : float or None, default {default_max_freq_factor}
+    Mulitplier for Nyquist frequency
+
+nyquist : str or float or None, default '{default_nyquist}'
     Type of Nyquist frequency. Could be one of:
-     - 'average': "Average" Nyquist frequency
-     - 'median': Nyquist frequency is defined by median time interval
-        between observations
+
+     - ``'average'``: "Average" Nyquist frequency
+     - ``'median'``: Nyquist frequency is defined by median time interval
+       between observations
      - float: Nyquist frequency is defined by given quantile of time
-        intervals between observations
-    Default is '{default_nyquist}'
-freqs : array-like or None, optional
-    Explicid and fixed frequency grid (angular frequency, radians/time unit).
-    If given, `resolution`, `max_freq_factor` and `nyquist` are being
-    ignored.
-    For `fast=True` the only supported type of the grid is
-    np.linspace(0.0, max_freq, 2**k+1), where k is an integer.
-    For `fast=False` any grid is accepted, but linear grids, like
-    np.linspace(min_freq, max_freq, n), apply some computational
-    optimisations.
-fast : bool or None, optional
-    Use "Fast" (approximate and FFT-based) or direct periodogram algorithm,
-    default is {default_fast}
-features : iterable or None, optional
+       intervals between observations
+
+freqs : array-like or None, default None
+    Explicit and fixed frequency grid (angular frequency, radians/time unit).
+    If given, ``resolution``, ``max_freq_factor`` and ``nyquist`` are ignored.
+    For ``fast=True`` the only supported type of the grid is
+    ``np.linspace(0.0, max_freq, 2**k+1)``, where k is an integer.
+    For ``fast=False`` any grid is accepted, but linear grids apply some
+    computational optimisations.
+
+fast : bool or None, default {default_fast}
+    Use "Fast" (approximate and FFT-based) or direct periodogram algorithm
+
+features : iterable or None, default None
     Features extracted from the periodogram power spectrum, treating it as a
     time-series (frequency as time, power as magnitude).
-    Default is None which means no additional spectrum features.
-phase_features : iterable or None, optional
+    ``None`` means no additional spectrum features.
+
+phase_features : iterable or None, default None
     Features to extract from the light curve phase-folded at the best period.
     Phase runs from 0 to 1 with phase 0 at the magnitude minimum.
-    Feature names are prefixed with `period_folded_`.
-    Default is None which means no phase features.
-normalization : str, optional
-    Normalization of the periodogram power. Affects `power()`,
-    `freq_power()`, and feature extraction via `__call__()`.
+    Feature names are prefixed with ``period_folded_``.
+    ``None`` means no phase features.
+
+normalization : str, default 'psd'
+    Normalization of the periodogram power. Affects ``power()``,
+    ``freq_power()``, and feature extraction via ``__call__()``.
     Let P be the raw power and n the number of observations.
     Must be one of:
-     - 'psd': Raw power P, unnormalized (default). Consistent with
-       scipy.signal.lombscargle(normalize=False) on variance-normalized
-       data, but differs from astropy's 'psd' convention
-     - 'standard': P_std = P * 2 / (n - 1), values in [0, 1].
-       Matches astropy's 'standard' normalization
-     - 'model': P_std / (1 - P_std), values in [0, inf).
-       Matches astropy's 'model' normalization
-     - 'log': -ln(1 - P_std), values in [0, inf).
-       Matches astropy's 'log' normalization
-    Default is 'psd'
-transform : None, optional
-    Not supported for Periodogram, peaks are not transformed, but you still
-    may apply transformation for the underlying features with thier
-    constructors
+
+     - ``'psd'``: Raw power P, unnormalized. Consistent with
+       ``scipy.signal.lombscargle(normalize=False)`` on variance-normalized
+       data, but differs from astropy's ``'psd'`` convention
+     - ``'standard'``: P_std = P * 2 / (n - 1), values in [0, 1].
+       Matches astropy's ``'standard'`` normalization
+     - ``'model'``: P_std / (1 - P_std), values in [0, inf).
+       Matches astropy's ``'model'`` normalization
+     - ``'log'``: -ln(1 - P_std), values in [0, inf).
+       Matches astropy's ``'log'`` normalization
+
+transform : None, default None
+    Not supported for Periodogram. Peaks are not transformed, but you may
+    apply transformation for the underlying features via their constructors
 
 {common}
 freq_power(t, m, *, cast=False)
@@ -2294,8 +2442,10 @@ freq_power(t, m, *, cast=False)
     ----------
     t : np.ndarray of np.float32 or np.float64
         Time array
+
     m : np.ndarray of np.float32 or np.float64
         Magnitude (flux) array
+
     cast : bool, optional
         Cast inputs to np.ndarray objects of the same dtype
 
@@ -2303,6 +2453,7 @@ freq_power(t, m, *, cast=False)
     -------
     freq : np.ndarray of np.float32 or np.float64
         Frequency grid
+
     power : np.ndarray of np.float32 or np.float64
         Periodogram power
 
@@ -2313,8 +2464,10 @@ power(t, m, *, cast=False)
     ----------
     t : np.ndarray of np.float32 or np.float64
         Time array
+
     m : np.ndarray of np.float32 or np.float64
         Magnitude (flux) array
+
     cast : bool, optional
         Cast inputs to np.ndarray objects of the same dtype
 
@@ -2334,7 +2487,7 @@ Examples
 >>> peaks = periodogram(t, m, sorted=True)[::2]
 >>> frequency, power = periodogram.freq_power(t, m)
 "#,
-            intro = LcfPeriodogram::<f64>::doc(),
+            intro = prepare_upstream_doc(LcfPeriodogram::<f64>::doc()),
             default_peaks = LcfPeriodogram::<f64>::default_peaks(),
             default_resolution = LcfPeriodogram::<f64>::default_resolution(),
             default_max_freq_factor = LcfPeriodogram::<f64>::default_max_freq_factor(),
@@ -2433,7 +2586,7 @@ impl OtsuSplit {
     fn __doc__() -> String {
         format!(
             "{}{}",
-            lcf::OtsuSplit::doc().trim_start(),
+            prepare_upstream_doc(lcf::OtsuSplit::doc()),
             COMMON_FEATURE_DOC
         )
     }

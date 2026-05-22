@@ -1,0 +1,66 @@
+# Overview
+
+A dm-dt map is a 2D histogram of magnitude differences (dm) versus log-time differences
+(lg dt) for all pairs of observations in a light curve.
+It was introduced as an input representation for ML classifiers by
+[Mahabal et al. 2011](https://ui.adsabs.harvard.edu/abs/2011BASI...39..387M/abstract) and
+[Soraisam et al. 2020](https://ui.adsabs.harvard.edu/abs/2020ApJ...892..112S/abstract).
+
+Unlike scalar feature extractors, `DmDt` produces a 2D array — a fixed-size image that
+can be fed directly into a CNN.
+
+## Basic usage
+
+```python
+import light_curve as licu
+import numpy as np
+
+dmdt = licu.DmDt.from_borders(
+    min_lgdt=0,       # log10(dt_min) in days
+    max_lgdt=2,       # log10(dt_max) in days
+    max_abs_dm=1,     # maximum |dm| in magnitudes
+    lgdt_size=32,     # number of dt bins
+    dm_size=32,       # number of dm bins
+    norm=["dt"],      # normalise each dt row
+)
+
+rng = np.random.default_rng(0)
+t = np.sort(rng.uniform(0, 100, 200))
+m = 15.0 + rng.normal(0, 0.1, 200)
+
+map_ = dmdt.points(t, m)   # shape (32, 32)
+```
+
+The output array has shape `(lgdt_size, dm_size)`.
+Each cell counts the number of observation pairs \((i, j)\) with \(i < j\) that fall into
+the corresponding \((\lg\Delta t,\, \Delta m)\) bin.
+
+## Normalisation
+
+The `norm` parameter accepts a list of zero, one, or both of the following strings:
+
+| `norm` value | Effect |
+|---|---|
+| `[]` (empty) | Raw pair counts |
+| `["dt"]` | Divide each Δt row by its total count (row sums to ≤1) |
+| `["max"]` | Divide the entire map by its maximum value (max = 1) |
+| `["dt", "max"]` | Apply both normalisations in sequence |
+
+## Batch processing
+
+```python
+light_curves = [(t1, m1), (t2, m2), ...]
+maps = dmdt.points_many(light_curves)   # shape (N, 32, 32)
+```
+
+## Error-weighted maps (Gaussian kernel)
+
+When photometric errors are available, use `gausses()` to spread each pair into a Gaussian
+kernel in Δm space. The `err2` argument is the **variance** (σ²), not the standard deviation:
+
+```python
+err = np.full(200, 0.05)          # 1-σ photometric error
+map_g = dmdt.gausses(t, m, err**2)   # shape (32, 32)
+```
+
+See the [API reference](api.md) for the full `DmDt` signature.
