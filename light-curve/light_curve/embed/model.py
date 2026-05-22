@@ -251,10 +251,10 @@ class ImplicitMultiBandModel(EmbeddingSession, ABC):
     wavelength or a fixed positional slot).
 
     Subclasses must define :attr:`seq_per_band`: an ordered sequence of
-    ``(band_label, n_slots)`` pairs that specifies both the band vocabulary and the
-    number of observation slots reserved for each band in the fixed-length input
-    sequence.  :attr:`band_labels` and :attr:`seq_len` are derived from it
-    automatically.
+    ``(band_label, n_slots)`` pairs that specifies the number of observation slots
+    reserved for each band in the fixed-length input sequence.  :attr:`seq_len` is
+    derived from it automatically.  Unknown band labels in the input are silently
+    ignored — their slots remain zero-padded.
 
     The helper :meth:`_iterate_band_slots` sorts observations by time, clips each
     band to its slot count, and yields per-band data in :attr:`seq_per_band` order
@@ -280,17 +280,9 @@ class ImplicitMultiBandModel(EmbeddingSession, ABC):
     band_groups : list of collections of str, optional
         Each element is the set of band labels to include in one independent model
         run.  ``None`` runs the model once on all observations.
-    allow_extra_bands : bool, optional
-        If ``False`` (default), :meth:`__call__` raises :exc:`ValueError` when the
-        input contains labels absent from :attr:`band_labels`.  Set to ``True`` to
-        silently ignore unrecognised observations.
     """
 
     seq_per_band: Sequence[tuple[str, int]]
-
-    @property
-    def band_labels(self) -> frozenset[str]:
-        return frozenset(b for b, _ in self.seq_per_band)
 
     @property
     def seq_len(self) -> int:
@@ -301,18 +293,9 @@ class ImplicitMultiBandModel(EmbeddingSession, ABC):
         session: ort.InferenceSession,
         *,
         band_groups: Sequence[Collection[str]] | None = None,
-        allow_extra_bands: bool = False,
     ) -> None:
         super().__init__(session, reduction=Beginning())
         self.band_groups = band_groups
-        self.allow_extra_bands = allow_extra_bands
-
-    def _validate_bands(self, band: ArrayLike) -> None:
-        if self.allow_extra_bands:
-            return
-        unknown = set(np.unique(np.asarray(band))) - self.band_labels
-        if unknown:
-            raise ValueError(f"band contains labels not in {sorted(self.band_labels)}: {sorted(unknown)}")
 
     def _iterate_band_slots(
         self,
@@ -355,15 +338,13 @@ class ImplicitMultiBandModel(EmbeddingSession, ABC):
         magerr : array-like, shape ``(n,)``
             Measurement uncertainties.
         band : array-like, shape ``(n,)``
-            Band labels — must be elements of :attr:`band_labels` unless
-            ``allow_extra_bands`` is ``True``.
+            Band labels.  Unknown labels are silently ignored.
 
         Returns
         -------
         np.ndarray, shape ``(n_band_groups, n_subsamples, seq_size, embed_dim)``
             ``n_band_groups`` is 1 when ``band_groups`` is ``None``.
         """
-        self._validate_bands(band)
         time = np.asarray(time, dtype=np.float64)
         mag = np.asarray(mag, dtype=np.float32)
         magerr = np.asarray(magerr, dtype=np.float32)
