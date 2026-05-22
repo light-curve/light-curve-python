@@ -215,6 +215,12 @@
   box-shadow: none !important;
 }
 
+/* Section container div also carries md-nav__link — prevent its text-decoration from bleeding
+   through to the active child <a> (CSS text-decoration on a parent overrides child's none) */
+.md-sidebar--primary .md-nav__container {
+  text-decoration: none !important;
+}
+
 /* Left sidebar — not clickable on desktop only (on mobile, allows navigating to section index) */
 @media screen and (min-width: 76.25em) {
   .md-sidebar--primary .md-nav__link--active,
