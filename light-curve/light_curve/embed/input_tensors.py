@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import asdict, dataclass, field
 
 import numpy as np
@@ -19,3 +20,14 @@ class InputTensors:
         d = asdict(self)
         d.pop("bool_mask")
         return d
+
+
+def concat_input_tensors(tensors: list[InputTensors]) -> InputTensors:
+    ty = type(tensors[0])
+    arrays = defaultdict(list)
+    for t in tensors:
+        assert isinstance(t, ty), "All tensors must be of the same type"
+        for k, v in asdict(t).items():
+            arrays[k].append(v)
+    arrays = {k: np.concatenate(v, axis=0) for k, v in arrays.items()}
+    return ty(**arrays)

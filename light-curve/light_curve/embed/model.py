@@ -3,13 +3,12 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections import Counter
 from enum import IntEnum
-from numbers import Number
 from typing import TYPE_CHECKING, Mapping, Sequence
 
 import numpy as np
 from numpy.typing import ArrayLike
 
-from light_curve.embed.input_tensors import InputTensors
+from light_curve.embed.input_tensors import InputTensors, concat_input_tensors
 from light_curve.embed.reduction import Reduction, reduction_from_str
 from light_curve.light_curve_py.warnings import warn_experimental
 
@@ -187,8 +186,6 @@ class SingleBandModel(EmbeddingSession, ABC):
         Extra kwargs forwarded to :func:`reduction_from_str`.
     """
 
-    seq_size: int
-
     def __init__(
         self,
         session: ort.InferenceSession,
@@ -242,12 +239,10 @@ class SingleBandModel(EmbeddingSession, ABC):
         return np.concatenate(embeddings, axis=Dim.BAND)
 
 
-class ExplicitMultiBandModel(EmbeddingSession, ABC):
+class MultiBandModel(EmbeddingSession, ABC):
     """Embedding model that receives all photometric bands in a single forward pass.
 
-    Unlike :class:`SingleBandModel`, the band identity is passed explicitly to the
-    model as an integer channel index alongside the flux and time arrays.  This
-    allows the model to learn inter-band correlations.
+    Unlike :class:`SingleBandModel`, model may accept multiple photometric bands.
 
     ``band_groups`` controls how user-supplied band labels are mapped to the
     integer indices the model expects:
@@ -280,8 +275,7 @@ class ExplicitMultiBandModel(EmbeddingSession, ABC):
         Extra keyword arguments forwarded to :func:`reduction_from_str`.
     """
 
-    seq_size: int
-    valid_model_bands: frozenset[Number]
+    n_model_bands: int
 
     def __init__(
         self,
@@ -297,12 +291,12 @@ class ExplicitMultiBandModel(EmbeddingSession, ABC):
             reduction=reduction,
             reduction_kwargs=reduction_kwargs,
         )
-        self.bands = band_groups
+        self.bands_groups = band_groups
         self.allow_extra_bands = allow_extra_bands
 
         if band_groups is None:
             self.band_mappings = None
-            self.defined_input_bands = self.valid_model_bands
+            self.defined_input_bands = set(range(self.n_model_bands))
             return
 
         if isinstance(band_groups, Sequence):
@@ -325,11 +319,11 @@ class ExplicitMultiBandModel(EmbeddingSession, ABC):
             uniq_values = set(band_groups.values())
             band_mappings = [(frozenset(band_groups.keys()), np.vectorize(band_groups.get))]
             defined_input_bands = set(band_groups.keys())
-        if not uniq_values.issubset(self.valid_model_bands):
+        if not uniq_values.issubset(range(self.n_model_bands)):
             raise ValueError(
                 "if ``band_groups`` is a ``dict[input_band, model_map]``, or a list of such dicts, "
                 "then all ``model_map`` values must be in the set of valid model band_groups. "
-                f"Invalid values found: {sorted(uniq_values - self.valid_model_bands)}"
+                f"Invalid values found: {sorted(uniq_values - set(range(self.n_model_bands)))}"
             )
 
         self.band_mappings = band_mappings
@@ -372,7 +366,7 @@ class ExplicitMultiBandModel(EmbeddingSession, ABC):
         """
         self._validate_extra_bands(band)
 
-        if self.bands is None:
+        if self.bands_groups is None:
             embed = super().__call__(*(arrays + (band,)))
             return np.expand_dims(embed, axis=Dim.BAND)
 
@@ -388,6 +382,32 @@ class ExplicitMultiBandModel(EmbeddingSession, ABC):
             embeddings.append(np.expand_dims(embed_band_group, axis=Dim.BAND))
 
         return np.concatenate(embeddings, axis=Dim.BAND)
+
+
+class ImplicitMultiBandModel(MultiBandModel, ABC):
+    seq_sizes: list[int]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if len(self.seq_sizes) != self.n_model_bands:
+            raise ValueError(
+                f"Length of seq_sizes must match n_model_bands. "
+                f"Got len(seq_sizes)={len(self.seq_sizes)} and n_model_bands={self.n_model_bands}."
+            )
+
+    def preprocess_lc(self, *arrays: ArrayLike, band: ArrayLike) -> InputTensors:
+        inputs = []
+        for band_idx, seq_size in enumerate(self.seq_sizes):
+            band_mask = band == band_idx
+            band_arrays = tuple(arr[band_mask] for arr in arrays)
+            band_input_tensors = self.preprocess_single_band(*band_arrays)
+            inputs.append(band_input_tensors)
+
+        return concat_input_tensors(inputs)
+
+    @abstractmethod
+    def preprocess_single_band(self, *arrays: ArrayLike) -> InputTensors:
+        raise NotImplementedError
 
 
 _ONNX_INSTALL_HINT = (
