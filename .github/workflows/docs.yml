@@ -135,6 +135,7 @@ jobs:
         run: |
           rm -rf gh-pages-deploy/pr${PR}
           cp -r /tmp/pr-site gh-pages-deploy/pr${PR}
+          rm -f gh-pages-deploy/pr${PR}/CNAME
 
           python3 -c "
           import json, os, re
