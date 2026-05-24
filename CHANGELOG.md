@@ -9,11 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- New `AstraCLR` embedding model in `light_curve.embed`: a contrastive-learning transformer encoder
+  pretrained on ZTF *g*, *r*, *i* photometry on ZTF DR16 (MJD 58 194 – 59 951, Majumder et al.
+  2026, in prep). Accepts `(mjd, mag, magerr, band)` — times must be in MJD — and returns
+  512-dimensional embeddings. Load with `AstraCLR.from_hf(band_groups={"g": 0, "r": 1, "i": 2})`.
+- New `Middle` reduction strategy in `light_curve.embed`: selects observations centred on the
+  temporal midpoint of the light curve. Available for all embedding models via `reduction="middle"`.
 - New documentation site with MkDocs + Material for MkDocs at https://light-curve.snad.space/:
-  - Tutorials for feature extraction basics, periodogram, curve fitting, multiband features,
-    dm-dt maps, and light-curve embeddings
-  - Full API reference for all feature extractors, `DmDt`, and embedding models
-  - *Citing & Support* page with BibTeX entries for all related papers
+    - Tutorials for feature extraction basics, periodogram, curve fitting, multiband features,
+      dm-dt maps, and light-curve embeddings
+    - Full API reference for all feature extractors, `DmDt`, and embedding models
+    - *Citing & Support* page with BibTeX entries for all related papers
 - CI: each pull request gets a live docs preview deployed to `/pr{N}/`
 
 ### Changed

@@ -22,12 +22,12 @@ class InputTensors:
         return d
 
 
-def concat_input_tensors(tensors: list[InputTensors]) -> InputTensors:
+def concat_input_tensors(tensors: list[InputTensors], axis: int = 0) -> InputTensors:
     ty = type(tensors[0])
     arrays = defaultdict(list)
     for t in tensors:
         assert isinstance(t, ty), "All tensors must be of the same type"
         for k, v in asdict(t).items():
             arrays[k].append(v)
-    arrays = {k: np.concatenate(v, axis=0) for k, v in arrays.items()}
+    arrays = {k: np.concatenate(v, axis=axis) for k, v in arrays.items()}
     return ty(**arrays)

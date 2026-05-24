@@ -26,6 +26,7 @@ If you already have the ONNX model file locally, `huggingface_hub` is not requir
 | `Astromer1` | single (or per-band) | time, mag | 256 | MACHO R-band |
 | `Astromer2` | single (or per-band) | time, mag | 256 | MACHO (1.5 M light curves) |
 | `ATCAT` | 6 (ugrizY jointly) | time, flux, flux\_err, band index | 384 | ELAsTiCC |
+| `AstraCLR` | 3 (gri jointly) | time, mag, mag\_err, band index | 512 | ZTF (Zubercal DR16) |
 
 ## Single-band: Astromer2
 
@@ -80,6 +81,76 @@ print(embedding.shape)  # (1, 1, 1, 384)
 ```
 
 Set `mag_zp=27.5` for ELAsTiCC/SNANA FITS data, or `mag_zp=8.9` for Jy.
+
+## Multi-band: AstraCLR
+
+[AstraCLR](https://huggingface.co/ashrot/astra-clr-base) processes ZTF *g*, *r*, *i*
+bands jointly using a contrastive-learning transformer and returns 512-dimensional embeddings.
+Inputs are magnitudes, magnitude errors, **MJD observation times**, and band labels.
+
+!!! important
+    Times must be in **Modified Julian Date (MJD)** — the model subtracts a fixed offset of
+    58 000 internally, so arbitrary time units will produce incorrect embeddings.
+    The model was pretrained on **ZTF DR16** (Zubercal DR16 × Gaia DR3), which covers
+    **MJD 58 194 – 59 951** (roughly 2018 Feb – 2023 Jan).
+
+```python
+import numpy as np
+from light_curve.embed import AstraCLR
+
+model = AstraCLR.from_hf(band_groups={"g": 0, "r": 1, "i": 2})
+
+rng = np.random.default_rng(3)
+n = 300
+# Times must be MJD — ZTF DR16 covers MJD 58 194 to 59 951
+mjd    = np.sort(rng.uniform(58_194, 59_951, n)).astype(np.float64)
+mag    = rng.normal(17, 0.5, n).astype(np.float32)
+magerr = np.full(n, 0.02, dtype=np.float32)
+band   = np.array(["g", "r", "i"])[rng.integers(0, 3, n)]
+
+embedding = model(mjd, mag, magerr, band)
+print(embedding.shape)  # (1, 1, 1, 512)
+vec = embedding.squeeze()  # (512,)
+```
+
+Integer band indices (0=*g*, 1=*r*, 2=*i*) can be used directly without `band_groups`:
+
+```python
+import numpy as np
+from light_curve.embed import AstraCLR
+
+model = AstraCLR.from_hf()
+
+rng = np.random.default_rng(4)
+n = 300
+mjd    = np.sort(rng.uniform(58_194, 59_951, n)).astype(np.float64)
+mag    = rng.normal(17, 0.5, n).astype(np.float32)
+magerr = np.full(n, 0.02, dtype=np.float32)
+band   = rng.integers(0, 3, n)  # 0=g, 1=r, 2=i
+
+embedding = model(mjd, mag, magerr, band)
+print(embedding.shape)  # (1, 1, 1, 512)
+```
+
+Multiple subsampling strategies (e.g. for test-time augmentation) are supported via
+:class:`MultipleReductions`.  The new :class:`Middle` reduction selects observations
+centred on the light curve's temporal midpoint:
+
+```python
+import numpy as np
+from light_curve.embed import AstraCLR
+
+rng = np.random.default_rng(5)
+n = 400
+mjd    = np.sort(rng.uniform(58_194, 59_951, n)).astype(np.float64)
+mag    = rng.normal(17, 0.5, n).astype(np.float32)
+magerr = np.full(n, 0.02, dtype=np.float32)
+band   = rng.integers(0, 3, n)
+
+model = AstraCLR.from_hf(reduction=["beginning", "end", "middle"])
+embedding = model(mjd, mag, magerr, band)
+print(embedding.shape)  # (1, 3, 1, 512) — one embedding per reduction
+```
 
 ## GPU and alternative runtimes
 

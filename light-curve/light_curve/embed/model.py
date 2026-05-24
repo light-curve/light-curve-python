@@ -395,18 +395,29 @@ class ImplicitMultiBandModel(MultiBandModel, ABC):
                 f"Got len(seq_sizes)={len(self.seq_sizes)} and n_model_bands={self.n_model_bands}."
             )
 
-    def preprocess_lc(self, *arrays: ArrayLike, band: ArrayLike) -> InputTensors:
+    def preprocess_lc(self, *arrays_with_band: ArrayLike) -> InputTensors:
+        *arrays, band = arrays_with_band
+        band = np.asarray(band)
+
         inputs = []
+        n_subsamples = None
         for band_idx, seq_size in enumerate(self.seq_sizes):
             band_mask = band == band_idx
-            band_arrays = tuple(arr[band_mask] for arr in arrays)
-            band_input_tensors = self.preprocess_single_band(*band_arrays)
-            inputs.append(band_input_tensors)
+            band_arrays = tuple(np.asarray(arr)[band_mask] for arr in arrays)
+            band_tensors = self.preprocess_single_band(*band_arrays, band_idx=band_idx, seq_size=seq_size)
+            if n_subsamples is None:
+                n_subsamples = band_tensors.bool_mask.shape[0]
+            elif band_tensors.bool_mask.shape[0] != n_subsamples:
+                raise ValueError(
+                    f"Band {band_idx} produced {band_tensors.bool_mask.shape[0]} subsamples "
+                    f"but previous bands produced {n_subsamples}."
+                )
+            inputs.append(band_tensors)
 
-        return concat_input_tensors(inputs)
+        return concat_input_tensors(inputs, axis=1)
 
     @abstractmethod
-    def preprocess_single_band(self, *arrays: ArrayLike) -> InputTensors:
+    def preprocess_single_band(self, *arrays: ArrayLike, band_idx: int, seq_size: int) -> InputTensors:
         raise NotImplementedError
 
 
