@@ -356,7 +356,7 @@ class _TestBazinFit:
         return return_value
 
 
-@pytest.mark.skip("Runs too long")
+@pytest.mark.slow
 class TestBazinFitMcmc(_TestBazinFit, _Test):
     args = ("mcmc",)
 
@@ -366,7 +366,7 @@ if lc_ext._built_with_ceres:
     class TestBazinFitCeres(_TestBazinFit, _Test):
         args = ("ceres",)
 
-    @pytest.mark.skip("Runs too long")
+    @pytest.mark.slow
     class TestBazinFitMcmcCeres(_TestBazinFit, _Test):
         args = ("mcmc-ceres",)
 
@@ -376,26 +376,26 @@ if lc_ext._built_with_gsl:
     class TestBazinFitLmsder(_TestBazinFit, _Test):
         args = ("lmsder",)
 
-    @pytest.mark.skip("Runs too long")
+    @pytest.mark.slow
     class TestBazinFitMcmcLmsder(_TestBazinFit, _Test):
         args = ("mcmc-lmsder",)
 
 
-@pytest.mark.skip("Runs too long")
+@pytest.mark.slow
 class TestBazinFitNuts(_TestBazinFit, _Test):
     args = ("nuts",)
 
 
 if lc_ext._built_with_ceres:
 
-    @pytest.mark.skip("Runs too long")
+    @pytest.mark.slow
     class TestBazinFitNutsCeres(_TestBazinFit, _Test):
         args = ("nuts-ceres",)
 
 
 if lc_ext._built_with_gsl:
 
-    @pytest.mark.skip("Runs too long")
+    @pytest.mark.slow
     class TestBazinFitNutsLmsder(_TestBazinFit, _Test):
         args = ("nuts-lmsder",)
 

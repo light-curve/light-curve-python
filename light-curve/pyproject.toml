@@ -105,6 +105,13 @@ dev = [
     "cesium",
     "astropy",
 ]
+# Slow tests and pre-executed notebook validation (nightly CI)
+test-slow = [
+    { include-group = "dev" },
+    "scikit-learn",
+    "matplotlib",
+    "nbmake",
+]
 
 [tool.maturin]
 # It asks to use Cargo.lock to make the build reproducible
@@ -179,10 +186,10 @@ select = [
 [tool.pytest.ini_options]
 minversion = "6.0"
 # requires pytest-benchmark
-addopts = "-ra --import-mode=append --benchmark-min-time=0.1 --benchmark-max-time=5.0 --benchmark-sort=mean --benchmark-disable"
+addopts = "-ra --import-mode=append --benchmark-min-time=0.1 --benchmark-max-time=5.0 --benchmark-sort=mean --benchmark-disable -m 'not slow'"
 testpaths = [
     "tests/",
-    "README.md", # requires markdown-pytest
+    "README.md",
 ]
 norecursedirs = [
     "tests/prep-models",
@@ -191,12 +198,15 @@ norecursedirs = [
 markers = [
     "nobs: marks benchmarks for different numbers of observations (deselect with '-m \"not nobs\"')",
     "multi: marks multiprocessing benchmarks (deselect with '-m \"not multi\"')",
+    "slow: marks tests that are too slow for regular CI (run nightly)",
 ]
 
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py{310,311,312,313,314,314t}-{base,test}
+envlist =
+    py{310,311,312,313,314,314t}-{base,test}
+    py314-slow
 isolated_build = True
 
 [testenv:py{310,311,312,313,314,314t}-base]
@@ -212,6 +222,14 @@ dependency_groups = dev
 commands =
     pytest README.md tests/ light_curve/
     ruff check .
+set_env =
+    CARGO_TARGET_DIR = {tox_root}/target
+
+[testenv:py314-slow]
+dependency_groups = test-slow
+commands =
+    pytest -m slow tests/
+    pytest --nbmake --nbmake-timeout=3600 ../docs/embed/pre-executed
 set_env =
     CARGO_TARGET_DIR = {tox_root}/target
 
