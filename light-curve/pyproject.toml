@@ -179,10 +179,10 @@ select = [
 [tool.pytest.ini_options]
 minversion = "6.0"
 # requires pytest-benchmark
-addopts = "-ra --import-mode=append --benchmark-min-time=0.1 --benchmark-max-time=5.0 --benchmark-sort=mean --benchmark-disable"
+addopts = "-ra --import-mode=append --benchmark-min-time=0.1 --benchmark-max-time=5.0 --benchmark-sort=mean --benchmark-disable -m 'not slow'"
 testpaths = [
     "tests/",
-    "README.md", # requires markdown-pytest
+    "README.md",
 ]
 norecursedirs = [
     "tests/prep-models",
@@ -191,6 +191,7 @@ norecursedirs = [
 markers = [
     "nobs: marks benchmarks for different numbers of observations (deselect with '-m \"not nobs\"')",
     "multi: marks multiprocessing benchmarks (deselect with '-m \"not multi\"')",
+    "slow: marks tests that are too slow for regular CI (run nightly)",
 ]
 
 [tool.tox]
@@ -212,6 +213,19 @@ dependency_groups = dev
 commands =
     pytest README.md tests/ light_curve/
     ruff check .
+set_env =
+    CARGO_TARGET_DIR = {tox_root}/target
+
+[testenv:py313-slow]
+dependency_groups = dev
+deps =
+    scikit-learn
+    matplotlib
+    pytest-timeout
+    nbmake
+commands =
+    pytest -m slow tests/ --timeout=3600
+    pytest --nbmake --nbmake-timeout=3600 ../docs/embed/similarity_search.ipynb ../docs/embed/classification.ipynb
 set_env =
     CARGO_TARGET_DIR = {tox_root}/target
 

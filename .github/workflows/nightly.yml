@@ -1,0 +1,39 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  slow-tests:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: light-curve
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "${{ runner.os }}_stable-rust_nightly"
+          workspaces: "light-curve"
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgsl-dev
+      - name: Install tox
+        run: pip install tox
+      - name: Run slow tests
+        run: tox -e py313-slow

@@ -49,6 +49,9 @@ plugins:
       execute: true
       allow_errors: false
       include_source: true
+      execute_ignore:
+        - "embed/similarity_search.ipynb"
+        - "embed/classification.ipynb"
   - mkdocstrings:
       custom_templates: docs/templates
       handlers:
@@ -127,6 +130,8 @@ nav:
   - ML Embeddings:
     - embed/index.md
     - Tutorial: embed/tutorial.ipynb
+    - Similarity search: embed/similarity_search.ipynb
+    - Classification: embed/classification.ipynb
     - API: embed/api.md
   - dm–dt maps:
     - dmdt/index.md
