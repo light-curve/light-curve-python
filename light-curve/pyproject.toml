@@ -87,23 +87,23 @@ docs = [
     "s3fs",
     "universal-pathlib",
 ]
-# Development environment for free-threaded Python builds
-dev-free-threading = [
+# Testing environment for free-threaded Python builds (excludes packages incompatible with free-threading)
+test-free-threading = [
     { include-group = "test-base" },
     "numpy",
     "pyarrow",
     "pandas",
     "onnxruntime<2",
-    "ruff",
 ]
 # Full development environment
 dev = [
-    { include-group = "dev-free-threading" },
+    { include-group = "test-free-threading" },
     "iminuit>=2.21,<3",
     "nanoarrow",
     "polars",
     "cesium",
     "astropy",
+    "ruff",
 ]
 # Slow tests and pre-executed notebook validation (nightly CI)
 test-slow = [
@@ -205,47 +205,28 @@ markers = [
 legacy_tox_ini = """
 [tox]
 envlist =
-    py{310,311,312,313,314,314t}-{base,test}
+    py{310,311,312,313,314,314t}-test
     py314-slow
-isolated_build = True
-
-[testenv:py{310,311,312,313,314,314t}-base]
-change_dir = {envtmpdir}
-extras =
-commands =
-    python -c 'import light_curve'
-set_env =
-    CARGO_TARGET_DIR = {tox_root}/target
 
 [testenv:py{310,311,312,313,314}-test]
-dependency_groups = dev
+dependency_groups = test
 commands =
     pytest README.md tests/ light_curve/
-    ruff check .
-set_env =
-    CARGO_TARGET_DIR = {tox_root}/target
 
 [testenv:py314-slow]
 dependency_groups = test-slow
 commands =
     pytest -m slow tests/
     pytest --nbmake --nbmake-timeout=3600 ../docs/embed/pre-executed
-set_env =
-    CARGO_TARGET_DIR = {tox_root}/target
 
 [testenv:py314t-test]
-dependency_groups = dev-free-threading
+dependency_groups = test-free-threading
 commands =
     pytest README.md tests/ light_curve/ \
         --ignore tests/test_w_bench.py \
         --ignore tests/light_curve_py/features/test_rainbow.py \
-        --deselect README.md::test_rainbow_fit_example \
-        --deselect README.md::test_many_polars \
         --deselect tests/light_curve_ext/test_feature.py::test_many_nanoarrow \
         --deselect tests/light_curve_ext/test_feature.py::test_many_polars
-    ruff check .
-set_env =
-    CARGO_TARGET_DIR = {tox_root}/target
 """
 
 
