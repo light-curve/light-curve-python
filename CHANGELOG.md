@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Full API reference for all feature extractors, `DmDt`, and embedding models
   - *Citing & Support* page with BibTeX entries for all related papers
 - CI: each pull request gets a live docs preview deployed to `/pr{N}/`
+- Two new embed tutorials: Roman transient classification with ATCAT and ZTF similarity search
+  ([#720](https://github.com/light-curve/light-curve-python/pull/720))
 
 ### Changed
 
