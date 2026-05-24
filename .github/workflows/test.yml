@@ -3,6 +3,8 @@ name: Test
 on:
   push:
   pull_request:
+  schedule:
+    - cron: "0 3 * * 2"
   workflow_dispatch:
 
 concurrency:
@@ -273,3 +275,28 @@ jobs:
         run: |
           uvx maturin build -i python3.10
           uvx maturin build -i python3.14t
+
+
+  slow-tests:
+    runs-on: ubuntu-latest
+    needs: [build-wheels]
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Download wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-linux-x86_64
+          path: light-curve/wheels/
+      - name: Run slow tests
+        working-directory: light-curve
+        run: uvx --with tox-uv tox -e py314-slow --installpkg=$(ls wheels/*.whl)
