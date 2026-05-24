@@ -2,7 +2,7 @@ name: Nightly
 
 on:
   schedule:
-    - cron: "0 3 * * *"
+    - cron: "0 3 * * 2"
   workflow_dispatch:
 
 jobs:
@@ -21,10 +21,10 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-      - name: Set up Python 3.13
+      - name: Set up Python 3.14
         uses: actions/setup-python@v6
         with:
-          python-version: "3.13"
+          python-version: "3.14"
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: "${{ runner.os }}_stable-rust_nightly"
@@ -36,4 +36,4 @@ jobs:
       - name: Install tox
         run: pip install tox
       - name: Run slow tests
-        run: tox -e py313-slow
+        run: tox -e py314-slow
