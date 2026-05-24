@@ -251,6 +251,34 @@ class RandomSubsample(SingleSubsampleReduction):
         return tuple(array[indices] for array in arrays)
 
 
+class Middle(SingleSubsampleReduction):
+    """Select the ``seq_size`` observations centred on the midpoint of the light curve.
+
+    The centre index is ``len // 2``; the window is shifted toward the edges
+    when there are fewer than ``seq_size`` observations on one side.
+    """
+
+    def single_subsample_lc(self, *arrays: np.ndarray, seq_size: int) -> tuple[np.ndarray, ...]:
+        """Return a window of at most ``seq_size`` elements centred at ``len // 2``.
+
+        Parameters
+        ----------
+        *arrays : np.ndarray
+            1-D arrays of equal length.
+        seq_size : int
+            Maximum number of observations to keep.
+
+        Returns
+        -------
+        tuple of np.ndarray
+            ``min(len, seq_size)`` elements centred on the midpoint.
+        """
+        m = arrays[0].size
+        cut = m // 2
+        start = max(0, min(cut - seq_size // 2, m - seq_size))
+        return tuple(array[start : start + seq_size] for array in arrays)
+
+
 class NonOverlappingWindows(Reduction):
     """Split the light curve into consecutive non-overlapping windows of ``seq_size`` observations.
 
@@ -429,8 +457,8 @@ def reduction_from_str(s: str | list[str], **kwargs) -> Reduction:
     s : str or list of str
         Strategy name or list of names.  Recognised values (case-insensitive,
         underscores treated as hyphens): ``"beginning"``, ``"end"``,
-        ``"random-subsample"``, ``"non-overlapping-windows"``.  A list with more
-        than one entry produces a :class:`MultipleReductions`.
+        ``"middle"``, ``"random-subsample"``, ``"non-overlapping-windows"``.
+        A list with more than one entry produces a :class:`MultipleReductions`.
     **kwargs
         Forwarded to the strategy constructor (e.g. ``rng`` for
         :class:`RandomSubsample`).
@@ -456,6 +484,8 @@ def reduction_from_str(s: str | list[str], **kwargs) -> Reduction:
             return Beginning()
         case "end":
             return End()
+        case "middle":
+            return Middle()
         case "random-subsample":
             try:
                 rng = kwargs["rng"]
