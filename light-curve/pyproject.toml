@@ -105,6 +105,14 @@ dev = [
     "cesium",
     "astropy",
 ]
+# Slow tests and pre-executed notebook validation (nightly CI)
+test-slow = [
+    { include-group = "dev" },
+    "scikit-learn",
+    "matplotlib",
+    "pytest-timeout",
+    "nbmake",
+]
 
 [tool.maturin]
 # It asks to use Cargo.lock to make the build reproducible
@@ -197,7 +205,9 @@ markers = [
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py{310,311,312,313,314,314t}-{base,test}
+envlist =
+    py{310,311,312,313,314,314t}-{base,test}
+    py313-slow
 isolated_build = True
 
 [testenv:py{310,311,312,313,314,314t}-base]
@@ -217,15 +227,10 @@ set_env =
     CARGO_TARGET_DIR = {tox_root}/target
 
 [testenv:py313-slow]
-dependency_groups = dev
-deps =
-    scikit-learn
-    matplotlib
-    pytest-timeout
-    nbmake
+dependency_groups = test-slow
 commands =
     pytest -m slow tests/ --timeout=3600
-    pytest --nbmake --nbmake-timeout=3600 ../docs/embed/similarity_search.ipynb ../docs/embed/classification.ipynb
+    pytest --nbmake --nbmake-timeout=3600 ../docs/embed/pre-executed
 set_env =
     CARGO_TARGET_DIR = {tox_root}/target
 
