@@ -359,6 +359,7 @@ class _TestBazinFit:
 @pytest.mark.slow
 class TestBazinFitMcmc(_TestBazinFit, _Test):
     args = ("mcmc",)
+    rtol = 2e-2  # posterior mean vs MLE can differ by ~1-2%
 
 
 if lc_ext._built_with_ceres:
@@ -384,6 +385,7 @@ if lc_ext._built_with_gsl:
 @pytest.mark.slow
 class TestBazinFitNuts(_TestBazinFit, _Test):
     args = ("nuts",)
+    rtol = 2e-2  # posterior mean vs MLE can differ by ~1-2%
 
 
 if lc_ext._built_with_ceres:
