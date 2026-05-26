@@ -222,7 +222,6 @@ def test_noisy_all_functions_combination():
     BB_parameters = []
 
     UV_BB_parameters = [
-        3.0, # log_intensity
         750.0, # lambda_scale
     ]
     
