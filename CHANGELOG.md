@@ -9,17 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `Periodogram` now accepts a `phase_features` argument: features extracted from the light curve
-  phase-folded at the best period
-  ([#701](https://github.com/light-curve/light-curve-python/pull/701)).
-- New feature `Chi2Pvar`: probability of variability from the chi-squared test
-  ([#701](https://github.com/light-curve/light-curve-python/pull/701)).
-- New feature `LaflerKinmanStringLength`: smoothness of the light curve
-  ([#701](https://github.com/light-curve/light-curve-python/pull/701)).
+- New `AstraCLR` embedding model in `light_curve.embed`: a contrastive-learning transformer encoder
+  pretrained on ZTF *g*, *r*, *i* photometry on ZTF DR16 (MJD 58 194 – 59 951, Majumder et al.
+  2026, in prep). Accepts `(mjd, mag, magerr, band)` — times must be in MJD — and returns
+  512-dimensional embeddings. Load with `AstraCLR.from_hf(band_groups={"g": 0, "r": 1, "i": 2})`.
+- New `Middle` reduction strategy in `light_curve.embed`: selects observations centred on the
+  temporal midpoint of the light curve. Available for all embedding models via `reduction="middle"`.
+- New documentation site with MkDocs + Material for MkDocs at https://light-curve.snad.space/:
+    - Tutorials for feature extraction basics, periodogram, curve fitting, multiband features,
+      dm-dt maps, and light-curve embeddings
+    - Full API reference for all feature extractors, `DmDt`, and embedding models
+    - *Citing & Support* page with BibTeX entries for all related papers
+- CI: each pull request gets a live docs preview deployed to `/pr{N}/`
+- Two new embed tutorials: Roman transient classification with ATCAT and ZTF similarity search
+  ([#720](https://github.com/light-curve/light-curve-python/pull/720))
 
 ### Changed
 
-- **Breaking** Underlying `nuts-rs` crate has updated, so specific non-linear optimization results may change https://github.com/light-curve/light-curve-python/pull/701
+--
 
 ### Deprecated
 
@@ -36,6 +43,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 --
+
+## [0.12.4] 2026-05-20
+
+### Added
+
+- `Periodogram` now accepts a `phase_features` argument: features extracted from the light curve
+  phase-folded at the best period
+  ([#701](https://github.com/light-curve/light-curve-python/pull/701)).
+- New feature `Chi2Pvar`: probability of variability from the chi-squared test
+  ([#701](https://github.com/light-curve/light-curve-python/pull/701)).
+- New feature `LaflerKinmanStringLength`: smoothness of the light curve
+  ([#701](https://github.com/light-curve/light-curve-python/pull/701)).
+- `RainbowFit` now supports parameterized SED models. Two models are built in: black-body
+  (default, preserves old behavior) and UV-extincted black-body
+  ([#705](https://github.com/light-curve/light-curve-python/pull/705)).
+
+### Changed
+
+- **Breaking** The underlying `nuts-rs` crate has been updated, so specific non-linear optimization
+  results may change ([#701](https://github.com/light-curve/light-curve-python/pull/701)).
 
 ## [0.12.3] 2026-05-14
 

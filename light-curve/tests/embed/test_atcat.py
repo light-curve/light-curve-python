@@ -6,6 +6,8 @@ import numpy as np
 import pyarrow.parquet as pq
 import pytest
 
+from light_curve.embed import ATCAT
+
 PREP_MODELS_DIR = Path(__file__).parent.parent / "prep-models" / "models"
 ATCAT_PARQUET = PREP_MODELS_DIR / "atcat" / "out" / "test-data" / "atcat_test.parquet"
 
@@ -41,17 +43,15 @@ def atcat_data_table():
 
 def test_from_hf_invalid_output():
     """from_hf() raises ValueError for unknown output names."""
-    import light_curve.embed as lce
 
     with pytest.raises(ValueError, match="Unknown output"):
-        lce.ATCAT.from_hf(output="nonexistent")
+        ATCAT.from_hf(output="nonexistent")
 
 
 def test_from_hf_shape(atcat_lsst_band_groups):
     """from_hf() with band_groups returns a working model with correct output shape."""
-    import light_curve.embed as lce
 
-    model = lce.ATCAT.from_hf(output="last", reduction="beginning", band_groups=atcat_lsst_band_groups)
+    model = ATCAT.from_hf(output="last", reduction="beginning", band_groups=atcat_lsst_band_groups)
     n = 50
     band_names = list(atcat_lsst_band_groups.keys())
     time = np.linspace(0, 200, n, dtype=np.float32)
@@ -71,13 +71,12 @@ def test_from_hf_shape(atcat_lsst_band_groups):
 @pytest.mark.parametrize("row_idx", range(10))
 def test_last_matches_reference(atcat_data_table, row_idx, atcat_lsst_band_groups):
     """'last' output matches the reference embedding from the parquet."""
-    import light_curve.embed as lce
 
     lc = atcat_data_table["lightcurve"][row_idx]
     time, flux, flux_err, band = _flatten_lc(lc)
     expected = np.array(atcat_data_table["embedding_last"][row_idx])
 
-    model = lce.ATCAT.from_hf(output="last", reduction="beginning", band_groups=atcat_lsst_band_groups, mag_zp=27.5)
+    model = ATCAT.from_hf(output="last", reduction="beginning", band_groups=atcat_lsst_band_groups, mag_zp=27.5)
     embedding = model(time, flux, flux_err, band)
 
     assert embedding.shape == (1, 1, 1, 384)

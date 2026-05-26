@@ -7,6 +7,8 @@ import numpy as np
 import pyarrow.parquet as pq
 import pytest
 
+from light_curve import embed
+
 PREP_MODELS_DIR = Path(__file__).parent.parent / "prep-models" / "models"
 
 
@@ -56,9 +58,8 @@ def data_table(config):
 @pytest.mark.parametrize("model_class_name", ["Astromer1", "Astromer2"])
 def test_astromer_preprocess_normalises(model_class_name):
     """preprocess_lc produces zero-mean time and mag for each window."""
-    import light_curve.embed as lce
 
-    model_class = getattr(lce, model_class_name)
+    model_class = getattr(embed, model_class_name)
     model = model_class(session=None, reduction="non-overlapping-windows")
     time = np.linspace(0, 100, 200)
     mag = np.linspace(10, 15, 200)
@@ -75,9 +76,8 @@ def test_astromer_preprocess_normalises(model_class_name):
 
 def test_sequence_output_long_lc(config):
     """NonOverlappingWindows + 'sequence' output yields (1, 1, 200, 256) shape."""
-    import light_curve.embed as lce
 
-    model_class = getattr(lce, config.model_name)
+    model_class = getattr(embed, config.model_name)
     model = model_class.from_hf(output="sequence", reduction="non-overlapping-windows")
 
     time = np.linspace(0, 1000, 350)
@@ -90,9 +90,8 @@ def test_sequence_output_long_lc(config):
 
 def test_from_hf_shape(config):
     """from_hf() returns a working model with correct output shape."""
-    import light_curve.embed as lce
 
-    model_class = getattr(lce, config.model_name)
+    model_class = getattr(embed, config.model_name)
     model = model_class.from_hf(output="mean")
     time = np.linspace(0, 100, 50)
     mag = np.ones(50)
@@ -103,9 +102,8 @@ def test_from_hf_shape(config):
 
 def test_from_hf_invalid_output(config):
     """from_hf() raises ValueError for unknown output names."""
-    import light_curve.embed as lce
 
-    model_class = getattr(lce, config.model_name)
+    model_class = getattr(embed, config.model_name)
     with pytest.raises(ValueError, match="Unknown output"):
         model_class.from_hf(output="nonexistent")
 
@@ -113,9 +111,8 @@ def test_from_hf_invalid_output(config):
 @pytest.mark.parametrize("row_idx", range(10))
 def test_mean_matches_reference(config, data_table, row_idx):
     """Mean-pooling output matches the reference embedding from the parquet."""
-    import light_curve.embed as lce
 
-    model_class = getattr(lce, config.model_name)
+    model_class = getattr(embed, config.model_name)
     lc = data_table["lightcurve"][row_idx]
     time = np.array([obs["mjd"] for obs in lc])
     mag = np.array([obs["mag"] for obs in lc])

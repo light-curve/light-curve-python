@@ -7,7 +7,7 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 from light_curve.embed.input_tensors import InputTensors
-from light_curve.embed.model import ExplicitMultiBandModel
+from light_curve.embed.model import MultiBandModel
 from light_curve.embed.reduction import Reduction
 
 if TYPE_CHECKING:
@@ -25,7 +25,7 @@ class ATCATInputs(InputTensors):
     channel_index: np.ndarray = field(kw_only=True)
 
 
-class ATCAT(ExplicitMultiBandModel):
+class ATCAT(MultiBandModel):
     """ATCAT multiband transformer embedding model.
 
     ATCAT (Astronomical Transformer for Classification and Analysis of
@@ -100,7 +100,7 @@ class ATCAT(ExplicitMultiBandModel):
     """
 
     seq_size: int = 243
-    valid_model_bands: frozenset[int] = frozenset(range(6))
+    n_model_bands: int = 6
     hf_repo: str = "light-curve/atcat"
     hf_filename: str = "atcat.onnx"
     model_outputs: frozenset[str] = frozenset({"last", "mean", "sequence"})

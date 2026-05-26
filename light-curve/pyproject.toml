@@ -70,23 +70,47 @@ test = [
     "polars",
     "cesium",
 ]
-# Development environment for free-threaded Python builds
-dev-free-threading = [
+# Documentation build
+docs = [
+    "mike>=2.0",
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.25",
+    "mkdocs-jupyter>=0.24",
+    "numpy",
+    "matplotlib",
+    "astropy",
+    "pyarrow",
+    "huggingface-hub",
+    "onnxruntime<2",
+    "polars",
+    "nested-pandas",
+    "s3fs",
+    "universal-pathlib",
+]
+# Testing environment for free-threaded Python builds (excludes packages incompatible with free-threading)
+test-free-threading = [
     { include-group = "test-base" },
     "numpy",
     "pyarrow",
     "pandas",
     "onnxruntime<2",
-    "ruff",
 ]
 # Full development environment
 dev = [
-    { include-group = "dev-free-threading" },
+    { include-group = "test-free-threading" },
     "iminuit>=2.21,<3",
     "nanoarrow",
     "polars",
     "cesium",
     "astropy",
+    "ruff",
+]
+# Slow tests and pre-executed notebook validation (nightly CI)
+test-slow = [
+    { include-group = "dev" },
+    "scikit-learn",
+    "matplotlib",
+    "nbmake",
 ]
 
 [tool.maturin]
@@ -162,10 +186,10 @@ select = [
 [tool.pytest.ini_options]
 minversion = "6.0"
 # requires pytest-benchmark
-addopts = "-ra --import-mode=append --benchmark-min-time=0.1 --benchmark-max-time=5.0 --benchmark-sort=mean --benchmark-disable"
+addopts = "-ra --import-mode=append --benchmark-min-time=0.1 --benchmark-max-time=5.0 --benchmark-sort=mean --benchmark-disable -m 'not slow'"
 testpaths = [
     "tests/",
-    "README.md", # requires markdown-pytest
+    "README.md",
 ]
 norecursedirs = [
     "tests/prep-models",
@@ -174,43 +198,35 @@ norecursedirs = [
 markers = [
     "nobs: marks benchmarks for different numbers of observations (deselect with '-m \"not nobs\"')",
     "multi: marks multiprocessing benchmarks (deselect with '-m \"not multi\"')",
+    "slow: marks tests that are too slow for regular CI (run nightly)",
 ]
 
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py{310,311,312,313,314,314t}-{base,test}
-isolated_build = True
-
-[testenv:py{310,311,312,313,314,314t}-base]
-change_dir = {envtmpdir}
-extras =
-commands =
-    python -c 'import light_curve'
-set_env =
-    CARGO_TARGET_DIR = {tox_root}/target
+envlist =
+    py{310,311,312,313,314,314t}-test
+    py314-slow
 
 [testenv:py{310,311,312,313,314}-test]
-dependency_groups = dev
+dependency_groups = test
 commands =
     pytest README.md tests/ light_curve/
-    ruff check .
-set_env =
-    CARGO_TARGET_DIR = {tox_root}/target
+
+[testenv:py314-slow]
+dependency_groups = test-slow
+commands =
+    pytest -m slow tests/
+    pytest --nbmake --nbmake-timeout=3600 ../docs/embed/pre-executed
 
 [testenv:py314t-test]
-dependency_groups = dev-free-threading
+dependency_groups = test-free-threading
 commands =
     pytest README.md tests/ light_curve/ \
         --ignore tests/test_w_bench.py \
         --ignore tests/light_curve_py/features/test_rainbow.py \
-        --deselect README.md::test_rainbow_fit_example \
-        --deselect README.md::test_many_polars \
         --deselect tests/light_curve_ext/test_feature.py::test_many_nanoarrow \
         --deselect tests/light_curve_ext/test_feature.py::test_many_polars
-    ruff check .
-set_env =
-    CARGO_TARGET_DIR = {tox_root}/target
 """
 
 

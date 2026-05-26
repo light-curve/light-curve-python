@@ -37,6 +37,17 @@ class RainbowFit(BaseRainbowFit):
     temperature : str or BaseTemperatureTerm subclass, optional
         The shape of temperature term. Default is 'sigmoid'.
         Other options are: 'constant', 'delayed_sigmoid'
+    spectral : str or BaseSpectralTerm subclass, optional
+        The spectral SED model. Default is 'planck' (standard blackbody,
+        no extra fit parameters). Use 'blanketed' for a UV-extincted blackbody:
+
+        .. math::
+            F(\\lambda) = B_\\nu(T) \\cdot e^{-\\tau},\\quad
+            \\tau = 10^{\\texttt{log\\_intensity}} \\cdot e^{-\\lambda/\\texttt{lambda\\_scale}}
+
+        This adds two fit parameters: ``log_intensity`` (blanketing strength,
+        range 1.5–6) and ``lambda_scale`` (characteristic blanketing wavelength
+        in Å, range 100–2000).
 
     Methods
     -------

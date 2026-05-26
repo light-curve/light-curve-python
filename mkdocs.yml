@@ -1,0 +1,141 @@
+site_name: light-curve
+site_url: https://light-curve.snad.space/
+repo_url: https://github.com/light-curve/light-curve-python
+repo_name: light-curve/light-curve-python
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  logo: assets/logo.png
+  favicon: assets/logo.png
+  icon:
+    repo: fontawesome/brands/github
+    edit: material/pencil
+  font:
+    text: Inter
+    code: JetBrains Mono
+  palette:
+    - scheme: default
+      primary: white
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: deep-orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.indexes
+    - toc.follow
+    - content.code.copy
+    - content.action.edit
+    - header.autohide
+
+extra:
+  generator: false
+  version:
+    provider: mike
+    alias: true
+
+plugins:
+  - search
+  - mkdocs-jupyter:
+      execute: true
+      allow_errors: false
+      include_source: true
+      execute_ignore:
+        - "*/pre-executed/*.ipynb"
+  - mkdocstrings:
+      custom_templates: docs/templates
+      handlers:
+        python:
+          load_external_modules: true
+          options:
+            docstring_style: numpy
+            docstring_options:
+              warn_unknown_params: false
+              warn_missing_types: false
+              warnings: false
+            filters:
+              - "^_FeatureEvaluator"
+              - "!^_"
+            show_source: false
+            show_bases: true
+            show_signature: false
+            show_root_heading: true
+            heading_level: 2
+            force_inspection: true
+            inherited_members: false
+            members_order: source
+            members: false
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.snippets:
+      base_path: .
+  - admonition
+  - attr_list
+  - def_list
+  - md_in_html
+  - toc:
+      toc_depth: 2
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+
+extra_css:
+  - stylesheets/extra.css
+  - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css
+
+extra_javascript:
+  - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js
+  - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js
+  - javascripts/katex.js
+
+watch:
+  - CHANGELOG.md
+  - light-curve/light_curve
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Feature Extractors:
+    - features/index.md
+    - Basics: features/basics.ipynb
+    - Periodogram: features/periodogram.ipynb
+    - Parametric fits: features/fitting.ipynb
+    - Multiband: features/multiband/tutorial.ipynb
+    - API:
+      - features/api/index.md
+      - Base class: features/api/base.md
+      - Meta (Extractor, Bins): features/api/meta.md
+      - Statistical: features/api/statistical.md
+      - Variability & trend: features/api/variability.md
+      - Time sampling: features/api/time.md
+      - Periodogram: features/api/periodogram.md
+      - Parametric fits: features/api/fitting.md
+      - Detection-based: features/api/detection.md
+      - Multiband: features/multiband/api.md
+  - ML Embeddings:
+    - embed/index.md
+    - Tutorial: embed/tutorial.ipynb
+    - Similarity search: embed/pre-executed/similarity_search.ipynb
+    - Classification: embed/pre-executed/classification.ipynb
+    - API: embed/api.md
+  - dm–dt maps:
+    - dmdt/index.md
+    - Tutorial: dmdt/tutorial.ipynb
+    - API: dmdt/api.md
+  - Changelog: changelog.md
+  - Citing & Support: citing.md
+  - Contribute: developer/contributing.md

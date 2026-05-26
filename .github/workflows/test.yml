@@ -1,13 +1,20 @@
 name: Test
 
-on: [ push, pull_request, workflow_dispatch ]
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 3 * * 2"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ startsWith(github.ref, 'refs/tags/') && github.run_id || github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 jobs:
-  py_build_deps:
-    outputs:
-      output: ${{ steps.extract_from_toml.outputs.output }}
-
-    runs-on: ubuntu-slim
+  build-wheel-linux-x86_64:
+    name: Build wheels (x86_64)
+    runs-on: ubuntu-latest
 
     defaults:
       run:
@@ -17,58 +24,161 @@ jobs:
       - uses: actions/checkout@v6
         with:
           submodules: true
-      - name: Set up Python 3.13
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.13"
-      - name: Extract build deps from pyproject.toml
-        id: extract_from_toml
-        run: |
-          echo "output="$(python -c 'import tomllib; print(" ".join(tomllib.load(open("pyproject.toml", "rb"))["build-system"]["requires"]))') >> "$GITHUB_OUTPUT"
-
-
-  test:
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      fail-fast: false
-      matrix:
-        python_minor: [ '10', '11', '12', '13', '13t', '14', '14t' ]
-        os: [ ubuntu-latest ]
-        # Just a single ARM worker to be sure that it works
-        include:
-          - python_minor: '13'
-            os: ubuntu-24.04-arm
-
-    defaults:
-      run:
-        working-directory: light-curve
-
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: true
-      - name: Set up Rust toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
-      - name: Set up Python 3.${{ matrix.python_minor }}
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.${{ matrix.python_minor }}"
-          allow-prereleases: true
-      - uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: "${{ runner.os }}_stable-rust_tox-py3${{ matrix.python_minor }}"
-          workspaces: "light-curve"
-      - name: Install tox
-        run: pip install tox
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libgsl-dev
-      - name: Run Python tests
-        run: tox -e py3${{ matrix.python_minor }}-base,py3${{ matrix.python_minor }}-test
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "${{ runner.os }}-${{ runner.arch }}_stable-rust_build-wheels"
+          workspaces: "light-curve"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - name: Build abi3 wheel
+        run: uvx maturin build --release -i python3.14
+      - name: Upload abi3 wheel
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-linux-x86_64
+          path: light-curve/target/wheels/
+      - name: Set up Python 3.14t
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14t"
+      - name: Build free-threading wheel
+        run: |
+          rm -f target/wheels/*.whl
+          uvx maturin build --release -i python3.14t
+      - name: Upload free-threading wheel
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-linux-x86_64-ft
+          path: light-curve/target/wheels/
+
+
+  build-wheel-linux-aarch64:
+    name: Build wheels (aarch64)
+    runs-on: ubuntu-24.04-arm
+
+    defaults:
+      run:
+        working-directory: light-curve
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgsl-dev
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "${{ runner.os }}-${{ runner.arch }}_stable-rust_build-wheels"
+          workspaces: "light-curve"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - name: Build abi3 wheel
+        run: uvx maturin build --release -i python3.14
+      - name: Upload abi3 wheel
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-linux-aarch64
+          path: light-curve/target/wheels/
+
+
+  test-linux-x86_64:
+    runs-on: ubuntu-latest
+    needs: [build-wheel-linux-x86_64]
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {python_minor: "10", wheel_artifact: wheels-linux-x86_64}
+          - {python_minor: "14t", wheel_artifact: wheels-linux-x86_64-ft}
+
+    defaults:
+      run:
+        working-directory: light-curve
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+      - name: Set up Python 3.${{ matrix.python_minor }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.${{ matrix.python_minor }}"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Download wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.wheel_artifact }}
+          path: light-curve/wheels/
+      - name: Run tests
+        run: uvx --with tox-uv tox -e py3${{ matrix.python_minor }}-test --installpkg=$(ls wheels/*.whl)
+
+
+  test-linux-aarch64:
+    runs-on: ubuntu-24.04-arm
+    needs: [build-wheel-linux-aarch64]
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python_minor: ["11", "12", "13", "14"]
+
+    defaults:
+      run:
+        working-directory: light-curve
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+      - name: Set up Python 3.${{ matrix.python_minor }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.${{ matrix.python_minor }}"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Download wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-linux-aarch64
+          path: light-curve/wheels/
+      - name: Run tests
+        run: uvx --with tox-uv tox -e py3${{ matrix.python_minor }}-test --installpkg=$(ls wheels/*.whl)
+
+
+  ruff:
+    runs-on: ubuntu-slim
+
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - run: uvx ruff check .
+        working-directory: light-curve
+
 
   cargo-fmt:
     runs-on: ubuntu-slim
@@ -81,6 +191,7 @@ jobs:
           toolchain: stable
           components: rustfmt
       - run: cargo fmt --manifest-path=light-curve/Cargo.toml -- --check
+
 
   cargo-clippy:
     runs-on: ubuntu-latest
@@ -102,10 +213,9 @@ jobs:
           sudo apt-get install -y libgsl-dev
       - run: cargo clippy --manifest-path=light-curve/Cargo.toml --all-targets -- -D warnings
 
+
   coverage:
     runs-on: ubuntu-latest
-
-    needs: [ py_build_deps ]
 
     defaults:
       run:
@@ -128,8 +238,8 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.14"
-      - name: Install build deps
-        run: pip install "${{ needs.py_build_deps.outputs.output }}"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -137,10 +247,11 @@ jobs:
       - name: Generate code coverage
         run: |
           source <(cargo llvm-cov show-env --export-prefix)
-          python -m venv venv
-          source venv/bin/activate
+          uv venv .venv
+          source .venv/bin/activate
+          uv pip install maturin
           maturin develop --group dev
-          python -m pytest
+          pytest
           cargo llvm-cov report --lcov --output-path lcov.info
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v6
@@ -150,24 +261,24 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-  benchmarks:
-    runs-on: ubuntu-22.04
 
-    needs: [ py_build_deps ]
+  benchmarks:
+    runs-on: ubuntu-latest
+    needs: [build-wheel-linux-x86_64]
 
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.13"
-      - uses: Swatinem/rust-cache@v2
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Download wheels
+        uses: actions/download-artifact@v4
         with:
-          shared-key: "${{ runner.os }}_stable-rust_maturin-develop-release"
-          workspaces: "light-curve"
+          name: wheels-linux-x86_64
+          path: wheels/
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v4
         with:
@@ -175,16 +286,15 @@ jobs:
           mode: simulation
           run: |
             cd light-curve
-            python3 -m venv venv
-            . venv/bin/activate
-            pip install "${{ needs.py_build_deps.outputs.output }}" pytest-codspeed
-            maturin develop --group test --release
-            python3 -mpytest -m "not (nobs or multi)" --codspeed tests/test_w_bench.py
+            uv venv --python=python3.13 .venv
+            source .venv/bin/activate
+            uv pip install ../wheels/*.whl
+            uv pip install --group test pytest-codspeed
+            pytest -m "not (nobs or multi)" --codspeed tests/test_w_bench.py
+
 
   msrv-build:
     runs-on: ubuntu-latest
-
-    needs: [ py_build_deps ]
 
     defaults:
       run:
@@ -200,7 +310,6 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.14t'
-          allow-prereleases: true
       - name: Get minimum supported Rust version
         run: echo "msrv=$(grep '^rust-version = ' Cargo.toml | grep -o '[0-9.]\+')" >> $GITHUB_OUTPUT
         id: get_msrv
@@ -211,14 +320,38 @@ jobs:
         with:
           shared-key: "${{ runner.os }}_msrv-rust_maturin-build"
           workspaces: "light-curve"
-      - name: Install build_deps
-        run: pip install "${{ needs.py_build_deps.outputs.output }}"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libgsl-dev
       - name: Build
         run: |
-          rustup default ${{ steps.get_msrv.outputs.msrv }}
-          maturin build -i python3.10
-          maturin build -i python3.14t
+          uvx maturin build -i python3.10
+          uvx maturin build -i python3.14t
+
+
+  slow-tests:
+    runs-on: ubuntu-latest
+    needs: [build-wheel-linux-x86_64]
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Download wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-linux-x86_64
+          path: light-curve/wheels/
+      - name: Run slow tests
+        working-directory: light-curve
+        run: uvx --with tox-uv tox -e py314-slow --installpkg=$(ls wheels/*.whl)
