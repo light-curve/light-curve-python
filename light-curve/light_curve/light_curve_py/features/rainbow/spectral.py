@@ -122,5 +122,3 @@ spectral_terms = {
     "planck": PlanckSpectralTerm,
     "blanketed": BlanketedPlanckSpectralTerm,
 }
-
-
