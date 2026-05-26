@@ -117,8 +117,10 @@ class BlanketedPlanckSpectralTerm(BaseSpectralTerm):
             "lambda_scale": (10.0, 1000.0),
         }
 
+
 spectral_terms = {
     "planck": PlanckSpectralTerm,
     "blanketed": BlanketedPlanckSpectralTerm,
 }
+
 
