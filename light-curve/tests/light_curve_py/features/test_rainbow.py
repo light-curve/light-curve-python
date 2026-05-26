@@ -222,7 +222,7 @@ def test_noisy_all_functions_combination():
     BB_parameters = []
 
     UV_BB_parameters = [
-        750.0, # lambda_scale
+        750.0,  # lambda_scale
     ]
 
     spectral_names = [
