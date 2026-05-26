@@ -11,7 +11,7 @@ astrophysical light curves. It's a hybrid Rust/Python project that wraps the [
 
 - **Primary Language**: Rust (performance-critical feature extraction) + Python (API and experimental features)
 - **Build System**: Maturin (Python-Rust bridge)
-- **Python Support**: Python 3.10+ (including free-threaded 3.13t and 3.14t)
+- **Python Support**: Python 3.10+ (including free-threaded 3.14t)
 - **Testing**: pytest with benchmark support
 - **CI/CD**: GitHub Actions with extensive platform coverage
 
@@ -142,7 +142,7 @@ When suggesting build commands, consider: `--no-default-features --features=...`
 
 ### Compatibility
 
-- Support Python 3.10-3.14 (including free-threaded variants)
+- Support Python 3.10-3.14 (including the free-threaded 3.14 variant)
 - Maintain backward compatibility
 - Test on multiple platforms: Linux (x86_64, aarch64), macOS, Windows
 - ABI3 wheels ensure forward compatibility with future Python versions
