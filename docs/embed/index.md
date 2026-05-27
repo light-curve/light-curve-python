@@ -10,8 +10,8 @@ Install `light-curve` together with its ML embedding dependencies so all version
 resolve jointly:
 
 ```sh
-pip install 'light-curve[full]' onnxruntime huggingface_hub   # CPU
-pip install 'light-curve[full]' onnxruntime-gpu huggingface_hub  # NVIDIA GPU
+pip install light-curve onnxruntime huggingface_hub   # CPU
+pip install light-curve onnxruntime-gpu huggingface_hub  # NVIDIA GPU
 ```
 
 `onnxruntime` is intentionally not bundled in the `light-curve[full]` extra — pick
