@@ -7,21 +7,20 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
-  pull_request:
-    types: [opened, synchronize, reopened, closed]
+  pull_request_target:
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
   pull-requests: write
 
-# All jobs push to gh-pages; queue them, never cancel
-concurrency:
-  group: gh-pages
-  cancel-in-progress: false
-
 jobs:
-  deploy:
+  docs-deploy:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    # Queue deploys; never cancel — concurrent gh-pages pushes would corrupt the branch
+    concurrency:
+      group: gh-pages
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -74,11 +73,59 @@ jobs:
           mike deploy --push --update-aliases latest
           mike set-default --push latest
 
-  preview:
-    # Build from source and push directly to gh-pages/pr{N}/ without mike,
-    # then register the PR in versions.json so Material shows the correct
-    # version label. Non-PR versions come first, then PRs in ascending order.
-    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+      - name: Remove stale PR previews
+        # pull_request.closed doesn't fire for bot-merged PRs (copilot[bot],
+        # pre-commit-ci[bot]).  Run this after every deploy to catch leftovers.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git clone --depth=1 --branch=gh-pages \
+            "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" \
+            /tmp/gh-pages-stale
+          cd /tmp/gh-pages-stale
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          gh pr list --repo "${{ github.repository }}" --state open \
+            --json number --limit 200 > /tmp/open_prs.json
+
+          python3 - <<'PYEOF'
+          import json, os, re, subprocess, sys
+
+          with open('/tmp/open_prs.json') as f:
+              open_set = {f"pr{p['number']}" for p in json.load(f)}
+
+          with open('versions.json') as f:
+              versions = json.load(f)
+
+          stale = [v['version'] for v in versions
+                   if re.fullmatch(r'pr\d+', v['version']) and v['version'] not in open_set]
+          if not stale:
+              print("No stale PR previews.")
+              sys.exit(0)
+
+          print("Removing stale PR previews:", stale)
+          for ver in stale:
+              if os.path.isdir(ver):
+                  subprocess.run(['git', 'rm', '-rf', ver], check=True)
+          cleaned = [v for v in versions if v['version'] not in stale]
+          with open('versions.json', 'w') as f:
+              json.dump(cleaned, f, indent=2)
+              f.write('\n')
+          subprocess.run(['git', 'add', 'versions.json'], check=True)
+          PYEOF
+
+          git diff --cached --quiet && echo "Nothing to commit." || \
+            git commit -m "docs: remove stale PR previews" && git push
+
+  docs-preview:
+    # pull_request_target gives write access even for fork PRs.
+    # We explicitly check out the PR head so the docs reflect the PR content.
+    if: github.event_name == 'pull_request_target'
+    # Cancel older builds for the same PR; only the latest commit's preview matters
+    concurrency:
+      group: docs-preview-pr${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -87,6 +134,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           submodules: true
 
@@ -186,55 +234,3 @@ jobs:
                 body,
               });
             }
-
-  cleanup:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: gh-pages
-          fetch-depth: 1
-
-      - name: Configure git
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Delete PR preview
-        env:
-          PR: ${{ github.event.pull_request.number }}
-        run: |
-          changed=false
-
-          if [ -d pr${PR} ]; then
-            git rm -rf pr${PR}
-            changed=true
-          fi
-
-          python3 -c "
-          import json, os, sys
-          pr_version = f'pr{int(os.environ[\"PR\"])}'
-          with open('versions.json') as f:
-              versions = json.load(f)
-          filtered = [v for v in versions if v['version'] != pr_version]
-          if len(filtered) == len(versions):
-              sys.exit(0)
-          with open('versions.json', 'w') as f:
-              json.dump(filtered, f, indent=2)
-              f.write('\n')
-          "
-
-          if ! git diff --quiet versions.json; then
-            git add versions.json
-            changed=true
-          fi
-
-          if [ "$changed" = true ]; then
-            git commit -m "docs: remove PR #${PR} preview"
-            git push
-          fi
