@@ -80,6 +80,11 @@ class ConstantTemperatureTerm(BaseTemperatureTerm):
 
         return limits
 
+    @staticmethod
+    def derivatives(t, temp):
+        """∂T/∂T = 1, shape (1, len(t))."""
+        return np.ones((1, len(t)))
+
 
 @dataclass
 class SigmoidTemperatureTerm(BaseTemperatureTerm):
@@ -131,6 +136,42 @@ class SigmoidTemperatureTerm(BaseTemperatureTerm):
         limits["t_color"] = (dt / 3, 10 * t_amplitude)
 
         return limits
+
+    @staticmethod
+    def derivatives(t, t0, temp_min, temp_max, t_color):
+        """Jacobian of `value` w.r.t. (t0, Tmin, Tmax, t_color), shape (4, len(t)).
+
+        Mirrors the three-region clamping in `value`: in the saturated regions
+        the value is constant in (t0, t_color), so those partials are zero.
+        """
+        dt = t - t0
+        jac = np.zeros((4, len(dt)))
+
+        idx1 = dt <= -100 * t_color  # T == Tmax
+        idx2 = (dt > -100 * t_color) & (dt < 100 * t_color)
+        idx3 = dt >= 100 * t_color  # T == Tmin
+
+        jac[2, idx1] = 1.0
+        jac[1, idx3] = 1.0
+
+        if np.any(idx2):
+            dt_in = dt[idx2]
+            e = np.exp(dt_in / t_color)
+            inv_1p_e = 1.0 / (1.0 + e)
+            s = inv_1p_e  # sigmoid(-dt/t_color)
+            s_1ms = e * inv_1p_e * inv_1p_e  # s * (1 - s)
+            delta_t = temp_max - temp_min
+
+            # ∂T/∂t0   =  ΔT · s(1-s) / t_color
+            jac[0, idx2] = delta_t * s_1ms / t_color
+            # ∂T/∂Tmin =  1 - s
+            jac[1, idx2] = 1.0 - s
+            # ∂T/∂Tmax =  s
+            jac[2, idx2] = s
+            # ∂T/∂t_color = ΔT · s(1-s) · dt / t_color²
+            jac[3, idx2] = delta_t * s_1ms * dt_in / (t_color * t_color)
+
+        return jac
 
 
 @dataclass
@@ -185,6 +226,38 @@ class DelayedSigmoidTemperatureTerm(BaseTemperatureTerm):
         limits["t_delay"] = (-t_amplitude, t_amplitude)
 
         return limits
+
+    @staticmethod
+    def derivatives(t, t0, Tmin, Tmax, t_color, t_delay):
+        """Jacobian, shape (5, len(t)). Same body as SigmoidTemperatureTerm
+        but ``dt = t - t0 - t_delay``, so ∂T/∂t_delay equals ∂T/∂t0.
+        """
+        dt = t - t0 - t_delay
+        jac = np.zeros((5, len(dt)))
+
+        idx1 = dt <= -100 * t_color
+        idx2 = (dt > -100 * t_color) & (dt < 100 * t_color)
+        idx3 = dt >= 100 * t_color
+
+        jac[2, idx1] = 1.0
+        jac[1, idx3] = 1.0
+
+        if np.any(idx2):
+            dt_in = dt[idx2]
+            e = np.exp(dt_in / t_color)
+            inv = 1.0 / (1.0 + e)
+            s = inv
+            s_1ms = e * inv * inv
+            delta_t = Tmax - Tmin
+
+            dT_dt0 = delta_t * s_1ms / t_color
+            jac[0, idx2] = dT_dt0
+            jac[1, idx2] = 1.0 - s
+            jac[2, idx2] = s
+            jac[3, idx2] = delta_t * s_1ms * dt_in / (t_color * t_color)
+            jac[4, idx2] = dT_dt0  # ∂T/∂t_delay = ∂T/∂t0
+
+        return jac
 
 
 def median_dt(t, band):

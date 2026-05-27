@@ -157,3 +157,13 @@ class RainbowFit(BaseRainbowFit):
     def peak_time(self, params) -> float:
         """Returns true bolometric peak position for given parameters"""
         return self.bolometric.peak_time(*params[self.p.all_bol_idx])
+
+    def _supports_analytic_jac(self) -> bool:
+        # Each term must expose `derivatives`; the spectral term additionally
+        # needs `dvalue_dT` for the temperature-coupling factor.
+        return (
+            hasattr(self.bolometric, "derivatives")
+            and hasattr(self.temperature, "derivatives")
+            and hasattr(self.spectral, "derivatives")
+            and hasattr(self.spectral, "dvalue_dT")
+        )

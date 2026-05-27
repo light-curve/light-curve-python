@@ -108,6 +108,16 @@ class BaseRainbowFit(BaseMultiBandFeature):
         else:
             self._lsq_model = self._lsq_model_no_baseline
 
+        # Analytic Jacobian is available only when every term provides the
+        # right derivative method. Subclasses (e.g. RainbowFit) wire the
+        # term-level checks via `_supports_analytic_jac`.
+        if self._supports_analytic_jac():
+            self._lsq_jac = (
+                self._lsq_jac_with_baseline if self.with_baseline else self._lsq_jac_no_baseline
+            )
+        else:
+            self._lsq_jac = None
+
     def _initialize_minuit(self) -> None:
         self._check_iminuit()
 
@@ -255,6 +265,59 @@ class BaseRainbowFit(BaseMultiBandFeature):
         params = np.array(params)
         return self._lsq_model((t, band_idx, wave_cm), *params)
 
+    def _supports_analytic_jac(self) -> bool:
+        """Whether all of the current terms expose the methods needed by `_lsq_jac_*`.
+
+        Default is False; concrete subclasses (RainbowFit) override based on the
+        term combination they actually compose.
+        """
+        return False
+
+    def _lsq_jac_no_baseline(self, x, *params):
+        """Jacobian d flux / d parameter, shape (n_params, n_obs)."""
+        t, _band_idx, wave_cm = x
+        params = np.array(params)
+        n_params = len(params)
+
+        spec_params = params[self.p.all_spec_idx]
+
+        bol = self.bol_func(t, params)
+        temp = self.temp_func(t, params)
+        norm = (sigma_sb * temp**4) / np.pi / self.average_nu
+        spectral = self.spectral_func(wave_cm, temp, params)
+        g = spectral / norm  # spec / norm
+
+        bol_jac = self.bolometric.derivatives(t, *params[self.p.all_bol_idx])
+        temp_jac = self.temperature.derivatives(t, *params[self.p.all_temp_idx])
+        dspec_dT = self.spectral.dvalue_dT(wave_cm, temp, *spec_params)
+
+        # d(spec/norm)/dT = dspec/dT / norm  -  (spec/norm) · 4/T
+        dg_dT = dspec_dT / norm - g * 4.0 / temp
+
+        jac = np.zeros((n_params, len(t)))
+        # Bolometric parameters (including shared t0): df/dθ = (dB/dθ) · g
+        for i, idx in enumerate(self.p.all_bol_idx):
+            jac[idx] += bol_jac[i] * g
+        # Temperature parameters (including shared t0): df/dθ = bol · dg/dT · dT/dθ
+        for i, idx in enumerate(self.p.all_temp_idx):
+            jac[idx] += bol * dg_dT * temp_jac[i]
+        # Spectral parameters: df/dθ_spec = bol · (∂spec/∂θ_spec) / norm
+        if len(self.p.all_spec_idx) > 0:
+            spec_jac = self.spectral.derivatives(wave_cm, temp, *spec_params)
+            inv_norm = 1.0 / norm
+            for i, idx in enumerate(self.p.all_spec_idx):
+                jac[idx] += bol * spec_jac[i] * inv_norm
+
+        return jac
+
+    def _lsq_jac_with_baseline(self, x, *params):
+        jac = self._lsq_jac_no_baseline(x, *params)
+        _t, band_idx, _wave_cm = x
+        # ∂flux/∂baseline_b = 1 where band == b, else 0.
+        param_idx_per_obs = self.p.baseline_idx[band_idx]
+        jac[param_idx_per_obs, np.arange(len(band_idx))] = 1.0
+        return jac
+
     @property
     def names(self):
         """Names of the parameters."""
@@ -352,6 +415,9 @@ class BaseRainbowFit(BaseMultiBandFeature):
         limits = {name: limits[name] for name in self.names}
 
         # least_squares = LeastSquares(
+        # Analytic Jacobian is only safe without upper limits; the gradient code
+        # in MaximumLikelihood explicitly refuses upper_mask + jac.
+        jac = self._lsq_jac if (self._lsq_jac is not None and upper_mask is None) else None
         cost_function = MaximumLikelihood(
             model=self._lsq_model,
             parameters=limits,
@@ -359,9 +425,13 @@ class BaseRainbowFit(BaseMultiBandFeature):
             y=m,
             yerror=sigma,
             upper_mask=upper_mask,
+            jac=jac,
         )
-        minuit = self.Minuit(cost_function, name=self.names, **initial_guesses)
-
+        # `grad=False` forces iminuit to fall back to its numerical gradient.
+        # If we passed `grad=None`, iminuit would auto-detect `cost_function.grad`
+        # and call it even when no Jacobian is wired in.
+        minuit_grad = cost_function.grad if jac is not None else False
+        minuit = self.Minuit(cost_function, name=self.names, grad=minuit_grad, **initial_guesses)
         # TODO: expose these parameters through function arguments
         if print_level is not None:
             minuit.print_level = print_level

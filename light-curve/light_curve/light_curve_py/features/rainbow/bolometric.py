@@ -116,6 +116,30 @@ class SigmoidBolometricTerm(BaseBolometricTerm):
         """Peak time is not defined for the sigmoid, so it returns mid-time of the rise instead"""
         return t0
 
+    @staticmethod
+    def derivatives(t, t0, amplitude, rise_time):
+        """Jacobian of `value` w.r.t. (t0, amplitude, rise_time), shape (3, len(t))."""
+        dt = t - t0
+        jac = np.zeros((3, len(dt)))
+
+        idx = dt > -100 * rise_time
+        if not np.any(idx):
+            return jac
+
+        dt_in = dt[idx]
+        e = np.exp(-dt_in / rise_time)
+        s = 1.0 / (e + 1.0)
+        s_1ms = e * s * s  # s · (1 - s)
+
+        # ∂B/∂t0   = -A · s(1-s) / τ
+        jac[0, idx] = -amplitude * s_1ms / rise_time
+        # ∂B/∂A    = s
+        jac[1, idx] = s
+        # ∂B/∂τ    = -A · s(1-s) · dt / τ²
+        jac[2, idx] = -amplitude * s_1ms * dt_in / (rise_time * rise_time)
+
+        return jac
+
 
 @dataclass()
 class BazinBolometricTerm(BaseBolometricTerm):
@@ -180,6 +204,52 @@ class BazinBolometricTerm(BaseBolometricTerm):
     @staticmethod
     def peak_time(t0, amplitude, rise_time, fall_time):
         return t0 + np.log(fall_time / rise_time) * rise_time * fall_time / (rise_time + fall_time)
+
+    @staticmethod
+    def derivatives(t, t0, amplitude, rise_time, fall_time):
+        """Jacobian of `value` w.r.t. (t0, amplitude, rise_time, fall_time).
+
+        Returns an array of shape (4, len(t)) whose rows match the order of
+        `parameter_names()`. Outside the same clamping window used by `value`,
+        all partials are zero (the value is identically zero there).
+        """
+        dt = t - t0
+        jac = np.zeros((4, len(dt)))
+
+        idx = (dt > -100 * rise_time) & (dt < 100 * fall_time)
+        if not np.any(idx):
+            return jac
+
+        dt_in = dt[idx]
+        e_r = np.exp(-dt_in / rise_time)
+        e_f = np.exp(dt_in / fall_time)
+        denom = e_r + e_f
+
+        # Scale factor (peak == amplitude) and its partials in τ_r, τ_f.
+        alpha = fall_time / rise_time
+        tau = rise_time + fall_time
+        u = rise_time / tau
+        v = fall_time / tau
+        log_alpha = np.log(alpha)
+        a1 = alpha**u
+        a2 = alpha ** (-v)
+        scale = a1 + a2
+        # d(α^u)/dτ_r and d(α^-v)/dτ_r — see analysis notes.
+        dscale_dr = a1 * (v * log_alpha / tau - u / rise_time) + a2 * (v * log_alpha / tau + v / rise_time)
+        dscale_df = a1 * u * (1.0 / fall_time - log_alpha / tau) + a2 * (-u * log_alpha / tau - v / fall_time)
+
+        b = amplitude * scale / denom
+
+        # ∂B/∂t0 = (B/D) * (E_f/τ_f - E_r/τ_r)
+        jac[0, idx] = (b / denom) * (e_f / fall_time - e_r / rise_time)
+        # ∂B/∂A = scale / D
+        jac[1, idx] = scale / denom
+        # ∂B/∂τ_r = B * (dscale_dr/scale  -  E_r * dt / (τ_r² · D))
+        jac[2, idx] = b * (dscale_dr / scale - e_r * dt_in / (rise_time**2 * denom))
+        # ∂B/∂τ_f = B * (dscale_df/scale  +  E_f * dt / (τ_f² · D))
+        jac[3, idx] = b * (dscale_df / scale + e_f * dt_in / (fall_time**2 * denom))
+
+        return jac
 
 
 @dataclass()
@@ -247,6 +317,40 @@ class LinexpBolometricTerm(BaseBolometricTerm):
     @staticmethod
     def peak_time(t0, amplitude, rise_time):
         return t0 - rise_time
+
+    @staticmethod
+    def derivatives(t, t0, amplitude, rise_time):
+        """Jacobian of `value` w.r.t. (t0, amplitude, rise_time), shape (3, len(t)).
+
+        Inactive region (where `value` clips to 0) has zero derivatives.
+        """
+        dt = t0 - t  # note: reversed convention compared to Bazin/Sigmoid
+        jac = np.zeros((3, len(dt)))
+
+        # Skip the near-zero rise_time regime where `value` is clipped via
+        # `protected_rise`; the gradient there is meaningless anyway.
+        if abs(rise_time) < 1e-5:
+            return jac
+
+        tau = rise_time
+        e_const = math.e
+        # Active wherever the raw expression is positive (i.e. dt and τ same sign).
+        active = (np.sign(dt) == np.sign(tau)) & (dt != 0.0)
+        if not np.any(active):
+            return jac
+
+        dt_a = dt[active]
+        exp_pow = np.exp(-dt_a / tau)
+        coeff = amplitude * e_const / tau
+
+        # ∂f/∂t0  = A·e·E/τ · (1 - dt/τ)
+        jac[0, active] = coeff * exp_pow * (1.0 - dt_a / tau)
+        # ∂f/∂A   = e · dt · E / τ
+        jac[1, active] = e_const * dt_a * exp_pow / tau
+        # ∂f/∂τ   = A·e·dt·E · (dt - τ) / τ³
+        jac[2, active] = coeff * dt_a * exp_pow * (dt_a - tau) / (tau * tau)
+
+        return jac
 
 
 @dataclass()
@@ -317,6 +421,50 @@ class DoublexpBolometricTerm(BaseBolometricTerm):
             raise ImportError("scipy is required for DoublexpBolometricTerm.peak_time, please install it")
 
         return t0 + np.real(-lambertw(p * np.exp(1)) + 1)
+
+    @staticmethod
+    def derivatives(t, t0, amplitude, time1, time2, p):
+        """Jacobian of `value` w.r.t. (t0, amplitude, time1, time2, p), shape (5, len(t)).
+
+        Where the inner exponent is clamped (A > maxp=20), the model becomes
+        constant in (t0, time1, time2, p), so only the amplitude derivative is
+        non-zero there.
+        """
+        dt = t - t0
+        n = len(dt)
+        jac = np.zeros((5, n))
+
+        v = np.exp(-dt / time2)
+        a_inner = -(dt / time1) * (p - v)
+        maxp = 20.0
+        clamped = a_inner > maxp
+        active = ~clamped
+
+        # B = amplitude · exp(min(a_inner, maxp))
+        B = amplitude * np.exp(np.where(clamped, maxp, a_inner))
+
+        # ∂B/∂amplitude = B / amplitude (always true; in clamped region too)
+        jac[1] = B / amplitude
+
+        if np.any(active):
+            dt_a = dt[active]
+            v_a = v[active]
+            B_a = B[active]
+            # ∂a_inner/∂t0  = (p - v)/τ1 + dt · v / (τ1 · τ2)
+            da_dt0 = (p - v_a) / time1 + dt_a * v_a / (time1 * time2)
+            # ∂a_inner/∂τ1  = dt · (p - v) / τ1²
+            da_dτ1 = dt_a * (p - v_a) / (time1 * time1)
+            # ∂a_inner/∂τ2  = dt² · v / (τ1 · τ2²)
+            da_dτ2 = (dt_a * dt_a) * v_a / (time1 * time2 * time2)
+            # ∂a_inner/∂p   = -dt / τ1
+            da_dp = -dt_a / time1
+
+            jac[0, active] = B_a * da_dt0
+            jac[2, active] = B_a * da_dτ1
+            jac[3, active] = B_a * da_dτ2
+            jac[4, active] = B_a * da_dp
+
+        return jac
 
 
 def median_dt(t, band):

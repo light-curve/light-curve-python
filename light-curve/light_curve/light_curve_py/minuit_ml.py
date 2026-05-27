@@ -15,9 +15,18 @@ else:
         errordef = Minuit.LIKELIHOOD
 
         def __init__(
-            self, model: Callable, parameters: Dict[str, Tuple[float, float]], upper_mask=None, *, x, y, yerror
+            self,
+            model: Callable,
+            parameters: Dict[str, Tuple[float, float]],
+            upper_mask=None,
+            *,
+            x,
+            y,
+            yerror,
+            jac: Callable = None,
         ):
             self.model = model
+            self.jac = jac
             self.x = x
             self.y = y
             self.yerror = yerror
@@ -29,6 +38,8 @@ else:
             self.limits0 = self.limits[:, 0]
             self.limits1 = self.limits[:, 1]
             self.limits_scale = self.limits[:, 1] - self.limits[:, 0]
+
+            self._inv_yerror2 = 1.0 / np.asarray(yerror) ** 2
 
         @property
         def ndata(self):
@@ -57,6 +68,27 @@ else:
             result += 0.0001 * np.sum(self.barrier((self.limits1 - par) / self.limits_scale))
 
             return result
+
+        def grad(self, *par):
+            """Analytic gradient of the cost. Requires `jac` to have been provided."""
+            if self.jac is None:
+                raise RuntimeError("MaximumLikelihood.grad called without a Jacobian")
+            if self.upper_mask is not None:
+                raise NotImplementedError("Analytic gradient not implemented with upper_mask")
+
+            ym = self.model(self.x, *par)
+            j = self.jac(self.x, *par)  # shape (n_params, n_obs)
+
+            residual = self.y - ym
+            # d/dθ_k [(1/2) Σ ((y - m)/σ)²] = -Σ (y - m)/σ² · ∂m/∂θ_k
+            g = -(j @ (residual * self._inv_yerror2))
+
+            par_arr = np.asarray(par)
+            # d barrier((p-lo)/s)/dp = -s/(p-lo)²;  d barrier((hi-p)/s)/dp = s/(hi-p)²
+            g += 0.0001 * self.limits_scale * (
+                1.0 / (self.limits1 - par_arr) ** 2 - 1.0 / (par_arr - self.limits0) ** 2
+            )
+            return g
 
         @staticmethod
         def logpdf(x, mu, sigma):
