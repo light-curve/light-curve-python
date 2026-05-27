@@ -14,14 +14,13 @@ permissions:
   contents: write
   pull-requests: write
 
-# All jobs push to gh-pages; queue them, never cancel
-concurrency:
-  group: gh-pages
-  cancel-in-progress: false
-
 jobs:
   docs-deploy:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    # Queue deploys; never cancel — concurrent gh-pages pushes would corrupt the branch
+    concurrency:
+      group: gh-pages
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -123,6 +122,10 @@ jobs:
     # pull_request_target gives write access even for fork PRs.
     # We explicitly check out the PR head so the docs reflect the PR content.
     if: github.event_name == 'pull_request_target'
+    # Cancel older builds for the same PR; only the latest commit's preview matters
+    concurrency:
+      group: docs-preview-pr${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     defaults:
       run:
