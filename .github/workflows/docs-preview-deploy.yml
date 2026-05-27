@@ -1,0 +1,108 @@
+name: Docs Preview Deploy
+
+on:
+  workflow_run:
+    workflows: ["Docs Preview Build"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read  # needed to download artifacts from the build run
+
+# All jobs push to gh-pages; queue them, never cancel
+concurrency:
+  group: gh-pages
+  cancel-in-progress: false
+
+jobs:
+  docs-preview-deploy:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages-deploy
+          fetch-depth: 1
+
+      - name: Configure git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Download docs preview artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docs-preview
+          path: /tmp/artifact
+          github-token: ${{ github.token }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Read PR number
+        id: pr
+        run: echo "number=$(cat /tmp/artifact/pr_number.txt)" >> $GITHUB_OUTPUT
+
+      - name: Push preview to gh-pages
+        env:
+          PR: ${{ steps.pr.outputs.number }}
+        run: |
+          rm -rf gh-pages-deploy/pr${PR}
+          cp -r /tmp/artifact gh-pages-deploy/pr${PR}
+          rm -f gh-pages-deploy/pr${PR}/CNAME
+          rm -f gh-pages-deploy/pr${PR}/pr_number.txt
+
+          python3 -c "
+          import json, os, re
+          pr = int(os.environ['PR'])
+          entry = {'version': f'pr{pr}', 'title': f'pr{pr}', 'aliases': []}
+          with open('gh-pages-deploy/versions.json') as f:
+              versions = json.load(f)
+          versions = [v for v in versions if v['version'] != entry['version']]
+          non_pr = [v for v in versions if not re.fullmatch(r'pr\d+', v['version'])]
+          prs    = [v for v in versions if     re.fullmatch(r'pr\d+', v['version'])]
+          prs.append(entry)
+          prs.sort(key=lambda v: int(v['version'][2:]))
+          with open('gh-pages-deploy/versions.json', 'w') as f:
+              json.dump(non_pr + prs, f, indent=2)
+              f.write('\n')
+          "
+
+          cd gh-pages-deploy
+          git add pr${PR} versions.json
+          git diff --cached --quiet && echo "No changes" || git commit -m "docs: update PR #${PR} preview"
+          git push
+
+      - name: Comment preview URL on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = ${{ steps.pr.outputs.number }};
+            const marker = '<!-- docs-preview -->';
+            const url = `https://light-curve.snad.space/pr${pr}/`;
+            const body = `${marker}\n📖 **Docs preview:** ${url}`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr,
+            });
+            const existing = comments.find(c => c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr,
+                body,
+              });
+            }
