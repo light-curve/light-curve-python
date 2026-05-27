@@ -122,6 +122,9 @@ mkdocs serve   # live preview at http://127.0.0.1:8000
    ```
 3. Commit and push; CI deploys automatically to the `dev` version of the site on merge to `main`.
 
+The API reference prose (parameter descriptions, equations) is read from the Python
+docstrings, so updating those in the source is enough — no manual copy-paste needed.
+
 ## Docs preview CI
 
 Every pull request gets an automatic docs preview at `https://light-curve.snad.space/pr<N>/`, posted as a comment by the bot.
@@ -129,9 +132,6 @@ Every pull request gets an automatic docs preview at `https://light-curve.snad.s
 The preview is built by the **Docs Preview** job in `docs.yml`, which uses a `pull_request_target` trigger so it has write access even for PRs from forks. It explicitly checks out the PR head commit to build the actual PR content.
 
 Stale previews (from merged or closed PRs) are removed the next time anything is pushed to `main`.
-
-The API reference prose (parameter descriptions, equations) is read from the Python
-docstrings, so updating those in the source is enough — no manual copy-paste needed.
 
 ## Free-threaded Python
 
