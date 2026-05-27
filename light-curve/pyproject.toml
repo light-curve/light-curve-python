@@ -277,10 +277,11 @@ select = "*linux_x86_64"
 # We'd like to use MKL for x86_64
 environment = { "PATH" = "$PATH:$HOME/.cargo/bin", "MATURIN_PEP517_ARGS" = "--locked --no-default-features --features=abi3,ceres-system,mkl,gsl,mimalloc" }
 
-# Test on macOS only (natively available on GitHub Actions runners).
+# Test on macOS ARM64 only (x86_64 GitHub runner is too slow).
 # Manylinux wheels are not tested in cibuildwheel: numpy<2 required for
 # manylinux_2_17 onnxruntime wheels is incompatible with nested-pandas.
+# Windows lacks features needed for the test.
 [[tool.cibuildwheel.overrides]]
-select = "cp*-macosx*"
+select = "cp*-macosx_arm64"
 test-command = "pytest {package}/README.md {package}/light_curve/ {package}/tests/"
 test-groups = ["test"]
