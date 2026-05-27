@@ -126,10 +126,7 @@ mkdocs serve   # live preview at http://127.0.0.1:8000
 
 Every pull request gets an automatic docs preview at `https://light-curve.snad.space/pr<N>/`, posted as a comment by the bot.
 
-The preview is built by two workflows:
-
-1. **Docs Preview Build** — triggered by the PR, builds the site and uploads it as a CI artifact. Runs with a read-only token, so it is safe to run from fork PRs.
-2. **Docs Preview Deploy** — triggered when the build finishes, downloads the artifact and pushes it to `gh-pages`. Runs in the base repository context, so it has write access regardless of whether the PR comes from a fork.
+The preview is built by the **Docs Preview** job in `docs.yml`, which uses a `pull_request_target` trigger so it has write access even for PRs from forks. It explicitly checks out the PR head commit to build the actual PR content.
 
 Stale previews (from merged or closed PRs) are removed the next time anything is pushed to `main`.
 

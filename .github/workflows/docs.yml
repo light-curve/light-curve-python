@@ -7,6 +7,8 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
@@ -116,3 +118,116 @@ jobs:
 
           git diff --cached --quiet && echo "Nothing to commit." || \
             git commit -m "docs: remove stale PR previews" && git push
+
+  docs-preview:
+    # pull_request_target gives write access even for fork PRs.
+    # We explicitly check out the PR head so the docs reflect the PR content.
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          submodules: true
+
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages-deploy
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "light-curve"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgsl-dev
+
+      - name: Configure git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install from source with docs dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install maturin
+          cd light-curve && maturin develop --extras=full --group=docs -q
+
+      - name: Build docs
+        run: |
+          source .venv/bin/activate
+          mkdocs build --site-dir /tmp/pr-site
+
+      - name: Push preview to gh-pages
+        env:
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          rm -rf gh-pages-deploy/pr${PR}
+          cp -r /tmp/pr-site gh-pages-deploy/pr${PR}
+          rm -f gh-pages-deploy/pr${PR}/CNAME
+
+          python3 -c "
+          import json, os, re
+          pr = int(os.environ['PR'])
+          entry = {'version': f'pr{pr}', 'title': f'pr{pr}', 'aliases': []}
+          with open('gh-pages-deploy/versions.json') as f:
+              versions = json.load(f)
+          versions = [v for v in versions if v['version'] != entry['version']]
+          non_pr = [v for v in versions if not re.fullmatch(r'pr\d+', v['version'])]
+          prs    = [v for v in versions if     re.fullmatch(r'pr\d+', v['version'])]
+          prs.append(entry)
+          prs.sort(key=lambda v: int(v['version'][2:]))
+          with open('gh-pages-deploy/versions.json', 'w') as f:
+              json.dump(non_pr + prs, f, indent=2)
+              f.write('\n')
+          "
+
+          cd gh-pages-deploy
+          git add pr${PR} versions.json
+          git diff --cached --quiet && echo "No changes" || git commit -m "docs: update PR #${PR} preview"
+          git push
+
+      - name: Comment preview URL on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- docs-preview -->';
+            const url = `https://light-curve.snad.space/pr${{ github.event.pull_request.number }}/`;
+            const body = `${marker}\n📖 **Docs preview:** ${url}`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
