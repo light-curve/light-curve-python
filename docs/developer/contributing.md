@@ -102,7 +102,7 @@ This means every extractor has a Python fallback, but the Rust version takes pre
 
 ## Updating the documentation
 
-Docs live on the `documentation` branch. After switching to it:
+Docs live in `docs/` on the `main` branch. To preview locally:
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
@@ -111,7 +111,7 @@ cd light-curve && maturin develop --extras=full --group=docs -q && cd ..
 mkdocs serve   # live preview at http://127.0.0.1:8000
 ```
 
-**When adding a new feature extractor**, update the docs on the `documentation` branch:
+**When adding a new feature extractor**, update the docs:
 
 1. **Feature table** — `docs/features/index.md`: add a row to the appropriate category table (manually maintained).
 2. **API page** — `docs/features/api/<category>.md`: add a `:::` autodoc entry:
@@ -120,7 +120,18 @@ mkdocs serve   # live preview at http://127.0.0.1:8000
        options:
          heading_level: 3
    ```
-3. Commit and push to `documentation`; CI deploys automatically to the `dev` version of the site.
+3. Commit and push; CI deploys automatically to the `dev` version of the site on merge to `main`.
+
+## Docs preview CI
+
+Every pull request gets an automatic docs preview at `https://light-curve.snad.space/pr<N>/`, posted as a comment by the bot.
+
+The preview is built by two workflows:
+
+1. **Docs Preview Build** — triggered by the PR, builds the site and uploads it as a CI artifact. Runs with a read-only token, so it is safe to run from fork PRs.
+2. **Docs Preview Deploy** — triggered when the build finishes, downloads the artifact and pushes it to `gh-pages`. Runs in the base repository context, so it has write access regardless of whether the PR comes from a fork.
+
+Stale previews (from merged or closed PRs) are removed the next time anything is pushed to `main`.
 
 The API reference prose (parameter descriptions, equations) is read from the Python
 docstrings, so updating those in the source is enough — no manual copy-paste needed.
