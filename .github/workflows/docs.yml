@@ -7,10 +7,6 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
-  # pull_request_target (not pull_request) gives write access for fork PRs;
-  # safe here because docs-cleanup never runs untrusted PR code.
-  pull_request_target:
-    types: [closed]
 
 permissions:
   contents: write
@@ -120,55 +116,3 @@ jobs:
 
           git diff --cached --quiet && echo "Nothing to commit." || \
             git commit -m "docs: remove stale PR previews" && git push
-
-  docs-cleanup:
-    if: github.event_name == 'pull_request_target' && github.event.action == 'closed'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: gh-pages
-          fetch-depth: 1
-
-      - name: Configure git
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Delete PR preview
-        env:
-          PR: ${{ github.event.pull_request.number }}
-        run: |
-          changed=false
-
-          if [ -d pr${PR} ]; then
-            git rm -rf pr${PR}
-            changed=true
-          fi
-
-          python3 -c "
-          import json, os, sys
-          pr_version = f'pr{int(os.environ[\"PR\"])}'
-          with open('versions.json') as f:
-              versions = json.load(f)
-          filtered = [v for v in versions if v['version'] != pr_version]
-          if len(filtered) == len(versions):
-              sys.exit(0)
-          with open('versions.json', 'w') as f:
-              json.dump(filtered, f, indent=2)
-              f.write('\n')
-          "
-
-          if ! git diff --quiet versions.json; then
-            git add versions.json
-            changed=true
-          fi
-
-          if [ "$changed" = true ]; then
-            git commit -m "docs: remove PR #${PR} preview"
-            git push
-          fi
