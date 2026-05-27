@@ -306,7 +306,6 @@ def test_noisy_all_functions_combination():
                 plt.show()
                 """
 
-                
                 """ Too strict requirement. Parameters of complex models are too degenerate.
                 np.testing.assert_allclose(
                     actual[:-1],
