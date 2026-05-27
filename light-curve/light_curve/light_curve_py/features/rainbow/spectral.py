@@ -82,38 +82,39 @@ class BlanketedPlanckSpectralTerm(BaseSpectralTerm):
 
     @staticmethod
     def parameter_names():
-        return ["log_intensity", "lambda_scale"]
+        return ["lambda_scale"]
 
     @staticmethod
     def parameter_scalings():
-        return [None, None]
+        return [None]
 
     @staticmethod
-    def value(wave_cm, T, log_intensity, lambda_scale):
+    def value(wave_cm, T, lambda_scale):
         base = PlanckSpectralTerm.value(wave_cm, T)
 
         # lambda_scale is expressed in Angstrom
         lambda_scale_cm = lambda_scale * 1e-8
 
-        tau = 10**log_intensity * np.exp(-wave_cm / lambda_scale_cm)
+        # Phenomenological value for the slope of the extinction
+        # No physical reasons for this value, just nice fits
+        # Could be improved in the future
+        # Fitting instead of fixing is likely overkill for broad band photometry
+        intensity = 10**2
+
+        tau = intensity * np.exp(-wave_cm / lambda_scale_cm)
 
         return base * np.exp(-tau)
 
     @staticmethod
     def initial_guesses(t, m, sigma, band):
         return {
-            "log_intensity": 1.5,
-            "lambda_scale": 100.0,
+            "lambda_scale": 10.0,
         }
 
     @staticmethod
     def limits(t, m, sigma, band):
-        # lambda_scale and log_intensity are degenerate. Putting either to ~0 leads to a classical BB.
-        # We prevent log_intensity to go to 0, because the blanketing is more physically realistic
-        # at low lambda_scale high log_intensity rather than high lambda_scale low log_intensity.
         return {
-            "log_intensity": (1.5, 6.0),
-            "lambda_scale": (100.0, 2000.0),
+            "lambda_scale": (10.0, 1000.0),
         }
 
 
