@@ -74,7 +74,52 @@ jobs:
           mike deploy --push --update-aliases latest
           mike set-default --push latest
 
-  preview:
+      - name: Remove stale PR previews
+        # pull_request.closed doesn't fire for bot-merged PRs (copilot[bot],
+        # pre-commit-ci[bot]).  Run this after every deploy to catch leftovers.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git clone --depth=1 --branch=gh-pages \
+            "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" \
+            /tmp/gh-pages-stale
+          cd /tmp/gh-pages-stale
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          gh pr list --repo "${{ github.repository }}" --state open \
+            --json number --limit 200 > /tmp/open_prs.json
+
+          python3 - <<'PYEOF'
+          import json, os, re, subprocess, sys
+
+          with open('/tmp/open_prs.json') as f:
+              open_set = {f"pr{p['number']}" for p in json.load(f)}
+
+          with open('versions.json') as f:
+              versions = json.load(f)
+
+          stale = [v['version'] for v in versions
+                   if re.fullmatch(r'pr\d+', v['version']) and v['version'] not in open_set]
+          if not stale:
+              print("No stale PR previews.")
+              sys.exit(0)
+
+          print("Removing stale PR previews:", stale)
+          for ver in stale:
+              if os.path.isdir(ver):
+                  subprocess.run(['git', 'rm', '-rf', ver], check=True)
+          cleaned = [v for v in versions if v['version'] not in stale]
+          with open('versions.json', 'w') as f:
+              json.dump(cleaned, f, indent=2)
+              f.write('\n')
+          subprocess.run(['git', 'add', 'versions.json'], check=True)
+          PYEOF
+
+          git diff --cached --quiet && echo "Nothing to commit." || \
+            git commit -m "docs: remove stale PR previews" && git push
+
+  docs-preview:
     # Build from source and push directly to gh-pages/pr{N}/ without mike,
     # then register the PR in versions.json so Material shows the correct
     # version label. Non-PR versions come first, then PRs in ascending order.
