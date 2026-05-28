@@ -201,7 +201,8 @@
 /* on the dark indigo backgrounds.  The deep-orange accent has good        */
 /* contrast and is already used as the theme accent colour.                */
 
-[data-md-color-scheme="slate"] {
+/* Match Material's two-attribute specificity so our rule wins */
+[data-md-color-scheme="slate"][data-md-color-primary="indigo"] {
   --md-typeset-a-color: var(--md-accent-fg-color);
 }
 
