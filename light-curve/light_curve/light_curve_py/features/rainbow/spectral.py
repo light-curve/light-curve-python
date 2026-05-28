@@ -92,8 +92,13 @@ class BlanketedPlanckSpectralTerm(BaseSpectralTerm):
     def value(wave_cm, T, lambda_scale):
         base = PlanckSpectralTerm.value(wave_cm, T)
 
-        # lambda_scale is expressed in Angstrom
-        lambda_scale_cm = lambda_scale * 1e-8
+        # Lambda_angstrom represents how far (in wavelength) the extinction affects the BB
+        # Lambda_scale quantifies this between 0 (no UV ext) and 1 (most of high frequencies are suppressed)
+        # Therefore, lambda_angstrom should inversely scale with temperature (width of BB varies)
+        lambda_angstrom = 5e7 * lambda_scale / T
+
+        # Convert to cm to match wave_cm
+        lambda_cm = lambda_angstrom * 1e-8
 
         # Phenomenological value for the slope of the extinction
         # No physical reasons for this value, just nice fits
@@ -101,20 +106,20 @@ class BlanketedPlanckSpectralTerm(BaseSpectralTerm):
         # Fitting instead of fixing is likely overkill for broad band photometry
         intensity = 10**2
 
-        tau = intensity * np.exp(-wave_cm / lambda_scale_cm)
+        tau = intensity * np.exp(-wave_cm / lambda_cm)
 
         return base * np.exp(-tau)
 
     @staticmethod
     def initial_guesses(t, m, sigma, band):
         return {
-            "lambda_scale": 10.0,
+            "lambda_scale": 0.001,
         }
 
     @staticmethod
     def limits(t, m, sigma, band):
         return {
-            "lambda_scale": (10.0, 1000.0),
+            "lambda_scale": (0.001, 1.0),
         }
 
 

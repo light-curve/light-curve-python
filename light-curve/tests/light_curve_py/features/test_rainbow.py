@@ -25,7 +25,7 @@ def test_noisy_with_baseline():
     Tmax = 15e3
     t_color = 10
 
-    lambda_scale = 500.0
+    lambda_scale = 0.1
 
     baselines = {b: 0.3 * amplitude + rng.exponential(scale=0.3 * amplitude) for b in band_wave_aa}
 
@@ -220,7 +220,7 @@ def test_noisy_all_functions_combination():
     BB_parameters = []
 
     UV_BB_parameters = [
-        800.0,  # lambda_scale
+        0.4,  # lambda_scale
     ]
 
     spectral_names = [
