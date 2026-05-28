@@ -196,6 +196,16 @@
   .lc-dmdt-s1, .lc-dmdt-s2, .lc-dmdt-s3 { opacity: 0.9 !important; animation: none; }
 }
 
+/* ── Dark mode: use accent (deep-orange) for all links ───────────────── */
+/* In slate+indigo, --md-typeset-a-color defaults to blue — hard to read  */
+/* on the dark indigo backgrounds.  The deep-orange accent has good        */
+/* contrast and is already used as the theme accent colour.                */
+
+/* Match Material's two-attribute specificity so our rule wins */
+[data-md-color-scheme="slate"][data-md-color-primary="indigo"] {
+  --md-typeset-a-color: var(--md-accent-fg-color);
+}
+
 /* ── Navigation links ──────────────────────────────────────────────── */
 
 /* Left sidebar — non-active links: blue + underline */
