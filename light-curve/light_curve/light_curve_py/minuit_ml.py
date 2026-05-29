@@ -41,12 +41,60 @@ else:
 
             self._inv_yerror2 = 1.0 / np.asarray(yerror) ** 2
 
+            # One-slot model cache; see `_model` for the full rationale and scope.
+            # Held as a single (par, ym) tuple so it is published with one atomic
+            # assignment.
+            self._cache = None
+
         @property
         def ndata(self):
             return len(self.y)
 
-        def __call__(self, *par):
+        def _model(self, par):
+            # Memoise the most recent model evaluation, keyed on the parameter tuple.
+            #
+            # WHY THIS EXISTS
+            #   Migrad evaluates the cost value (`__call__`) and its gradient (`grad`)
+            #   at the *same* parameter point on every step. Both need `model(x, *par)`.
+            #   Without this cache the model is computed twice per point; with it, the
+            #   second call (whichever of value/gradient comes second) reuses the first
+            #   result. This is the entire speed benefit — nothing else depends on it.
+            #
+            # SCOPE — read before relying on or removing it
+            #   * The cache is per-instance state on this cost object, and a *fresh*
+            #     MaximumLikelihood (hence a fresh, empty cache) is built for every fit
+            #     in BaseRainbowFit._eval_and_get_errors. It is therefore never shared
+            #     between light curves / fits — batch and process-parallel fitting are
+            #     unaffected because each fit owns its own cache.
+            #   * It is a single slot, not a dict: it only ever helps the immediate
+            #     value/gradient pair at one point. It is not a general memo table and
+            #     will thrash (all misses) if evaluated at many points in a row.
+            #
+            # CORRECTNESS INVARIANTS — do not break these
+            #   * `model(self.x, *par)` must be a pure, deterministic function of `par`.
+            #     `self.x` and `self.model` are set at construction and must not be
+            #     mutated afterwards, or the cache will return stale results.
+            #   * The cached array is returned BY REFERENCE. Callers (`__call__`, `grad`)
+            #     only read it. Never mutate a model result in place, or you corrupt the
+            #     paired call's view of it.
+            #
+            # CONCURRENCY
+            #   Designed for Migrad's strictly serial evaluation. We still publish the
+            #   (par, ym) pair as a single tuple via one assignment, and read it into a
+            #   local first, so that IF this instance were ever shared across threads a
+            #   reader can only ever see None, the old pair, or this complete new pair —
+            #   never a torn mix of one par with another par's ym. (This keeps it safe,
+            #   not fast, under sharing — a parallel multi-point optimiser would still
+            #   just thrash the single slot.)
+            cache = self._cache
+            if cache is not None and cache[0] == par:
+                return cache[1]
             ym = self.model(self.x, *par)
+            self._cache = (par, ym)
+            return ym
+
+        def __call__(self, *par):
+            ym = self._model(par)
 
             if self.upper_mask is None:
                 result = -np.sum(self.logpdf(self.y, ym, self.yerror))
@@ -76,7 +124,7 @@ else:
             if self.upper_mask is not None:
                 raise NotImplementedError("Analytic gradient not implemented with upper_mask")
 
-            ym = self.model(self.x, *par)
+            ym = self._model(par)
             j = self.jac(self.x, *par)  # shape (n_params, n_obs)
 
             residual = self.y - ym
@@ -85,8 +133,8 @@ else:
 
             par_arr = np.asarray(par)
             # d barrier((p-lo)/s)/dp = -s/(p-lo)²;  d barrier((hi-p)/s)/dp = s/(hi-p)²
-            g += 0.0001 * self.limits_scale * (
-                1.0 / (self.limits1 - par_arr) ** 2 - 1.0 / (par_arr - self.limits0) ** 2
+            g += (
+                0.0001 * self.limits_scale * (1.0 / (self.limits1 - par_arr) ** 2 - 1.0 / (par_arr - self.limits0) ** 2)
             )
             return g
 
