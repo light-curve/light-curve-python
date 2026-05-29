@@ -1,8 +1,1 @@
-## Summary
-
-<!-- Describe your changes briefly. -->
-
-## Checklist
-
-- [ ] I confirm that my contribution is dual-licensed under GPLv3 and MIT.
-- [ ] I have read and acknowledged the dual-licensing update in https://github.com/light-curve/light-curve-python/issues/742.
+- [ ] By submitting this pull request, I confirm that my contribution is licensed under both GPLv3 and MIT. The project is currently GPLv3 and is in the process of moving to MIT (see https://github.com/light-curve/light-curve-python/issues/742). Dual-licensing all new contributions now ensures a smooth transition.
