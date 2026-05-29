@@ -92,19 +92,24 @@ class BlanketedPlanckSpectralTerm(BaseSpectralTerm):
     def value(wave_cm, T, lambda_scale):
         base = PlanckSpectralTerm.value(wave_cm, T)
 
-        # Lambda_angstrom represents how far (in wavelength) the extinction affects the BB
-        # Lambda_scale quantifies this between 0 (no UV ext) and 1 (most of high frequencies are suppressed)
-        # Therefore, lambda_angstrom should inversely scale with temperature (width of BB varies)
-        lambda_angstrom = 5e7 * lambda_scale / T
+        # Phenomenological value for the slope of the extinction
+        # No physical reasons for this value, just nice fits
+        # Fitting instead of fixing is likely overkill for broad band photometry
+        intensity = 10**2
+
+        # This empirical constant encodes how far (in wavelength) the maximum UV extinction extends (lambda_scale=1).
+        # The scale of this value comes from how it relates temperature to wavelength in angstrom.
+        # This value allows the extinction to affect the BB wavelength a little over the peak (when used in the formula below).
+        max_extinction = 5e7
+
+        # Lambda_angstrom represents how far (in absolute wavelength) the extinction affects the BB.
+        # Lambda_scale quantifies this between 0 (no UV ext) and 1 maximum allowed suppression (encoded by max_extinction above)
+        # We want this maximum extinction to scale with the size of the BB.
+        # Therefore, lambda_angstrom should inversely scale with temperature.
+        lambda_angstrom = max_extinction * lambda_scale / T
 
         # Convert to cm to match wave_cm
         lambda_cm = lambda_angstrom * 1e-8
-
-        # Phenomenological value for the slope of the extinction
-        # No physical reasons for this value, just nice fits
-        # Could be improved in the future
-        # Fitting instead of fixing is likely overkill for broad band photometry
-        intensity = 10**2
 
         tau = intensity * np.exp(-wave_cm / lambda_cm)
 
