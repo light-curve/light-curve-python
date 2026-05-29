@@ -102,6 +102,9 @@ extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js
   - javascripts/katex.js
 
+hooks:
+  - docs/hooks.py
+
 watch:
   - CHANGELOG.md
   - light-curve/light_curve
