@@ -99,11 +99,11 @@ class BlanketedPlanckSpectralTerm(BaseSpectralTerm):
 
         # This empirical constant encodes how far (in wavelength) the maximum UV extinction extends (lambda_scale=1).
         # The scale of this value comes from how it relates temperature to wavelength in angstrom.
-        # This value allows the extinction to affect the BB wavelength a little over the peak (when used in the formula below).
+        # This value allows the extinction to affect the BB wavelength a little over the peak (in the formula below).
         max_extinction = 5e7
 
         # Lambda_angstrom represents how far (in absolute wavelength) the extinction affects the BB.
-        # Lambda_scale quantifies this between 0 (no UV ext) and 1 maximum allowed suppression (encoded by max_extinction above)
+        # Lambda_scale quantifies this between 0 (no UV ext) and 1 max suppression (encoded by max_extinction above)
         # We want this maximum extinction to scale with the size of the BB.
         # Therefore, lambda_angstrom should inversely scale with temperature.
         lambda_angstrom = max_extinction * lambda_scale / T
