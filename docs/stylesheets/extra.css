@@ -283,6 +283,18 @@
   flex-wrap: wrap;
 }
 
+.lc-nb-icon {
+  display: inline-flex;
+  vertical-align: text-bottom;
+  margin-right: 0.3em;
+}
+
+.lc-nb-icon svg {
+  width: 1em;
+  height: 1em;
+  fill: currentColor;
+}
+
 /* ── Notebooks: hide cell count badges ───────────────────────────── */
 
 .jp-Cell-inputWrapper .jp-InputPrompt {
