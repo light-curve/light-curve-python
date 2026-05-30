@@ -1,4 +1,4 @@
-# Citing & Support
+# Cite & Contact
 
 ## Contact
 

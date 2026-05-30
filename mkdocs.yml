@@ -142,5 +142,5 @@ nav:
     - Tutorial: dmdt/tutorial.ipynb
     - API: dmdt/api.md
   - Changelog: changelog.md
-  - Citing & Support: citing.md
+  - Cite & Contact: citing.md
   - Contribute: developer/contributing.md
