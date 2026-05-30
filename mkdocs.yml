@@ -49,6 +49,8 @@ plugins:
       execute: true
       allow_errors: false
       include_source: true
+      ignore:
+        - "hooks.py"
       execute_ignore:
         - "*/pre-executed/*.ipynb"
   - mkdocstrings:
