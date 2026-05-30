@@ -283,15 +283,21 @@
   flex-wrap: wrap;
 }
 
-.lc-nb-icon {
+/* Override md-button's inline-block so icon + text align perfectly */
+.lc-nb-buttons .md-button {
   display: inline-flex;
-  vertical-align: text-bottom;
-  margin-right: 0.3em;
+  align-items: center;
+  gap: 0.25em;
+}
+
+.lc-nb-icon {
+  display: flex;
+  flex-shrink: 0;
 }
 
 .lc-nb-icon svg {
-  width: 1em;
-  height: 1em;
+  width: 1.1em;
+  height: 1.1em;
   fill: currentColor;
 }
 
