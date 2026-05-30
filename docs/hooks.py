@@ -1,11 +1,13 @@
 """MkDocs hooks for light-curve-python docs."""
 
+import os
 import pathlib
 
 import material
 
 _REPO = "light-curve/light-curve-python"
-_BRANCH = "main"
+# GITHUB_HEAD_REF = PR source branch; GITHUB_REF_NAME = push branch/tag; fallback = main
+_BRANCH = os.environ.get("GITHUB_HEAD_REF") or os.environ.get("GITHUB_REF_NAME", "main")
 
 _ICONS_DIR = pathlib.Path(material.__path__[0]) / "templates/.icons"
 
