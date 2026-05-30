@@ -2,20 +2,17 @@
 
 import pathlib
 
+import material
+
 _REPO = "light-curve/light-curve-python"
 _BRANCH = "main"
 
-_ICONS_DIR = pathlib.Path(__file__).parent.parent / ".venv/lib"
+_ICONS_DIR = pathlib.Path(material.__path__[0]) / "templates/.icons"
 
 
 def _load_icon(bundle: str, name: str) -> str:
-    """Return inline SVG for a Material/Simple icon, stripped of the XML declaration."""
-    # Walk .venv/lib to find the icons directory regardless of Python version
-    for icons_dir in _ICONS_DIR.rglob("material/templates/.icons"):
-        svg_path = icons_dir / bundle / f"{name}.svg"
-        if svg_path.exists():
-            return svg_path.read_text()
-    return ""
+    svg_path = _ICONS_DIR / bundle / f"{name}.svg"
+    return svg_path.read_text() if svg_path.exists() else ""
 
 
 _ICON_DOWNLOAD = _load_icon("material", "download")
@@ -35,7 +32,7 @@ def on_page_content(html, page, config, files, **kwargs):
 
     buttons = (
         f'<p class="lc-nb-buttons">'
-        f'<a href="{download_url}" class="md-button" download>'
+        f'<a href="{download_url}" class="md-button md-button--primary" download>'
         f'<span class="lc-nb-icon">{_ICON_DOWNLOAD}</span>Download notebook</a> '
         f'<a href="{colab_url}" class="md-button md-button--primary" target="_blank" rel="noopener">'
         f'<span class="lc-nb-icon">{_ICON_COLAB}</span>Run in Google Colab</a>'
