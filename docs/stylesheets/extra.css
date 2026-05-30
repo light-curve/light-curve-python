@@ -274,6 +274,33 @@
   cursor: default;
 }
 
+/* ── Notebooks: download / Colab button row ─────────────────────── */
+
+.lc-nb-buttons {
+  margin: 0 0 1.5rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Override md-button's inline-block so icon + text align perfectly */
+.lc-nb-buttons .md-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+}
+
+.lc-nb-icon {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.lc-nb-icon svg {
+  width: 1.1em;
+  height: 1.1em;
+  fill: currentColor;
+}
+
 /* ── Notebooks: hide cell count badges ───────────────────────────── */
 
 .jp-Cell-inputWrapper .jp-InputPrompt {

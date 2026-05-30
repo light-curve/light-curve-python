@@ -49,6 +49,8 @@ plugins:
       execute: true
       allow_errors: false
       include_source: true
+      ignore:
+        - "hooks.py"
       execute_ignore:
         - "*/pre-executed/*.ipynb"
   - mkdocstrings:
@@ -102,6 +104,9 @@ extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js
   - javascripts/katex.js
 
+hooks:
+  - docs/hooks.py
+
 watch:
   - CHANGELOG.md
   - light-curve/light_curve
@@ -137,5 +142,5 @@ nav:
     - Tutorial: dmdt/tutorial.ipynb
     - API: dmdt/api.md
   - Changelog: changelog.md
-  - Citing & Support: citing.md
+  - Cite & Contact: citing.md
   - Contribute: developer/contributing.md
