@@ -60,17 +60,10 @@
   transform: translateY(-3px);
 }
 
-/* Full-card click target: the title link's ::after stretches to cover the card */
 .lc-card-body h3 a {
   color: var(--md-default-fg-color);
   text-decoration: underline;
   text-underline-offset: 3px;
-}
-
-.lc-card-body h3 a::after {
-  content: '';
-  position: absolute;
-  inset: 0;
 }
 
 /* Fixed dark background so the white SVG elements are always visible */
@@ -197,13 +190,6 @@
   padding: 0.65rem 1rem;
   border: 1px solid var(--md-default-fg-color--lightest);
   border-radius: 0.4rem;
-  text-decoration: none !important;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.lc-ub-pkg:hover {
-  border-color: var(--md-accent-fg-color);
-  box-shadow: 0 2px 8px rgba(0,0,0,.08);
 }
 
 .lc-ub-pkg-logo-wrap {

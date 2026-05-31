@@ -260,18 +260,18 @@ and the public <a href="https://ztf.snad.space" target="_blank" rel="noopener">S
 <section class="lc-ub-section">
 <h3 class="lc-ub-heading">Software</h3>
 <div class="lc-ub-pkg-grid">
-  <a href="https://github.com/quatrope/feets" target="_blank" rel="noopener" class="lc-ub-pkg">
-    <div class="lc-ub-pkg-logo-wrap"><img src="assets/packages/feets.svg" alt="feets" class="lc-ub-pkg-logo"></div>
+  <div class="lc-ub-pkg">
+    <div class="lc-ub-pkg-logo-wrap"><a href="https://github.com/quatrope/feets" target="_blank" rel="noopener"><img src="assets/packages/feets.svg" alt="feets" class="lc-ub-pkg-logo"></a></div>
     <span class="lc-ub-pkg-desc">Feature extraction library for time series with Dask-parallel processing and a scikit-learn-style API, using light-curve as its computational backend</span>
-  </a>
-  <a href="https://github.com/COINtoolbox/RESSPECT" target="_blank" rel="noopener" class="lc-ub-pkg">
-    <div class="lc-ub-pkg-logo-wrap"><img src="assets/packages/resspect.png" alt="RESSPECT" class="lc-ub-pkg-logo"></div>
+  </div>
+  <div class="lc-ub-pkg">
+    <div class="lc-ub-pkg-logo-wrap"><a href="https://github.com/COINtoolbox/RESSPECT" target="_blank" rel="noopener"><img src="assets/packages/resspect.png" alt="RESSPECT" class="lc-ub-pkg-logo"></a></div>
     <span class="lc-ub-pkg-desc">Photometric supernova classification pipeline for LSST, with active learning, developed by LSST DESC and COIN</span>
-  </a>
-  <a href="https://github.com/VTDA-Group/superphot-plus" target="_blank" rel="noopener" class="lc-ub-pkg">
-    <div class="lc-ub-pkg-logo-wrap"><img src="assets/packages/superphot-plus.svg" alt="superphot+" class="lc-ub-pkg-logo lc-ub-pkg-logo--wordmark"></div>
+  </div>
+  <div class="lc-ub-pkg">
+    <div class="lc-ub-pkg-logo-wrap"><a href="https://github.com/VTDA-Group/superphot-plus" target="_blank" rel="noopener"><img src="assets/packages/superphot-plus.svg" alt="superphot+" class="lc-ub-pkg-logo lc-ub-pkg-logo--wordmark"></a></div>
     <span class="lc-ub-pkg-desc">Real-time supernova light curve fitting and classification for ZTF/Rubin</span>
-  </a>
+  </div>
 </div>
 </section>
 </div>
