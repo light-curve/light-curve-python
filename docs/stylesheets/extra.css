@@ -106,19 +106,23 @@
 /* ── Used by section ─────────────────────────────────────────────── */
 
 .lc-used-by {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: repeat(2, auto);
-  grid-auto-flow: column;
-  gap: 1.2rem 2.5rem;
+  display: flex;
+  gap: 2.5rem;
   margin: 0.75rem 0 1rem;
   align-items: start;
 }
 
+.lc-ub-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
 @media (max-width: 600px) {
   .lc-used-by {
-    grid-template-columns: 1fr;
-    grid-auto-flow: row;
+    flex-direction: column;
   }
 }
 

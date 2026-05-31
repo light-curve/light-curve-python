@@ -225,6 +225,7 @@ matrix = dmdt.points(t, m)   # shape (16, 16)
 
 <div class="lc-used-by">
 
+<div class="lc-ub-col">
 <section class="lc-ub-section">
 <h3 class="lc-ub-heading">Alert brokers</h3>
 <p class="lc-ub-desc">AMPEL, ANTARES, and Fink use <code>light-curve</code> for real-time feature extraction
@@ -253,7 +254,9 @@ anomaly-detection group uses <code>light-curve</code> to analyze hundreds of mil
 Zwicky Transient Facility light curves from data releases, powering large-scale analyses
 and the public <a href="https://ztf.snad.space" target="_blank" rel="noopener">SNAD ZTF Viewer</a>.</p>
 </section>
+</div>
 
+<div class="lc-ub-col">
 <section class="lc-ub-section">
 <h3 class="lc-ub-heading">Software</h3>
 <div class="lc-ub-pkg-grid">
@@ -276,5 +279,6 @@ and the public <a href="https://ztf.snad.space" target="_blank" rel="noopener">S
 <h3 class="lc-ub-heading">Publications</h3>
 <p class="lc-ub-desc">Used in <a href="https://ui.adsabs.harvard.edu/public-libraries/hcwBtIKwQ3yJjT784upA7A" target="_blank" rel="noopener">30+ research publications</a>.</p>
 </section>
+</div>
 
 </div>
