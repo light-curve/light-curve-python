@@ -188,11 +188,72 @@ pip install 'light-curve[full]'
 </div>
 <div class="lc-card-body">
 <h3><a href="dmdt/">dm-dt maps</a></h3>
-<p>2D histograms of Δmag vs log-Δt for all observation pairs — fixed-size image representation for CNN-based variability classifiers.</p>
+<p>2D histograms of Δmag vs log-Δt for all observation pairs, providing a fixed-size image representation for CNN-based variability classifiers.</p>
 </div>
 </div>
 
 </div>
+
+## Used by
+
+<div class="lc-used-by">
+
+<section class="lc-ub-section">
+<h3 class="lc-ub-heading">Alert brokers</h3>
+<p class="lc-ub-desc">AMPEL, ANTARES, and Fink use <code>light-curve</code> for real-time feature extraction
+when classifying on the order of a million alerts per night from the Zwicky Transient Facility
+and the Rubin Observatory.</p>
+<div class="lc-ub-logos">
+  <a href="https://ampelproject.github.io" target="_blank" rel="noopener" class="lc-broker-logo">
+    <img src="assets/brokers/ampel.png" alt="AMPEL">
+  </a>
+  <a href="https://antares.noirlab.edu" target="_blank" rel="noopener" class="lc-broker-logo lc-broker-logo--inv">
+    <img src="assets/brokers/antares.svg" alt="ANTARES">
+  </a>
+  <a href="https://fink-broker.org" target="_blank" rel="noopener" class="lc-broker-logo">
+    <img src="assets/brokers/fink.svg" alt="Fink">
+  </a>
+</div>
+</section>
+
+<section class="lc-ub-section">
+<h3 class="lc-ub-heading">The SNAD team</h3>
+<a href="https://snad.space" target="_blank" rel="noopener" class="lc-broker-logo">
+  <img src="assets/brokers/snad.png" alt="SNAD">
+</a>
+<p class="lc-ub-desc">The <a href="https://snad.space" target="_blank" rel="noopener">SNAD</a>
+anomaly-detection group uses <code>light-curve</code> to analyze hundreds of millions of
+Zwicky Transient Facility light curves from data releases, covering catalog-wide feature
+extraction and the public <a href="https://ztf.snad.space" target="_blank" rel="noopener">SNAD ZTF Viewer</a>.</p>
+</section>
+
+<section class="lc-ub-section">
+<h3 class="lc-ub-heading">Software</h3>
+<div class="lc-ub-pkg-grid">
+  <a href="https://github.com/quatrope/feets" target="_blank" rel="noopener" class="lc-ub-pkg">
+    <div class="lc-ub-pkg-logo-wrap"><img src="assets/packages/feets.svg" alt="feets" class="lc-ub-pkg-logo"></div>
+    <span class="lc-ub-pkg-desc">Feature extraction library for time series with Dask-parallel processing and a scikit-learn-style API, using light-curve as its computational backend</span>
+  </a>
+
+  <a href="https://github.com/COINtoolbox/RESSPECT" target="_blank" rel="noopener" class="lc-ub-pkg">
+    <div class="lc-ub-pkg-logo-wrap"><img src="assets/packages/resspect.png" alt="RESSPECT" class="lc-ub-pkg-logo"></div>
+    <span class="lc-ub-pkg-desc">Photometric supernova classification pipeline for LSST, with active learning, developed by LSST DESC and COIN</span>
+  </a>
+  <a href="https://github.com/VTDA-Group/superphot-plus" target="_blank" rel="noopener" class="lc-ub-pkg">
+    <div class="lc-ub-pkg-logo-wrap"><img src="assets/packages/superphot-plus.svg" alt="superphot+" class="lc-ub-pkg-logo lc-ub-pkg-logo--wordmark"></div>
+    <span class="lc-ub-pkg-desc">Real-time supernova light curve fitting and classification for ZTF/Rubin</span>
+  </a>
+</div>
+</section>
+
+<section class="lc-ub-section">
+<h3 class="lc-ub-heading">Publications</h3>
+<p class="lc-ub-desc">Used in <a href="https://ui.adsabs.harvard.edu/public-libraries/hcwBtIKwQ3yJjT784upA7A" target="_blank" rel="noopener">30+ research publications</a>.</p>
+</section>
+
+</div>
+
+---
 
 ## Quick start
 
