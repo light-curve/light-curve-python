@@ -105,10 +105,14 @@
 
 /* ── Used by section ─────────────────────────────────────────────── */
 
+.md-typeset h2:has(+ .lc-used-by) {
+  margin-bottom: 0.2rem;
+}
+
 .lc-used-by {
   display: flex;
   gap: 2.5rem;
-  margin: 0.2rem 0 1rem;
+  margin: 0 0 1rem;
   align-items: start;
 }
 
