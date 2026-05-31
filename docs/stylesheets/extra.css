@@ -60,17 +60,10 @@
   transform: translateY(-3px);
 }
 
-/* Full-card click target: the title link's ::after stretches to cover the card */
 .lc-card-body h3 a {
   color: var(--md-default-fg-color);
   text-decoration: underline;
   text-underline-offset: 3px;
-}
-
-.lc-card-body h3 a::after {
-  content: '';
-  position: absolute;
-  inset: 0;
 }
 
 /* Fixed dark background so the white SVG elements are always visible */
@@ -101,6 +94,137 @@
   width: 100% !important;
   height: 100% !important;
   display: block !important;
+}
+
+/* ── Used by section ─────────────────────────────────────────────── */
+
+.md-typeset h2:has(+ .lc-used-by) {
+  margin-bottom: 0.2rem;
+}
+
+.lc-used-by {
+  display: flex;
+  gap: 2.5rem;
+  margin: 0 0 1rem;
+  align-items: start;
+}
+
+.lc-ub-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+@media (max-width: 600px) {
+  .lc-used-by {
+    flex-direction: column;
+  }
+}
+
+.lc-ub-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.lc-ub-heading {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--md-default-fg-color--light);
+  margin: 0;
+}
+
+.lc-ub-desc {
+  font-size: 0.9rem;
+  color: var(--md-default-fg-color--light);
+  margin: 0;
+  max-width: 68ch;
+}
+
+/* Broker / team logos */
+.lc-ub-logos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.2rem;
+  margin-top: 0.2rem;
+}
+
+.lc-broker-logo {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none !important;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.lc-broker-logo:hover {
+  opacity: 1;
+}
+
+.lc-broker-logo img {
+  height: 4rem;
+  max-width: 16rem;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+
+/* Software package cards */
+.lc-ub-pkg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.2rem;
+}
+
+.lc-ub-pkg {
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: span 2;
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.4rem;
+}
+
+.lc-ub-pkg-logo-wrap {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.lc-ub-pkg-logo {
+  height: 4rem !important;
+  width: auto !important;
+  max-width: 100%;
+  object-fit: contain;
+  display: block !important;
+}
+
+/* Wordmarks: smaller, bottom-aligned so they sit close to the description */
+.lc-ub-pkg-logo--wordmark {
+  height: 2rem !important;
+}
+
+[data-md-color-scheme="slate"] .lc-ub-pkg-logo--wordmark {
+  filter: brightness(0) invert(1);
+}
+
+.lc-ub-pkg-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--md-default-fg-color);
+}
+
+.lc-ub-pkg-desc {
+  font-size: 0.8rem;
+  color: var(--md-default-fg-color--light);
+  line-height: 1.4;
 }
 
 /* Increase max content width for large screens */
