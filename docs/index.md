@@ -244,6 +244,17 @@ and the Rubin Observatory.</p>
 </section>
 
 <section class="lc-ub-section">
+<h3 class="lc-ub-heading">The SNAD team</h3>
+<a href="https://snad.space" target="_blank" rel="noopener" class="lc-broker-logo">
+  <img src="assets/brokers/snad.png" alt="SNAD">
+</a>
+<p class="lc-ub-desc">The <a href="https://snad.space" target="_blank" rel="noopener">SNAD</a>
+anomaly-detection group uses <code>light-curve</code> to analyze hundreds of millions of
+Zwicky Transient Facility light curves from data releases, powering large-scale analyses
+and the public <a href="https://ztf.snad.space" target="_blank" rel="noopener">SNAD ZTF Viewer</a>.</p>
+</section>
+
+<section class="lc-ub-section">
 <h3 class="lc-ub-heading">Software</h3>
 <div class="lc-ub-pkg-grid">
   <a href="https://github.com/quatrope/feets" target="_blank" rel="noopener" class="lc-ub-pkg">
@@ -259,17 +270,6 @@ and the Rubin Observatory.</p>
     <span class="lc-ub-pkg-desc">Real-time supernova light curve fitting and classification for ZTF/Rubin</span>
   </a>
 </div>
-</section>
-
-<section class="lc-ub-section">
-<h3 class="lc-ub-heading">The SNAD team</h3>
-<a href="https://snad.space" target="_blank" rel="noopener" class="lc-broker-logo">
-  <img src="assets/brokers/snad.png" alt="SNAD">
-</a>
-<p class="lc-ub-desc">The <a href="https://snad.space" target="_blank" rel="noopener">SNAD</a>
-anomaly-detection group uses <code>light-curve</code> to analyze hundreds of millions of
-Zwicky Transient Facility light curves from data releases, powering large-scale analyses
-and the public <a href="https://ztf.snad.space" target="_blank" rel="noopener">SNAD ZTF Viewer</a>.</p>
 </section>
 
 <section class="lc-ub-section">
