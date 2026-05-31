@@ -119,14 +119,15 @@ class AstraCLR(ImplicitMultiBandModel):
     References
     ----------
     Majumder et al. (2026, in prep)
-    https://huggingface.co/ashrot/astra-clr-base
+
+    https://huggingface.co/light-curve/astra-clr
     """
 
     n_model_bands: int = 3
     seq_sizes: list[int] = [300, 350, 50]
     embed_dim: int = 512
-    hf_repo: str = "ashrot/astra-clr-base"
-    hf_filename: str = "astra-clr.onnx"
+    hf_repo: str = "light-curve/astra-clr"
+    hf_filename: str = "astra_clr.onnx"
     model_outputs: frozenset[str] = frozenset({"mean"})
 
     def __init__(
@@ -159,7 +160,7 @@ class AstraCLR(ImplicitMultiBandModel):
         """Load the model from the HuggingFace Hub.
 
         Downloads (and caches) the ONNX model from
-        ``https://huggingface.co/ashrot/astra-clr-base``, creates an
+        ``https://huggingface.co/light-curve/astra-clr``, creates an
         ``onnxruntime.InferenceSession``, and returns a ready-to-use instance.
 
         Parameters
