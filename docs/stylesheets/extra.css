@@ -106,16 +106,20 @@
 /* ── Used by section ─────────────────────────────────────────────── */
 
 .lc-used-by {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  margin: 1.5rem 0 2rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2rem 2.5rem;
+  margin: 0.75rem 0 1rem;
+}
+
+@media (max-width: 600px) {
+  .lc-used-by { grid-template-columns: 1fr; }
 }
 
 .lc-ub-section {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.4rem;
 }
 
 .lc-ub-heading {
@@ -139,8 +143,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 2rem;
-  margin-top: 0.3rem;
+  gap: 1.2rem;
+  margin-top: 0.2rem;
 }
 
 .lc-broker-logo {
@@ -163,14 +167,6 @@
   display: block;
 }
 
-/* ANTARES SVG is white — render as black in light mode */
-.lc-broker-logo--inv img {
-  filter: brightness(0);
-}
-
-[data-md-color-scheme="slate"] .lc-broker-logo--inv img {
-  filter: none;
-}
 
 /* Software package cards */
 .lc-ub-pkg-grid {
