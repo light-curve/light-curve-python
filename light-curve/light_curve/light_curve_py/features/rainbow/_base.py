@@ -369,6 +369,22 @@ class BaseRainbowFit(BaseMultiBandFeature):
             limits[self.p.baseline_parameter_name(b)] = (lower, upper)
         return limits
 
+    def _reduced_chi2(self, cost, n_obs, *, get_initial):
+        """Reduced chi-square ``cost / dof`` with ``dof = n_obs - n_params``.
+
+        Guards the degenerate case ``dof <= 0`` (a light curve with no more points
+        than the model has free parameters): the reduced chi-square is then undefined.
+        Treated like a non-converged fit — raise under ``fail_on_divergence`` (so the
+        caller's ``fill_value`` path can take over), otherwise return ``nan`` rather
+        than crashing on division by zero or returning a meaningless negative value.
+        """
+        dof = n_obs - self.size
+        if dof <= 0:
+            if self.fail_on_divergence and not get_initial:
+                raise RuntimeError(f"Fit has non-positive degrees of freedom: {n_obs} points <= {self.size} parameters")
+            return np.nan
+        return cost / dof
+
     def _eval(self, *, t, m, sigma, band):
         params, errors = self._eval_and_get_errors(t=t, m=m, sigma=sigma, band=band)
         return params
@@ -501,7 +517,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
         if not minuit.valid and self.fail_on_divergence and not get_initial:
             raise RuntimeError("Fitting failed")
 
-        reduced_chi2 = minuit.fval / (len(t) - self.size)
+        reduced_chi2 = self._reduced_chi2(minuit.fval, len(t), get_initial=get_initial)
 
         if get_initial:
             # Reset the fitter so that it returns initial values instead of final ones
@@ -658,7 +674,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
 
         # Match iminuit's convention: it reports MaximumLikelihood.fval / dof, and fval
         # is the 0.5·χ² negative-log-likelihood, hence the factor of one half here.
-        reduced_chi2 = 0.5 * chi2 / (len(m) - self.size)
+        reduced_chi2 = self._reduced_chi2(0.5 * chi2, len(m), get_initial=get_initial)
 
         params = params.copy()
         self._unscale_parameters(params, t_scaler, m_scaler)
