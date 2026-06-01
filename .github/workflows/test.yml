@@ -45,7 +45,7 @@ jobs:
       - name: Build abi3 wheel
         run: uvx maturin build --release -i python3.14
       - name: Upload abi3 wheel
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wheels-linux-x86_64
           path: light-curve/target/wheels/
@@ -58,7 +58,7 @@ jobs:
           rm -f target/wheels/*.whl
           uvx maturin build --release -i python3.14t
       - name: Upload free-threading wheel
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wheels-linux-x86_64-ft
           path: light-curve/target/wheels/
@@ -97,7 +97,7 @@ jobs:
       - name: Build abi3 wheel
         run: uvx maturin build --release -i python3.14
       - name: Upload abi3 wheel
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wheels-linux-aarch64
           path: light-curve/target/wheels/
