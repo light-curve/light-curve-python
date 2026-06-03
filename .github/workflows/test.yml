@@ -128,6 +128,11 @@ jobs:
           python-version: "3.${{ matrix.python_minor }}"
       - name: Install uv
         uses: astral-sh/setup-uv@v5
+      - name: Cache HuggingFace models
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/huggingface
+          key: huggingface-${{ runner.os }}-${{ runner.arch }}-v1
       - name: Download wheels
         uses: actions/download-artifact@v8
         with:
@@ -160,6 +165,11 @@ jobs:
           python-version: "3.${{ matrix.python_minor }}"
       - name: Install uv
         uses: astral-sh/setup-uv@v5
+      - name: Cache HuggingFace models
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/huggingface
+          key: huggingface-${{ runner.os }}-${{ runner.arch }}-v1
       - name: Download wheels
         uses: actions/download-artifact@v8
         with:
@@ -244,6 +254,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libgsl-dev
+      - name: Cache HuggingFace models
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/huggingface
+          key: huggingface-${{ runner.os }}-${{ runner.arch }}-v1
       - name: Generate code coverage
         run: |
           source <(cargo llvm-cov show-env --export-prefix)
@@ -352,6 +367,11 @@ jobs:
         with:
           name: wheels-linux-x86_64
           path: light-curve/wheels/
+      - name: Cache HuggingFace models
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/huggingface
+          key: huggingface-${{ runner.os }}-${{ runner.arch }}-v1
       - name: Run slow tests
         working-directory: light-curve
         run: uvx --with tox-uv tox -e py314-slow --installpkg=$(ls wheels/*.whl)
