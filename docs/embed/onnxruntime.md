@@ -1,6 +1,6 @@
 # onnxruntime tips
 
-Practical configuration tweaks for running `light_curve.embed` models in non-default environments.
+Practical configuration tweaks for running `light_curve.embed` models on HPC clusters, science platforms, and GPU nodes.
 
 ## Shared environments (science platforms and HPC clusters)
 
