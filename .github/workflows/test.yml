@@ -37,7 +37,7 @@ jobs:
           shared-key: "${{ runner.os }}-${{ runner.arch }}_stable-rust_build-wheels"
           workspaces: "light-curve"
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v8.2.0
       - name: Set up Python 3.14
         uses: actions/setup-python@v6
         with:
@@ -89,7 +89,7 @@ jobs:
           shared-key: "${{ runner.os }}-${{ runner.arch }}_stable-rust_build-wheels"
           workspaces: "light-curve"
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v8.2.0
       - name: Set up Python 3.14
         uses: actions/setup-python@v6
         with:
@@ -127,7 +127,7 @@ jobs:
         with:
           python-version: "3.${{ matrix.python_minor }}"
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v8.2.0
       - name: Cache HuggingFace models
         uses: actions/cache@v5
         with:
@@ -164,7 +164,7 @@ jobs:
         with:
           python-version: "3.${{ matrix.python_minor }}"
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v8.2.0
       - name: Cache HuggingFace models
         uses: actions/cache@v5
         with:
@@ -185,7 +185,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v8.2.0
       - run: uvx ruff check .
         working-directory: light-curve
 
@@ -249,7 +249,7 @@ jobs:
         with:
           python-version: "3.14"
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v8.2.0
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -288,7 +288,7 @@ jobs:
         with:
           python-version: "3.13"
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v8.2.0
       - name: Cache HuggingFace models
         uses: actions/cache@v5
         with:
@@ -341,7 +341,7 @@ jobs:
           shared-key: "${{ runner.os }}_msrv-rust_maturin-build"
           workspaces: "light-curve"
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v8.2.0
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -366,7 +366,7 @@ jobs:
         with:
           python-version: "3.14"
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v8.2.0
       - name: Download wheels
         uses: actions/download-artifact@v8
         with:
