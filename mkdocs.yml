@@ -119,7 +119,7 @@ nav:
     - Basics: features/basics.ipynb
     - Periodogram: features/periodogram.ipynb
     - Parametric fits: features/fitting.ipynb
-    - Multiband: features/multiband/tutorial.ipynb
+    - Rainbow: features/rainbow.ipynb
     - API:
       - features/api/index.md
       - Base class: features/api/base.md
@@ -130,7 +130,7 @@ nav:
       - Periodogram: features/api/periodogram.md
       - Parametric fits: features/api/fitting.md
       - Detection-based: features/api/detection.md
-      - Multiband: features/multiband/api.md
+      - Multiband: features/api/multiband.md
   - ML Embeddings:
     - embed/index.md
     - Tutorial: embed/tutorial.ipynb
