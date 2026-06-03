@@ -60,8 +60,13 @@ jobs:
         env:
           DOCS_DEPLOY_TOKEN: ${{ secrets.DOCS_DEPLOY_TOKEN }}
         run: |
-          git remote add docs-site \
-            "https://x-access-token:${DOCS_DEPLOY_TOKEN}@github.com/${DOCS_REPO}.git"
+          # actions/checkout sets a global http.extraheader with GITHUB_TOKEN for all
+          # github.com requests. Set a URL-specific override so our PAT wins for the
+          # docs repo, without touching auth for anything else.
+          git config \
+            "http.https://github.com/${DOCS_REPO}.git.extraheader" \
+            "AUTHORIZATION: basic $(printf 'x-access-token:%s' "${DOCS_DEPLOY_TOKEN}" | base64 -w0)"
+          git remote add docs-site "https://github.com/${DOCS_REPO}.git"
 
       - name: Cache HuggingFace models
         uses: actions/cache@v5
@@ -100,8 +105,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           DOCS_DEPLOY_TOKEN: ${{ secrets.DOCS_DEPLOY_TOKEN }}
         run: |
+          git config --global \
+            "http.https://github.com/${DOCS_REPO}.git.extraheader" \
+            "AUTHORIZATION: basic $(printf 'x-access-token:%s' "${DOCS_DEPLOY_TOKEN}" | base64 -w0)"
           git clone --depth=1 --branch="${DOCS_BRANCH}" \
-            "https://x-access-token:${DOCS_DEPLOY_TOKEN}@github.com/${DOCS_REPO}.git" \
+            "https://github.com/${DOCS_REPO}.git" \
             /tmp/docs-stale
           cd /tmp/docs-stale
           git config user.name "github-actions[bot]"
