@@ -57,8 +57,15 @@ and look for your Python process in the *Processes* table at the bottom.
 If the installed CUDA libraries do not match, you will see runtime errors like
 `libcudnn.so.X: cannot open shared object file`.
 
-The [CUDA Execution Provider requirements table](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#requirements)
-lists the exact CUDA and cuDNN versions required by each `onnxruntime-gpu` release.
+Before installing, check two things and make sure they agree:
+
+1. **What your driver supports** — run `nvidia-smi` and read the *CUDA Version* in the
+   top-right corner. That is the *maximum* CUDA version your driver can run.
+
+2. **What onnxruntime-gpu requires** — see the
+   [CUDA Execution Provider requirements table](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#requirements)
+   for the exact CUDA and cuDNN versions needed by each release.
+   Pick a release whose requirements are at or below your driver's maximum.
 
 The easiest way to get a compatible stack is **[pixi](https://pixi.sh)**, which can
 install the CUDA toolkit and cuDNN from the NVIDIA conda channel alongside
@@ -80,11 +87,8 @@ huggingface_hub = "*"
 onnxruntime-gpu = "*"
 ```
 
-First run `nvidia-smi` and check the *CUDA Version* shown in the top-right corner —
-that is the maximum version your driver supports.
-Choose a `nvidia/label/cuda-X.Y.Z` channel that is at or below that version.
-If `onnxruntime-gpu` from PyPI requires a different CUDA version than the one you
-installed, pin it explicitly:
+Choose the `nvidia/label/cuda-X.Y.Z` channel to match the CUDA version required by
+your chosen `onnxruntime-gpu` release. Pin the version if needed:
 
 ```toml
 [pypi-dependencies]
