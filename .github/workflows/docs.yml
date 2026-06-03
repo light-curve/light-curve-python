@@ -11,15 +11,19 @@ on:
     types: [opened, synchronize, reopened]
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
+
+env:
+  DOCS_REPO: light-curve/light-curve.snad.space
+  DOCS_BRANCH: main
 
 jobs:
   docs-deploy:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-    # Queue deploys; never cancel — concurrent gh-pages pushes would corrupt the branch
+    # Queue deploys; never cancel — concurrent pushes would corrupt the docs branch
     concurrency:
-      group: gh-pages
+      group: docs-deploy
       cancel-in-progress: false
     runs-on: ubuntu-latest
     defaults:
@@ -52,6 +56,13 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
+      - name: Add docs remote
+        env:
+          DOCS_DEPLOY_TOKEN: ${{ secrets.DOCS_DEPLOY_TOKEN }}
+        run: |
+          git remote add docs-site \
+            "https://x-access-token:${DOCS_DEPLOY_TOKEN}@github.com/${DOCS_REPO}.git"
+
       - name: Cache HuggingFace models
         uses: actions/cache@v5
         with:
@@ -69,24 +80,28 @@ jobs:
         if: github.ref_type == 'branch'
         run: |
           source .venv/bin/activate
-          mike deploy --push --update-aliases dev
-          mike list | grep -q "latest" || mike set-default --push dev
+          mike deploy --push --remote docs-site --branch "${DOCS_BRANCH}" \
+            --update-aliases dev
+          mike list --remote docs-site --branch "${DOCS_BRANCH}" | grep -q "latest" \
+            || mike set-default --push --remote docs-site --branch "${DOCS_BRANCH}" dev
 
       - name: Deploy release (tag)
         if: github.ref_type == 'tag'
         run: |
           source .venv/bin/activate
-          mike deploy --push --update-aliases latest
-          mike set-default --push latest
+          mike deploy --push --remote docs-site --branch "${DOCS_BRANCH}" \
+            --update-aliases latest
+          mike set-default --push --remote docs-site --branch "${DOCS_BRANCH}" latest
 
       - name: Remove stale PR previews
         # pull_request.closed doesn't fire for bot-merged PRs (copilot[bot],
         # pre-commit-ci[bot]).  Run this after every deploy to catch leftovers.
         env:
           GH_TOKEN: ${{ github.token }}
+          DOCS_DEPLOY_TOKEN: ${{ secrets.DOCS_DEPLOY_TOKEN }}
         run: |
-          git clone --depth=1 --branch=gh-pages \
-            "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" \
+          git clone --depth=1 --branch="${DOCS_BRANCH}" \
+            "https://x-access-token:${DOCS_DEPLOY_TOKEN}@github.com/${DOCS_REPO}.git" \
             /tmp/gh-pages-stale
           cd /tmp/gh-pages-stale
           git config user.name "github-actions[bot]"
@@ -124,6 +139,7 @@ jobs:
           git diff --cached --quiet && echo "Nothing to commit." || \
             git commit -m "docs: remove stale PR previews" && git push
 
+
   docs-preview:
     # pull_request_target gives write access even for fork PRs.
     # We explicitly check out the PR head so the docs reflect the PR content.
@@ -146,7 +162,9 @@ jobs:
 
       - uses: actions/checkout@v6
         with:
-          ref: gh-pages
+          repository: ${{ env.DOCS_REPO }}
+          token: ${{ secrets.DOCS_DEPLOY_TOKEN }}
+          ref: ${{ env.DOCS_BRANCH }}
           path: gh-pages-deploy
           fetch-depth: 1
 
@@ -189,7 +207,7 @@ jobs:
           source .venv/bin/activate
           mkdocs build --site-dir /tmp/pr-site
 
-      - name: Push preview to gh-pages
+      - name: Push preview to docs repo
         env:
           PR: ${{ github.event.pull_request.number }}
         run: |
