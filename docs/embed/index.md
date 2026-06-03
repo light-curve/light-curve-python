@@ -163,6 +163,7 @@ model = Astromer2.from_hf(
 )
 ```
 
-See the [onnxruntime install guide](https://onnxruntime.ai/docs/install/) for provider options.
+See the [onnxruntime tips](onnxruntime.md) page for CUDA version compatibility,
+thread control on shared HPC nodes, and pixi-based GPU environment setup.
 
 See the [API reference](api.md) for full signatures and reduction strategies.
