@@ -136,6 +136,7 @@ nav:
     - Tutorial: embed/tutorial.ipynb
     - Similarity search: embed/pre-executed/similarity_search.ipynb
     - Classification: embed/pre-executed/classification.ipynb
+    - onnxruntime tips: embed/onnxruntime.md
     - API: embed/api.md
   - dm–dt maps:
     - dmdt/index.md
