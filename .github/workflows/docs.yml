@@ -102,8 +102,8 @@ jobs:
         run: |
           git clone --depth=1 --branch="${DOCS_BRANCH}" \
             "https://x-access-token:${DOCS_DEPLOY_TOKEN}@github.com/${DOCS_REPO}.git" \
-            /tmp/gh-pages-stale
-          cd /tmp/gh-pages-stale
+            /tmp/docs-stale
+          cd /tmp/docs-stale
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
@@ -172,7 +172,7 @@ jobs:
           repository: ${{ env.DOCS_REPO }}
           token: ${{ secrets.DOCS_DEPLOY_TOKEN }}
           ref: ${{ env.DOCS_BRANCH }}
-          path: gh-pages-deploy
+          path: docs-deploy
           fetch-depth: 1
 
       - uses: actions/setup-python@v6
@@ -218,27 +218,27 @@ jobs:
         env:
           PR: ${{ github.event.pull_request.number }}
         run: |
-          rm -rf gh-pages-deploy/pr${PR}
-          cp -r /tmp/pr-site gh-pages-deploy/pr${PR}
-          rm -f gh-pages-deploy/pr${PR}/CNAME
+          rm -rf docs-deploy/pr${PR}
+          cp -r /tmp/pr-site docs-deploy/pr${PR}
+          rm -f docs-deploy/pr${PR}/CNAME
 
           python3 -c "
           import json, os, re
           pr = int(os.environ['PR'])
           entry = {'version': f'pr{pr}', 'title': f'pr{pr}', 'aliases': []}
-          with open('gh-pages-deploy/versions.json') as f:
+          with open('docs-deploy/versions.json') as f:
               versions = json.load(f)
           versions = [v for v in versions if v['version'] != entry['version']]
           non_pr = [v for v in versions if not re.fullmatch(r'pr\d+', v['version'])]
           prs    = [v for v in versions if     re.fullmatch(r'pr\d+', v['version'])]
           prs.append(entry)
           prs.sort(key=lambda v: int(v['version'][2:]))
-          with open('gh-pages-deploy/versions.json', 'w') as f:
+          with open('docs-deploy/versions.json', 'w') as f:
               json.dump(non_pr + prs, f, indent=2)
               f.write('\n')
           "
 
-          cd gh-pages-deploy
+          cd docs-deploy
           git add pr${PR} versions.json
           git diff --cached --quiet && echo "No changes" && exit 0
           git commit -m "docs: update PR #${PR} preview"
