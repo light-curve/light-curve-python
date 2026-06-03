@@ -11,6 +11,8 @@ __all__ = [
     "BlanketedPlanckConstTemp",
     "BlanketedPlanckSigmoidTemp",
     "GenWienSpectralTerm",
+    "ModifiedBlackBodySpectralTerm",
+    "LogParabolaSpectralTerm",
 ]
 
 # CODATA 2018
@@ -340,9 +342,144 @@ class GenWienSpectralTerm(BaseSpectralTerm):
         return {"spec_k": (GenWienSpectralTerm._prior_mean, GenWienSpectralTerm._prior_sigma)}
 
 
+@dataclass()
+class ModifiedBlackBodySpectralTerm(BaseSpectralTerm):
+    r"""Modified blackbody: a Planck spectrum tilted by a power law in wavelength.
+
+    .. math::
+        F(\lambda) = B_\nu(\lambda, T) \cdot (\lambda / \lambda_\mathrm{ref})^{\beta}
+
+    The single parameter ``beta`` is anchored at the pure-Planck value 0:
+
+    - ``beta = 0`` is **exactly Planck**, so the temperature stays physical — a pure
+      blackbody is recovered with ``beta ≈ 0`` and ``T`` to ~1-6% across 5-35 kK;
+    - ``beta > 0`` suppresses the blue (a gentle UV deficit / blanketing);
+    - ``beta < 0`` enhances the blue, and ``beta`` together with a high ``T`` (whose
+      optical Planck is Rayleigh-Jeans, ``∝ ν²``) reproduces a power-law SED
+      ``F_ν ∝ ν^{2-\beta}``.
+
+    Because the deviation is a power-law *tilt* of a preserved Planck core (not a reshape
+    of the whole SED), ``beta`` and ``T`` are nearly orthogonal — the best-conditioned of
+    the deviation terms. The single power-law tilt is, however, too gentle to reproduce
+    the very sharpest blue cutoffs (use ``logparabola`` for those).
+    """
+
+    _wave_ref_cm = 6000e-8  # reference wavelength (~middle of the optical), in cm
+
+    @staticmethod
+    def parameter_names():
+        return ["beta"]
+
+    @staticmethod
+    def parameter_scalings():
+        return [None]
+
+    @staticmethod
+    def value(wave_cm, T, beta):
+        tilt = np.power(wave_cm / ModifiedBlackBodySpectralTerm._wave_ref_cm, beta)
+        return PlanckSpectralTerm.value(wave_cm, T) * tilt
+
+    @staticmethod
+    def dvalue_dT(wave_cm, T, beta):
+        """∂(value)/∂T = ∂Planck/∂T · tilt (the tilt is T-independent)."""
+        tilt = np.power(wave_cm / ModifiedBlackBodySpectralTerm._wave_ref_cm, beta)
+        return PlanckSpectralTerm.dvalue_dT(wave_cm, T) * tilt
+
+    @staticmethod
+    def derivatives(wave_cm, T, beta):
+        """∂(value)/∂beta = value · ln(λ/λ_ref); shape (1, len(wave_cm))."""
+        rel = wave_cm / ModifiedBlackBodySpectralTerm._wave_ref_cm
+        value = PlanckSpectralTerm.value(wave_cm, T) * np.power(rel, beta)
+        jac = np.zeros((1, len(wave_cm)))
+        jac[0] = value * np.log(rel)
+        return jac
+
+    @staticmethod
+    def initial_guesses(t, m, sigma, band):
+        return {"beta": 0.0}
+
+    @staticmethod
+    def limits(t, m, sigma, band):
+        return {"beta": (-6.0, 10.0)}
+
+
+@dataclass()
+class LogParabolaSpectralTerm(BaseSpectralTerm):
+    r"""Log-parabola modification of a Planck spectrum.
+
+    .. math::
+        F(\lambda) = B_\nu(\lambda, T) \cdot e^{a L + b L^2},\quad L = \ln(\lambda / \lambda_\mathrm{ref})
+
+    Two parameters tilt (``sp_a``) and curve (``sp_b``) the Planck core, both anchored at
+    the pure-Planck value 0. This is the most flexible of the deviation terms — its
+    curvature captures the *sharpest* blue cutoffs that the single tilt of ``modified_bb``
+    cannot — so it gives the best raw fit quality on strongly blanketed sources.
+
+    The cost is that ``(T, sp_a, sp_b)`` over-parameterize the smooth optical SED, so for a
+    pure blackbody they are degenerate and ``T`` would be biased. A Gaussian prior anchoring
+    ``sp_a`` and ``sp_b`` toward 0 breaks that degeneracy: where the data do not constrain
+    the deviation (blackbody-like sources) the prior recovers ``T`` (to ~5-8% with the
+    default ``sigma``), while genuinely blanketed sources, which constrain the parameters,
+    override it. The prior strength ``_prior_sigma`` tunes the fit-quality vs
+    temperature-fidelity trade-off (smaller => more physical T, weaker deviation capture).
+    """
+
+    _wave_ref_cm = 6000e-8
+    _prior_sigma = 0.5
+
+    @staticmethod
+    def parameter_names():
+        return ["sp_a", "sp_b"]
+
+    @staticmethod
+    def parameter_scalings():
+        return [None, None]
+
+    @staticmethod
+    def _L_fac(wave_cm, sp_a, sp_b):
+        ell = np.log(wave_cm / LogParabolaSpectralTerm._wave_ref_cm)
+        return ell, np.exp(sp_a * ell + sp_b * ell * ell)
+
+    @staticmethod
+    def value(wave_cm, T, sp_a, sp_b):
+        _ell, fac = LogParabolaSpectralTerm._L_fac(wave_cm, sp_a, sp_b)
+        return PlanckSpectralTerm.value(wave_cm, T) * fac
+
+    @staticmethod
+    def dvalue_dT(wave_cm, T, sp_a, sp_b):
+        """∂(value)/∂T = ∂Planck/∂T · exp(aL+bL²)."""
+        _ell, fac = LogParabolaSpectralTerm._L_fac(wave_cm, sp_a, sp_b)
+        return PlanckSpectralTerm.dvalue_dT(wave_cm, T) * fac
+
+    @staticmethod
+    def derivatives(wave_cm, T, sp_a, sp_b):
+        """∂(value)/∂(sp_a, sp_b) = value·(L, L²); shape (2, len(wave_cm))."""
+        ell, fac = LogParabolaSpectralTerm._L_fac(wave_cm, sp_a, sp_b)
+        value = PlanckSpectralTerm.value(wave_cm, T) * fac
+        jac = np.zeros((2, len(wave_cm)))
+        jac[0] = value * ell
+        jac[1] = value * ell * ell
+        return jac
+
+    @staticmethod
+    def initial_guesses(t, m, sigma, band):
+        return {"sp_a": 0.0, "sp_b": 0.0}
+
+    @staticmethod
+    def limits(t, m, sigma, band):
+        return {"sp_a": (-6.0, 6.0), "sp_b": (-4.0, 4.0)}
+
+    @staticmethod
+    def parameter_priors():
+        sigma = LogParabolaSpectralTerm._prior_sigma
+        return {"sp_a": (0.0, sigma), "sp_b": (0.0, sigma)}
+
+
 spectral_terms = {
     "planck": PlanckSpectralTerm,
     "blanketed_constant_temperature": BlanketedPlanckConstTemp,
     "blanketed_sigmoid_temperature": BlanketedPlanckSigmoidTemp,
     "genwien": GenWienSpectralTerm,
+    "modified_bb": ModifiedBlackBodySpectralTerm,
+    "logparabola": LogParabolaSpectralTerm,
 }
