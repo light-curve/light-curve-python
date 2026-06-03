@@ -4,9 +4,17 @@ Practical configuration tweaks for running `light_curve.embed` models on HPC clu
 
 ## Shared environments (science platforms and HPC clusters)
 
-By default, onnxruntime grabs every CPU it can see — which on a shared node means
-it will compete with other users' jobs or over-subscribe your allocation.
-Limit thread counts by passing a `SessionOptions` object via `ort_session_kwargs`:
+By default, onnxruntime grabs every CPU it can see and attempts to set thread
+affinity accordingly. On shared nodes this can cause two problems: over-subscribing
+your allocation, and outright failure when the host enforces strict CPU access control.
+In the latter case you will see errors like:
+
+```
+pthread_setaffinity_np failed for thread: 8151, index: 18, mask: {73, }, error code: 22
+error msg: Invalid argument. Specify the number of threads explicitly so the affinity is not set.
+```
+
+Fix both by setting thread counts explicitly via `SessionOptions`:
 
 ```python
 import onnxruntime as ort
