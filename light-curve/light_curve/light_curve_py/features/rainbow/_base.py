@@ -369,6 +369,31 @@ class BaseRainbowFit(BaseMultiBandFeature):
             limits[self.p.baseline_parameter_name(b)] = (lower, upper)
         return limits
 
+    def _parameter_priors(self) -> Dict[str, Tuple[float, float]]:
+        """Gaussian priors ``{name: (mean, sigma)}`` on parameters. Default: none."""
+        return {}
+
+    def _build_priors(self):
+        """Translate the prior dict into ``(idx, mean, inv_sigma2)`` arrays in fit order.
+
+        Returns None when there are no priors. Only ``None``-scaled parameters may carry a
+        prior: the fit runs in scaled space, where unscaled parameters equal their physical
+        value, so the prior applies directly; a scaled parameter would need conversion.
+        """
+        priors = self._parameter_priors()
+        if not priors:
+            return None
+        scalings = self._parameter_scalings()
+        idx, mean, inv_sigma2 = [], [], []
+        for name, (mu, sigma) in priors.items():
+            scaling = scalings.get(name)
+            if scaling is not None and str(scaling).lower() != "none":
+                raise ValueError(f"Prior on scaled parameter {name!r} (scaling={scaling!r}) is not supported")
+            idx.append(int(self.p[name]))
+            mean.append(float(mu))
+            inv_sigma2.append(1.0 / float(sigma) ** 2)
+        return np.array(idx), np.array(mean), np.array(inv_sigma2)
+
     def _reduced_chi2(self, cost, n_obs, *, get_initial):
         """Reduced chi-square ``cost / dof`` with ``dof = n_obs - n_params``.
 
@@ -472,6 +497,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
             yerror=sigma,
             upper_mask=upper_mask,
             jac=jac,
+            prior=self._build_priors(),
         )
         # `grad=False` forces iminuit to fall back to its numerical gradient.
         # If we passed `grad=None`, iminuit would auto-detect `cost_function.grad`
@@ -517,7 +543,16 @@ class BaseRainbowFit(BaseMultiBandFeature):
         if not minuit.valid and self.fail_on_divergence and not get_initial:
             raise RuntimeError("Fitting failed")
 
-        reduced_chi2 = self._reduced_chi2(minuit.fval, len(t), get_initial=get_initial)
+        # Report a pure data goodness-of-fit: strip the Gaussian-prior penalty from the
+        # cost so the reduced chi2 stays comparable across terms (with and without priors)
+        # and is not inflated when a parameter is pulled away from its prior mean by data.
+        fval = minuit.fval
+        priors = self._build_priors()
+        if priors is not None:
+            idx, mean, inv_sigma2 = priors
+            values = np.array(minuit.values)
+            fval -= 0.5 * np.sum(inv_sigma2 * (values[idx] - mean) ** 2)
+        reduced_chi2 = self._reduced_chi2(fval, len(t), get_initial=get_initial)
 
         if get_initial:
             # Reset the fitter so that it returns initial values instead of final ones
@@ -613,17 +648,33 @@ class BaseRainbowFit(BaseMultiBandFeature):
 
         inv_sigma = 1.0 / sigma
 
+        # Gaussian priors enter least-squares as extra residual rows r = (p-μ)/σ_prior,
+        # so 0.5·Σ r² reproduces the prior penalty used on the iminuit path.
+        priors = self._build_priors()
+        if priors is not None:
+            prior_idx, prior_mean, prior_sqrt = priors[0], priors[1], np.sqrt(priors[2])
+            prior_rows = np.zeros((len(prior_idx), len(names)))
+            prior_rows[np.arange(len(prior_idx)), prior_idx] = prior_sqrt
+
         def residual(params):
-            return (self._lsq_model(x, *params) - m) * inv_sigma
+            res = (self._lsq_model(x, *params) - m) * inv_sigma
+            if priors is not None:
+                res = np.concatenate([res, (params[prior_idx] - prior_mean) * prior_sqrt])
+            return res
 
         def jacobian(params):
-            return (self._lsq_jac(x, *params) * inv_sigma).T  # (n_obs, n_params)
+            jac = (self._lsq_jac(x, *params) * inv_sigma).T  # (n_obs, n_params)
+            if priors is not None:
+                jac = np.concatenate([jac, prior_rows], axis=0)
+            return jac
 
         if get_initial:
             params = p0
             cov_scaled = None
             valid = True
-            chi2 = float(np.sum(residual(p0) ** 2))
+            # Data-only chi2 for reporting: the first len(m) residual rows; any trailing
+            # prior rows are excluded so the reduced chi2 stays a pure goodness-of-fit.
+            chi2 = float(np.sum(residual(p0)[: len(m)] ** 2))
         else:
             # The default TRF budget (~100·n_params) is too tight for the ill-conditioned
             # blanketed Jacobian on some real light curves: they reach the optimum but hit
@@ -650,7 +701,8 @@ class BaseRainbowFit(BaseMultiBandFeature):
                 # here; result.success is the sole convergence criterion.
                 return None
             params = result.x
-            chi2 = float(np.sum(result.fun**2))
+            # Data-only chi2 (exclude trailing prior residual rows) for reporting.
+            chi2 = float(np.sum(result.fun[: len(m)] ** 2))
             cov_scaled = self._lsq_covariance(result.jac)
             valid = True
 

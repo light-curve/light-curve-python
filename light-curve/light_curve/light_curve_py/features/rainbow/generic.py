@@ -140,6 +140,15 @@ class RainbowFit(BaseRainbowFit):
 
         return rules
 
+    def _parameter_priors(self) -> Dict[str, Tuple[float, float]]:
+        priors = super()._parameter_priors()
+
+        for term in [self.bolometric, self.temperature, self.spectral]:
+            if hasattr(term, "parameter_priors"):
+                priors.update(term.parameter_priors())
+
+        return priors
+
     def _initial_guesses(self, t, m, sigma, band) -> Dict[str, float]:
         initial = self.bolometric.initial_guesses(t, m, sigma, band)
         initial.update(self.temperature.initial_guesses(t, m, sigma, band))

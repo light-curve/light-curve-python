@@ -24,6 +24,7 @@ else:
             y,
             yerror,
             jac: Callable = None,
+            prior=None,
         ):
             self.model = model
             self.jac = jac
@@ -31,6 +32,10 @@ else:
             self.y = y
             self.yerror = yerror
             self.upper_mask = upper_mask
+            # Optional Gaussian priors: (idx, mean, inv_sigma2) arrays adding
+            # 0.5·Σ inv_sigma2·(par[idx] - mean)² to the negative-log-likelihood.
+            # None means no priors (the common case, zero overhead).
+            self._prior = prior
 
             self._parameters = parameters
             # FIXME: here we assume the order of dict keys is the same as in parameters array
@@ -115,6 +120,11 @@ else:
             result += 0.0001 * np.sum(self.barrier((par - self.limits0) / self.limits_scale))
             result += 0.0001 * np.sum(self.barrier((self.limits1 - par) / self.limits_scale))
 
+            if self._prior is not None:
+                idx, mean, inv_sigma2 = self._prior
+                # Gaussian prior contributes -ln N = 0.5·((p-μ)/σ)² to the NLL.
+                result += 0.5 * np.sum(inv_sigma2 * (np.asarray(par)[idx] - mean) ** 2)
+
             return result
 
         def grad(self, *par):
@@ -136,6 +146,11 @@ else:
             g += (
                 0.0001 * self.limits_scale * (1.0 / (self.limits1 - par_arr) ** 2 - 1.0 / (par_arr - self.limits0) ** 2)
             )
+
+            if self._prior is not None:
+                idx, mean, inv_sigma2 = self._prior
+                # d/dp [0.5·inv_sigma2·(p-μ)²] = inv_sigma2·(p-μ)
+                g[idx] += inv_sigma2 * (par_arr[idx] - mean)
             return g
 
         @staticmethod
