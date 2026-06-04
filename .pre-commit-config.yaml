@@ -17,6 +17,12 @@ repos:
     # Python
     -   id: check-docstring-first # checks a common error of defining a docstring after code
     -   id: debug-statements # checks for debugger imports and py37+ `breakpoint()` calls in python source
+-   repo: https://github.com/kynan/nbstripout
+    rev: 0.9.1
+    hooks:
+    -   id: nbstripout
+        files: \.ipynb$
+        exclude: ^docs/embed/pre-executed/
 -   repo: https://github.com/astral-sh/ruff-pre-commit
     rev: 'v0.15.15'
     hooks:

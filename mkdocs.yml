@@ -115,33 +115,35 @@ nav:
   - Home: index.md
   - Installation: installation.md
   - Feature Extractors:
-    - features/index.md
-    - Basics: features/basics.ipynb
-    - Periodogram: features/periodogram.ipynb
-    - Parametric fits: features/fitting.ipynb
-    - Rainbow: features/rainbow.ipynb
-    - API:
-      - features/api/index.md
-      - Base class: features/api/base.md
-      - Meta (Extractor, Bins): features/api/meta.md
-      - Statistical: features/api/statistical.md
-      - Variability & trend: features/api/variability.md
-      - Time sampling: features/api/time.md
-      - Periodogram: features/api/periodogram.md
-      - Parametric fits: features/api/fitting.md
-      - Detection-based: features/api/detection.md
-      - Multiband: features/api/multiband.md
+      - features/index.md
+      - Basics: features/basics.ipynb
+      - Multiband: features/multiband.ipynb
+      - Batch processing: features/batch_processing.ipynb
+      - Periodogram: features/periodogram.ipynb
+      - Single-band parametric fits: features/fitting.ipynb
+      - Rainbow: features/rainbow.ipynb
+      - API:
+          - features/api/index.md
+          - Base class: features/api/base.md
+          - Meta (Extractor, Bins): features/api/meta.md
+          - Statistical: features/api/statistical.md
+          - Variability & trend: features/api/variability.md
+          - Time sampling: features/api/time.md
+          - Periodogram: features/api/periodogram.md
+          - Parametric fits: features/api/fitting.md
+          - Detection-based: features/api/detection.md
+          - Multiband: features/api/multiband.md
   - ML Embeddings:
-    - embed/index.md
-    - Tutorial: embed/tutorial.ipynb
-    - Similarity search: embed/pre-executed/similarity_search.ipynb
-    - Classification: embed/pre-executed/classification.ipynb
-    - onnxruntime tips: embed/onnxruntime.md
-    - API: embed/api.md
+      - embed/index.md
+      - Tutorial: embed/tutorial.ipynb
+      - Similarity search: embed/pre-executed/similarity_search.ipynb
+      - Classification: embed/pre-executed/classification.ipynb
+      - onnxruntime tips: embed/onnxruntime.md
+      - API: embed/api.md
   - dm–dt maps:
-    - dmdt/index.md
-    - Tutorial: dmdt/tutorial.ipynb
-    - API: dmdt/api.md
+      - dmdt/index.md
+      - Tutorial: dmdt/tutorial.ipynb
+      - API: dmdt/api.md
   - Changelog: changelog.md
   - Cite & Contact: citing.md
   - Contribute: developer/contributing.md

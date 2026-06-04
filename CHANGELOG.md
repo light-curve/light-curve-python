@@ -9,19 +9,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
---
+- **Multi-band support** for all single-band Rust feature extractors: every feature now accepts an
+  optional `bands` constructor argument (e.g. `Amplitude(bands=["g", "r"])`). When provided, the
+  feature is evaluated independently per passband and the outputs are concatenated; output names are
+  suffixed with the band label (e.g. `"amplitude_g"`, `"amplitude_r"`). A `band` array must then be
+  passed to `__call__` / `many()`
+  ([#762](https://github.com/light-curve/light-curve-python/pull/762)).
+- `Extractor` now supports **mixed mode**: it can combine multiband features (constructed with
+  `bands=`) and regular single-band features in a single extractor. Single-band features receive the
+  full light curve; multiband features receive per-band splits. Output arrays and names are
+  concatenated in declaration order
+  ([#762](https://github.com/light-curve/light-curve-python/pull/762)).
+- `Bins` now accepts a `bands` argument to apply per-passband binning to its inner features
+  ([#762](https://github.com/light-curve/light-curve-python/pull/762)).
+- `Periodogram` now accepts `bands` and `multiband_normalization` (`"chi2"` (default) or `"count"`)
+  arguments for multi-band periodogram analysis via `MultiColorPeriodogram`
+  ([#762](https://github.com/light-curve/light-curve-python/pull/762)).
+- Arrow (`many()`) input now supports multiband features
+  ([#762](https://github.com/light-curve/light-curve-python/pull/762)).
+- New **pure-multiband** Rust feature extractors (always require `bands`, no single-band mode)
+  ([#762](https://github.com/light-curve/light-curve-python/pull/762)):
+  - `ColorOfMaximum(bands)` — `max(band[0]) − max(band[1])` for exactly two passbands.
+  - `ColorOfMedian(bands)` — `median(band[0]) − median(band[1])` for exactly two passbands.
+  - `ColorOfMinimum(bands)` — `min(band[0]) − min(band[1])` for exactly two passbands.
+  - `ColorSpread(bands)` — population standard deviation of per-passband inverse-variance-weighted
+    mean magnitudes, for two or more passbands.
 
 ### Changed
 
---
-
-### Deprecated
-
---
+- **Breaking** `arrow_fields` argument to `many()` now requires a `dict` (e.g.
+  `{"t": "time", "m": "mag"}`) instead of a list
+  ([#762](https://github.com/light-curve/light-curve-python/pull/762)).
+- Bump `light-curve-feature` to 0.17.0
+  ([#762](https://github.com/light-curve/light-curve-python/pull/762)).
 
 ### Removed
 
---
+- Experimental pure-Python `ColorOfMedian` class removed; the Rust implementation supersedes it
+  with the same semantics but a different constructor signature (`ColorOfMedian(["g", "r"])` instead
+  of `ColorOfMedian(blue_band="g", red_band="r")`)
+  ([#762](https://github.com/light-curve/light-curve-python/pull/762)).
 
 ### Fixed
 

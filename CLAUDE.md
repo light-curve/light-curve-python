@@ -69,9 +69,18 @@ pre-commit run --all-files
 **Import layering**: `__init__.py` imports all Python implementations first, then overwrites them with Rust equivalents.
 This means Rust features shadow Python ones at runtime, but both exist for testing/comparison.
 
+**Import alias**: All docs and examples use `import light_curve as licu` (not `lc`).
+
 **Feature extraction pattern**: Each feature (e.g., `Amplitude`, `BazinFit`, `Periodogram`) is a class with
 `__call__(t, m, sigma, ...)` for single light curves and `.many(...)` for batch processing with reduced Python-Rust
 overhead.
+
+**Multiband mode**: Every Rust-backed feature accepts a `bands=["g", "r", ...]` constructor argument. When set,
+`__call__` expects a fourth `band` string array; output names get a passband suffix (e.g. `amplitude_g`).
+Pure-multiband features (`ColorOfMaximum`, `ColorOfMedian`, `ColorOfMinimum`, `ColorSpread`) take `bands` as their
+first positional argument and have no single-band mode. `Periodogram` supports `bands=` via `MultiColorPeriodogram`
+(add `multiband_normalization=`). `Extractor` freely mixes single-band and multiband features; it filters the band
+array automatically for each sub-feature.
 
 **Rust edition**: 2024, MSRV 1.85. Clippy treats warnings as errors.
 
@@ -89,6 +98,7 @@ propagation, and prefer owned types only when necessary (borrow when possible).
 
 1. Core implementation goes in upstream `light-curve-feature` Rust crate
 2. Add PyO3 bindings in `src/features.rs`, export in `src/lib.rs`
+   - For pure-multiband features, use the `color_two_band_feature!` macro (2-band) or model after `ColorSpread` (≥2 bands)
 3. Optionally add experimental Python version in `light_curve_py/`
 4. Add tests in `tests/`, benchmarks in `tests/test_w_bench.py`
 5. Update README.md feature table and CHANGELOG.md

@@ -95,22 +95,20 @@ test-free-threading = [
     "pandas",
     "onnxruntime<2",
 ]
-# Full development environment
-dev = [
-    { include-group = "test-free-threading" },
-    "iminuit>=2.21,<3",
-    "nanoarrow",
-    "polars",
-    "cesium",
-    "astropy",
-    "ruff",
-]
 # Slow tests and pre-executed notebook validation (nightly CI)
 test-slow = [
-    { include-group = "dev" },
-    "scikit-learn",
+    { include-group = "test" },
+    "astropy",
     "matplotlib",
     "nbmake",
+    "scikit-learn",
+]
+# Full development environment
+dev = [
+    { include-group = "test-slow" },
+    { include-group = "docs" },
+    "maturin",
+    "ruff",
 ]
 
 [tool.maturin]

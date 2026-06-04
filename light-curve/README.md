@@ -18,8 +18,9 @@ pip install 'light-curve[full]'
 ```
 
 <!-- name: test_quickstart -->
+
 ```python
-import light_curve as lc
+import light_curve as licu
 import numpy as np
 
 rng = np.random.default_rng(0)
@@ -28,12 +29,18 @@ m = 15.0 + 0.01 * t + rng.normal(0, 0.1, 100)
 err = np.full(100, 0.1)
 
 # Statistical and variability feature extraction
-extractor = lc.Extractor(lc.Amplitude(), lc.BeyondNStd(nstd=1), lc.LinearFit())
+extractor = licu.Extractor(licu.Amplitude(), licu.BeyondNStd(nstd=1), licu.LinearFit())
 result = extractor(t, m, err)
 print('\n'.join(f"{name} = {value:.4f}" for name, value in zip(extractor.names, result)))
 
+# Multi-band: per-band features and cross-band color in one Extractor
+band = np.tile(["g", "r"], 50)  # 50 interleaved g/r observations
+ext_mb = licu.Extractor(licu.WeightedMean(bands=["g", "r"]), licu.ColorOfMedian(["g", "r"]))
+result_mb = ext_mb(t, m, err, band=band)
+print(dict(zip(ext_mb.names, result_mb)))
+
 # dm-dt map — 2D histogram of Δmag vs log-Δt for CNN classifiers
-dmdt = lc.DmDt.from_borders(min_lgdt=0, max_lgdt=2, max_abs_dm=1.0, lgdt_size=16, dm_size=16, norm=[])
+dmdt = licu.DmDt.from_borders(min_lgdt=0, max_lgdt=2, max_abs_dm=1.0, lgdt_size=16, dm_size=16, norm=[])
 matrix = dmdt.points(t, m)
 print(f"dm-dt map shape: {matrix.shape}")  # (16, 16)
 ```
@@ -48,8 +55,8 @@ rng = np.random.default_rng(0)
 t = np.sort(rng.uniform(0, 100, 100))
 m = 15.0 + 0.01 * t + rng.normal(0, 0.1, 100)
 
-model = Astromer2.from_hf(output="mean")   # cached after first download
-embedding = model(t, m).squeeze()           # shape (256,)
+model = Astromer2.from_hf(output="mean")  # cached after first download
+embedding = model(t, m).squeeze()  # shape (256,)
 print(f"Embedding shape: {embedding.shape}")
 ```
 

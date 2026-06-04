@@ -59,6 +59,10 @@ fn light_curve(py: Python, m: Bound<PyModule>) -> PyResult<()> {
     m.add_class::<f::BeyondNStd>()?;
     m.add_class::<f::Bins>()?;
     m.add_class::<f::Chi2Pvar>()?;
+    m.add_class::<f::ColorOfMaximum>()?;
+    m.add_class::<f::ColorOfMedian>()?;
+    m.add_class::<f::ColorOfMinimum>()?;
+    m.add_class::<f::ColorSpread>()?;
     m.add_class::<f::Cusum>()?;
     m.add_class::<f::Duration>()?;
     m.add_class::<f::Eta>()?;
