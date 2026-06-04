@@ -8,7 +8,6 @@ from light_curve.light_curve_py.dataclass_field import dataclass_field
 from light_curve.light_curve_py.features._base import BaseMultiBandFeature
 from light_curve.light_curve_py.features.rainbow._bands import Bands
 from light_curve.light_curve_py.features.rainbow._parameters import create_parameters_class
-import light_curve.light_curve_py.features.rainbow.spectral as spct
 from light_curve.light_curve_py.features.rainbow._scaler import MultiBandScaler, Scaler
 from light_curve.light_curve_py.minuit_lsq import LeastSquares
 from light_curve.light_curve_py.minuit_ml import MaximumLikelihood
@@ -362,7 +361,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
             upper_mask=upper_mask,
         )
         minuit = self.Minuit(cost_function, name=self.names, **initial_guesses)
-        
+
         # TODO: expose these parameters through function arguments
         if print_level is not None:
             minuit.print_level = print_level
@@ -381,7 +380,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
                 # That's what iterate is supposed to do?..
                 minuit.simplex()
                 # FIXME: it may drive the fit valid, but we will not have Hesse run on last iteration
-        
+
         if debug:
             # Expose everything we have to outside, unscaled, for easier debugging
             self.minuit = minuit

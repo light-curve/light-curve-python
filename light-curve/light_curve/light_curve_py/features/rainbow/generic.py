@@ -74,13 +74,13 @@ class RainbowFit(BaseRainbowFit):
     def __post_init__(self):
         if not isinstance(self.bolometric, BaseBolometricTerm):
             self.bolometric = bolometric_terms[self.bolometric]
-    
+
         if not isinstance(self.temperature, BaseTemperatureTerm):
             temperature_name = self.temperature
             self.temperature = temperature_terms[temperature_name]
         else:
             temperature_name = None
-    
+
         if not isinstance(self.spectral, BaseSpectralTerm):
             if self.spectral == "blanketed":
                 if temperature_name == "constant":
@@ -94,7 +94,7 @@ class RainbowFit(BaseRainbowFit):
                     )
             else:
                 self.spectral = spectral_terms[self.spectral]
-    
+
         super().__post_init__()
 
     def _common_bol_temp_parameter_names(self) -> List[str]:
@@ -120,7 +120,7 @@ class RainbowFit(BaseRainbowFit):
 
     def _spectral_parameter_names(self) -> List[str]:
         spectral_parameters = self.spectral.parameter_names()
-        return [i for i in spectral_parameters if i not in self._common_temp_spec_parameter_names()] 
+        return [i for i in spectral_parameters if i not in self._common_temp_spec_parameter_names()]
 
     def bol_func(self, t, params):
         return self.bolometric.value(t, *params[self.p.all_bol_idx])

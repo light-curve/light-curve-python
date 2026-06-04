@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List, Union\
+from typing import Dict, List, Union
 
 import numpy as np
 
@@ -16,7 +16,7 @@ __all__ = [
 planck_constant = 6.62607004e-27  # erg s
 speed_of_light = 2.99792458e10  # cm/s
 boltzman_constant = 1.380649e-16  # erg/K
-b_wien = 28977720 # Angstrom*K
+b_wien = 28977720  # Angstrom*K
 
 
 @dataclass()
@@ -97,7 +97,7 @@ class BlanketedPlanckConstTemp(BaseSpectralTerm):
         # Phenomenological value for the slope of the extinction
         # Fitting instead of fixing is likely overkill for broad band photometry
         intensity = 100
-        
+
         # Encodes how far (in wavelength) the maximum UV extinction extends (at lambda_scale=1).
         # Allows the extinction to affect the BB wavelength past the peak (in the formula below).
         max_extinction = 2 * b_wien
@@ -127,6 +127,7 @@ class BlanketedPlanckConstTemp(BaseSpectralTerm):
             "lambda_scale": (0.001, 1.0),
         }
 
+
 @dataclass()
 class BlanketedPlanckSigmoidTemp(BaseSpectralTerm):
     """Blackbody spectrum with exponential blanketing."""
@@ -146,7 +147,7 @@ class BlanketedPlanckSigmoidTemp(BaseSpectralTerm):
         # Phenomenological value for the slope of the extinction
         # Fitting instead of fixing is likely overkill for broad band photometry
         intensity = 100
-        
+
         # Encodes how far (in wavelength) the maximum UV extinction extends (at lambda_scale=1).
         # Allows the extinction to affect the BB wavelength past the peak (in the formula below).
         max_extinction = 2 * b_wien
@@ -179,9 +180,8 @@ class BlanketedPlanckSigmoidTemp(BaseSpectralTerm):
         }
 
 
-
 spectral_terms = {
     "planck": PlanckSpectralTerm,
     "blanketed_constant_temperature": BlanketedPlanckConstTemp,
-    "blanketed_sigmoid_temperature": BlanketedPlanckSigmoidTemp
+    "blanketed_sigmoid_temperature": BlanketedPlanckSigmoidTemp,
 }
