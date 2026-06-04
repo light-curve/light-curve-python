@@ -126,6 +126,7 @@ jobs:
           package-dir: ./light-curve
         env:
           CIBW_BUILD_VERBOSITY: "3"
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
 
       - name: Upload wheels as artifacts
         uses: actions/upload-artifact@v7
