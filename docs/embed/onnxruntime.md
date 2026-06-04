@@ -101,3 +101,34 @@ onnxruntime supports additional hardware via execution providers:
 DirectML (Windows/AMD), CoreML (Apple Silicon), OpenVINO (Intel), TensorRT, and others.
 See the [onnxruntime execution providers docs](https://onnxruntime.ai/docs/execution-providers/)
 for installation and provider names to pass in `providers`.
+
+## Controlling log verbosity
+
+When using a non-CPU execution provider you may see warnings like:
+
+```
+[W:onnxruntime:, transformer_memcpy.cc:111 ApplyImpl] 6 Memcpy nodes are added to the graph
+main_graph for CUDAExecutionProvider. It might have negative impact on performance ...
+[W:onnxruntime:, session_state.cc:1367 VerifyEachNodeIsAssignedToAnEp] Some nodes were not
+assigned to the preferred execution providers which may or may not have a negative impact on
+performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.
+```
+
+These are informational — onnxruntime deliberately keeps certain ops (e.g. shape ops) on CPU,
+which is normal. To silence them, raise the log severity to `ERROR` (3) via `SessionOptions`:
+
+```python
+import onnxruntime as ort
+from light_curve.embed import Astromer2
+
+so = ort.SessionOptions()
+so.log_severity_level = 3  # 0=Verbose, 1=Info, 2=Warning (default), 3=Error, 4=Fatal
+
+model = Astromer2.from_hf(
+    output="mean",
+    ort_session_kwargs={
+        "providers": ["CUDAExecutionProvider"],
+        "sess_options": so,
+    },
+)
+```
