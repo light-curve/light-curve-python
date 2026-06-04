@@ -63,7 +63,7 @@ pip install 'light-curve[full]'
 </div>
 <div class="lc-card-body">
 <h3><a href="features/">Feature extractors</a></h3>
-<p>40+ features across 6 categories: statistical, variability &amp; trend, time sampling, Lomb–Scargle periodogram, parametric fits (Bazin, Villar), and multiband. All implemented in Rust for survey-scale throughput.</p>
+<p>40+ features: magnitude and flux statistics, time-series shape descriptors, period extraction, and parametric fits for transients. Supports multi-band light curves and optimized to process 10⁶–10⁹ objects.</p>
 </div>
 </div>
 
@@ -119,7 +119,7 @@ pip install 'light-curve[full]'
 </div>
 <div class="lc-card-body">
 <h3><a href="embed/">ML embeddings</a></h3>
-<p>Map raw light curves to dense vectors using pretrained transformer models (Astromer2, ATCAT). Suitable for classification, anomaly detection, and similarity search at scale.</p>
+<p>Map raw light curves to dense vectors using pretrained transformer models. Suitable for classification, anomaly detection, and similarity search at different scales</p>
 </div>
 </div>
 
