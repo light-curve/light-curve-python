@@ -78,6 +78,11 @@ jobs:
         if: github.ref_type == 'branch'
         run: |
           source .venv/bin/activate
+          # Detach HEAD and drop the local branch so mike fetches docs-site/${DOCS_BRANCH}
+          # fresh instead of reusing the source-code branch of the same name.
+          git fetch docs-site "${DOCS_BRANCH}"
+          git checkout --detach HEAD
+          git branch -D "${DOCS_BRANCH}"
           mike deploy --push --remote docs-site --branch "${DOCS_BRANCH}" \
             --update-aliases dev
           mike list --remote docs-site --branch "${DOCS_BRANCH}" | grep -q "latest" \
@@ -87,6 +92,9 @@ jobs:
         if: github.ref_type == 'tag'
         run: |
           source .venv/bin/activate
+          git fetch docs-site "${DOCS_BRANCH}"
+          git checkout --detach HEAD
+          git branch -D "${DOCS_BRANCH}"
           mike deploy --push --remote docs-site --branch "${DOCS_BRANCH}" \
             --update-aliases latest
           mike set-default --push --remote docs-site --branch "${DOCS_BRANCH}" latest
