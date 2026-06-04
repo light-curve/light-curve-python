@@ -339,9 +339,19 @@ class ModifiedBlackBodySpectralTerm(BaseSpectralTerm):
     of the whole SED), ``beta`` and ``T`` are nearly orthogonal — the best-conditioned of
     the deviation terms. The single power-law tilt is, however, too gentle to reproduce
     the very sharpest blue cutoffs (use ``logparabola`` for those).
+
+    For a *true* blackbody the fit sits at ``beta ≈ 0`` and recovers a physical ``T``, but
+    for a genuinely non-blackbody SED (e.g. supernovae, whose optical is closer to a power
+    law) ``beta`` and ``T`` become degenerate: the tilt can mimic a temperature change, so
+    the fit slides ``beta`` toward its bound and ``T`` to an unphysically cold corner. A
+    weak Gaussian prior ``N(0, _prior_sigma)`` anchors ``beta`` toward 0, breaking that
+    degeneracy — it is overridden where the data demand a real tilt, but stops the runaway
+    railing. ``_prior_sigma`` tunes the trade-off (smaller => more physical T, weaker
+    deviation capture).
     """
 
     _wave_ref_cm = 6000e-8  # reference wavelength (~middle of the optical), in cm
+    _prior_sigma = 1.0
 
     @staticmethod
     def parameter_names():
@@ -378,6 +388,10 @@ class ModifiedBlackBodySpectralTerm(BaseSpectralTerm):
     @staticmethod
     def limits(t, m, sigma, band):
         return {"beta": (-6.0, 10.0)}
+
+    @staticmethod
+    def parameter_priors():
+        return {"beta": (0.0, ModifiedBlackBodySpectralTerm._prior_sigma)}
 
 
 @dataclass()
