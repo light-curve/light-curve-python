@@ -1,3 +1,9 @@
 # Python virtual environments
 **/venv
 **/.venv
+
+# Build artifacts
+**/__pycache__
+docs/_build/
+site/
+.cache/

@@ -98,8 +98,8 @@ class AstraCLR(ImplicitMultiBandModel):
     Examples
     --------
     >>> import numpy as np
-    >>> import light_curve.embed as lce
-    >>> model = lce.AstraCLR.from_hf(
+    >>> from light_curve.embed import AstraCLR
+    >>> model = AstraCLR.from_hf(
     ...     band_groups={"g": 0, "r": 1, "i": 2},
     ... )
     >>> rng = np.random.default_rng(0)

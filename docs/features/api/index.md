@@ -11,7 +11,7 @@
 | [Periodogram](periodogram.md) | Periodogram |
 | [Parametric fits](fitting.md) | BazinFit, VillarFit |
 | [Detection-based](detection.md) | Duration, MaximumTimeInterval, … |
-| [Multiband](../multiband/api.md) | ColorOfMedian, RainbowFit |
+| [Multiband](multiband.md) | ColorOfMaximum, ColorOfMedian, ColorOfMinimum, ColorSpread, RainbowFit |
 
 ---
 

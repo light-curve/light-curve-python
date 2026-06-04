@@ -75,8 +75,8 @@ class ATCAT(MultiBandModel):
     Examples
     --------
     >>> import numpy as np
-    >>> import light_curve.embed as lce
-    >>> model = lce.ATCAT.from_hf(
+    >>> from light_curve.embed import ATCAT
+    >>> model = ATCAT.from_hf(
     ...     output="last",
     ...     band_groups={"u": 0, "g": 1, "r": 2, "i": 3, "z": 4, "Y": 5},
     ... )
