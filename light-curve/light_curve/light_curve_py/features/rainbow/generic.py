@@ -76,24 +76,10 @@ class RainbowFit(BaseRainbowFit):
             self.bolometric = bolometric_terms[self.bolometric]
 
         if not isinstance(self.temperature, BaseTemperatureTerm):
-            temperature_name = self.temperature
-            self.temperature = temperature_terms[temperature_name]
-        else:
-            temperature_name = None
+            self.temperature = temperature_terms[self.temperature]
 
         if not isinstance(self.spectral, BaseSpectralTerm):
-            if self.spectral == "blanketed":
-                if temperature_name == "constant":
-                    self.spectral = spectral_terms["blanketed_constant_temperature"]
-                elif temperature_name == "sigmoid":
-                    self.spectral = spectral_terms["blanketed_sigmoid_temperature"]
-                else:
-                    raise ValueError(
-                        "`spectral='blanketed'` is only supported with "
-                        "`temperature='constant'` or `temperature='sigmoid'`."
-                    )
-            else:
-                self.spectral = spectral_terms[self.spectral]
+            self.spectral = spectral_terms[self.spectral]
 
         super().__post_init__()
 

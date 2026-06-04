@@ -376,19 +376,18 @@ class BaseRainbowFit(BaseMultiBandFeature):
     def _build_priors(self):
         """Translate the prior dict into ``(idx, mean, inv_sigma2)`` arrays in fit order.
 
-        Returns None when there are no priors. Only ``None``-scaled parameters may carry a
-        prior: the fit runs in scaled space, where unscaled parameters equal their physical
-        value, so the prior applies directly; a scaled parameter would need conversion.
+        Returns None when there are no priors. Priors are specified in *fit (scaled) space*:
+        for an unscaled parameter that equals the physical value, while for a scaled
+        parameter (e.g. a ``timescale`` like ``t_delay``) the prior is relative to the
+        light-curve scale (``scale = std(times)``), which makes a fixed sigma adapt to each
+        light curve. The fit, barrier, and reported chi2 all operate in scaled space, so the
+        prior is applied there directly with no conversion.
         """
         priors = self._parameter_priors()
         if not priors:
             return None
-        scalings = self._parameter_scalings()
         idx, mean, inv_sigma2 = [], [], []
         for name, (mu, sigma) in priors.items():
-            scaling = scalings.get(name)
-            if scaling is not None and str(scaling).lower() != "none":
-                raise ValueError(f"Prior on scaled parameter {name!r} (scaling={scaling!r}) is not supported")
             idx.append(int(self.p[name]))
             mean.append(float(mu))
             inv_sigma2.append(1.0 / float(sigma) ** 2)

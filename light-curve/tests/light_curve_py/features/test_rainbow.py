@@ -194,8 +194,8 @@ def test_noisy_all_functions_combination():
     # ======================================================
 
     Tsigmoid_parameters = [
-        5e3,  # Tmin
-        15e3,  # Tmax
+        15e3,  # T (peak, = Tmax)
+        1.0 / 3.0,  # T_ratio = Tmin / Tmax  (= 5e3 / 15e3)
         10,  # t_color
     ]
 
@@ -240,13 +240,6 @@ def test_noisy_all_functions_combination():
     for idx_b in range(len(bolometric_names)):
         for idx_t in range(len(temperature_names)):
             for idx_s in range(len(spectral_names)):
-                expected = [
-                    *bolometric_params[idx_b],
-                    *temperature_params[idx_t],
-                    *spectral_params[idx_s],
-                    1.0,
-                ]
-
                 feature = RainbowFit.from_angstrom(
                     band_wave_aa,
                     with_baseline=False,
@@ -254,6 +247,21 @@ def test_noisy_all_functions_combination():
                     bolometric=bolometric_names[idx_b],
                     spectral=spectral_names[idx_s],
                 )
+
+                # The per-term parameter lists above are given for each term's *own*
+                # (non-shared) parameters; assemble them into the model's actual parameter
+                # order. This is robust to parameters shared between terms (e.g. the peak
+                # ``T`` shared by the sigmoid temperature and the blanketed spectral term),
+                # which the flat enum order places ahead of the bolometric block.
+                bol_names = feature.bolometric.parameter_names()
+                all_temp_names = feature.temperature.parameter_names()
+                temp_names = [n for n in all_temp_names if n not in bol_names]
+                spec_names = [n for n in feature.spectral.parameter_names() if n not in all_temp_names]
+                value_by_name = {}
+                value_by_name.update(zip(bol_names, bolometric_params[idx_b], strict=True))
+                value_by_name.update(zip(temp_names, temperature_params[idx_t], strict=True))
+                value_by_name.update(zip(spec_names, spectral_params[idx_s], strict=True))
+                expected = [value_by_name[name] for name in feature.names] + [1.0]
 
                 flux = feature.model(t, band, *expected[:-1])
 

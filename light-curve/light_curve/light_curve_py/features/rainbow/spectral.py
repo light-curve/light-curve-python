@@ -8,8 +8,7 @@ __all__ = [
     "spectral_terms",
     "BaseSpectralTerm",
     "PlanckSpectralTerm",
-    "BlanketedPlanckConstTemp",
-    "BlanketedPlanckSigmoidTemp",
+    "BlanketedPlanckSpectralTerm",
     "GenWienSpectralTerm",
     "ModifiedBlackBodySpectralTerm",
     "LogParabolaSpectralTerm",
@@ -108,12 +107,31 @@ class PlanckSpectralTerm(BaseSpectralTerm):
 
 
 @dataclass()
-class BlanketedPlanckConstTemp(BaseSpectralTerm):
-    """Blackbody spectrum with exponential blanketing, anchored to a constant temperature.
+class BlanketedPlanckSpectralTerm(BaseSpectralTerm):
+    r"""Blackbody spectrum with exponential UV blanketing.
 
-    Pairs with ``temperature='constant'``: the extinction reach scales as ``1/T`` with the
-    (constant-in-time) temperature, so the blanketing depth does not vary over the light
-    curve. See :class:`BlanketedPlanckSigmoidTemp` for the cooling-source variant.
+    .. math::
+        F(\lambda) = B_\nu(\lambda, T)\, e^{-\tau},\quad
+        \tau = I\, e^{-\lambda / \lambda_s},\quad
+        \lambda_s = \texttt{max\_extinction}\cdot \texttt{lambda\_scale} / T_\mathrm{ref}
+
+    The blackbody core follows the instantaneous temperature ``T(t)``, but the *depth* of
+    the UV extinction should not vary as the source cools, so the extinction reach
+    ``lambda_s`` is anchored to a single, time-constant characteristic temperature
+    ``T_ref`` rather than to the instantaneous one.
+
+    That anchor is the temperature term's characteristic ``T``, which this term **shares**
+    via the ``common_temp_spec`` machinery (so the only new fit parameter is
+    ``lambda_scale``):
+
+    - with ``temperature='constant'`` the characteristic ``T`` is the (constant)
+      temperature itself, so ``T_ref`` equals the instantaneous ``T``;
+    - with ``temperature='sigmoid'`` / ``'delayed_sigmoid'`` it is the peak (hot-plateau)
+      temperature, so the blanketing depth is pinned to the peak while the Planck core
+      still cools.
+
+    A single implementation therefore covers every temperature term; the value of the
+    shared ``T`` simply differs (constant vs. peak).
     """
 
     # Fixed blanketing intensity and extinction reach; referenced by `value` and the gradients.
@@ -122,29 +140,30 @@ class BlanketedPlanckConstTemp(BaseSpectralTerm):
 
     @staticmethod
     def parameter_names():
-        return ["lambda_scale"]
+        # ``T`` is shared with the temperature term; only ``lambda_scale`` is a new parameter.
+        return ["T", "lambda_scale"]
 
     @staticmethod
     def parameter_scalings():
-        return [None]
+        return [None, None]
 
     @staticmethod
-    def value(wave_cm, T, lambda_scale):
+    def value(wave_cm, T, T_ref, lambda_scale):
+        # ``T`` is the instantaneous temperature (cooling, for sigmoid terms); ``T_ref`` is
+        # the shared, time-constant characteristic temperature anchoring the extinction reach
+        # (equal to ``T`` for a constant temperature term).
         base = PlanckSpectralTerm.value(wave_cm, T)
 
-        # Phenomenological value for the slope of the extinction
-        # Fitting instead of fixing is likely overkill for broad band photometry
-        intensity = BlanketedPlanckConstTemp._intensity
+        intensity = BlanketedPlanckSpectralTerm._intensity
 
         # Encodes how far (in wavelength) the maximum UV extinction extends (at lambda_scale=1).
         # Allows the extinction to affect the BB wavelength past the peak (in the formula below).
-        max_extinction = BlanketedPlanckConstTemp._max_extinction
+        max_extinction = BlanketedPlanckSpectralTerm._max_extinction
 
         # Lambda_angstrom represents how far (in absolute wavelength) the extinction affects the BB.
-        # Lambda_scale quantifies this between 0 (no UV ext) and 1 max suppression (encoded by max_extinction above)
-        # We want this maximum extinction to scale with the size of the BB.
-        # We use T to give the correct order of magntiude of the scaling
-        lambda_angstrom = max_extinction * lambda_scale / T
+        # Lambda_scale quantifies this between 0 (no UV ext) and 1 max suppression (encoded by max_extinction above).
+        # Anchored to the constant T_ref so the blanketing depth does not vary as the object cools.
+        lambda_angstrom = max_extinction * lambda_scale / T_ref
 
         # Convert to cm to match wave_cm
         lambda_cm = lambda_angstrom * 1e-8
@@ -155,6 +174,7 @@ class BlanketedPlanckConstTemp(BaseSpectralTerm):
 
     @staticmethod
     def initial_guesses(t, m, sigma, band):
+        # ``T`` initial guess/limits come from the (shared) temperature term.
         return {
             "lambda_scale": 0.001,
         }
@@ -166,90 +186,47 @@ class BlanketedPlanckConstTemp(BaseSpectralTerm):
         }
 
     @staticmethod
-    def _planck_and_tau(wave_cm, T, lambda_scale):
+    def _planck_and_tau(wave_cm, T, T_ref, lambda_scale):
         nu = speed_of_light / wave_cm
         x = planck_constant * nu / (boltzman_constant * T)
         em1 = np.expm1(x)
         planck = (2 * planck_constant / speed_of_light**2) * nu**3 / em1
-        # Extinction reach scales inversely with temperature (see `value`).
-        lambda_cm = BlanketedPlanckConstTemp._max_extinction * lambda_scale / T * 1e-8
+        # Extinction reach anchored to the constant characteristic temperature T_ref (see `value`).
+        lambda_cm = BlanketedPlanckSpectralTerm._max_extinction * lambda_scale / T_ref * 1e-8
         u = wave_cm / lambda_cm
-        tau = BlanketedPlanckConstTemp._intensity * np.exp(-u)
+        tau = BlanketedPlanckSpectralTerm._intensity * np.exp(-u)
         return planck, em1, x, tau, u
 
     @staticmethod
-    def dvalue_dT(wave_cm, T, lambda_scale):
-        """∂(spec)/∂T, including the temperature dependence of the extinction τ(T)."""
-        planck, em1, x, tau, u = BlanketedPlanckConstTemp._planck_and_tau(wave_cm, T, lambda_scale)
-        exp_mtau = np.exp(-tau)
+    def dvalue_dT(wave_cm, T, T_ref, lambda_scale):
+        """∂(spec)/∂T w.r.t. the *instantaneous* temperature only.
+
+        The extinction depends on the constant anchor ``T_ref``, not on the instantaneous
+        ``T``, so only the Planck core varies here; the ``T_ref`` contribution is reported by
+        `derivatives` (it is the shared spectral parameter). When the temperature term is
+        constant, ``T`` and ``T_ref`` are the same parameter and the two contributions are
+        summed by the Jacobian assembly (``jac[idx] += ...``).
+        """
+        planck, em1, x, tau, _u = BlanketedPlanckSpectralTerm._planck_and_tau(wave_cm, T, T_ref, lambda_scale)
         dplanck_dT = planck * x * np.exp(x) / (T * em1)
-        spec = planck * exp_mtau
-        # τ = I·e^{-u},  u = wave_cm/λ_cm,  λ_cm ∝ λ_scale/T  ⇒  ∂u/∂T = u/T,  ∂τ/∂T = -τ·u/T
-        # ∂spec/∂T = e^{-τ}·∂planck/∂T - spec·∂τ/∂T = e^{-τ}·∂planck/∂T + spec·τ·u/T
-        return dplanck_dT * exp_mtau + spec * tau * u / T
+        return dplanck_dT * np.exp(-tau)
 
     @staticmethod
-    def derivatives(wave_cm, T, lambda_scale):
-        """∂(spec)/∂lambda_scale; shape (1, len(wave_cm)). Intensity is fixed, not fitted."""
-        planck, _em1, _x, tau, u = BlanketedPlanckConstTemp._planck_and_tau(wave_cm, T, lambda_scale)
+    def derivatives(wave_cm, T, T_ref, lambda_scale):
+        """∂(spec)/∂(T_ref, lambda_scale); shape (2, len(wave_cm)).
+
+        Row order matches ``parameter_names()`` = ``[T, lambda_scale]`` (the shared ``T``
+        enters here as the anchor ``T_ref``). With ``u = wave_cm/λ_cm ∝ T_ref/λ_scale``:
+        ``∂u/∂T_ref = u/T_ref`` and ``∂u/∂λ_scale = -u/λ_scale``, and ``∂τ = -τ·∂u``.
+        """
+        planck, _em1, _x, tau, u = BlanketedPlanckSpectralTerm._planck_and_tau(wave_cm, T, T_ref, lambda_scale)
         spec = planck * np.exp(-tau)
-        # u = wave_cm/λ_cm ∝ 1/λ_scale  ⇒  ∂u/∂λ_scale = -u/λ_scale,  ∂τ/∂λ_scale = τ·u/λ_scale
-        # ∂spec/∂λ_scale = -spec · ∂τ/∂λ_scale
-        jac = np.zeros((1, len(wave_cm)))
-        jac[0] = -spec * tau * u / lambda_scale
+        jac = np.zeros((2, len(wave_cm)))
+        # ∂spec/∂T_ref = -spec·∂τ/∂T_ref = +spec·τ·u/T_ref
+        jac[0] = spec * tau * u / T_ref
+        # ∂spec/∂λ_scale = -spec·∂τ/∂λ_scale = -spec·τ·u/λ_scale
+        jac[1] = -spec * tau * u / lambda_scale
         return jac
-
-
-@dataclass()
-class BlanketedPlanckSigmoidTemp(BaseSpectralTerm):
-    """Blackbody spectrum with exponential blanketing."""
-
-    @staticmethod
-    def parameter_names():
-        return ["Tmin", "Tmax", "lambda_scale"]
-
-    @staticmethod
-    def parameter_scalings():
-        return [None, None, None]
-
-    @staticmethod
-    def value(wave_cm, T, Tmin, Tmax, lambda_scale):
-        base = PlanckSpectralTerm.value(wave_cm, T)
-
-        # Phenomenological value for the slope of the extinction
-        # Fitting instead of fixing is likely overkill for broad band photometry
-        intensity = 100
-
-        # Encodes how far (in wavelength) the maximum UV extinction extends (at lambda_scale=1).
-        # Allows the extinction to affect the BB wavelength past the peak (in the formula below).
-        max_extinction = 2 * b_wien
-
-        # The depth of exinction depends on the temperature of source.
-        # But it should not vary as the object cools down. We use T(t=~peak)
-        T_scale = (Tmin + Tmax) / 2
-
-        # Lambda_angstrom represents how far (in absolute wavelength) the extinction affects the BB.
-        # Lambda_scale quantifies this between 0 (no UV ext) and 1 max suppression (encoded by max_extinction above)
-        lambda_angstrom = max_extinction * lambda_scale / T_scale
-
-        # Convert to cm to match wave_cm
-        lambda_cm = lambda_angstrom * 1e-8
-
-        tau = intensity * np.exp(-wave_cm / lambda_cm)
-
-        return base * np.exp(-tau)
-
-    @staticmethod
-    def initial_guesses(t, m, sigma, band):
-        return {
-            "lambda_scale": 0.001,
-        }
-
-    @staticmethod
-    def limits(t, m, sigma, band):
-        return {
-            "lambda_scale": (0.001, 1.0),
-        }
 
 
 @dataclass()
@@ -477,8 +454,7 @@ class LogParabolaSpectralTerm(BaseSpectralTerm):
 
 spectral_terms = {
     "planck": PlanckSpectralTerm,
-    "blanketed_constant_temperature": BlanketedPlanckConstTemp,
-    "blanketed_sigmoid_temperature": BlanketedPlanckSigmoidTemp,
+    "blanketed": BlanketedPlanckSpectralTerm,
     "genwien": GenWienSpectralTerm,
     "modified_bb": ModifiedBlackBodySpectralTerm,
     "logparabola": LogParabolaSpectralTerm,
