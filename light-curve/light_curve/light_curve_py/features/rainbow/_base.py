@@ -8,6 +8,7 @@ from light_curve.light_curve_py.dataclass_field import dataclass_field
 from light_curve.light_curve_py.features._base import BaseMultiBandFeature
 from light_curve.light_curve_py.features.rainbow._bands import Bands
 from light_curve.light_curve_py.features.rainbow._parameters import create_parameters_class
+import light_curve.light_curve_py.features.rainbow.spectral as spct
 from light_curve.light_curve_py.features.rainbow._scaler import MultiBandScaler, Scaler
 from light_curve.light_curve_py.minuit_lsq import LeastSquares
 from light_curve.light_curve_py.minuit_ml import MaximumLikelihood
@@ -50,8 +51,14 @@ class BaseRainbowFit(BaseMultiBandFeature):
 
     @staticmethod
     @abstractmethod
-    def _common_parameter_names() -> List[str]:
-        """Common parameter names."""
+    def _common_bol_temp_parameter_names() -> List[str]:
+        """Common parameter names beween bolometric and temperature models."""
+        return NotImplementedError
+
+    @staticmethod
+    @abstractmethod
+    def _common_temp_spec_parameter_names() -> List[str]:
+        """Common parameter names beween temperature and spectral models."""
         return NotImplementedError
 
     @staticmethod
@@ -81,7 +88,8 @@ class BaseRainbowFit(BaseMultiBandFeature):
 
         self.p = create_parameters_class(
             f"{self.__class__.__name__}Parameters",
-            common=self._common_parameter_names(),
+            common_bol_temp=self._common_bol_temp_parameter_names(),
+            common_temp_spec=self._common_temp_spec_parameter_names(),
             bol=self._bolometric_parameter_names(),
             temp=self._temperature_parameter_names(),
             spec=self._spectral_parameter_names(),
@@ -225,9 +233,9 @@ class BaseRainbowFit(BaseMultiBandFeature):
         # norm = self.planck_nu(speed_of_light / peak_nu, temp) # Peak = 1 normalization
 
         spectral = self.spectral_func(wave_cm, temp, params)
-        planck = spectral / norm
 
-        flux = planck * bol
+        SED = spectral / norm
+        flux = SED * bol
 
         return flux
 
@@ -340,6 +348,10 @@ class BaseRainbowFit(BaseMultiBandFeature):
             initial_guesses = self._initial_guesses(t, m, sigma, band)
             limits = self._limits(t, m, sigma, band)
 
+        # Force all parameter dictionaries to follow enum / Minuit order
+        initial_guesses = {name: initial_guesses[name] for name in self.names}
+        limits = {name: limits[name] for name in self.names}
+
         # least_squares = LeastSquares(
         cost_function = MaximumLikelihood(
             model=self._lsq_model,
@@ -350,6 +362,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
             upper_mask=upper_mask,
         )
         minuit = self.Minuit(cost_function, name=self.names, **initial_guesses)
+        
         # TODO: expose these parameters through function arguments
         if print_level is not None:
             minuit.print_level = print_level
@@ -368,7 +381,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
                 # That's what iterate is supposed to do?..
                 minuit.simplex()
                 # FIXME: it may drive the fit valid, but we will not have Hesse run on last iteration
-
+        
         if debug:
             # Expose everything we have to outside, unscaled, for easier debugging
             self.minuit = minuit

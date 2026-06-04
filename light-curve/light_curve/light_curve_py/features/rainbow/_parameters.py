@@ -26,7 +26,8 @@ def create_int_enum(cls_name: str, attributes: Iterable[str]):
 def create_parameters_class(
     cls_name: str,
     *,
-    common: List[str],
+    common_bol_temp: List[str],
+    common_temp_spec: List[str],
     bol: List[str],
     temp: List[str],
     spec: List[str],
@@ -39,8 +40,10 @@ def create_parameters_class(
     ----------
     cls_name : str
         Name of the class to create.
-    common : list of str
-        Common parameters for both bolometric and temperature models.
+    common_bol_temp : list of str
+        Common parameters for the bolometric and temperature models.
+    common_temp_spec : list of str
+        Common parameters for the spectral and temperature models.
     bol : list of str
         Bolometric model parameters, without common parameters.
     temp : list of str
@@ -53,29 +56,32 @@ def create_parameters_class(
     with_baseline : bool
         Whether to include baseline parameters, one per band in `bands`.
     """
-    attributes = common + bol + temp + spec
+    attributes = common_bol_temp + common_temp_spec + bol + temp + spec
     if with_baseline:
         baseline = list(map(baseline_parameter_name, bands.names))
         attributes += baseline
 
     enum = create_int_enum(cls_name, attributes)
 
-    enum.all_common = common
-    enum.common_idx = np.array([enum[attr] for attr in common])
+    enum.all_common_bol_temp = common_bol_temp
+    enum.common_bol_temp_idx = np.array([enum[attr] for attr in common_bol_temp])
+
+    enum.all_common_temp_spec = common_temp_spec
+    enum.common_temp_spec_idx = np.array([enum[attr] for attr in common_temp_spec])
 
     enum.bol = bol
     enum.bol_idx = np.array([enum[attr] for attr in enum.bol], dtype=np.int64)
-    enum.all_bol = common + bol
+    enum.all_bol = common_bol_temp + bol
     enum.all_bol_idx = np.array([enum[attr] for attr in enum.all_bol], dtype=np.int64)
 
     enum.temp = temp
     enum.temp_idx = np.array([enum[attr] for attr in enum.temp], dtype=np.int64)
-    enum.all_temp = common + temp
+    enum.all_temp = common_bol_temp + common_temp_spec + temp
     enum.all_temp_idx = np.array([enum[attr] for attr in enum.all_temp], dtype=np.int64)
 
     enum.spec = spec
     enum.spec_idx = np.array([enum[attr] for attr in enum.spec], dtype=np.int64)
-    enum.all_spec = spec
+    enum.all_spec = common_temp_spec + spec
     enum.all_spec_idx = np.array([enum[attr] for attr in enum.all_spec], dtype=np.int64)
 
     enum.with_baseline = with_baseline

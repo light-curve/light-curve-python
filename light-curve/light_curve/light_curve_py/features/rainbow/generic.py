@@ -39,15 +39,8 @@ class RainbowFit(BaseRainbowFit):
         Other options are: 'constant', 'delayed_sigmoid'
     spectral : str or BaseSpectralTerm subclass, optional
         The spectral SED model. Default is 'planck' (standard blackbody,
-        no extra fit parameters). Use 'blanketed' for a UV-extincted blackbody:
-
-        .. math::
-            F(\\lambda) = B_\\nu(T) \\cdot e^{-\\tau},\\quad
-            \\tau = 10^{\\texttt{log\\_intensity}} \\cdot e^{-\\lambda/\\texttt{lambda\\_scale}}
-
-        This adds two fit parameters: ``log_intensity`` (blanketing strength,
-        range 1.5–6) and ``lambda_scale`` (characteristic blanketing wavelength
-        in Å, range 100–2000).
+        no extra fit parameters). Use 'blanketed' for a UV-extincted blackbody.
+        It adds one parameter to fit: ``lambda_scale`` (blanketing strength from ~0 to 1)
 
     Methods
     -------
@@ -75,39 +68,59 @@ class RainbowFit(BaseRainbowFit):
     temperature: Union[str, BaseTemperatureTerm] = dataclass_field(default="sigmoid", kw_only=True)
     """Which parametric temperature term to use"""
 
-    spectral: Union[str, BaseSpectralTerm] = dataclass_field(
-        default="planck",
-        kw_only=True,
-    )
+    spectral: Union[str, BaseSpectralTerm] = dataclass_field(default="planck", kw_only=True)
     """Which spectral term to use"""
 
     def __post_init__(self):
         if not isinstance(self.bolometric, BaseBolometricTerm):
             self.bolometric = bolometric_terms[self.bolometric]
-
+    
         if not isinstance(self.temperature, BaseTemperatureTerm):
-            self.temperature = temperature_terms[self.temperature]
-
+            temperature_name = self.temperature
+            self.temperature = temperature_terms[temperature_name]
+        else:
+            temperature_name = None
+    
         if not isinstance(self.spectral, BaseSpectralTerm):
-            self.spectral = spectral_terms[self.spectral]
-
+            if self.spectral == "blanketed":
+                if temperature_name == "constant":
+                    self.spectral = spectral_terms["blanketed_constant_temperature"]
+                elif temperature_name == "sigmoid":
+                    self.spectral = spectral_terms["blanketed_sigmoid_temperature"]
+                else:
+                    raise ValueError(
+                        "`spectral='blanketed'` is only supported with "
+                        "`temperature='constant'` or `temperature='sigmoid'`."
+                    )
+            else:
+                self.spectral = spectral_terms[self.spectral]
+    
         super().__post_init__()
 
-    def _common_parameter_names(self) -> List[str]:
+    def _common_bol_temp_parameter_names(self) -> List[str]:
         bolometric_parameters = self.bolometric.parameter_names()
         temperature_parameters = self.temperature.parameter_names()
-        return [j for j in bolometric_parameters if j in temperature_parameters]
+        common_bol_temp = [j for j in bolometric_parameters if j in temperature_parameters]
+        return common_bol_temp
+
+    def _common_temp_spec_parameter_names(self) -> List[str]:
+        spectral_parameters = self.spectral.parameter_names()
+        temperature_parameters = self.temperature.parameter_names()
+        common_temp_spec = [j for j in temperature_parameters if j in spectral_parameters]
+        return common_temp_spec
 
     def _bolometric_parameter_names(self) -> List[str]:
         bolometric_parameters = self.bolometric.parameter_names()
-        return [i for i in bolometric_parameters if i not in self._common_parameter_names()]
+        return [i for i in bolometric_parameters if i not in self._common_bol_temp_parameter_names()]
 
     def _temperature_parameter_names(self) -> List[str]:
         temperature_parameters = self.temperature.parameter_names()
-        return [i for i in temperature_parameters if i not in self._common_parameter_names()]
+        common = self._common_bol_temp_parameter_names() + self._common_temp_spec_parameter_names()
+        return [i for i in temperature_parameters if i not in common]
 
     def _spectral_parameter_names(self) -> List[str]:
-        return self.spectral.parameter_names()
+        spectral_parameters = self.spectral.parameter_names()
+        return [i for i in spectral_parameters if i not in self._common_temp_spec_parameter_names()] 
 
     def bol_func(self, t, params):
         return self.bolometric.value(t, *params[self.p.all_bol_idx])
