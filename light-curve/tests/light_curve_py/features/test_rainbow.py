@@ -1,8 +1,14 @@
 # import matplotlib.pyplot as plt
+import warnings
+
 import numpy as np
 
 from light_curve.light_curve_py import RainbowFit
 from light_curve.light_curve_py.features.rainbow._scaler import MultiBandScaler
+from light_curve.light_curve_py.features.rainbow.spectral import (
+    BlanketedPlanckSpectralTerm,
+    PlanckSpectralTerm,
+)
 
 
 def test_noisy_with_baseline():
@@ -29,19 +35,6 @@ def test_noisy_with_baseline():
 
     baselines = {b: 0.3 * amplitude + rng.exponential(scale=0.3 * amplitude) for b in band_wave_aa}
 
-    expected = [
-        reference_time,
-        amplitude,
-        rise_time,
-        fall_time,
-        Tmin,
-        Tmax,
-        t_color,
-        lambda_scale,
-        *baselines.values(),
-        1.0,
-    ]
-
     feature = RainbowFit.from_angstrom(
         band_wave_aa,
         with_baseline=True,
@@ -49,6 +42,21 @@ def test_noisy_with_baseline():
         bolometric="bazin",
         spectral="blanketed",
     )
+
+    # Assemble the true parameter vector in feature.names order. The sigmoid temperature is
+    # parametrized by the mid temperature and the relative amplitude (Tmax-Tmin)/(Tmax+Tmin).
+    value_by_name = {
+        "reference_time": reference_time,
+        "amplitude": amplitude,
+        "rise_time": rise_time,
+        "fall_time": fall_time,
+        "T": 0.5 * (Tmin + Tmax),
+        "T_amplitude": (Tmax - Tmin) / (Tmax + Tmin),
+        "t_color": t_color,
+        "lambda_scale": lambda_scale,
+        **{feature.p.baseline_parameter_name(b): v for b, v in baselines.items()},
+    }
+    expected = [value_by_name[name] for name in feature.names] + [1.0]
 
     t = np.sort(
         rng.uniform(
@@ -329,6 +337,27 @@ def test_noisy_all_functions_combination():
                     atol=0.1,
                     strict=False,
                 )
+
+
+def test_spectral_planck_overflow_safe_at_cold_temperature():
+    """Planck value/dvalue_dT must stay finite at low T (no expm1/exp overflow).
+
+    Within the fit bounds the instantaneous temperature can dip to ~1% of the mid ``T``
+    (e.g. ``T_amplitude`` near 1), pushing ``x = hν/k_BT`` past the ``exp`` overflow
+    threshold at the blue end; the blackbody must go to 0 (Wien tail), not inf/nan.
+    """
+    wave_cm = np.array([3671.0, 4827.0, 6223.0, 7546.0, 8691.0, 9712.0]) * 1e-8
+    # Underflow to 0 (the Wien tail) is fine; overflow / invalid / divide must not occur.
+    with np.errstate(under="ignore"), warnings.catch_warnings():
+        warnings.simplefilter("error", RuntimeWarning)
+        for T in (50.0, 10.0, 1.0):
+            for arr in (
+                PlanckSpectralTerm.value(wave_cm, T),
+                PlanckSpectralTerm.dvalue_dT(wave_cm, T),
+                BlanketedPlanckSpectralTerm.dvalue_dT(wave_cm, T, 12_000.0, 0.3),
+                BlanketedPlanckSpectralTerm.derivatives(wave_cm, T, 12_000.0, 0.3),
+            ):
+                assert np.all(np.isfinite(arr)), f"non-finite blackbody at T={T} K"
 
 
 def test_scaler_from_flux_list_input():

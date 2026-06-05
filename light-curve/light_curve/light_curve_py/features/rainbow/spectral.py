@@ -76,10 +76,11 @@ class PlanckSpectralTerm(BaseSpectralTerm):
     @staticmethod
     def value(wave_cm, T, *params):
         nu = speed_of_light / wave_cm
-
-        return (
-            (2 * planck_constant / speed_of_light**2) * nu**3 / np.expm1(planck_constant * nu / (boltzman_constant * T))
-        )
+        x = planck_constant * nu / (boltzman_constant * T)
+        # B = (2h/c²) ν³ / (e^x - 1), written as ν³ e^{-x} / (1 - e^{-x}) to stay overflow-safe
+        # at large x (cold T / blue wavelengths): e^x / expm1(x) overflows there, whereas e^{-x}
+        # underflows to 0 and B → 0 (the Wien tail), which is the correct limit.
+        return (2 * planck_constant / speed_of_light**2) * nu**3 * np.exp(-x) / (-np.expm1(-x))
 
     @staticmethod
     def initial_guesses(t, m, sigma, band):
@@ -94,11 +95,10 @@ class PlanckSpectralTerm(BaseSpectralTerm):
         """∂(planck)/∂T. `*params` is empty for plain Planck (kept for API parity)."""
         nu = speed_of_light / wave_cm
         x = planck_constant * nu / (boltzman_constant * T)
-        em1 = np.expm1(x)
-        # planck = (2h/c²) ν³ / expm1(x);   x = hν/(kT);   dx/dT = -x/T
-        # ∂planck/∂T = planck · x·exp(x) / (T · expm1(x))
-        planck = (2 * planck_constant / speed_of_light**2) * nu**3 / em1
-        return planck * x * np.exp(x) / (T * em1)
+        neg_em1 = -np.expm1(-x)  # 1 - e^{-x}, the stable denominator (no e^{+x})
+        planck = (2 * planck_constant / speed_of_light**2) * nu**3 * np.exp(-x) / neg_em1
+        # ∂planck/∂T = planck · x·e^x/(T·expm1(x)) = planck · x / (T · (1 - e^{-x}))
+        return planck * x / (T * neg_em1)
 
     @staticmethod
     def derivatives(wave_cm, T, *params):
@@ -189,13 +189,15 @@ class BlanketedPlanckSpectralTerm(BaseSpectralTerm):
     def _planck_and_tau(wave_cm, T, T_ref, lambda_scale):
         nu = speed_of_light / wave_cm
         x = planck_constant * nu / (boltzman_constant * T)
-        em1 = np.expm1(x)
-        planck = (2 * planck_constant / speed_of_light**2) * nu**3 / em1
+        # Overflow-safe Planck core (see PlanckSpectralTerm.value): use e^{-x} / (1 - e^{-x})
+        # instead of 1 / expm1(x) so cold T / blue wavelengths give 0, not inf/nan.
+        neg_em1 = -np.expm1(-x)  # 1 - e^{-x}
+        planck = (2 * planck_constant / speed_of_light**2) * nu**3 * np.exp(-x) / neg_em1
         # Extinction reach anchored to the constant characteristic temperature T_ref (see `value`).
         lambda_cm = BlanketedPlanckSpectralTerm._max_extinction * lambda_scale / T_ref * 1e-8
         u = wave_cm / lambda_cm
         tau = BlanketedPlanckSpectralTerm._intensity * np.exp(-u)
-        return planck, em1, x, tau, u
+        return planck, neg_em1, x, tau, u
 
     @staticmethod
     def dvalue_dT(wave_cm, T, T_ref, lambda_scale):
@@ -207,8 +209,9 @@ class BlanketedPlanckSpectralTerm(BaseSpectralTerm):
         constant, ``T`` and ``T_ref`` are the same parameter and the two contributions are
         summed by the Jacobian assembly (``jac[idx] += ...``).
         """
-        planck, em1, x, tau, _u = BlanketedPlanckSpectralTerm._planck_and_tau(wave_cm, T, T_ref, lambda_scale)
-        dplanck_dT = planck * x * np.exp(x) / (T * em1)
+        planck, neg_em1, x, tau, _u = BlanketedPlanckSpectralTerm._planck_and_tau(wave_cm, T, T_ref, lambda_scale)
+        # ∂planck/∂T = planck · x / (T · (1 - e^{-x})) — the overflow-safe form of x·e^x/(T·expm1(x)).
+        dplanck_dT = planck * x / (T * neg_em1)
         return dplanck_dT * np.exp(-tau)
 
     @staticmethod
