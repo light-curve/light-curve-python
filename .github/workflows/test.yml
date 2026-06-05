@@ -139,6 +139,8 @@ jobs:
           name: ${{ matrix.wheel_artifact }}
           path: light-curve/wheels/
       - name: Run tests
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: uvx --with tox-uv tox -e py3${{ matrix.python_minor }}-test --installpkg=$(ls wheels/*.whl)
 
 
@@ -176,6 +178,8 @@ jobs:
           name: wheels-linux-aarch64
           path: light-curve/wheels/
       - name: Run tests
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: uvx --with tox-uv tox -e py3${{ matrix.python_minor }}-test --installpkg=$(ls wheels/*.whl)
 
 
@@ -260,6 +264,8 @@ jobs:
           path: ~/.cache/huggingface
           key: huggingface-v1
       - name: Generate code coverage
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           source <(cargo llvm-cov show-env --export-prefix)
           uv venv .venv
@@ -301,6 +307,8 @@ jobs:
           path: wheels/
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v4
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
           mode: simulation
@@ -379,4 +387,6 @@ jobs:
           key: huggingface-v1
       - name: Run slow tests
         working-directory: light-curve
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: uvx --with tox-uv tox -e py314-slow --installpkg=$(ls wheels/*.whl)

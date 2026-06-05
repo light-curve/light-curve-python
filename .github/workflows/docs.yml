@@ -76,6 +76,8 @@ jobs:
 
       - name: Deploy dev (main branch)
         if: github.ref_type == 'branch'
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           source .venv/bin/activate
           # Detach HEAD and drop the local branch so mike fetches docs-site/${DOCS_BRANCH}
@@ -90,6 +92,8 @@ jobs:
 
       - name: Deploy release (tag)
         if: github.ref_type == 'tag'
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           source .venv/bin/activate
           git fetch docs-site "${DOCS_BRANCH}"
@@ -217,6 +221,8 @@ jobs:
           cd light-curve && maturin develop --extras=full --group=docs -q
 
       - name: Build docs
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           source .venv/bin/activate
           mkdocs build --site-dir /tmp/pr-site

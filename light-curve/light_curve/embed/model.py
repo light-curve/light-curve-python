@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections import Counter
 from enum import IntEnum
+from functools import lru_cache
 from typing import TYPE_CHECKING, Mapping, Sequence
 
 import numpy as np
@@ -102,22 +103,7 @@ class EmbeddingSession(ABC):
         ImportError
             If no ``onnxruntime`` variant is installed.
         """
-        try:
-            from huggingface_hub import hf_hub_download
-        except ImportError as exc:
-            hf_url = f"https://huggingface.co/{cls.hf_repo}/resolve/main/{filename}"
-            raise ImportError(
-                "huggingface_hub is required to download models from HuggingFace.\n"
-                "Install it with:\n"
-                "  pip install huggingface-hub\n"
-                "Or download the model file directly:\n"
-                f"  {hf_url}\n"
-                "then load it with:\n"
-                "  import onnxruntime as ort\n"
-                f'  {cls.__name__}(session=ort.InferenceSession("/path/to/{filename}")")'
-            ) from exc
-
-        model_path = hf_hub_download(repo_id=cls.hf_repo, filename=filename)
+        model_path = _hf_hub_download_cached(cls.hf_repo, filename)
 
         if ort_session_kwargs is None:
             ort_session_kwargs = {}
@@ -419,6 +405,25 @@ class ImplicitMultiBandModel(MultiBandModel, ABC):
     @abstractmethod
     def preprocess_single_band(self, *arrays: ArrayLike, band_idx: int, seq_size: int) -> InputTensors:
         raise NotImplementedError
+
+
+@lru_cache
+def _hf_hub_download_cached(repo_id: str, filename: str) -> str:
+    try:
+        from huggingface_hub import hf_hub_download
+    except ImportError as exc:
+        hf_url = f"https://huggingface.co/{repo_id}/resolve/main/{filename}"
+        raise ImportError(
+            "huggingface_hub is required to download models from HuggingFace.\n"
+            "Install it with:\n"
+            "  pip install huggingface-hub\n"
+            "Or download the model file directly:\n"
+            f"  {hf_url}\n"
+            "then load it with:\n"
+            "  import onnxruntime as ort\n"
+            f'  session=ort.InferenceSession("/path/to/{filename}")'
+        ) from exc
+    return hf_hub_download(repo_id=repo_id, filename=filename)
 
 
 _ONNX_INSTALL_HINT = (
