@@ -450,8 +450,8 @@ def _hf_hub_download_cached(
                 raise
             wait = _retry_after_seconds(exc.response, retry_fallback_seconds)
         _logger.warning(
-            "HuggingFace rate limit hit for %s/%s (attempt %d/%d), retrying in %d s",
-            repo_id, filename, attempt, max_attempts, wait,
+            f"HuggingFace rate limit hit for {repo_id}/{filename} "
+            f"(attempt {attempt}/{max_attempts}), retrying in {wait} s"
         )
         time.sleep(wait)
 
