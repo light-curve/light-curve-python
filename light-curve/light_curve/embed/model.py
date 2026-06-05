@@ -412,6 +412,7 @@ class ImplicitMultiBandModel(MultiBandModel, ABC):
 
 _logger = logging.getLogger(__name__)
 
+
 @lru_cache
 def _hf_hub_download_cached(
     repo_id: str,
