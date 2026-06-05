@@ -413,13 +413,7 @@ class ImplicitMultiBandModel(MultiBandModel, ABC):
 _logger = logging.getLogger(__name__)
 
 def _retry_after_seconds(response, fallback: int) -> int:
-    header = response.headers.get("Retry-After")
-    if header is None:
-        return fallback
-    try:
-        return math.ceil(float(header)) + 5
-    except ValueError:
-        return fallback
+    return math.ceil(float(response.headers.get("Retry-After", fallback - 5))) + 5
 
 
 @lru_cache
