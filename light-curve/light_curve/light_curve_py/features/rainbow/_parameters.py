@@ -90,9 +90,7 @@ def create_parameters_class(
         # baseline_idx[i] is the parameter index of the baseline for band index i.
         # Bands are numbered in the same order as bands.names, so this array doubles
         # as a band_idx -> baseline_parameter_idx lookup table.
-        enum.baseline_idx = np.array(
-            [enum[baseline_parameter_name(name)] for name in bands.names], dtype=np.int64
-        )
+        enum.baseline_idx = np.array([enum[baseline_parameter_name(name)] for name in bands.names], dtype=np.int64)
         enum.baseline_parameter_name = staticmethod(baseline_parameter_name)
         enum.baseline_band_name = staticmethod(baseline_band_name)
         enum.lookup_baseline_idx_with_band_idx = enum.baseline_idx.__getitem__
