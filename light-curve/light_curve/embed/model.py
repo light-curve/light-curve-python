@@ -412,19 +412,20 @@ class ImplicitMultiBandModel(MultiBandModel, ABC):
 
 _logger = logging.getLogger(__name__)
 
-_HF_DOWNLOAD_MAX_ATTEMPTS = 5
-_HF_DOWNLOAD_RETRY_FALLBACK_SECONDS = 60
-
-
-def _retry_after_seconds(response) -> int:
+def _retry_after_seconds(response, fallback: int) -> int:
     try:
         return math.ceil(float(response.headers.get("Retry-After", ""))) + 5
     except ValueError:
-        return _HF_DOWNLOAD_RETRY_FALLBACK_SECONDS
+        return fallback
 
 
 @lru_cache
-def _hf_hub_download_cached(repo_id: str, filename: str) -> str:
+def _hf_hub_download_cached(
+    repo_id: str,
+    filename: str,
+    max_attempts: int = 5,
+    retry_fallback_seconds: int = 60,
+) -> str:
     try:
         from huggingface_hub import hf_hub_download
         from huggingface_hub.errors import HfHubHTTPError
@@ -441,16 +442,16 @@ def _hf_hub_download_cached(repo_id: str, filename: str) -> str:
             f'  session=ort.InferenceSession("/path/to/{filename}")'
         ) from exc
 
-    for attempt in range(1, _HF_DOWNLOAD_MAX_ATTEMPTS + 1):
+    for attempt in range(1, max_attempts + 1):
         try:
             return hf_hub_download(repo_id=repo_id, filename=filename)
         except HfHubHTTPError as exc:
-            if exc.response.status_code != 429 or attempt == _HF_DOWNLOAD_MAX_ATTEMPTS:
+            if exc.response.status_code != 429 or attempt == max_attempts:
                 raise
-            wait = _retry_after_seconds(exc.response)
+            wait = _retry_after_seconds(exc.response, retry_fallback_seconds)
         _logger.warning(
             "HuggingFace rate limit hit for %s/%s (attempt %d/%d), retrying in %d s",
-            repo_id, filename, attempt, _HF_DOWNLOAD_MAX_ATTEMPTS, wait,
+            repo_id, filename, attempt, max_attempts, wait,
         )
         time.sleep(wait)
 
