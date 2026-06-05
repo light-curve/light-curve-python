@@ -36,11 +36,32 @@ class RainbowFit(BaseRainbowFit):
         Other options are: 'sigmoid'
     temperature : str or BaseTemperatureTerm subclass, optional
         The shape of temperature term. Default is 'sigmoid'.
-        Other options are: 'constant', 'delayed_sigmoid'
+        Other options are: 'constant', 'delayed_sigmoid'.
+        The sigmoid terms are parametrized by a peak temperature ``T`` and a ratio
+        ``T_ratio = Tmin / Tmax`` (the cool floor as a fraction of the peak); a weak prior
+        anchors ``T_ratio`` to 1 (constant temperature) unless the data require cooling.
     spectral : str or BaseSpectralTerm subclass, optional
-        The spectral SED model. Default is 'planck' (standard blackbody,
-        no extra fit parameters). Use 'blanketed' for a UV-extincted blackbody.
-        It adds one parameter to fit: ``lambda_scale`` (blanketing strength from ~0 to 1)
+        The spectral SED model. Default is 'planck' (standard blackbody, no extra fit
+        parameters). The other terms describe SEDs that deviate from a blackbody; each
+        reduces to Planck at a null parameter value, with a weak Gaussian prior anchoring
+        it there so a true blackbody is recovered unbiased:
+
+        - 'blanketed' — UV-extincted blackbody ``B_nu(T) * exp(-tau)``; adds ``lambda_scale``
+          (blanketing strength, ~0 to 1). The extinction reach is anchored to the
+          characteristic temperature ``T`` (shared with the temperature term) so the
+          blanketing depth does not vary as the source cools.
+        - 'modified_bb' — Planck tilted by a power law ``(lambda / lambda_ref) ** beta``;
+          adds ``beta`` (0 => Planck).
+        - 'logparabola' — Planck times ``exp(a*L + b*L**2)``, ``L = ln(lambda / lambda_ref)``;
+          adds ``sp_a``, ``sp_b`` (0 => Planck).
+        - 'genwien' — generalized Wien ``B_nu ~ nu**3 * exp(-x**spec_k)``, ``x = h*nu/(k_B*T)``;
+          adds ``spec_k`` (1 => Wien tail). The fitted ``T`` is not a physical temperature
+          for this term (see the class docstring).
+    optimizer : str, optional
+        Optimizer backend: 'iminuit' (default, robust Migrad) or 'least_squares' (scipy
+        Trust Region Reflective). The latter shares the same analytic Jacobian and is
+        usually faster; it transparently falls back to iminuit for upper-limit fits, term
+        combinations without analytic derivatives, or when it fails to converge.
 
     Methods
     -------
