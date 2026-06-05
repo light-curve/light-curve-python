@@ -254,31 +254,22 @@
 /* ── Embeddings SVG: connections draw then vector text — looped on hover */
 
 .lc-svg-embed .lc-conn-a,
-.lc-svg-embed .lc-conn-b {
-  stroke-dasharray: 55;
-  stroke-dashoffset: 55;
-  opacity: 0;
-}
+.lc-svg-embed .lc-conn-b { opacity: 0; }
 .lc-svg-embed .lc-vec-text { opacity: 0; }
 
 @keyframes embed-conn-a {
-  0%        { stroke-dashoffset: 55; opacity: 0; }
-  5%        { stroke-dashoffset: 55; opacity: 0.75; }
-  18%       { stroke-dashoffset: 0;  opacity: 0.75; }
-  65%       { stroke-dashoffset: 0;  opacity: 0.75; }
-  85%, 100% { stroke-dashoffset: 55; opacity: 0; }
+  0%        { opacity: 0; }
+  5%, 65%   { opacity: 0.75; }
+  85%, 100% { opacity: 0; }
 }
 @keyframes embed-conn-b {
-  0%, 15%   { stroke-dashoffset: 55; opacity: 0; }
-  18%       { stroke-dashoffset: 55; opacity: 0.75; }
-  28%       { stroke-dashoffset: 0;  opacity: 0.75; }
-  65%       { stroke-dashoffset: 0;  opacity: 0.75; }
-  85%, 100% { stroke-dashoffset: 55; opacity: 0; }
+  0%, 18%   { opacity: 0; }
+  28%, 65%  { opacity: 0.75; }
+  85%, 100% { opacity: 0; }
 }
 @keyframes embed-vec {
   0%, 28%   { opacity: 0; }
-  65%       { opacity: 1; }
-  68%       { opacity: 1; }
+  40%, 75%  { opacity: 1; }
   85%, 100% { opacity: 0; }
 }
 
@@ -315,7 +306,7 @@
   .lc-svg-features .lc-feat-s1,
   .lc-svg-features .lc-feat-s2 { opacity: 1 !important; animation: none; }
   .lc-svg-embed .lc-conn-a,
-  .lc-svg-embed .lc-conn-b { stroke-dashoffset: 0 !important; opacity: 0.75 !important; animation: none; }
+  .lc-svg-embed .lc-conn-b { opacity: 0.75 !important; animation: none; }
   .lc-svg-embed .lc-vec-text { opacity: 1 !important; animation: none; }
   .lc-dmdt-s1, .lc-dmdt-s2, .lc-dmdt-s3 { opacity: 0.9 !important; animation: none; }
 }
