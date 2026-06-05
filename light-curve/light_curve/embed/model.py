@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+import time
 from abc import ABC, abstractmethod
 from collections import Counter
 from enum import IntEnum
@@ -407,10 +409,16 @@ class ImplicitMultiBandModel(MultiBandModel, ABC):
         raise NotImplementedError
 
 
+_logger = logging.getLogger(__name__)
+
+_HF_DOWNLOAD_MAX_ATTEMPTS = 5
+
+
 @lru_cache
 def _hf_hub_download_cached(repo_id: str, filename: str) -> str:
     try:
         from huggingface_hub import hf_hub_download
+        from huggingface_hub.errors import HfHubHTTPError
     except ImportError as exc:
         hf_url = f"https://huggingface.co/{repo_id}/resolve/main/{filename}"
         raise ImportError(
@@ -423,7 +431,25 @@ def _hf_hub_download_cached(repo_id: str, filename: str) -> str:
             "  import onnxruntime as ort\n"
             f'  session=ort.InferenceSession("/path/to/{filename}")'
         ) from exc
-    return hf_hub_download(repo_id=repo_id, filename=filename)
+
+    for attempt in range(1, _HF_DOWNLOAD_MAX_ATTEMPTS + 1):
+        try:
+            return hf_hub_download(repo_id=repo_id, filename=filename)
+        except HfHubHTTPError as exc:
+            if exc.response.status_code != 429 or attempt == _HF_DOWNLOAD_MAX_ATTEMPTS:
+                raise
+            retry_after = exc.response.headers.get("Retry-After", "60")
+            try:
+                wait = float(retry_after)
+            except ValueError:
+                wait = 60.0
+            _logger.warning(
+                "HuggingFace rate limit hit for %s/%s (attempt %d/%d), retrying in %.0f s",
+                repo_id, filename, attempt, _HF_DOWNLOAD_MAX_ATTEMPTS, wait,
+            )
+            time.sleep(wait)
+
+    raise RuntimeError("unreachable")
 
 
 _ONNX_INSTALL_HINT = (
