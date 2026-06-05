@@ -413,6 +413,14 @@ class ImplicitMultiBandModel(MultiBandModel, ABC):
 _logger = logging.getLogger(__name__)
 
 _HF_DOWNLOAD_MAX_ATTEMPTS = 5
+_HF_DOWNLOAD_RETRY_FALLBACK_SECONDS = 60
+
+
+def _retry_after_seconds(response) -> int:
+    try:
+        return math.ceil(float(response.headers.get("Retry-After", ""))) + 5
+    except ValueError:
+        return _HF_DOWNLOAD_RETRY_FALLBACK_SECONDS
 
 
 @lru_cache
@@ -439,16 +447,12 @@ def _hf_hub_download_cached(repo_id: str, filename: str) -> str:
         except HfHubHTTPError as exc:
             if exc.response.status_code != 429 or attempt == _HF_DOWNLOAD_MAX_ATTEMPTS:
                 raise
-            retry_after = exc.response.headers.get("Retry-After", "60")
-            try:
-                wait = math.ceil(float(retry_after)) + 5
-            except ValueError:
-                wait = 65
-            _logger.warning(
-                "HuggingFace rate limit hit for %s/%s (attempt %d/%d), retrying in %.0f s",
-                repo_id, filename, attempt, _HF_DOWNLOAD_MAX_ATTEMPTS, wait,
-            )
-            time.sleep(wait)
+            wait = _retry_after_seconds(exc.response)
+        _logger.warning(
+            "HuggingFace rate limit hit for %s/%s (attempt %d/%d), retrying in %d s",
+            repo_id, filename, attempt, _HF_DOWNLOAD_MAX_ATTEMPTS, wait,
+        )
+        time.sleep(wait)
 
     raise RuntimeError("unreachable")
 
