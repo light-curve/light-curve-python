@@ -412,10 +412,6 @@ class ImplicitMultiBandModel(MultiBandModel, ABC):
 
 _logger = logging.getLogger(__name__)
 
-def _retry_after_seconds(response, fallback: int) -> int:
-    return math.ceil(float(response.headers.get("Retry-After", fallback - 5))) + 5
-
-
 @lru_cache
 def _hf_hub_download_cached(
     repo_id: str,
@@ -445,7 +441,7 @@ def _hf_hub_download_cached(
         except HfHubHTTPError as exc:
             if exc.response.status_code != 429 or attempt == max_attempts:
                 raise
-            wait = _retry_after_seconds(exc.response, retry_fallback_seconds)
+            wait = math.ceil(float(exc.response.headers.get("Retry-After", retry_fallback_seconds - 5))) + 5
         _logger.warning(
             f"HuggingFace rate limit hit for {repo_id}/{filename} "
             f"(attempt {attempt}/{max_attempts}), retrying in {wait} s"
