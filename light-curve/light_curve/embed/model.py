@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import math
 import time
 from abc import ABC, abstractmethod
 from collections import Counter
@@ -440,9 +441,9 @@ def _hf_hub_download_cached(repo_id: str, filename: str) -> str:
                 raise
             retry_after = exc.response.headers.get("Retry-After", "60")
             try:
-                wait = float(retry_after)
+                wait = math.ceil(float(retry_after)) + 5
             except ValueError:
-                wait = 60.0
+                wait = 65
             _logger.warning(
                 "HuggingFace rate limit hit for %s/%s (attempt %d/%d), retrying in %.0f s",
                 repo_id, filename, attempt, _HF_DOWNLOAD_MAX_ATTEMPTS, wait,
