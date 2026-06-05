@@ -37,9 +37,10 @@ class RainbowFit(BaseRainbowFit):
     temperature : str or BaseTemperatureTerm subclass, optional
         The shape of temperature term. Default is 'sigmoid'.
         Other options are: 'constant', 'delayed_sigmoid'.
-        The sigmoid terms are parametrized by a peak temperature ``T`` and a ratio
-        ``T_ratio = Tmin / Tmax`` (the cool floor as a fraction of the peak); a weak prior
-        anchors ``T_ratio`` to 1 (constant temperature) unless the data require cooling.
+        The sigmoid terms are parametrized by the mid temperature ``T = (Tmin + Tmax) / 2``
+        and a relative amplitude ``T_amplitude = (Tmax - Tmin) / (Tmax + Tmin)``; a weak
+        prior anchors ``T_amplitude`` to 0 (constant temperature) unless the data require a
+        temperature change.
     spectral : str or BaseSpectralTerm subclass, optional
         The spectral SED model. Default is 'planck' (standard blackbody, no extra fit
         parameters). The other terms describe SEDs that deviate from a blackbody; each

@@ -90,29 +90,30 @@ class ConstantTemperatureTerm(BaseTemperatureTerm):
 class SigmoidTemperatureTerm(BaseTemperatureTerm):
     """Sigmoid temperature.
 
-    Reparameterized as a peak temperature ``T`` (the early / hot plateau, = old ``Tmax``)
-    times a ratio ``T_ratio = Tmin / Tmax`` (the late / cool floor relative to the peak):
+    Parametrized by the mid temperature ``T = (Tmin + Tmax) / 2`` and a dimensionless
+    relative amplitude ``T_amplitude = (Tmax - Tmin) / (Tmax + Tmin)``, so that
+    ``Tmax = T(1 + T_amplitude)`` and ``Tmin = T(1 - T_amplitude)``:
 
     .. math::
-        T(t) = T\\,\\big(T_\\mathrm{ratio} + (1 - T_\\mathrm{ratio})\\,s\\big),
+        T(t) = T\\,\\big(1 + T_\\mathrm{amplitude}\\,(2 s - 1)\\big),
         \\quad s = \\frac{1}{1 + e^{(t - t_0) / t_\\mathrm{color}}}
 
-    ``T_ratio = 1`` is a constant temperature ``T``. The independent ``(Tmin, Tmax)`` pair
-    is degenerate when the temperature is not actually changing; here ``T`` stays pinned by
-    the well-sampled epochs while only the floppy ``T_ratio`` floats, and a weak
-    ``N(1, 0.5)`` prior anchors it to 1 (constant) unless the data demand cooling.
+    ``s`` runs from 1 (early, hot) to 0 (late, cool), so ``T(t)`` runs from ``Tmax`` to
+    ``Tmin``. ``T_amplitude = 0`` is a constant temperature ``T``; a weak ``N(0, 0.5)``
+    prior anchors it to 0 unless the data demand a temperature change. Strictly positive
+    temperature corresponds to the independent box ``T > 0``, ``-1 < T_amplitude < 1``.
     """
 
     @staticmethod
     def parameter_names():
-        return ["reference_time", "T", "T_ratio", "t_color"]
+        return ["reference_time", "T", "T_amplitude", "t_color"]
 
     @staticmethod
     def parameter_scalings():
         return ["time", None, None, "timescale"]
 
     @staticmethod
-    def value(t, t0, T, T_ratio, t_color):
+    def value(t, t0, T, T_amplitude, t_color):
         dt = t - t0
 
         # To avoid numerical overflows, let's only compute the exponent not too far from t0
@@ -121,10 +122,10 @@ class SigmoidTemperatureTerm(BaseTemperatureTerm):
         idx3 = dt >= 100 * t_color
 
         result = np.zeros(len(dt))
-        result[idx1] = T  # early -> Tmax = T
-        result[idx3] = T * T_ratio  # late -> Tmin = T * T_ratio
+        result[idx1] = T * (1.0 + T_amplitude)  # early -> Tmax
+        result[idx3] = T * (1.0 - T_amplitude)  # late -> Tmin
         s = 1.0 / (1.0 + np.exp(dt[idx2] / t_color))
-        result[idx2] = T * (T_ratio + (1.0 - T_ratio) * s)
+        result[idx2] = T * (1.0 + T_amplitude * (2.0 * s - 1.0))
 
         return result
 
@@ -134,7 +135,7 @@ class SigmoidTemperatureTerm(BaseTemperatureTerm):
 
         initial = {}
         initial["T"] = 10000.0
-        initial["T_ratio"] = 1.0
+        initial["T_amplitude"] = 0.0
         initial["t_color"] = 2 * dt
 
         return initial
@@ -145,35 +146,36 @@ class SigmoidTemperatureTerm(BaseTemperatureTerm):
         _, dt = t0_and_weighted_centroid_sigma(t, m, sigma)
 
         limits = {}
-        limits["T"] = (1e3, 2e6)  # K
-        limits["T_ratio"] = (0.1, 5.0)  # Tmin / Tmax
+        limits["T"] = (1e3, 2e6)  # K (mid temperature)
+        limits["T_amplitude"] = (-0.99, 0.99)  # (Tmax - Tmin) / (Tmax + Tmin); |.| < 1 keeps T(t) > 0
         limits["t_color"] = (dt / 3, 10 * t_amplitude)
 
         return limits
 
     @staticmethod
     def parameter_priors():
-        # Weak prior anchoring T_ratio to 1 (constant temperature) when unconstrained;
-        # in fit space, and T_ratio is unscaled so it equals the physical value.
-        return {"T_ratio": (1.0, 0.5)}
+        # Weak prior anchoring T_amplitude to 0 (constant temperature) when unconstrained;
+        # in fit space T_amplitude is unscaled so it equals the physical value.
+        return {"T_amplitude": (0.0, 0.5)}
 
     @staticmethod
-    def derivatives(t, t0, T, T_ratio, t_color):
-        """Jacobian w.r.t. (t0, T, T_ratio, t_color), shape (4, len(t)).
+    def derivatives(t, t0, T, T_amplitude, t_color):
+        """Jacobian w.r.t. (t0, T, T_amplitude, t_color), shape (4, len(t)).
 
-        ``T(t) = T·(T_ratio + (1-T_ratio)·s)``; saturated regions have zero (t0, t_color)
+        ``T(t) = T·(1 + T_amplitude·(2s - 1))``; saturated regions have zero (t0, t_color)
         partials.
         """
         dt = t - t0
         jac = np.zeros((4, len(dt)))
 
-        idx1 = dt <= -100 * t_color  # T(t) == T
+        idx1 = dt <= -100 * t_color  # T(t) == T·(1 + T_amplitude)
         idx2 = (dt > -100 * t_color) & (dt < 100 * t_color)
-        idx3 = dt >= 100 * t_color  # T(t) == T * T_ratio
+        idx3 = dt >= 100 * t_color  # T(t) == T·(1 - T_amplitude)
 
-        jac[1, idx1] = 1.0  # ∂T/∂T = 1 (early plateau)
-        jac[1, idx3] = T_ratio  # ∂T/∂T (late floor)
-        jac[2, idx3] = T  # ∂T/∂T_ratio (late floor)
+        jac[1, idx1] = 1.0 + T_amplitude  # ∂T/∂T (early plateau)
+        jac[2, idx1] = T  # ∂T/∂T_amplitude (early plateau)
+        jac[1, idx3] = 1.0 - T_amplitude  # ∂T/∂T (late floor)
+        jac[2, idx3] = -T  # ∂T/∂T_amplitude (late floor)
 
         if np.any(idx2):
             dt_in = dt[idx2]
@@ -181,12 +183,12 @@ class SigmoidTemperatureTerm(BaseTemperatureTerm):
             inv_1p_e = 1.0 / (1.0 + e)
             s = inv_1p_e
             s_1ms = e * inv_1p_e * inv_1p_e  # s · (1 - s)
-            omr = 1.0 - T_ratio
+            two_s_m1 = 2.0 * s - 1.0
 
-            jac[0, idx2] = T * omr * s_1ms / t_color  # ∂T/∂t0
-            jac[1, idx2] = T_ratio + omr * s  # ∂T/∂T = T(t)/T
-            jac[2, idx2] = T * (1.0 - s)  # ∂T/∂T_ratio
-            jac[3, idx2] = T * omr * s_1ms * dt_in / (t_color * t_color)  # ∂T/∂t_color
+            jac[0, idx2] = 2.0 * T * T_amplitude * s_1ms / t_color  # ∂T/∂t0
+            jac[1, idx2] = 1.0 + T_amplitude * two_s_m1  # ∂T/∂T = T(t)/T
+            jac[2, idx2] = T * two_s_m1  # ∂T/∂T_amplitude
+            jac[3, idx2] = 2.0 * T * T_amplitude * s_1ms * dt_in / (t_color * t_color)  # ∂T/∂t_color
 
         return jac
 
@@ -195,33 +197,33 @@ class SigmoidTemperatureTerm(BaseTemperatureTerm):
 class DelayedSigmoidTemperatureTerm(BaseTemperatureTerm):
     """Sigmoid temperature with delay w.r.t. bolometric peak.
 
-    Reparameterized as a peak temperature ``T`` (the early / hot plateau, = old
-    ``Tmax``) times a ratio ``T_ratio = Tmin / Tmax`` (the late / cool floor relative to
-    the peak), instead of two independent ``(Tmin, Tmax)``:
+    Parametrized by the mid temperature ``T = (Tmin + Tmax) / 2`` and a dimensionless
+    relative amplitude ``T_amplitude = (Tmax - Tmin) / (Tmax + Tmin)``, so that
+    ``Tmax = T(1 + T_amplitude)`` and ``Tmin = T(1 - T_amplitude)``:
 
     .. math::
-        T(t) = T\\,\\big(T_\\mathrm{ratio} + (1 - T_\\mathrm{ratio})\\,s\\big),
+        T(t) = T\\,\\big(1 + T_\\mathrm{amplitude}\\,(2 s - 1)\\big),
         \\quad s = \\frac{1}{1 + e^{(t - t_0 - t_\\mathrm{delay}) / t_\\mathrm{color}}}
 
-    ``T_ratio = 1`` is a constant temperature ``T``. When the temperature is not
-    actually changing (e.g. TDEs), the absolute ``(Tmin, Tmax)`` pair is degenerate and
-    wanders, but here ``T`` stays pinned by the well-sampled epochs while only the
-    poorly-constrained ``T_ratio`` floats; a weak ``N(1, 0.5)`` prior then anchors it to 1
-    (constant), while genuinely cooling sources, which constrain the ratio, override it.
-    The ``t_delay`` carries a weak prior toward 0 in scaled (light-curve-timescale) units
-    for the same reason.
+    ``T_amplitude = 0`` is a constant temperature ``T``. When the temperature is not
+    actually changing (e.g. TDEs) the swing is degenerate and wanders, so a weak
+    ``N(0, 0.5)`` prior anchors ``T_amplitude`` to 0 while ``T`` stays pinned by the
+    well-sampled epochs; genuinely cooling sources, which constrain the amplitude, override
+    it. The ``t_delay`` carries a weak prior toward 0 in scaled (light-curve-timescale)
+    units for the same reason. Strictly positive temperature corresponds to the independent
+    box ``T > 0``, ``-1 < T_amplitude < 1``.
     """
 
     @staticmethod
     def parameter_names():
-        return ["reference_time", "T", "T_ratio", "t_color", "t_delay"]
+        return ["reference_time", "T", "T_amplitude", "t_color", "t_delay"]
 
     @staticmethod
     def parameter_scalings():
         return ["time", None, None, "timescale", "timescale"]
 
     @staticmethod
-    def value(t, t0, T, T_ratio, t_color, t_delay):
+    def value(t, t0, T, T_amplitude, t_color, t_delay):
         dt = t - t0 - t_delay
 
         # To avoid numerical overflows, let's only compute the exponent not too far from t0
@@ -230,10 +232,10 @@ class DelayedSigmoidTemperatureTerm(BaseTemperatureTerm):
         idx3 = dt >= 100 * t_color
 
         result = np.zeros(len(dt))
-        result[idx1] = T  # early -> Tmax = T
-        result[idx3] = T * T_ratio  # late -> Tmin = T * T_ratio
+        result[idx1] = T * (1.0 + T_amplitude)  # early -> Tmax
+        result[idx3] = T * (1.0 - T_amplitude)  # late -> Tmin
         s = 1.0 / (1.0 + np.exp(dt[idx2] / t_color))
-        result[idx2] = T * (T_ratio + (1.0 - T_ratio) * s)
+        result[idx2] = T * (1.0 + T_amplitude * (2.0 * s - 1.0))
 
         return result
 
@@ -243,7 +245,7 @@ class DelayedSigmoidTemperatureTerm(BaseTemperatureTerm):
 
         initial = {}
         initial["T"] = 10000.0
-        initial["T_ratio"] = 1.0
+        initial["T_amplitude"] = 0.0
         initial["t_color"] = 2 * dt
         initial["t_delay"] = 0.0
 
@@ -255,8 +257,8 @@ class DelayedSigmoidTemperatureTerm(BaseTemperatureTerm):
         _, dt = t0_and_weighted_centroid_sigma(t, m, sigma)
 
         limits = {}
-        limits["T"] = (1e3, 2e6)  # K
-        limits["T_ratio"] = (0.1, 5.0)  # Tmin / Tmax
+        limits["T"] = (1e3, 2e6)  # K (mid temperature)
+        limits["T_amplitude"] = (-0.99, 0.99)  # (Tmax - Tmin) / (Tmax + Tmin); |.| < 1 keeps T(t) > 0
         limits["t_color"] = (dt / 3, 10 * t_amplitude)
         limits["t_delay"] = (-t_amplitude, t_amplitude)
 
@@ -264,28 +266,29 @@ class DelayedSigmoidTemperatureTerm(BaseTemperatureTerm):
 
     @staticmethod
     def parameter_priors():
-        # Priors are in fit (scaled) space; T_ratio is unscaled so it equals physical,
+        # Priors are in fit (scaled) space; T_amplitude is unscaled so it equals physical,
         # while the t_delay prior is in light-curve-timescale units (scale = std of times).
         # Both are weak: they only anchor the parameter when the data leave it free
         # (constant-temperature / no-delay sources), and are overridden by real signal.
-        return {"T_ratio": (1.0, 0.5), "t_delay": (0.0, 1.0)}
+        return {"T_amplitude": (0.0, 0.5), "t_delay": (0.0, 1.0)}
 
     @staticmethod
-    def derivatives(t, t0, T, T_ratio, t_color, t_delay):
-        """Jacobian w.r.t. (t0, T, T_ratio, t_color, t_delay), shape (5, len(t)).
+    def derivatives(t, t0, T, T_amplitude, t_color, t_delay):
+        """Jacobian w.r.t. (t0, T, T_amplitude, t_color, t_delay), shape (5, len(t)).
 
-        ``T = T·(T_ratio + (1-T_ratio)·s)``; ∂T/∂t_delay equals ∂T/∂t0.
+        ``T(t) = T·(1 + T_amplitude·(2s - 1))``; ∂T/∂t_delay equals ∂T/∂t0.
         """
         dt = t - t0 - t_delay
         jac = np.zeros((5, len(dt)))
 
-        idx1 = dt <= -100 * t_color  # T == T
+        idx1 = dt <= -100 * t_color  # T(t) == T·(1 + T_amplitude)
         idx2 = (dt > -100 * t_color) & (dt < 100 * t_color)
-        idx3 = dt >= 100 * t_color  # T == T * T_ratio
+        idx3 = dt >= 100 * t_color  # T(t) == T·(1 - T_amplitude)
 
-        jac[1, idx1] = 1.0  # ∂T/∂T = 1 (early plateau)
-        jac[1, idx3] = T_ratio  # ∂T/∂T (late floor)
-        jac[2, idx3] = T  # ∂T/∂T_ratio (late floor)
+        jac[1, idx1] = 1.0 + T_amplitude  # ∂T/∂T (early plateau)
+        jac[2, idx1] = T  # ∂T/∂T_amplitude (early plateau)
+        jac[1, idx3] = 1.0 - T_amplitude  # ∂T/∂T (late floor)
+        jac[2, idx3] = -T  # ∂T/∂T_amplitude (late floor)
 
         if np.any(idx2):
             dt_in = dt[idx2]
@@ -293,13 +296,13 @@ class DelayedSigmoidTemperatureTerm(BaseTemperatureTerm):
             inv = 1.0 / (1.0 + e)
             s = inv
             s_1ms = e * inv * inv  # s · (1 - s)
-            omr = 1.0 - T_ratio
+            two_s_m1 = 2.0 * s - 1.0
 
-            dT_dt0 = T * omr * s_1ms / t_color
+            dT_dt0 = 2.0 * T * T_amplitude * s_1ms / t_color
             jac[0, idx2] = dT_dt0
-            jac[1, idx2] = T_ratio + omr * s  # = T / T
-            jac[2, idx2] = T * (1.0 - s)
-            jac[3, idx2] = T * omr * s_1ms * dt_in / (t_color * t_color)
+            jac[1, idx2] = 1.0 + T_amplitude * two_s_m1  # = T(t) / T
+            jac[2, idx2] = T * two_s_m1
+            jac[3, idx2] = 2.0 * T * T_amplitude * s_1ms * dt_in / (t_color * t_color)
             jac[4, idx2] = dT_dt0  # ∂T/∂t_delay = ∂T/∂t0
 
         return jac

@@ -37,7 +37,7 @@ PARAM_VALUES = {
     "time2": 12.0,
     "p": 0.3,
     "T": 12_000.0,
-    "T_ratio": 0.6,
+    "T_amplitude": 0.4,
     "t_color": 8.0,
     "t_delay": 3.0,
     "lambda_scale": 0.3,

@@ -194,8 +194,8 @@ def test_noisy_all_functions_combination():
     # ======================================================
 
     Tsigmoid_parameters = [
-        15e3,  # T (peak, = Tmax)
-        1.0 / 3.0,  # T_ratio = Tmin / Tmax  (= 5e3 / 15e3)
+        10e3,  # T (mid = (Tmin + Tmax) / 2 = (5e3 + 15e3) / 2)
+        0.5,  # T_amplitude = (Tmax - Tmin) / (Tmax + Tmin) = (15e3 - 5e3) / (15e3 + 5e3)
         10,  # t_color
     ]
 

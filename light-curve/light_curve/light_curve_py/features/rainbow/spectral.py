@@ -126,12 +126,12 @@ class BlanketedPlanckSpectralTerm(BaseSpectralTerm):
 
     - with ``temperature='constant'`` the characteristic ``T`` is the (constant)
       temperature itself, so ``T_ref`` equals the instantaneous ``T``;
-    - with ``temperature='sigmoid'`` / ``'delayed_sigmoid'`` it is the peak (hot-plateau)
-      temperature, so the blanketing depth is pinned to the peak while the Planck core
-      still cools.
+    - with ``temperature='sigmoid'`` / ``'delayed_sigmoid'`` it is the mid temperature
+      ``(Tmin + Tmax) / 2``, so the blanketing depth is pinned to that characteristic value
+      while the Planck core still cools.
 
     A single implementation therefore covers every temperature term; the value of the
-    shared ``T`` simply differs (constant vs. peak).
+    shared ``T`` simply differs (constant vs. mid).
     """
 
     # Fixed blanketing intensity and extinction reach; referenced by `value` and the gradients.
