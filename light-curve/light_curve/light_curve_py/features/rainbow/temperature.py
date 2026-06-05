@@ -99,10 +99,16 @@ class SigmoidTemperatureTerm(BaseTemperatureTerm):
         \\quad s = \\frac{1}{1 + e^{(t - t_0) / t_\\mathrm{color}}}
 
     ``s`` runs from 1 (early, hot) to 0 (late, cool), so ``T(t)`` runs from ``Tmax`` to
-    ``Tmin``. ``T_amplitude = 0`` is a constant temperature ``T``; a weak ``N(0, 0.5)``
-    prior anchors it to 0 unless the data demand a temperature change. Strictly positive
-    temperature corresponds to the independent box ``T > 0``, ``-1 < T_amplitude < 1``.
+    ``Tmin``. ``T_amplitude = 0`` is a constant temperature ``T``; a weak
+    ``N(0, _t_amplitude_prior_sigma)`` prior anchors it to 0 unless the data demand a
+    temperature change. Strictly positive temperature corresponds to the independent box
+    ``T > 0``, ``-1 < T_amplitude < 1``.
     """
+
+    # Width of the Gaussian prior anchoring T_amplitude to 0 (constant temperature). Smaller
+    # => the constant-temperature classes (TDE, AGN) tie more tightly to 0, at the cost of
+    # some sensitivity to genuine cooling; the cooling signal is robust down to ~0.25.
+    _t_amplitude_prior_sigma = 0.25
 
     @staticmethod
     def parameter_names():
@@ -156,7 +162,7 @@ class SigmoidTemperatureTerm(BaseTemperatureTerm):
     def parameter_priors():
         # Weak prior anchoring T_amplitude to 0 (constant temperature) when unconstrained;
         # in fit space T_amplitude is unscaled so it equals the physical value.
-        return {"T_amplitude": (0.0, 0.5)}
+        return {"T_amplitude": (0.0, SigmoidTemperatureTerm._t_amplitude_prior_sigma)}
 
     @staticmethod
     def derivatives(t, t0, T, T_amplitude, t_color):
@@ -207,12 +213,16 @@ class DelayedSigmoidTemperatureTerm(BaseTemperatureTerm):
 
     ``T_amplitude = 0`` is a constant temperature ``T``. When the temperature is not
     actually changing (e.g. TDEs) the swing is degenerate and wanders, so a weak
-    ``N(0, 0.5)`` prior anchors ``T_amplitude`` to 0 while ``T`` stays pinned by the
-    well-sampled epochs; genuinely cooling sources, which constrain the amplitude, override
-    it. The ``t_delay`` carries a weak prior toward 0 in scaled (light-curve-timescale)
-    units for the same reason. Strictly positive temperature corresponds to the independent
-    box ``T > 0``, ``-1 < T_amplitude < 1``.
+    ``N(0, _t_amplitude_prior_sigma)`` prior anchors ``T_amplitude`` to 0 while ``T`` stays
+    pinned by the well-sampled epochs; genuinely cooling sources, which constrain the
+    amplitude, override it. The ``t_delay`` carries a weak prior toward 0 in scaled
+    (light-curve-timescale) units for the same reason. Strictly positive temperature
+    corresponds to the independent box ``T > 0``, ``-1 < T_amplitude < 1``.
     """
+
+    # Width of the Gaussian prior anchoring T_amplitude to 0 (constant temperature); see
+    # SigmoidTemperatureTerm for the anchoring-vs-cooling-sensitivity trade-off.
+    _t_amplitude_prior_sigma = 0.25
 
     @staticmethod
     def parameter_names():
@@ -270,7 +280,7 @@ class DelayedSigmoidTemperatureTerm(BaseTemperatureTerm):
         # while the t_delay prior is in light-curve-timescale units (scale = std of times).
         # Both are weak: they only anchor the parameter when the data leave it free
         # (constant-temperature / no-delay sources), and are overridden by real signal.
-        return {"T_amplitude": (0.0, 0.5), "t_delay": (0.0, 1.0)}
+        return {"T_amplitude": (0.0, DelayedSigmoidTemperatureTerm._t_amplitude_prior_sigma), "t_delay": (0.0, 1.0)}
 
     @staticmethod
     def derivatives(t, t0, T, T_amplitude, t_color, t_delay):
