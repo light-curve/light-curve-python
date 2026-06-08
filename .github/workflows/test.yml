@@ -138,8 +138,7 @@ jobs:
         run: |
           uv venv .venv
           source .venv/bin/activate
-          uv pip install wheels/*.whl
-          uv pip install --group test
+          uv pip install wheels/*.whl --group test
           pytest tests/embed/
       - name: Save HuggingFace cache
         uses: actions/cache/save@v5
