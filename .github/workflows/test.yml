@@ -125,8 +125,8 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ~/.cache/huggingface
-          key: huggingface-v1
-          save-always: true
+          key: huggingface-v1-${{ github.run_id }}
+          restore-keys: huggingface-v1
       - name: Download wheels
         uses: actions/download-artifact@v8
         with:
@@ -173,7 +173,8 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ~/.cache/huggingface
-          key: huggingface-v1
+          key: huggingface-v1-${{ github.run_id }}
+          restore-keys: huggingface-v1
       - name: Set HF offline mode
         if: steps.hf-cache.outputs.cache-hit == 'true'
         run: echo "HF_HUB_OFFLINE=1" >> $GITHUB_ENV
@@ -216,7 +217,8 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ~/.cache/huggingface
-          key: huggingface-v1
+          key: huggingface-v1-${{ github.run_id }}
+          restore-keys: huggingface-v1
       - name: Set HF offline mode
         if: steps.hf-cache.outputs.cache-hit == 'true'
         run: echo "HF_HUB_OFFLINE=1" >> $GITHUB_ENV
@@ -312,7 +314,8 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ~/.cache/huggingface
-          key: huggingface-v1
+          key: huggingface-v1-${{ github.run_id }}
+          restore-keys: huggingface-v1
       - name: Set HF offline mode
         if: steps.hf-cache.outputs.cache-hit == 'true'
         run: echo "HF_HUB_OFFLINE=1" >> $GITHUB_ENV
@@ -353,7 +356,8 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ~/.cache/huggingface
-          key: huggingface-v1
+          key: huggingface-v1-${{ github.run_id }}
+          restore-keys: huggingface-v1
       - name: Set HF offline mode
         if: steps.hf-cache.outputs.cache-hit == 'true'
         run: echo "HF_HUB_OFFLINE=1" >> $GITHUB_ENV
@@ -442,7 +446,8 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ~/.cache/huggingface
-          key: huggingface-v1
+          key: huggingface-v1-${{ github.run_id }}
+          restore-keys: huggingface-v1
       - name: Set HF offline mode
         if: steps.hf-cache.outputs.cache-hit == 'true'
         run: echo "HF_HUB_OFFLINE=1" >> $GITHUB_ENV
