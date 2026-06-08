@@ -103,9 +103,48 @@ jobs:
           path: light-curve/target/wheels/
 
 
+  prepare-hf-models:
+    runs-on: ubuntu-24.04-arm
+    needs: [build-wheel-linux-aarch64]
+
+    defaults:
+      run:
+        working-directory: light-curve
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Cache HuggingFace models
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/huggingface
+          key: huggingface-v1
+      - name: Download wheels
+        uses: actions/download-artifact@v8
+        with:
+          name: wheels-linux-aarch64
+          path: light-curve/wheels/
+      - name: Run embed tests (populates HF cache)
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          uv venv .venv
+          source .venv/bin/activate
+          uv pip install wheels/*.whl
+          uv pip install --group test
+          pytest tests/embed/
+
+
   test-linux-x86_64:
     runs-on: ubuntu-latest
-    needs: [build-wheel-linux-x86_64]
+    needs: [build-wheel-linux-x86_64, prepare-hf-models]
 
     strategy:
       fail-fast: false
@@ -129,10 +168,14 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
       - name: Cache HuggingFace models
+        id: hf-cache
         uses: actions/cache@v5
         with:
           path: ~/.cache/huggingface
           key: huggingface-v1
+      - name: Set HF offline mode
+        if: steps.hf-cache.outputs.cache-hit == 'true'
+        run: echo "HF_HUB_OFFLINE=1" >> $GITHUB_ENV
       - name: Download wheels
         uses: actions/download-artifact@v8
         with:
@@ -146,7 +189,7 @@ jobs:
 
   test-linux-aarch64:
     runs-on: ubuntu-24.04-arm
-    needs: [build-wheel-linux-aarch64]
+    needs: [build-wheel-linux-aarch64, prepare-hf-models]
 
     strategy:
       fail-fast: false
@@ -168,10 +211,14 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
       - name: Cache HuggingFace models
+        id: hf-cache
         uses: actions/cache@v5
         with:
           path: ~/.cache/huggingface
           key: huggingface-v1
+      - name: Set HF offline mode
+        if: steps.hf-cache.outputs.cache-hit == 'true'
+        run: echo "HF_HUB_OFFLINE=1" >> $GITHUB_ENV
       - name: Download wheels
         uses: actions/download-artifact@v8
         with:
@@ -230,6 +277,7 @@ jobs:
 
   coverage:
     runs-on: ubuntu-latest
+    needs: [prepare-hf-models]
 
     defaults:
       run:
@@ -259,10 +307,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgsl-dev
       - name: Cache HuggingFace models
+        id: hf-cache
         uses: actions/cache@v5
         with:
           path: ~/.cache/huggingface
           key: huggingface-v1
+      - name: Set HF offline mode
+        if: steps.hf-cache.outputs.cache-hit == 'true'
+        run: echo "HF_HUB_OFFLINE=1" >> $GITHUB_ENV
       - name: Generate code coverage
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -285,7 +337,7 @@ jobs:
 
   benchmarks:
     runs-on: ubuntu-latest
-    needs: [build-wheel-linux-x86_64]
+    needs: [build-wheel-linux-x86_64, prepare-hf-models]
 
     steps:
       - uses: actions/checkout@v6
@@ -296,10 +348,14 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
       - name: Cache HuggingFace models
+        id: hf-cache
         uses: actions/cache@v5
         with:
           path: ~/.cache/huggingface
           key: huggingface-v1
+      - name: Set HF offline mode
+        if: steps.hf-cache.outputs.cache-hit == 'true'
+        run: echo "HF_HUB_OFFLINE=1" >> $GITHUB_ENV
       - name: Download wheels
         uses: actions/download-artifact@v8
         with:
@@ -362,7 +418,7 @@ jobs:
 
   slow-tests:
     runs-on: ubuntu-latest
-    needs: [build-wheel-linux-x86_64]
+    needs: [build-wheel-linux-x86_64, prepare-hf-models]
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
 
     steps:
@@ -381,10 +437,14 @@ jobs:
           name: wheels-linux-x86_64
           path: light-curve/wheels/
       - name: Cache HuggingFace models
+        id: hf-cache
         uses: actions/cache@v5
         with:
           path: ~/.cache/huggingface
           key: huggingface-v1
+      - name: Set HF offline mode
+        if: steps.hf-cache.outputs.cache-hit == 'true'
+        run: echo "HF_HUB_OFFLINE=1" >> $GITHUB_ENV
       - name: Run slow tests
         working-directory: light-curve
         env:
