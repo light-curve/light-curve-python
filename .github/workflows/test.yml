@@ -126,6 +126,7 @@ jobs:
         with:
           path: ~/.cache/huggingface
           key: huggingface-v1
+          save-always: true
       - name: Download wheels
         uses: actions/download-artifact@v8
         with:
