@@ -133,6 +133,22 @@ The preview is built by the **Docs Preview** job in `docs.yml`, which uses a `pu
 
 Stale previews (from merged or closed PRs) are removed the next time anything is pushed to `main`.
 
+## CI secrets
+
+The test workflow uses three repository secrets. Jobs and steps that require them are
+automatically skipped when the secret is absent, so CI still runs lint, build, and core tests
+on fork pull requests.
+
+| Secret | Used by | Purpose |
+|--------|---------|---------|
+| `HF_TOKEN` | `prepare-hf-models`, test jobs, `coverage`, `slow-tests` | Raises the HuggingFace API rate limit for model downloads (models are public; without the token the jobs still run at the unauthenticated limit) |
+| `CODECOV_TOKEN` | `coverage` | Uploads the coverage report to Codecov (skipped when absent) |
+| `CODSPEED_TOKEN` | `benchmarks` | Submits benchmark results to CodSpeed (whole job skipped when absent) |
+
+Maintainers of the upstream repository configure these at **repo Settings → Secrets and variables → Actions**.
+Fork contributors can add the same secrets to their own fork if they want full CI coverage.
+To disable CI entirely on a fork, go to **Settings → Actions → General** and select **Disable actions**.
+
 ## Free-threaded Python
 
 Free-threaded CPython (PEP 703) is supported from **Python 3.14t** onward.
