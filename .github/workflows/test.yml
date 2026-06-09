@@ -378,8 +378,13 @@ jobs:
         with:
           name: wheels-linux-x86_64
           path: wheels/
+      - name: Check CodSpeed token
+        if: github.repository == 'light-curve/light-curve-python' && env.CODSPEED_TOKEN == ''
+        run: |
+          echo "::error::CODSPEED_TOKEN secret is missing or expired — please renew it."
+          exit 1
       - name: Run benchmarks
-        if: env.CODSPEED_TOKEN != '' || github.repository == 'light-curve/light-curve-python'
+        if: env.CODSPEED_TOKEN != ''
         uses: CodSpeedHQ/action@v4
         with:
           token: ${{ env.CODSPEED_TOKEN }}
