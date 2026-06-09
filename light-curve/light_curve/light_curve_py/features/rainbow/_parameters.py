@@ -93,6 +93,5 @@ def create_parameters_class(
         enum.baseline_idx = np.array([enum[baseline_parameter_name(name)] for name in bands.names], dtype=np.int64)
         enum.baseline_parameter_name = staticmethod(baseline_parameter_name)
         enum.baseline_band_name = staticmethod(baseline_band_name)
-        enum.lookup_baseline_idx_with_band_idx = enum.baseline_idx.__getitem__
 
     return enum

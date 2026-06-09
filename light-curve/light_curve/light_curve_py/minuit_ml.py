@@ -14,6 +14,11 @@ else:
     class MaximumLikelihood:
         errordef = Minuit.LIKELIHOOD
 
+        # Coefficient of the soft 1/x barrier that keeps parameters away from their bounds.
+        # Kept tiny so the penalty is << 0.5 (the 1-sigma scale of the 0.5*chi^2 NLL) over
+        # most of the range and only bites very close to a bound.
+        _BARRIER_STRENGTH = 1e-4
+
         def __init__(
             self,
             model: Callable,
@@ -91,6 +96,14 @@ else:
             #   never a torn mix of one par with another par's ym. (This keeps it safe,
             #   not fast, under sharing — a parallel multi-point optimiser would still
             #   just thrash the single slot.)
+            #
+            # WHY NOT functools.lru_cache
+            #   The working set is exactly one point (the value/gradient pair), so an
+            #   lru_cache(maxsize=1) would give the identical hit rate with no benefit, while
+            #   `@lru_cache` on this method would key on and retain `self`, leaking every
+            #   per-fit cost instance (a fresh one is built per light curve). A per-instance
+            #   lru_cache avoids the leak but adds a lock + cache object per fit; this manual
+            #   slot is per-instance, GC-clean and lock-free on a hot path.
             cache = self._cache
             if cache is not None and cache[0] == par:
                 return cache[1]
@@ -114,11 +127,9 @@ else:
                     self.logcdf((self.y[self.upper_mask] - ym[self.upper_mask]) / self.yerror[self.upper_mask])
                 )
 
-            # Barriers around parameter ranges
-            # Scale is selected so that for the most of the range it is much smaller
-            # than 0.5 which corresponds to 1-sigma errors
-            result += 0.0001 * np.sum(self.barrier((par - self.limits0) / self.limits_scale))
-            result += 0.0001 * np.sum(self.barrier((self.limits1 - par) / self.limits_scale))
+            # Barriers around parameter ranges (see _BARRIER_STRENGTH for the coefficient).
+            result += self._BARRIER_STRENGTH * np.sum(self.barrier((par - self.limits0) / self.limits_scale))
+            result += self._BARRIER_STRENGTH * np.sum(self.barrier((self.limits1 - par) / self.limits_scale))
 
             if self._prior is not None:
                 idx, mean, inv_sigma2 = self._prior
@@ -144,7 +155,9 @@ else:
             par_arr = np.asarray(par)
             # d barrier((p-lo)/s)/dp = -s/(p-lo)²;  d barrier((hi-p)/s)/dp = s/(hi-p)²
             g += (
-                0.0001 * self.limits_scale * (1.0 / (self.limits1 - par_arr) ** 2 - 1.0 / (par_arr - self.limits0) ** 2)
+                self._BARRIER_STRENGTH
+                * self.limits_scale
+                * (1.0 / (self.limits1 - par_arr) ** 2 - 1.0 / (par_arr - self.limits0) ** 2)
             )
 
             if self._prior is not None:

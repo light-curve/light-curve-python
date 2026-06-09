@@ -260,7 +260,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
 
         _t, band_idx, _wave_cm = x
         params = np.array(params)
-        baselines = params[self.p.lookup_baseline_idx_with_band_idx(band_idx)]
+        baselines = params[self.p.baseline_idx[band_idx]]
         flux += baselines
 
         return flux
@@ -292,7 +292,7 @@ class BaseRainbowFit(BaseMultiBandFeature):
         temp = self.temp_func(t, params)
         norm = (sigma_sb * temp**4) / np.pi / self.average_nu
         spectral = self.spectral_func(wave_cm, temp, params)
-        g = spectral / norm  # spec / norm
+        g = spectral / norm
 
         bol_jac = self.bolometric.derivatives(t, *params[self.p.all_bol_idx])
         temp_jac = self.temperature.derivatives(t, *params[self.p.all_temp_idx])
