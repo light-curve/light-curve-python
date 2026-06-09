@@ -5,13 +5,14 @@
 | Page | Contents |
 |---|---|
 | [Meta](meta.md) | `Extractor`, `Bins` |
-| [Statistical](statistical.md) | Amplitude, BeyondNStd, Cusum, Kurtosis, LinearFit, Mean, Skew, … |
-| [Variability & trend](variability.md) | EtaE, ExcessVariance, ReducedChi2, … |
-| [Time sampling](time.md) | ObservationCount, TimeMean, TimeStandardDeviation |
+| [Variability](variability.md) | Amplitude, BeyondNStd, Chi2Pvar, Eta, EtaE, ExcessVariance, Kurtosis, … |
+| [Linear trend](linear.md) | LinearFit, LinearTrend |
+| [Time sampling](time.md) | Duration, ObservationCount, TimeMean, TimeStandardDeviation, … |
 | [Periodogram](periodogram.md) | Periodogram |
-| [Parametric fits](fitting.md) | BazinFit, VillarFit |
-| [Detection-based](detection.md) | Duration, MaximumTimeInterval, … |
-| [Multiband](multiband.md) | ColorOfMaximum, ColorOfMedian, ColorOfMinimum, ColorSpread, RainbowFit |
+| [Non-linear parametric fits](fitting.md) | BazinFit, LinexpFit, VillarFit |
+| [Multiband parametric fit](rainbow.md) | RainbowFit |
+| [Multiband](multiband.md) | ColorOfMaximum, ColorOfMedian, ColorOfMinimum, ColorSpread |
+| [Detection-based](detection.md) | FluxNNotDetBeforeFd, MagnitudeNNotDetBeforeFd |
 
 ---
 
@@ -27,9 +28,9 @@ Every extractor exposes two read-only attributes:
 | `descriptions` | `list[str]` | Human-readable description of each output |
 
 ```python
-import light_curve as lc
+import light_curve as licu
 
-ext = lc.Extractor(lc.Amplitude(), lc.LinearFit())
+ext = licu.Extractor(licu.Amplitude(), licu.LinearFit())
 print(ext.names)        # ['amplitude', 'linear_fit_slope', ...]
 print(ext.descriptions) # ['Half amplitude of magnitude sample', ...]
 ```
@@ -93,9 +94,9 @@ s = extractor.to_json()  # returns str
 ### `feature_from_json()` — deserialize
 
 ```python
-import light_curve as lc
+import light_curve as licu
 
-extractor = lc.feature_from_json(s)
+extractor = licu.feature_from_json(s)
 ```
 
 Returns a `JSONDeserializedFeature` that behaves identically to the original extractor (same `names`, `descriptions`, and `__call__` / `many` interface).
@@ -103,13 +104,13 @@ Returns a `JSONDeserializedFeature` that behaves identically to the original ext
 **Round-trip example:**
 
 ```python
-import light_curve as lc
+import light_curve as licu
 import numpy as np
 
-original = lc.Extractor(lc.Amplitude(), lc.LinearFit())
+original = licu.Extractor(licu.Amplitude(), licu.LinearFit())
 s = original.to_json()
 
-restored = lc.feature_from_json(s)
+restored = licu.feature_from_json(s)
 assert restored.names == original.names
 
 t = np.sort(np.random.default_rng(0).uniform(0, 100, 100))

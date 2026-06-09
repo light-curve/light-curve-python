@@ -1,3 +1,8 @@
+---
+hide:
+  - navigation
+---
+
 # Cite & Contact
 
 ## Contact
@@ -7,6 +12,9 @@ For bug reports, feature requests, and questions, use
 
 For broader discussion — use cases, ideas, or community questions — use
 [GitHub Discussions](https://github.com/light-curve/light-curve-python/discussions).
+
+For quick questions and community chat, join the
+[Telegram group](https://t.me/+lLzPcj1a3JkxZjRi).
 
 ## Citing
 

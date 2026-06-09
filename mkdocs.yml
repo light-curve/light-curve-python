@@ -126,13 +126,14 @@ nav:
           - features/api/index.md
           - Base class: features/api/base.md
           - Meta (Extractor, Bins): features/api/meta.md
-          - Statistical: features/api/statistical.md
-          - Variability & trend: features/api/variability.md
+          - Variability: features/api/variability.md
+          - Linear trend: features/api/linear.md
           - Time sampling: features/api/time.md
           - Periodogram: features/api/periodogram.md
-          - Parametric fits: features/api/fitting.md
-          - Detection-based: features/api/detection.md
+          - Non-linear parametric fits: features/api/fitting.md
+          - Multiband parametric fit: features/api/rainbow.md
           - Multiband: features/api/multiband.md
+          - Detection-based: features/api/detection.md
   - ML Embeddings:
       - embed/index.md
       - Tutorial: embed/tutorial.ipynb

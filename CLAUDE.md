@@ -28,7 +28,7 @@ All commands run from `light-curve/` directory:
 ```bash
 # Setup
 pip install maturin
-maturin develop --extras=dev          # Dev build with test dependencies
+maturin develop --group=dev           # Dev build with test dependencies
 maturin develop --release             # Optimized build
 
 # After Rust changes, re-run maturin develop. Python-only changes need no rebuild.
