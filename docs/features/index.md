@@ -29,7 +29,7 @@ See the [API reference](api/variability.md) for full signatures, parameters, and
 
 ### Variability
 
-*These features are very fast — suitable for real-time pipelines processing millions of objects.*
+*Fast: all 26 features combined ~100 µs on 1,000 observations, single band.*
 
 | Feature | Description | Outputs |
 |---------|-------------|---------|
@@ -62,7 +62,7 @@ See the [API reference](api/variability.md) for full signatures, parameters, and
 
 ### Linear trend
 
-*Fast; also suitable for real-time pipelines.*
+*Fast: both features combined ~10 µs on 1,000 observations, single band.*
 
 | Feature | Description | Outputs |
 |---------|-------------|---------|
@@ -71,7 +71,7 @@ See the [API reference](api/variability.md) for full signatures, parameters, and
 
 ### Time sampling
 
-*Fast; also suitable for real-time pipelines.*
+*Fast: all 6 features combined ~5 µs on 1,000 observations, single band.*
 
 | Feature | Description | Outputs |
 |---------|-------------|---------|
@@ -103,6 +103,8 @@ See the [API reference](api/variability.md) for full signatures, parameters, and
 | [`RainbowFit`](api/rainbow.md#light_curve.RainbowFit) | Multiband blackbody fit (Russeil+23) — bolometric flux + temperature evolution + SED spectral model | 4 to 10+ |
 
 ### Multiband
+
+*Fast: all 4 features combined ~100 µs on 1,000 observations.*
 
 | Feature | Description | Outputs |
 |---------|-------------|---------|
