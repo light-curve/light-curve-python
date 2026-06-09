@@ -38,9 +38,12 @@ class BaseRainbowFit(BaseMultiBandFeature):
 
     optimizer: str = dataclass_field(default="iminuit", kw_only=True)
     """Optimizer backend: 'iminuit' (default, robust Migrad) or 'least_squares'
-    (scipy Trust Region Reflective). The latter is experimental and only applies to
-    measurement-only fits with an analytic Jacobian; it transparently falls back to
-    iminuit for upper-limit fits or term combinations without analytic derivatives."""
+    (scipy Trust Region Reflective). The latter is experimental and only
+    applies to measurement-only (without non-detections / upper-limits) fits
+    with an analytic Jacobian; it transparently falls back to iminuit for
+    upper-limit fits or term combinations without analytic derivatives.
+
+    """
 
     @property
     def is_band_required(self) -> bool:
