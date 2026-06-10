@@ -92,7 +92,7 @@ jobs:
           source .venv/bin/activate
           git fetch docs-site "${DOCS_BRANCH}"
           git checkout --detach HEAD
-          git branch -D "${DOCS_BRANCH}"
+          git branch -D "${DOCS_BRANCH}" 2>/dev/null || true
           mike deploy --push --remote docs-site --branch "${DOCS_BRANCH}" \
             --update-aliases latest
           mike set-default --push --remote docs-site --branch "${DOCS_BRANCH}" latest
