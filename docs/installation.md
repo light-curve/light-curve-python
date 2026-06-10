@@ -69,7 +69,7 @@ and **CMake** (for the Ceres solver). GSL is optional but enables the `"lmsder"`
 git clone https://github.com/light-curve/light-curve-python
 cd light-curve-python/light-curve
 pip install maturin
-maturin develop --extras=dev      # dev build with test deps
+maturin develop --group=dev       # dev build with test deps
 maturin develop --release         # optimised build
 ```
 

@@ -1,21 +1,21 @@
 # Multiband features API
 
-## Rust-based multiband support
+## Multiband support in standard features
 
-All standard Rust feature extractors accept a `bands=` constructor argument to enable multiband
+All standard feature extractors accept a `bands=` constructor argument to enable multiband
 mode.  Full API documentation is available in the per-category reference pages:
 
 - [Meta features (`Extractor`, `Bins`)](../api/meta.md) — `Extractor` supports mixed
   single-band + multiband, `Bins` supports `bands=` for per-passband binning.
 - [Periodogram](../api/periodogram.md) — `Periodogram` supports `bands=` and
   `multiband_normalization=`.
-- [Statistical](../api/statistical.md), [Variability](../api/variability.md),
-  [Time sampling](../api/time.md), [Parametric fits](../api/fitting.md) —
+- [Variability](../api/variability.md), [Linear trend](../api/linear.md),
+  [Time sampling](../api/time.md), [Non-linear parametric fits](../api/fitting.md) —
   all accept `bands=`.
 
 ---
 
-## Rust-based pure multiband features
+## Pure multiband features
 
 These features are inherently multiband — they always require `bands` and have no single-band mode.
 
@@ -32,9 +32,3 @@ These features are inherently multiband — they always require `bands` and have
 ---
 
 ::: light_curve.ColorSpread
-
----
-
-## Experimental pure-Python features
-
-::: light_curve.RainbowFit

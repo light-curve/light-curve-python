@@ -3,6 +3,7 @@
 ::: light_curve.light_curve_ext._FeatureEvaluator
     options:
       members:
+        - __call__
         - names
         - descriptions
         - many
