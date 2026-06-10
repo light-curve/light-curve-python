@@ -162,7 +162,8 @@ Pre-built free-threaded wheels are not yet published to PyPI.
 
 1. Create a `release-vX.Y.Z` branch from `main`.
 2. Update `CHANGELOG.md` with the new version and date.
-3. Update the version in `Cargo.toml` (the Python package version is read from there).
+3. Update the version in `Cargo.toml` (the Python package version is read from there), then run
+   `cargo update` to update `Cargo.lock`.
 4. Commit, push the branch, and merge it into `main` via a PR.
 5. Tag the merge commit and push: `git tag vX.Y.Z && git push origin vX.Y.Z`.
 6. CI (`publish.yml`) builds wheels via cibuildwheel and uploads to PyPI.
