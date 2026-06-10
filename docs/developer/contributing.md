@@ -164,7 +164,8 @@ Pre-built free-threaded wheels are not yet published to PyPI.
 2. Update `CHANGELOG.md` with the new version and date.
 3. Update the version in `Cargo.toml` (the Python package version is read from there), then run
    `cargo update` to update `Cargo.lock`.
-4. Commit, push the branch, and merge it into `main` via a PR.
-5. Tag the merge commit and push: `git tag vX.Y.Z && git push origin vX.Y.Z`.
+4. Commit, push the branch, and open a PR into `main`.
+5. Tag the branch HEAD and push: `git tag vX.Y.Z && git push origin vX.Y.Z`.
 6. CI (`publish.yml`) builds wheels via cibuildwheel and uploads to PyPI.
-7. Once the release appears on PyPI, create a GitHub release from the tag (copy the relevant `CHANGELOG.md` section as the release notes).
+7. Once the release appears on PyPI, merge the PR into `main`.
+8. Create a GitHub release from the tag (copy the relevant `CHANGELOG.md` section as the release notes).
