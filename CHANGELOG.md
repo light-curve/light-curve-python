@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+--
+
+### Changed
+
+--
+
+### Deprecated
+
+--
+
+### Removed
+
+--
+
+### Fixed
+
+--
+
+### Security
+
+--
+
+## [0.13.0] 2026-06-10
+
+### Added
+
 - **Multi-band support** for all single-band Rust feature extractors: every feature now accepts an
   optional `bands` constructor argument (e.g. `Amplitude(bands=["g", "r"])`). When provided, the
   feature is evaluated independently per passband and the outputs are concatenated; output names are
@@ -51,10 +77,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([#762](https://github.com/light-curve/light-curve-python/pull/762)).
 
 ### Fixed
-
---
-
-### Security
 
 --
 
