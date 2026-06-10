@@ -7,6 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 `light-curve-python` is a hybrid Rust/Python package for time-series feature extraction in astrophysics. It wraps the
 `light-curve-feature` and `light-curve-dmdt` Rust crates via PyO3/Maturin bindings.
 
+**Default branch is `main`** (not `master`). Use `main` as the base for PRs and release branches.
+
 ## Repository Layout
 
 The main package lives in `light-curve/` (not the repo root). There's also a thin alias package in

@@ -60,6 +60,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ColorOfMinimum(bands)` — `min(band[0]) − min(band[1])` for exactly two passbands.
   - `ColorSpread(bands)` — population standard deviation of per-passband inverse-variance-weighted
     mean magnitudes, for two or more passbands.
+- `RainbowFit` gains new spectral SED models: modified blackbody, log-parabola, and
+  generalized Wien; a `scipy` least-squares optimizer is also now available as an alternative to
+  `iminuit`
+  ([#771](https://github.com/light-curve/light-curve-python/pull/771)).
 
 ### Changed
 
@@ -68,6 +72,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([#762](https://github.com/light-curve/light-curve-python/pull/762)).
 - Bump `light-curve-feature` to 0.17.0
   ([#762](https://github.com/light-curve/light-curve-python/pull/762)).
+- **Breaking experimental feature** `RainbowFit` UV-extincted blackbody: UV extinction now
+  inversely scales with temperature
+  ([#737](https://github.com/light-curve/light-curve-python/pull/737)).
+- **Breaking experimental feature** `RainbowFit` UV-extincted blackbody: spectral normalization
+  is now evaluated at a constant reference temperature rather than scaling with it
+  ([#761](https://github.com/light-curve/light-curve-python/pull/761)).
+- **Breaking experimental feature** `RainbowFit` sigmoid temperature is reparametrized as
+  mid-temperature and relative amplitude `(T_mid, T_ratio)`, replacing the previous form;
+  `T_amplitude_prior_sigma` is now a class attribute (default `0.25`)
+  ([#771](https://github.com/light-curve/light-curve-python/pull/771)).
 
 ### Removed
 
@@ -78,7 +92,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
---
+- `RainbowFit` Planck blackbody is now numerically stable at very low temperatures (overflow-safe
+  implementation)
+  ([#771](https://github.com/light-curve/light-curve-python/pull/771)).
 
 ## [0.12.5] 2026-05-27
 
