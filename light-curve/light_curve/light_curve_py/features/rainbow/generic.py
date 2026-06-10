@@ -36,11 +36,33 @@ class RainbowFit(BaseRainbowFit):
         Other options are: 'sigmoid'
     temperature : str or BaseTemperatureTerm subclass, optional
         The shape of temperature term. Default is 'sigmoid'.
-        Other options are: 'constant', 'delayed_sigmoid'
+        Other options are: 'constant', 'delayed_sigmoid'.
+        The sigmoid terms are parametrized by the mid temperature ``T = (Tmin + Tmax) / 2``
+        and a relative amplitude ``T_amplitude = (Tmax - Tmin) / (Tmax + Tmin)``; a weak
+        prior anchors ``T_amplitude`` to 0 (constant temperature) unless the data require a
+        temperature change.
     spectral : str or BaseSpectralTerm subclass, optional
-        The spectral SED model. Default is 'planck' (standard blackbody,
-        no extra fit parameters). Use 'blanketed' for a UV-extincted blackbody.
-        It adds one parameter to fit: ``lambda_scale`` (blanketing strength from ~0 to 1)
+        The spectral SED model. Default is 'planck' (standard blackbody, no extra fit
+        parameters). The other terms describe SEDs that deviate from a blackbody; each
+        reduces to Planck at a null parameter value, with a weak Gaussian prior anchoring
+        it there so a true blackbody is recovered unbiased:
+
+        - 'blanketed' — UV-extincted blackbody ``B_nu(T) * exp(-tau)``; adds ``lambda_scale``
+          (blanketing strength, ~0 to 1). The extinction reach is anchored to the
+          characteristic temperature ``T`` (shared with the temperature term) so the
+          blanketing depth does not vary as the source cools.
+        - 'modified_bb' — Planck tilted by a power law ``(lambda / lambda_ref) ** beta``;
+          adds ``beta`` (0 => Planck).
+        - 'logparabola' — Planck times ``exp(a*L + b*L**2)``, ``L = ln(lambda / lambda_ref)``;
+          adds ``sp_a``, ``sp_b`` (0 => Planck).
+        - 'genwien' — generalized Wien ``B_nu ~ nu**3 * exp(-x**spec_k)``, ``x = h*nu/(k_B*T)``;
+          adds ``spec_k`` (1 => Wien tail). The fitted ``T`` is not a physical temperature
+          for this term (see the class docstring).
+    optimizer : str, optional
+        Optimizer backend: 'iminuit' (default, robust Migrad) or 'least_squares' (scipy
+        Trust Region Reflective). The latter shares the same analytic Jacobian and is
+        usually faster; it transparently falls back to iminuit for upper-limit fits, term
+        combinations without analytic derivatives, or when it fails to converge.
 
     Methods
     -------
@@ -76,24 +98,10 @@ class RainbowFit(BaseRainbowFit):
             self.bolometric = bolometric_terms[self.bolometric]
 
         if not isinstance(self.temperature, BaseTemperatureTerm):
-            temperature_name = self.temperature
-            self.temperature = temperature_terms[temperature_name]
-        else:
-            temperature_name = None
+            self.temperature = temperature_terms[self.temperature]
 
         if not isinstance(self.spectral, BaseSpectralTerm):
-            if self.spectral == "blanketed":
-                if temperature_name == "constant":
-                    self.spectral = spectral_terms["blanketed_constant_temperature"]
-                elif temperature_name == "sigmoid":
-                    self.spectral = spectral_terms["blanketed_sigmoid_temperature"]
-                else:
-                    raise ValueError(
-                        "`spectral='blanketed'` is only supported with "
-                        "`temperature='constant'` or `temperature='sigmoid'`."
-                    )
-            else:
-                self.spectral = spectral_terms[self.spectral]
+            self.spectral = spectral_terms[self.spectral]
 
         super().__post_init__()
 
@@ -140,6 +148,15 @@ class RainbowFit(BaseRainbowFit):
 
         return rules
 
+    def _parameter_priors(self) -> Dict[str, Tuple[float, float]]:
+        priors = super()._parameter_priors()
+
+        for term in [self.bolometric, self.temperature, self.spectral]:
+            if hasattr(term, "parameter_priors"):
+                priors.update(term.parameter_priors())
+
+        return priors
+
     def _initial_guesses(self, t, m, sigma, band) -> Dict[str, float]:
         initial = self.bolometric.initial_guesses(t, m, sigma, band)
         initial.update(self.temperature.initial_guesses(t, m, sigma, band))
@@ -157,3 +174,13 @@ class RainbowFit(BaseRainbowFit):
     def peak_time(self, params) -> float:
         """Returns true bolometric peak position for given parameters"""
         return self.bolometric.peak_time(*params[self.p.all_bol_idx])
+
+    def _supports_analytic_jac(self) -> bool:
+        # Each term must expose `derivatives`; the spectral term additionally
+        # needs `dvalue_dT` for the temperature-coupling factor.
+        return (
+            hasattr(self.bolometric, "derivatives")
+            and hasattr(self.temperature, "derivatives")
+            and hasattr(self.spectral, "derivatives")
+            and hasattr(self.spectral, "dvalue_dT")
+        )

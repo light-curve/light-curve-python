@@ -87,13 +87,11 @@ def create_parameters_class(
     enum.with_baseline = with_baseline
     if with_baseline:
         enum.all_baseline = baseline
-        enum.baseline_idx = np.array([enum[attr] for attr in enum.all_baseline])
+        # baseline_idx[i] is the parameter index of the baseline for band index i.
+        # Bands are numbered in the same order as bands.names, so this array doubles
+        # as a band_idx -> baseline_parameter_idx lookup table.
+        enum.baseline_idx = np.array([enum[baseline_parameter_name(name)] for name in bands.names], dtype=np.int64)
         enum.baseline_parameter_name = staticmethod(baseline_parameter_name)
         enum.baseline_band_name = staticmethod(baseline_band_name)
-
-        band_idx_to_baseline_idx = {
-            band_idx: enum[baseline_parameter_name(band_name)] for band_idx, band_name in zip(bands.index, bands.names)
-        }
-        enum.lookup_baseline_idx_with_band_idx = np.vectorize(band_idx_to_baseline_idx.get, otypes=[int])
 
     return enum

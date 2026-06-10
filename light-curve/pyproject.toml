@@ -223,6 +223,7 @@ commands =
     pytest README.md tests/ light_curve/ \
         --ignore tests/test_w_bench.py \
         --ignore tests/light_curve_py/features/test_rainbow.py \
+        --ignore tests/light_curve_py/features/test_rainbow_derivatives.py \
         --deselect tests/light_curve_ext/test_feature.py::test_many_nanoarrow \
         --deselect tests/light_curve_ext/test_feature.py::test_many_polars
 """

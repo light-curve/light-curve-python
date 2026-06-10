@@ -1,8 +1,14 @@
 # import matplotlib.pyplot as plt
+import warnings
+
 import numpy as np
 
 from light_curve.light_curve_py import RainbowFit
 from light_curve.light_curve_py.features.rainbow._scaler import MultiBandScaler
+from light_curve.light_curve_py.features.rainbow.spectral import (
+    BlanketedPlanckSpectralTerm,
+    PlanckSpectralTerm,
+)
 
 
 def test_noisy_with_baseline():
@@ -29,19 +35,6 @@ def test_noisy_with_baseline():
 
     baselines = {b: 0.3 * amplitude + rng.exponential(scale=0.3 * amplitude) for b in band_wave_aa}
 
-    expected = [
-        reference_time,
-        amplitude,
-        rise_time,
-        fall_time,
-        Tmin,
-        Tmax,
-        t_color,
-        lambda_scale,
-        *baselines.values(),
-        1.0,
-    ]
-
     feature = RainbowFit.from_angstrom(
         band_wave_aa,
         with_baseline=True,
@@ -49,6 +42,21 @@ def test_noisy_with_baseline():
         bolometric="bazin",
         spectral="blanketed",
     )
+
+    # Assemble the true parameter vector in feature.names order. The sigmoid temperature is
+    # parametrized by the mid temperature and the relative amplitude (Tmax-Tmin)/(Tmax+Tmin).
+    value_by_name = {
+        "reference_time": reference_time,
+        "amplitude": amplitude,
+        "rise_time": rise_time,
+        "fall_time": fall_time,
+        "T": 0.5 * (Tmin + Tmax),
+        "T_amplitude": (Tmax - Tmin) / (Tmax + Tmin),
+        "t_color": t_color,
+        "lambda_scale": lambda_scale,
+        **{feature.p.baseline_parameter_name(b): v for b, v in baselines.items()},
+    }
+    expected = [value_by_name[name] for name in feature.names] + [1.0]
 
     t = np.sort(
         rng.uniform(
@@ -194,8 +202,8 @@ def test_noisy_all_functions_combination():
     # ======================================================
 
     Tsigmoid_parameters = [
-        5e3,  # Tmin
-        15e3,  # Tmax
+        10e3,  # T (mid = (Tmin + Tmax) / 2 = (5e3 + 15e3) / 2)
+        0.5,  # T_amplitude = (Tmax - Tmin) / (Tmax + Tmin) = (15e3 - 5e3) / (15e3 + 5e3)
         10,  # t_color
     ]
 
@@ -240,13 +248,6 @@ def test_noisy_all_functions_combination():
     for idx_b in range(len(bolometric_names)):
         for idx_t in range(len(temperature_names)):
             for idx_s in range(len(spectral_names)):
-                expected = [
-                    *bolometric_params[idx_b],
-                    *temperature_params[idx_t],
-                    *spectral_params[idx_s],
-                    1.0,
-                ]
-
                 feature = RainbowFit.from_angstrom(
                     band_wave_aa,
                     with_baseline=False,
@@ -254,6 +255,21 @@ def test_noisy_all_functions_combination():
                     bolometric=bolometric_names[idx_b],
                     spectral=spectral_names[idx_s],
                 )
+
+                # The per-term parameter lists above are given for each term's *own*
+                # (non-shared) parameters; assemble them into the model's actual parameter
+                # order. This is robust to parameters shared between terms (e.g. the peak
+                # ``T`` shared by the sigmoid temperature and the blanketed spectral term),
+                # which the flat enum order places ahead of the bolometric block.
+                bol_names = feature.bolometric.parameter_names()
+                all_temp_names = feature.temperature.parameter_names()
+                temp_names = [n for n in all_temp_names if n not in bol_names]
+                spec_names = [n for n in feature.spectral.parameter_names() if n not in all_temp_names]
+                value_by_name = {}
+                value_by_name.update(zip(bol_names, bolometric_params[idx_b], strict=True))
+                value_by_name.update(zip(temp_names, temperature_params[idx_t], strict=True))
+                value_by_name.update(zip(spec_names, spectral_params[idx_s], strict=True))
+                expected = [value_by_name[name] for name in feature.names] + [1.0]
 
                 flux = feature.model(t, band, *expected[:-1])
 
@@ -321,6 +337,27 @@ def test_noisy_all_functions_combination():
                     atol=0.1,
                     strict=False,
                 )
+
+
+def test_spectral_planck_overflow_safe_at_cold_temperature():
+    """Planck value/dvalue_dT must stay finite at low T (no expm1/exp overflow).
+
+    Within the fit bounds the instantaneous temperature can dip to ~1% of the mid ``T``
+    (e.g. ``T_amplitude`` near 1), pushing ``x = hν/k_BT`` past the ``exp`` overflow
+    threshold at the blue end; the blackbody must go to 0 (Wien tail), not inf/nan.
+    """
+    wave_cm = np.array([3671.0, 4827.0, 6223.0, 7546.0, 8691.0, 9712.0]) * 1e-8
+    # Underflow to 0 (the Wien tail) is fine; overflow / invalid / divide must not occur.
+    with np.errstate(under="ignore"), warnings.catch_warnings():
+        warnings.simplefilter("error", RuntimeWarning)
+        for T in (50.0, 10.0, 1.0):
+            for arr in (
+                PlanckSpectralTerm.value(wave_cm, T),
+                PlanckSpectralTerm.dvalue_dT(wave_cm, T),
+                BlanketedPlanckSpectralTerm.dvalue_dT(wave_cm, T, 12_000.0, 0.3),
+                BlanketedPlanckSpectralTerm.derivatives(wave_cm, T, 12_000.0, 0.3),
+            ):
+                assert np.all(np.isfinite(arr)), f"non-finite blackbody at T={T} K"
 
 
 def test_scaler_from_flux_list_input():
