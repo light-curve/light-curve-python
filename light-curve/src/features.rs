@@ -576,6 +576,42 @@ fn try_band_view_lookup(band_py: &Bound<PyAny>, lookup: &BandLookup) -> Res<Opti
         .map(Some)
 }
 
+/// Build a flat [lcf::MultiColorTimeSeries] borrowing the input data arrays, with
+/// per-observation passband references derived from `band_idx`.
+///
+/// Currently unused: every multicolor evaluator in light-curve-feature works on the
+/// mapping representation, so [mcts_from_indices] is always the better choice. Kept for
+/// the day upstream's `EvaluatorInfo` reports which representation an evaluator needs —
+/// call sites should then dispatch between the two constructors based on that flag,
+/// because a flat representation rebuilt from the mapping would be band-grouped rather
+/// than time-ordered.
+#[allow(dead_code)]
+fn flat_mcts_from_indices<'a, T>(
+    t: ndarray::ArrayView1<'a, T>,
+    m: ndarray::ArrayView1<'a, T>,
+    sigma: Option<ndarray::ArrayView1<'a, T>>,
+    band_idx: &[usize],
+    sorted_bands: &'a [lcf::StringPassband],
+    w_required: bool,
+) -> lcf::MultiColorTimeSeries<'a, lcf::StringPassband, T>
+where
+    T: Float,
+{
+    let band_refs: Vec<&'a lcf::StringPassband> =
+        band_idx.iter().map(|&i| &sorted_bands[i]).collect();
+    // Skip the 1/σ² computation when the evaluator doesn't use weights. A contiguous
+    // ones array keeps the per-band grouping on ndarray's slice fast path.
+    let w_ds: lcf::DataSample<T> = match sigma.filter(|_| w_required) {
+        Some(sigma) => {
+            let mut a = sigma.to_owned();
+            a.mapv_inplace(|x| x.powi(-2));
+            a.into()
+        }
+        None => ndarray::Array1::ones(t.len()).into(),
+    };
+    lcf::MultiColorTimeSeries::from_flat_borrowed(t, m, w_ds, band_refs, sorted_bands)
+}
+
 /// Build a mapped [lcf::MultiColorTimeSeries] by gathering observations into per-band
 /// buffers in a single pass over the data.
 ///
@@ -583,6 +619,7 @@ fn try_band_view_lookup(band_py: &Bound<PyAny>, lookup: &BandLookup) -> Res<Opti
 /// directly avoids the flat intermediate and the per-observation passband dispatch
 /// inside light-curve-feature. When `w_required` is false the weight buffers are not
 /// gathered at all ([lcf::TimeSeries::new_without_weight] assumes unity weights).
+/// See [flat_mcts_from_indices] for the flat-representation counterpart.
 fn mcts_from_indices<'a, T>(
     t: ndarray::ArrayView1<'_, T>,
     m: ndarray::ArrayView1<'_, T>,
