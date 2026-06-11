@@ -31,7 +31,7 @@ use pyo3::types::{PyBool, PyBytes, PyModule, PyTuple};
 use pyo3_arrow::PyChunkedArray;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::convert::TryInto;
 use std::ops::Deref;
 // Details of pickle support implementation
@@ -59,11 +59,11 @@ type PyMultibandLcs<'py> = Vec<(
     Bound<'py, PyAny>,
 )>;
 
-type OwnedMultibandLc<'pb, T> = (
+type OwnedMultibandLc<T> = (
     ndarray::Array1<T>,
     ndarray::Array1<T>,
     Option<ndarray::Array1<T>>,
-    Vec<&'pb lcf::StringPassband>,
+    Vec<usize>,
 );
 
 const ATTRIBUTES_DOC: &str = r#"Attributes
@@ -480,14 +480,14 @@ fn build_band_lookup(bands: &[lcf::StringPassband]) -> BandLookup {
 /// Fast band-array parsing using a single `view("uint8")` call to get a zero-copy byte view,
 /// then matching raw bytes against pre-built lookup tables. Falls back to Python iteration for
 /// non-numpy inputs (object arrays, lists, etc.).
-/// Returns references into `bands` — zero passband clones.
-fn band_array_to_passband_refs<'pb>(
+/// Returns per-observation indices into `bands`.
+fn band_array_to_indices(
     band_py: &Bound<PyAny>,
-    bands: &'pb [lcf::StringPassband],
+    bands: &[lcf::StringPassband],
     band_lookup: &BandLookup,
-) -> Res<Vec<&'pb lcf::StringPassband>> {
-    if let Some(refs) = try_band_view_lookup(band_py, bands, band_lookup)? {
-        return Ok(refs);
+) -> Res<Vec<usize>> {
+    if let Some(indices) = try_band_view_lookup(band_py, band_lookup)? {
+        return Ok(indices);
     }
 
     // Fallback: Python iteration (object arrays, plain lists, etc.)
@@ -495,32 +495,24 @@ fn band_array_to_passband_refs<'pb>(
         .try_iter()?
         .map(|item| {
             let s = item?.extract::<String>()?;
-            band_lookup
-                .get_raw(s.as_bytes())
-                .map(|i| &bands[i])
-                .ok_or_else(|| {
-                    Exception::ValueError(format!(
-                        "unknown passband '{}'; configured bands are: {}",
-                        s,
-                        bands
-                            .iter()
-                            .map(|b| b.name())
-                            .collect::<Vec<_>>()
-                            .join(", ")
-                    ))
-                })
+            band_lookup.get_raw(s.as_bytes()).ok_or_else(|| {
+                Exception::ValueError(format!(
+                    "unknown passband '{}'; configured bands are: {}",
+                    s,
+                    bands
+                        .iter()
+                        .map(|b| b.name())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                ))
+            })
         })
         .collect()
 }
 
 /// Try to parse a band array via one `view("uint8")` Python call (zero-copy buffer sharing).
 /// Returns `None` if the input is not a 1-D C-contiguous numpy typed-string array.
-/// Returns passband references directly, avoiding an intermediate `Vec<usize>`.
-fn try_band_view_lookup<'pb>(
-    band_py: &Bound<PyAny>,
-    bands: &'pb [lcf::StringPassband],
-    lookup: &BandLookup,
-) -> Res<Option<Vec<&'pb lcf::StringPassband>>> {
+fn try_band_view_lookup(band_py: &Bound<PyAny>, lookup: &BandLookup) -> Res<Option<Vec<usize>>> {
     let arr = match band_py.cast::<PyUntypedArray>() {
         Ok(a) if a.ndim() == 1 && a.is_c_contiguous() => a,
         _ => return Ok(None),
@@ -564,32 +556,97 @@ fn try_band_view_lookup<'pb>(
                     .chunks_exact(4)
                     .position(|cp| cp.iter().all(|&b| b == 0))
                     .map_or(chunk.len(), |i| i * 4);
-                lookup
-                    .get_ucs4(&chunk[..end])
-                    .ok_or_else(|| {
-                        let s: String = chunk[..end]
-                            .chunks_exact(4)
-                            .filter_map(|b| {
-                                char::from_u32(u32::from_le_bytes(b.try_into().unwrap()))
-                            })
-                            .collect();
-                        Exception::ValueError(format!("unknown passband '{s}'"))
-                    })
-                    .map(|i| &bands[i])
+                lookup.get_ucs4(&chunk[..end]).ok_or_else(|| {
+                    let s: String = chunk[..end]
+                        .chunks_exact(4)
+                        .filter_map(|b| char::from_u32(u32::from_le_bytes(b.try_into().unwrap())))
+                        .collect();
+                    Exception::ValueError(format!("unknown passband '{s}'"))
+                })
             } else {
                 // S / a: null-padded bytes — strip trailing nulls and look up directly.
                 let end = chunk.iter().rposition(|&b| b != 0).map_or(0, |i| i + 1);
-                lookup
-                    .get_raw(&chunk[..end])
-                    .ok_or_else(|| {
-                        let s = String::from_utf8_lossy(&chunk[..end]);
-                        Exception::ValueError(format!("unknown passband '{s}'"))
-                    })
-                    .map(|i| &bands[i])
+                lookup.get_raw(&chunk[..end]).ok_or_else(|| {
+                    let s = String::from_utf8_lossy(&chunk[..end]);
+                    Exception::ValueError(format!("unknown passband '{s}'"))
+                })
             }
         })
-        .collect::<Res<Vec<&'pb lcf::StringPassband>>>()
+        .collect::<Res<Vec<usize>>>()
         .map(Some)
+}
+
+/// Build a mapped [lcf::MultiColorTimeSeries] by gathering observations into per-band
+/// buffers in a single pass over the data.
+///
+/// Every multicolor evaluator works on the mapping representation, so constructing it
+/// directly avoids the flat intermediate and the per-observation passband dispatch
+/// inside light-curve-feature. When `w_required` is false the weight buffers are not
+/// gathered at all ([lcf::TimeSeries::new_without_weight] assumes unity weights).
+fn mcts_from_indices<'a, T>(
+    t: ndarray::ArrayView1<'_, T>,
+    m: ndarray::ArrayView1<'_, T>,
+    sigma: Option<ndarray::ArrayView1<'_, T>>,
+    band_idx: &[usize],
+    sorted_bands: &[lcf::StringPassband],
+    w_required: bool,
+) -> lcf::MultiColorTimeSeries<'a, lcf::StringPassband, T>
+where
+    T: Float,
+{
+    let k = sorted_bands.len();
+    let cap = band_idx.len().checked_div(k).map_or(0, |c| c + 1);
+    match sigma.filter(|_| w_required) {
+        Some(sigma) => {
+            let mut bufs: Vec<(Vec<T>, Vec<T>, Vec<T>)> = (0..k)
+                .map(|_| {
+                    (
+                        Vec::with_capacity(cap),
+                        Vec::with_capacity(cap),
+                        Vec::with_capacity(cap),
+                    )
+                })
+                .collect();
+            for (((&t_val, &m_val), &sigma_val), &idx) in
+                t.iter().zip(m.iter()).zip(sigma.iter()).zip(band_idx)
+            {
+                let (t_buf, m_buf, w_buf) = &mut bufs[idx];
+                t_buf.push(t_val);
+                m_buf.push(m_val);
+                w_buf.push(sigma_val.powi(-2));
+            }
+            lcf::MultiColorTimeSeries::from_map(
+                sorted_bands
+                    .iter()
+                    .zip(bufs)
+                    .filter(|(_, (t_buf, _, _))| !t_buf.is_empty())
+                    .map(|(p, (t_buf, m_buf, w_buf))| {
+                        (p.clone(), lcf::TimeSeries::new(t_buf, m_buf, w_buf))
+                    })
+                    .collect::<BTreeMap<_, _>>(),
+            )
+        }
+        None => {
+            let mut bufs: Vec<(Vec<T>, Vec<T>)> = (0..k)
+                .map(|_| (Vec::with_capacity(cap), Vec::with_capacity(cap)))
+                .collect();
+            for ((&t_val, &m_val), &idx) in t.iter().zip(m.iter()).zip(band_idx) {
+                let (t_buf, m_buf) = &mut bufs[idx];
+                t_buf.push(t_val);
+                m_buf.push(m_val);
+            }
+            lcf::MultiColorTimeSeries::from_map(
+                sorted_bands
+                    .iter()
+                    .zip(bufs)
+                    .filter(|(_, (t_buf, _))| !t_buf.is_empty())
+                    .map(|(p, (t_buf, m_buf))| {
+                        (p.clone(), lcf::TimeSeries::new_without_weight(t_buf, m_buf))
+                    })
+                    .collect::<BTreeMap<_, _>>(),
+            )
+        }
+    }
 }
 
 impl PyFeatureEvaluator {
@@ -897,13 +954,13 @@ impl PyFeatureEvaluator {
         .clone())
     }
 
-    fn many_multiband_impl<'pb, T>(
+    fn many_multiband_impl<T>(
         evaluator: &lcf::MultiColorFeature<lcf::StringPassband, T>,
-        lcs: Vec<OwnedMultibandLc<'pb, T>>,
+        lcs: Vec<OwnedMultibandLc<T>>,
         check: bool,
         fill_value: Option<T>,
         n_jobs: i64,
-        uniq_bands: &'pb [lcf::StringPassband],
+        uniq_bands: &[lcf::StringPassband],
     ) -> Res<ndarray::Array2<T>>
     where
         T: Float + numpy::Element,
@@ -925,19 +982,14 @@ impl PyFeatureEvaluator {
             .unwrap()
             .install(|| {
                 lcs.into_par_iter()
-                    .map(|(t, m, sigma, band)| {
-                        let n = t.len();
-                        // Skip the 1/σ² computation when the evaluator doesn't use weights.
-                        let w_ds: lcf::DataSample<T> = match &sigma {
-                            Some(s) if evaluator.is_w_required() => s.mapv(|x| x.powi(-2)).into(),
-                            _ => ndarray::Array1::ones(n).into(),
-                        };
-                        let mut mcts = lcf::MultiColorTimeSeries::from_flat_borrowed(
+                    .map(|(t, m, sigma, band_idx)| {
+                        let mut mcts = mcts_from_indices(
                             t.view(),
                             m.view(),
-                            w_ds,
-                            band,
+                            sigma.as_ref().map(|s| s.view()),
+                            &band_idx,
                             uniq_bands,
+                            evaluator.is_w_required(),
                         );
                         match fill_value {
                             Some(fv) => evaluator
@@ -1003,12 +1055,12 @@ impl PyFeatureEvaluator {
                 };
                 match (t, m, sigma) {
                     (Ok(t), Ok(m), Ok(sigma)) => {
-                        let band_refs = band_array_to_passband_refs(&band, bands, band_lookup)?;
+                        let band_idx = band_array_to_indices(&band, bands, band_lookup)?;
                         Ok((
                             t.as_array().to_owned(),
                             m.as_array().to_owned(),
                             sigma.map(|s| s.as_array().to_owned()),
-                            band_refs,
+                            band_idx,
                         ))
                     }
                     _ => Err(Exception::TypeError(format!(
@@ -1456,21 +1508,18 @@ impl PyFeatureEvaluator {
                     .as_ref()
             });
 
-            let lookup_band = |s: &str| -> Res<&lcf::StringPassband> {
-                band_lookup
-                    .get_raw(s.as_bytes())
-                    .map(|idx| &bands[idx])
-                    .ok_or_else(|| {
-                        Exception::ValueError(format!(
-                            "unknown passband '{}'; configured bands are: {}",
-                            s,
-                            bands
-                                .iter()
-                                .map(|b| b.name())
-                                .collect::<Vec<_>>()
-                                .join(", ")
-                        ))
-                    })
+            let lookup_band = |s: &str| -> Res<usize> {
+                band_lookup.get_raw(s.as_bytes()).ok_or_else(|| {
+                    Exception::ValueError(format!(
+                        "unknown passband '{}'; configured bands are: {}",
+                        s,
+                        bands
+                            .iter()
+                            .map(|b| b.name())
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    ))
+                })
             };
 
             // Collect (start, end) ranges — O(n_lcs) allocation of usize pairs, nothing more.
@@ -1489,7 +1538,7 @@ impl PyFeatureEvaluator {
                         let t = ndarray::ArrayView1::from(&t_vals[start..end]);
                         let m = ndarray::ArrayView1::from(&m_vals[start..end]);
                         let sigma = sigma_vals.map(|s| ndarray::ArrayView1::from(&s[start..end]));
-                        let band_refs: Vec<&lcf::StringPassband> = match band_type {
+                        let band_indices: Vec<usize> = match band_type {
                             ArrowBandType::LargeUtf8 => {
                                 let band_arr = struct_arr.column(band_idx).as_string::<i64>();
                                 (start..end)
@@ -1516,14 +1565,13 @@ impl PyFeatureEvaluator {
                                 check_no_nans(s)?;
                             }
                         }
-                        let n = t.len();
-                        // Skip the 1/σ² computation when the evaluator doesn't use weights.
-                        let w_ds: lcf::DataSample<T> = match &sigma {
-                            Some(s) if evaluator.is_w_required() => s.mapv(|x| x.powi(-2)).into(),
-                            _ => ndarray::Array1::ones(n).into(),
-                        };
-                        let mut mcts = lcf::MultiColorTimeSeries::from_flat_borrowed(
-                            t, m, w_ds, band_refs, bands,
+                        let mut mcts = mcts_from_indices(
+                            t,
+                            m,
+                            sigma,
+                            &band_indices,
+                            bands,
+                            evaluator.is_w_required(),
                         );
                         match fill_value {
                             Some(fv) => evaluator
@@ -1550,14 +1598,14 @@ impl PyFeatureEvaluator {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn call_multiband_impl<'pb, 'py, T>(
+    fn call_multiband_impl<'py, T>(
         evaluator: &lcf::MultiColorFeature<lcf::StringPassband, T>,
         py: Python<'py>,
         t: Arr<'py, T>,
         m: Arr<'py, T>,
         sigma: Option<Arr<'py, T>>,
-        band: Vec<&'pb lcf::StringPassband>,
-        uniq_bands: &'pb [lcf::StringPassband],
+        band_idx: &[usize],
+        sorted_bands: &[lcf::StringPassband],
         sorted: Option<bool>,
         check: bool,
         fill_value: Option<T>,
@@ -1565,61 +1613,17 @@ impl PyFeatureEvaluator {
     where
         T: Float + numpy::Element,
     {
-        if sorted == Some(false) {
-            return Err(Exception::NotImplementedError(
-                "sorted=False is not supported in multiband mode".to_string(),
-            ));
-        }
-        let n = t.len();
-        if n != m.len() {
-            return Err(Exception::ValueError(
-                "t and m must have the same size".to_string(),
-            ));
-        }
-        if let Some(sigma) = &sigma
-            && n != sigma.len()
-        {
-            return Err(Exception::ValueError(
-                "t and sigma must have the same size".to_string(),
-            ));
-        }
-        if n != band.len() {
-            return Err(Exception::ValueError(
-                "t and band must have the same size".to_string(),
-            ));
-        }
-        if check {
-            check_finite(t.as_array())?;
-            check_finite(m.as_array())?;
-            if let Some(s) = &sigma {
-                check_no_nans(s.as_array())?;
-            }
-        }
-        // Skip the 1/σ² computation when the evaluator doesn't use weights.
-        // A contiguous ones array keeps the per-band grouping on ndarray's slice fast path.
-        let w_ds: lcf::DataSample<T> = match &sigma {
-            Some(s) if evaluator.is_w_required() => {
-                let mut a = s.as_array().to_owned();
-                a.mapv_inplace(|x| x.powi(-2));
-                a.into()
-            }
-            _ => ndarray::Array1::ones(n).into(),
-        };
-        let mut mcts = lcf::MultiColorTimeSeries::from_flat_borrowed(
-            t.as_array(),
-            m.as_array(),
-            w_ds,
-            band,
-            uniq_bands,
-        );
-        let result = match fill_value {
-            Some(fv) => evaluator
-                .eval_or_fill_multicolor(&mut mcts, fv)
-                .map_err(|e| Exception::ValueError(format!("{e:?}")))?,
-            None => evaluator
-                .eval_multicolor(&mut mcts)
-                .map_err(|e| Exception::ValueError(format!("{e:?}")))?,
-        };
+        let result = Self::call_multiband_impl_vec(
+            evaluator,
+            t,
+            m,
+            sigma,
+            band_idx,
+            sorted_bands,
+            sorted,
+            check,
+            fill_value,
+        )?;
         Ok(PyArray1::from_vec(py, result).as_untyped().clone())
     }
 
@@ -1656,20 +1660,25 @@ impl PyFeatureEvaluator {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn call_multiband_impl_vec<'pb, T>(
+    fn call_multiband_impl_vec<T>(
         evaluator: &lcf::MultiColorFeature<lcf::StringPassband, T>,
         t: Arr<T>,
         m: Arr<T>,
         sigma: Option<Arr<T>>,
-        band: &[&'pb lcf::StringPassband],
-        uniq_bands: &'pb [lcf::StringPassband],
-        _sorted: Option<bool>,
+        band_idx: &[usize],
+        sorted_bands: &[lcf::StringPassband],
+        sorted: Option<bool>,
         check: bool,
         fill_value: Option<T>,
     ) -> Res<Vec<T>>
     where
         T: Float + numpy::Element,
     {
+        if sorted == Some(false) {
+            return Err(Exception::NotImplementedError(
+                "sorted=False is not supported in multiband mode".to_string(),
+            ));
+        }
         let n = t.len();
         if n != m.len() {
             return Err(Exception::ValueError(
@@ -1683,7 +1692,7 @@ impl PyFeatureEvaluator {
                 "t and sigma must have the same size".to_string(),
             ));
         }
-        if n != band.len() {
+        if n != band_idx.len() {
             return Err(Exception::ValueError(
                 "t and band must have the same size".to_string(),
             ));
@@ -1695,22 +1704,13 @@ impl PyFeatureEvaluator {
                 check_no_nans(s.as_array())?;
             }
         }
-        // Skip the 1/σ² computation when the evaluator doesn't use weights.
-        // A contiguous ones array keeps the per-band grouping on ndarray's slice fast path.
-        let w_ds: lcf::DataSample<T> = match &sigma {
-            Some(s) if evaluator.is_w_required() => {
-                let mut a = s.as_array().to_owned();
-                a.mapv_inplace(|x| x.powi(-2));
-                a.into()
-            }
-            _ => ndarray::Array1::ones(n).into(),
-        };
-        let mut mcts = lcf::MultiColorTimeSeries::from_flat_borrowed(
+        let mut mcts = mcts_from_indices(
             t.as_array(),
             m.as_array(),
-            w_ds,
-            band.to_vec(),
-            uniq_bands,
+            sigma.as_ref().map(|s| s.as_array()),
+            band_idx,
+            sorted_bands,
+            evaluator.is_w_required(),
         );
         Ok(match fill_value {
             Some(fv) => evaluator
@@ -1723,15 +1723,15 @@ impl PyFeatureEvaluator {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn call_mixed_impl<'pb, 'py, T>(
+    fn call_mixed_impl<'py, T>(
         sb_eval: &Feature<T>,
         mc_eval: &lcf::MultiColorFeature<lcf::StringPassband, T>,
         py: Python<'py>,
         t: Arr<'py, T>,
         m: Arr<'py, T>,
         sigma: Option<Arr<'py, T>>,
-        band: &[&'pb lcf::StringPassband],
-        uniq_bands: &'pb [lcf::StringPassband],
+        band_idx: &[usize],
+        sorted_bands: &[lcf::StringPassband],
         sb_mask: &[bool],
         sorted: Option<bool>,
         check: bool,
@@ -1769,8 +1769,8 @@ impl PyFeatureEvaluator {
             t_arr.readonly(),
             m_arr.readonly(),
             sigma_arr.as_ref().map(|a| a.readonly()),
-            band,
-            uniq_bands,
+            band_idx,
+            sorted_bands,
             sorted,
             check,
             fill_value,
@@ -1831,32 +1831,17 @@ impl PyFeatureEvaluator {
                         "band must be provided when bands is not None (multiband mode)".to_string(),
                     )
                 })?;
-                // band_refs is computed inside each dispatch closure so the owned Vec
-                // can be moved directly into call_multiband_impl, avoiding a to_vec() clone.
-                // Only one closure executes per call, so band_array_to_passband_refs is
-                // still called exactly once.
+                let band_idx = band_array_to_indices(&band_py, sorted_bands, band_lookup)?;
                 if let Some(sigma) = sigma {
                     dtype_dispatch!(
-                        |t, m, sigma| {
-                            let band_refs = band_array_to_passband_refs(&band_py, sorted_bands, band_lookup)?;
-                            Self::call_multiband_impl(mc_f32, py, t, m, Some(sigma), band_refs, sorted_bands, sorted, check, fill_value.map(|v| v as f32))
-                        },
-                        |t, m, sigma| {
-                            let band_refs = band_array_to_passband_refs(&band_py, sorted_bands, band_lookup)?;
-                            Self::call_multiband_impl(mc_f64, py, t, m, Some(sigma), band_refs, sorted_bands, sorted, check, fill_value)
-                        },
+                        |t, m, sigma| Self::call_multiband_impl(mc_f32, py, t, m, Some(sigma), &band_idx, sorted_bands, sorted, check, fill_value.map(|v| v as f32)),
+                        |t, m, sigma| Self::call_multiband_impl(mc_f64, py, t, m, Some(sigma), &band_idx, sorted_bands, sorted, check, fill_value),
                         t, =m, =sigma; cast=cast
                     )
                 } else {
                     dtype_dispatch!(
-                        |t, m| {
-                            let band_refs = band_array_to_passband_refs(&band_py, sorted_bands, band_lookup)?;
-                            Self::call_multiband_impl(mc_f32, py, t, m, None, band_refs, sorted_bands, sorted, check, fill_value.map(|v| v as f32))
-                        },
-                        |t, m| {
-                            let band_refs = band_array_to_passband_refs(&band_py, sorted_bands, band_lookup)?;
-                            Self::call_multiband_impl(mc_f64, py, t, m, None, band_refs, sorted_bands, sorted, check, fill_value)
-                        },
+                        |t, m| Self::call_multiband_impl(mc_f32, py, t, m, None, &band_idx, sorted_bands, sorted, check, fill_value.map(|v| v as f32)),
+                        |t, m| Self::call_multiband_impl(mc_f64, py, t, m, None, &band_idx, sorted_bands, sorted, check, fill_value),
                         t, =m; cast=cast
                     )
                 }
@@ -1947,18 +1932,18 @@ impl PyFeatureEvaluator {
                         "band must be provided when bands is not None (multiband mode)".to_string(),
                     )
                 })?;
-                let band_refs = band_array_to_passband_refs(&band_py, sorted_bands, band_lookup)?;
+                let band_idx = band_array_to_indices(&band_py, sorted_bands, band_lookup)?;
                 let sb_is_t_required = self.is_t_required(sorted);
                 if let Some(sigma) = sigma {
                     dtype_dispatch!(
-                        |t, m, sigma| Self::call_mixed_impl(sb_f32, mc_f32, py, t, m, Some(sigma), &band_refs, sorted_bands, sb_mask, sorted, check, sb_is_t_required, fill_value.map(|v| v as f32)),
-                        |t, m, sigma| Self::call_mixed_impl(sb_f64, mc_f64, py, t, m, Some(sigma), &band_refs, sorted_bands, sb_mask, sorted, check, sb_is_t_required, fill_value),
+                        |t, m, sigma| Self::call_mixed_impl(sb_f32, mc_f32, py, t, m, Some(sigma), &band_idx, sorted_bands, sb_mask, sorted, check, sb_is_t_required, fill_value.map(|v| v as f32)),
+                        |t, m, sigma| Self::call_mixed_impl(sb_f64, mc_f64, py, t, m, Some(sigma), &band_idx, sorted_bands, sb_mask, sorted, check, sb_is_t_required, fill_value),
                         t, =m, =sigma; cast=cast
                     )
                 } else {
                     dtype_dispatch!(
-                        |t, m| Self::call_mixed_impl(sb_f32, mc_f32, py, t, m, None, &band_refs, sorted_bands, sb_mask, sorted, check, sb_is_t_required, fill_value.map(|v| v as f32)),
-                        |t, m| Self::call_mixed_impl(sb_f64, mc_f64, py, t, m, None, &band_refs, sorted_bands, sb_mask, sorted, check, sb_is_t_required, fill_value),
+                        |t, m| Self::call_mixed_impl(sb_f32, mc_f32, py, t, m, None, &band_idx, sorted_bands, sb_mask, sorted, check, sb_is_t_required, fill_value.map(|v| v as f32)),
+                        |t, m| Self::call_mixed_impl(sb_f64, mc_f64, py, t, m, None, &band_idx, sorted_bands, sb_mask, sorted, check, sb_is_t_required, fill_value),
                         t, =m; cast=cast
                     )
                 }
@@ -4046,17 +4031,15 @@ impl Periodogram {
     where
         T: Float + numpy::Element,
     {
-        let band_refs = band_array_to_passband_refs(band_py, sorted_bands, band_lookup)?;
-        let w: ndarray::Array1<T> = match &sigma {
-            Some(s) => s.as_array().mapv(|x| x.powi(-2)),
-            None => ndarray::Array1::ones(t.len()),
-        };
-        let mut mcts = lcf::MultiColorTimeSeries::from_flat_borrowed(
+        let band_idx = band_array_to_indices(band_py, sorted_bands, band_lookup)?;
+        // The multicolor periodogram weights per-band powers by w, so always gather it.
+        let mut mcts = mcts_from_indices(
             t.as_array(),
             m.as_array(),
-            w.view(),
-            band_refs,
+            sigma.as_ref().map(|s| s.as_array()),
+            &band_idx,
             sorted_bands,
+            true,
         );
         let (freq, power) = mc
             .freq_power(&mut mcts)
