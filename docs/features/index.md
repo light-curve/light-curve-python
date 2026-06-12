@@ -104,7 +104,7 @@ See the [API reference](api/variability.md) for full signatures, parameters, and
 
 ### Multiband
 
-*Fast: all 4 features combined ~100 µs on 1,000 observations.*
+*Fast: all 4 features combined ~25 µs on 1,000 observations.*
 
 | Feature | Description | Outputs |
 |---------|-------------|---------|
