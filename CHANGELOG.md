@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Multiband feature evaluation is up to ~4× faster thanks to reduced per-call overhead and the
   `light-curve-feature` 0.17 → 0.18.1 upgrade
-  ([#XXX](https://github.com/light-curve/light-curve-python/pull/XXX)).
+  ([#783](https://github.com/light-curve/light-curve-python/pull/783)).
 
 ### Deprecated
 
