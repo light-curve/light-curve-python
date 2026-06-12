@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Multiband feature evaluation is up to ~3.5× faster thanks to reduced per-call overhead and the
+- Multiband feature evaluation is up to ~4× faster thanks to reduced per-call overhead and the
   `light-curve-feature` 0.17 → 0.18.1 upgrade
   ([#XXX](https://github.com/light-curve/light-curve-python/pull/XXX)).
 

@@ -425,6 +425,12 @@ fn extract_passband_vec(bands_py: &Bound<PyAny>) -> Res<Vec<lcf::StringPassband>
 /// The number of configured bands is small (typically ≤ 10), so a linear scan over a
 /// `Vec` of keys is faster than hashing each observation's bytes: it avoids the SipHash
 /// cost entirely and the first key comparison is a cheap length check.
+///
+/// Keys not longer than 16 bytes additionally get a "packed" table: the zero-padded key
+/// bytes reinterpreted as a little-endian `u128`. numpy's typed-string buffers are
+/// zero-padded the same way, so a whole null-padded item compares equal to its key with
+/// a single integer comparison — no `memcmp` call, no padding-strip scan (profiling
+/// showed the per-observation `memcmp` calls dominating the band-parsing cost).
 #[derive(Default)]
 pub(crate) struct BandLookup {
     /// Band-name bytes as Rust stores them (UTF-8 by construction) → index.
@@ -433,6 +439,10 @@ pub(crate) struct BandLookup {
     raw: Vec<(Box<[u8]>, usize)>,
     /// Unpadded UCS-4 LE bytes → index. Used for U-dtype (no decoding needed).
     ucs4: Vec<(Box<[u8]>, usize)>,
+    /// Packed variant of `raw`; `None` if some band name exceeds 16 bytes.
+    raw_packed: Option<Vec<(u128, usize)>>,
+    /// Packed variant of `ucs4`; `None` if some band name exceeds 4 UCS-4 codepoints.
+    ucs4_packed: Option<Vec<(u128, usize)>>,
 }
 
 impl BandLookup {
@@ -455,13 +465,23 @@ fn sorted_copy(bands: &[lcf::StringPassband]) -> Vec<lcf::StringPassband> {
     v
 }
 
+/// Zero-pad `bytes` to 16 and reinterpret as a little-endian `u128`;
+/// `None` if it doesn't fit.
+fn pack_key(bytes: &[u8]) -> Option<u128> {
+    (bytes.len() <= 16).then(|| {
+        let mut buf = [0u8; 16];
+        buf[..bytes.len()].copy_from_slice(bytes);
+        u128::from_le_bytes(buf)
+    })
+}
+
 fn build_band_lookup(bands: &[lcf::StringPassband]) -> BandLookup {
-    let raw = bands
+    let raw: Vec<(Box<[u8]>, usize)> = bands
         .iter()
         .enumerate()
         .map(|(i, b)| (b.name().as_bytes().to_vec().into_boxed_slice(), i))
         .collect();
-    let ucs4 = bands
+    let ucs4: Vec<(Box<[u8]>, usize)> = bands
         .iter()
         .enumerate()
         .map(|(i, b)| {
@@ -474,7 +494,18 @@ fn build_band_lookup(bands: &[lcf::StringPassband]) -> BandLookup {
             (key, i)
         })
         .collect();
-    BandLookup { raw, ucs4 }
+    let pack_table = |table: &[(Box<[u8]>, usize)]| {
+        table
+            .iter()
+            .map(|(k, i)| pack_key(k).map(|p| (p, *i)))
+            .collect::<Option<Vec<_>>>()
+    };
+    BandLookup {
+        raw_packed: pack_table(&raw),
+        ucs4_packed: pack_table(&ucs4),
+        raw,
+        ucs4,
+    }
 }
 
 /// Fast band-array parsing using a single `view("uint8")` call to get a zero-copy byte view,
@@ -545,6 +576,29 @@ fn try_band_view_lookup(band_py: &Bound<PyAny>, lookup: &BandLookup) -> Res<Opti
 
     debug_assert_eq!(bytes.len(), arr.shape()[0] * itemsize);
 
+    // Fast path: whole null-padded items compared as u128 against zero-padded keys.
+    let packed_table = match kind {
+        b'U' => lookup.ucs4_packed.as_ref(),
+        _ => lookup.raw_packed.as_ref(),
+    };
+    if itemsize <= 16
+        && let Some(table) = packed_table
+    {
+        return bytes
+            .chunks_exact(itemsize)
+            .map(|chunk| {
+                let mut buf = [0u8; 16];
+                buf[..itemsize].copy_from_slice(chunk);
+                let probe = u128::from_le_bytes(buf);
+                table
+                    .iter()
+                    .find_map(|&(k, i)| (k == probe).then_some(i))
+                    .ok_or_else(|| unknown_passband_error(chunk, kind))
+            })
+            .collect::<Res<Vec<usize>>>()
+            .map(Some);
+    }
+
     bytes
         .chunks_exact(itemsize)
         .map(|chunk| {
@@ -556,24 +610,34 @@ fn try_band_view_lookup(band_py: &Bound<PyAny>, lookup: &BandLookup) -> Res<Opti
                     .chunks_exact(4)
                     .position(|cp| cp.iter().all(|&b| b == 0))
                     .map_or(chunk.len(), |i| i * 4);
-                lookup.get_ucs4(&chunk[..end]).ok_or_else(|| {
-                    let s: String = chunk[..end]
-                        .chunks_exact(4)
-                        .filter_map(|b| char::from_u32(u32::from_le_bytes(b.try_into().unwrap())))
-                        .collect();
-                    Exception::ValueError(format!("unknown passband '{s}'"))
-                })
+                lookup
+                    .get_ucs4(&chunk[..end])
+                    .ok_or_else(|| unknown_passband_error(chunk, kind))
             } else {
                 // S / a: null-padded bytes — strip trailing nulls and look up directly.
                 let end = chunk.iter().rposition(|&b| b != 0).map_or(0, |i| i + 1);
-                lookup.get_raw(&chunk[..end]).ok_or_else(|| {
-                    let s = String::from_utf8_lossy(&chunk[..end]);
-                    Exception::ValueError(format!("unknown passband '{s}'"))
-                })
+                lookup
+                    .get_raw(&chunk[..end])
+                    .ok_or_else(|| unknown_passband_error(chunk, kind))
             }
         })
         .collect::<Res<Vec<usize>>>()
         .map(Some)
+}
+
+/// Decode a null-padded numpy typed-string item for the "unknown passband" error message.
+fn unknown_passband_error(chunk: &[u8], kind: u8) -> Exception {
+    let s: String = if kind == b'U' {
+        chunk
+            .chunks_exact(4)
+            .filter_map(|b| char::from_u32(u32::from_le_bytes(b.try_into().unwrap())))
+            .take_while(|&c| c != '\0')
+            .collect()
+    } else {
+        let end = chunk.iter().rposition(|&b| b != 0).map_or(0, |i| i + 1);
+        String::from_utf8_lossy(&chunk[..end]).into_owned()
+    };
+    Exception::ValueError(format!("unknown passband '{s}'"))
 }
 
 /// Build a flat [lcf::MultiColorTimeSeries] borrowing the input data arrays, with
