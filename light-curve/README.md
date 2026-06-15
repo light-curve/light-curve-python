@@ -63,11 +63,11 @@ print(f"Embedding shape: {embedding.shape}")
 The package provides:
 
 - **40+ feature extractors** — amplitude, period, variability indices, parametric fits, and more.
-  See the [Features docs](https://light-curve.snad.space/features/) for a full list.
+  See the [Features docs](https://light-curve.snad.space/latest/features/) for a full list.
 - **ML embeddings** — embed light curves with pretrained ONNX models (Astromer2, ATCAT).
-  See the [Embeddings docs](https://light-curve.snad.space/embed/).
+  See the [Embeddings docs](https://light-curve.snad.space/latest/embed/).
 - **dm-dt maps** — 2D histograms of Δm vs log-Δt for CNN input.
-  See the [dm-dt docs](https://light-curve.snad.space/dmdt/).
+  See the [dm-dt docs](https://light-curve.snad.space/latest/dmdt/).
 
 ## Installation
 
