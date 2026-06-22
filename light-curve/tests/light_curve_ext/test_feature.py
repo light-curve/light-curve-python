@@ -1940,3 +1940,48 @@ def test_integer_bands_arrow_string_feature_mismatch_raises():
             fill_value=-999.0,
             arrow_fields={"t": "t", "m": "m", "sigma": "sigma", "band": "band"},
         )
+
+
+# ---------------------------------------------------------------------------
+# Benchmarks: integer vs string band dispatch
+# ---------------------------------------------------------------------------
+
+_BENCH_N_PER_BAND = 1_000
+_BENCH_BANDS_STR = ["g", "r", "i"]
+_BENCH_BANDS_INT = [0, 1, 2]
+
+
+@pytest.fixture(scope="module")
+def _bench_str_lc():
+    return _make_multiband_lc(_BENCH_BANDS_STR, n_per_band=_BENCH_N_PER_BAND, rng=200)
+
+
+@pytest.fixture(scope="module")
+def _bench_int_lc():
+    return _make_int_multiband_lc(_BENCH_BANDS_INT, n_per_band=_BENCH_N_PER_BAND, rng=200)
+
+
+@pytest.fixture(scope="module")
+def _bench_str_feat():
+    return licu_ext.ObservationCount(bands=_BENCH_BANDS_STR)
+
+
+@pytest.fixture(scope="module")
+def _bench_int_feat():
+    return licu_ext.ObservationCount(bands=_BENCH_BANDS_INT)
+
+
+def test_benchmark_multiband_string_bands(benchmark, _bench_str_feat, _bench_str_lc):
+    """Benchmark multiband evaluation with string band labels (numpy input)."""
+    t, m, sigma, band = _bench_str_lc
+    benchmark.group = "multiband_band_dispatch"
+    benchmark.name = "string_bands"
+    benchmark(lambda: _bench_str_feat(t, m, sigma, band, sorted=True, check=False))
+
+
+def test_benchmark_multiband_integer_bands(benchmark, _bench_int_feat, _bench_int_lc):
+    """Benchmark multiband evaluation with integer band labels (numpy int64 input)."""
+    t, m, sigma, band = _bench_int_lc
+    benchmark.group = "multiband_band_dispatch"
+    benchmark.name = "integer_bands"
+    benchmark(lambda: _bench_int_feat(t, m, sigma, band, sorted=True, check=False))

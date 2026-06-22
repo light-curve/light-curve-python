@@ -30,6 +30,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyBytes, PyModule, PyTuple};
 use pyo3_arrow::PyChunkedArray;
 use rayon::prelude::*;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::convert::TryInto;
@@ -286,6 +287,30 @@ fn transform_parameter_doc(default: StockTransformer) -> String {
 
 type PyLightCurve<'a, T> = (Arr<'a, T>, Arr<'a, T>, Option<Arr<'a, T>>);
 
+/// A passband label: either a string name (e.g. "g", "r") or an integer ID.
+///
+/// Unifies [`lcf::StringPassband`] and [`lcf::LabeledPassband<i64>`] under a single type
+/// that satisfies [`PassbandTrait`], so [`lcf::MultiColorFeature`] can be parameterised with
+/// one concrete passband type regardless of how the user supplied the band labels.
+///
+/// Serde uses the untagged representation: string bands serialise as bare JSON strings
+/// (e.g. `"g"`), integer bands as `{"label": 0}`.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub(crate) enum Passband {
+    String(lcf::StringPassband),
+    Integer(lcf::LabeledPassband<i64>),
+}
+
+impl PassbandTrait for Passband {
+    fn name(&self) -> &str {
+        match self {
+            Passband::String(p) => p.name(),
+            Passband::Integer(p) => p.name(),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "mode")]
 #[allow(clippy::large_enum_variant)]
@@ -296,14 +321,12 @@ pub enum FeatureEvalMode {
     },
     MultiBand {
         /// Bands in user-specified order — exposed as the `.bands` Python property.
-        bands: Vec<lcf::StringPassband>,
-        /// Original integer band IDs in user-specified order (Some = integer mode).
-        int_bands: Option<Vec<i64>>,
-        feature_evaluator_f32: Box<lcf::MultiColorFeature<lcf::StringPassband, f32>>,
-        feature_evaluator_f64: Box<lcf::MultiColorFeature<lcf::StringPassband, f64>>,
-        /// Bands sorted by `StringPassband::Ord` for use with `MultiColorTimeSeries`.
+        bands: Vec<Passband>,
+        feature_evaluator_f32: Box<lcf::MultiColorFeature<Passband, f32>>,
+        feature_evaluator_f64: Box<lcf::MultiColorFeature<Passband, f64>>,
+        /// Bands sorted by `Passband::Ord` for use with `MultiColorTimeSeries`.
         #[serde(skip)]
-        sorted_bands: Vec<lcf::StringPassband>,
+        sorted_bands: Vec<Passband>,
         #[serde(skip)]
         band_input: BandInput,
     },
@@ -313,19 +336,17 @@ pub enum FeatureEvalMode {
     /// their outputs are interleaved according to `sb_mask` (true = single-band slot).
     Mixed {
         /// Bands in user-specified order — exposed as the `.bands` Python property.
-        bands: Vec<lcf::StringPassband>,
-        /// Original integer band IDs in user-specified order (Some = integer mode).
-        int_bands: Option<Vec<i64>>,
+        bands: Vec<Passband>,
         sb_f32: Feature<f32>,
         sb_f64: Feature<f64>,
-        mc_f32: Box<lcf::MultiColorFeature<lcf::StringPassband, f32>>,
-        mc_f64: Box<lcf::MultiColorFeature<lcf::StringPassband, f64>>,
+        mc_f32: Box<lcf::MultiColorFeature<Passband, f32>>,
+        mc_f64: Box<lcf::MultiColorFeature<Passband, f64>>,
         /// Length = total output size. `true` = this output slot comes from the
         /// single-band sub-evaluator, `false` = from the multiband one.
         sb_mask: Vec<bool>,
-        /// Bands sorted by `StringPassband::Ord` for use with `MultiColorTimeSeries`.
+        /// Bands sorted by `Passband::Ord` for use with `MultiColorTimeSeries`.
         #[serde(skip)]
-        sorted_bands: Vec<lcf::StringPassband>,
+        sorted_bands: Vec<Passband>,
         #[serde(skip)]
         band_input: BandInput,
     },
@@ -343,26 +364,22 @@ impl Clone for FeatureEvalMode {
             },
             Self::MultiBand {
                 bands,
-                int_bands,
                 feature_evaluator_f32,
                 feature_evaluator_f64,
                 ..
             } => {
                 let bands = bands.clone();
-                let int_bands = int_bands.clone();
-                let (sorted_bands, band_input) = make_sorted_bands_and_input(&bands, &int_bands);
+                let (sorted_bands, band_input) = make_sorted_bands_and_input(&bands);
                 Self::MultiBand {
                     band_input,
                     sorted_bands,
                     bands,
-                    int_bands,
                     feature_evaluator_f32: feature_evaluator_f32.clone(),
                     feature_evaluator_f64: feature_evaluator_f64.clone(),
                 }
             }
             Self::Mixed {
                 bands,
-                int_bands,
                 sb_f32,
                 sb_f64,
                 mc_f32,
@@ -371,13 +388,11 @@ impl Clone for FeatureEvalMode {
                 ..
             } => {
                 let bands = bands.clone();
-                let int_bands = int_bands.clone();
-                let (sorted_bands, band_input) = make_sorted_bands_and_input(&bands, &int_bands);
+                let (sorted_bands, band_input) = make_sorted_bands_and_input(&bands);
                 Self::Mixed {
                     band_input,
                     sorted_bands,
                     bands,
-                    int_bands,
                     sb_f32: sb_f32.clone(),
                     sb_f64: sb_f64.clone(),
                     mc_f32: mc_f32.clone(),
@@ -412,25 +427,6 @@ impl Clone for PyFeatureEvaluator {
     }
 }
 
-/// Passband source supplied by the user: either string names or integer IDs.
-pub(crate) enum UserBands {
-    String(Vec<lcf::StringPassband>),
-    /// Integer IDs in user-specified order alongside their `format!("{}")` string representations.
-    Integer {
-        int_vals: Vec<i64>,
-        str_bands: Vec<lcf::StringPassband>,
-    },
-}
-
-impl UserBands {
-    pub(crate) fn str_bands(&self) -> &[lcf::StringPassband] {
-        match self {
-            UserBands::String(v) => v,
-            UserBands::Integer { str_bands, .. } => str_bands,
-        }
-    }
-}
-
 /// Convert raw LE bytes to i64 for a numpy integer dtype (kind 'i' or 'u').
 fn bytes_to_i64(chunk: &[u8], kind: u8) -> Res<i64> {
     Ok(match (kind, chunk.len()) {
@@ -460,9 +456,7 @@ fn bytes_to_i64(chunk: &[u8], kind: u8) -> Res<i64> {
 }
 
 /// Extract integer bands from a 1-D C-contiguous numpy integer array.
-fn extract_int_bands_numpy(
-    arr: &Bound<'_, PyUntypedArray>,
-) -> Res<(Vec<i64>, Vec<lcf::StringPassband>)> {
+fn extract_int_bands_numpy(arr: &Bound<'_, PyUntypedArray>) -> Res<Vec<Passband>> {
     let kind = arr.dtype().kind();
     let itemsize = arr.dtype().itemsize();
     let raw = arr
@@ -485,40 +479,35 @@ fn extract_int_bands_numpy(
             )));
         }
     }
-    let str_bands = int_vals
-        .iter()
-        .map(|&v| lcf::StringPassband::from(format!("{v}").as_str()))
-        .collect();
-    Ok((int_vals, str_bands))
+    Ok(int_vals
+        .into_iter()
+        .map(|v| Passband::Integer(lcf::LabeledPassband::new(v)))
+        .collect())
 }
 
-/// Extract a Python array-like into `UserBands`.
+/// Extract a Python array-like into a `Vec<Passband>`.
 ///
-/// Integer numpy arrays and Python lists/tuples of integers produce `UserBands::Integer`;
-/// string numpy arrays and lists of str produce `UserBands::String`.
-fn extract_passband_bands(bands_py: &Bound<PyAny>) -> Res<UserBands> {
+/// Integer numpy arrays and Python lists/tuples of integers produce `Passband::Integer` entries;
+/// string numpy arrays and lists of str produce `Passband::String` entries.
+fn extract_passband_bands(bands_py: &Bound<PyAny>) -> Res<Vec<Passband>> {
     // Fast path for numpy arrays: dispatch on dtype kind.
     if let Ok(arr) = bands_py.cast::<PyUntypedArray>()
-        && arr.ndim() == 1 && arr.is_c_contiguous() {
-            let kind = arr.dtype().kind();
-            match kind {
-                b'i' | b'u' => {
-                    let (int_vals, str_bands) = extract_int_bands_numpy(arr)?;
-                    return Ok(UserBands::Integer {
-                        int_vals,
-                        str_bands,
-                    });
-                }
-                b'S' | b'a' | b'U' | b'O' => {} // fall through to generic iteration
-                _ => {
-                    return Err(Exception::TypeError(format!(
-                        "bands array has unsupported dtype kind '{}'; \
+        && arr.ndim() == 1
+        && arr.is_c_contiguous()
+    {
+        let kind = arr.dtype().kind();
+        match kind {
+            b'i' | b'u' => return extract_int_bands_numpy(arr),
+            b'S' | b'a' | b'U' | b'O' => {} // fall through to generic iteration
+            _ => {
+                return Err(Exception::TypeError(format!(
+                    "bands array has unsupported dtype kind '{}'; \
                         expected integer (i/u) or string (S/U/O) dtype",
-                        kind as char
-                    )));
-                }
+                    kind as char
+                )));
             }
         }
+    }
 
     // Generic iteration: detect mode from the first element.
     let mut int_vals: Vec<i64> = Vec::new();
@@ -557,18 +546,14 @@ fn extract_passband_bands(bands_py: &Bound<PyAny>) -> Res<UserBands> {
                     )));
                 }
             }
-            let str_bands = int_vals
-                .iter()
-                .map(|&v| lcf::StringPassband::from(format!("{v}").as_str()))
-                .collect();
-            Ok(UserBands::Integer {
-                int_vals,
-                str_bands,
-            })
+            Ok(int_vals
+                .into_iter()
+                .map(|v| Passband::Integer(lcf::LabeledPassband::new(v)))
+                .collect())
         }
         Some(false) => {
             let mut seen = BTreeSet::new();
-            let bands = str_names
+            str_names
                 .iter()
                 .map(|s| {
                     if !seen.insert(s.clone()) {
@@ -576,10 +561,9 @@ fn extract_passband_bands(bands_py: &Bound<PyAny>) -> Res<UserBands> {
                             "bands must be unique; duplicate: {s}"
                         )));
                     }
-                    Ok(lcf::StringPassband::from(s.as_str()))
+                    Ok(Passband::String(lcf::StringPassband::from(s.as_str())))
                 })
-                .collect::<Res<Vec<_>>>()?;
-            Ok(UserBands::String(bands))
+                .collect()
         }
     }
 }
@@ -633,7 +617,7 @@ fn pack_key(bytes: &[u8]) -> Option<u128> {
     })
 }
 
-fn build_band_lookup(bands: &[lcf::StringPassband]) -> BandLookup {
+fn build_band_lookup(bands: &[Passband]) -> BandLookup {
     let raw: Vec<(Box<[u8]>, usize)> = bands
         .iter()
         .enumerate()
@@ -668,8 +652,10 @@ fn build_band_lookup(bands: &[lcf::StringPassband]) -> BandLookup {
 
 /// Integer passband lookup table.
 ///
+type IntNativeLookup<T> = (Option<(T, usize)>, Vec<(T, usize)>);
+
 /// Maps i64 band IDs → indices into `sorted_bands`. The IDs are in the same order as
-/// `sorted_bands` (sorted by the string representation of the integer, i.e. `StringPassband::Ord`).
+/// `sorted_bands` (sorted numerically, i.e. `LabeledPassband<i64>::Ord` = `i64::Ord`).
 ///
 /// When the IDs form a contiguous integer range in that order, lookup is O(1) via a
 /// subtraction; otherwise a linear scan is used.
@@ -717,7 +703,7 @@ impl IntBandLookup {
 
     /// Cast `entries` and `range` to native type `T` once.
     /// Entries that don't fit in `T` are silently dropped (they can never match a `T` value).
-    pub(crate) fn native_lookup<T>(&self) -> (Option<(T, usize)>, Vec<(T, usize)>)
+    pub(crate) fn native_lookup<T>(&self) -> IntNativeLookup<T>
     where
         T: TryFrom<i64> + Copy,
     {
@@ -776,42 +762,30 @@ impl Default for BandInput {
 
 /// Build sorted bands and the matching `BandInput` from user-specified bands.
 ///
-/// For string mode (`int_bands = None`): sorts `str_bands` by `StringPassband::Ord`.
-/// For integer mode (`int_bands = Some`): sorts the `(str_band, int_val)` pairs by
-/// `StringPassband::Ord` (lexicographic on the decimal representation) so the ordering
-/// matches `MultiColorFeature`'s internal `BTreeMap<StringPassband, …>`.
-fn make_sorted_bands_and_input(
-    str_bands: &[lcf::StringPassband],
-    int_bands: &Option<Vec<i64>>,
-) -> (Vec<lcf::StringPassband>, BandInput) {
-    match int_bands {
-        None => {
-            let mut sorted = str_bands.to_vec();
-            sorted.sort();
-            let band_input = BandInput::String(build_band_lookup(&sorted));
-            (sorted, band_input)
+/// Sorts `bands` by `Passband::Ord`: string bands lex, integer bands numeric.
+/// Determines `BandInput` variant from the first element (all bands in one feature
+/// are always the same variant — either all string or all integer).
+fn make_sorted_bands_and_input(bands: &[Passband]) -> (Vec<Passband>, BandInput) {
+    let mut sorted = bands.to_vec();
+    sorted.sort();
+    let band_input = match sorted.first() {
+        None | Some(Passband::String(_)) => BandInput::String(build_band_lookup(&sorted)),
+        Some(Passband::Integer(_)) => {
+            let sorted_ints: Vec<i64> = sorted
+                .iter()
+                .map(|p| match p {
+                    Passband::Integer(lp) => lp.label,
+                    Passband::String(_) => unreachable!(),
+                })
+                .collect();
+            BandInput::Integer(IntBandLookup::build(&sorted_ints))
         }
-        Some(int_vals) => {
-            let mut pairs: Vec<(&lcf::StringPassband, i64)> =
-                str_bands.iter().zip(int_vals.iter().copied()).collect();
-            pairs.sort_by_key(|(b, _)| *b);
-            let sorted_bands: Vec<lcf::StringPassband> =
-                pairs.iter().map(|(b, _)| (*b).clone()).collect();
-            let sorted_ints: Vec<i64> = pairs.iter().map(|(_, v)| *v).collect();
-            (
-                sorted_bands,
-                BandInput::Integer(IntBandLookup::build(&sorted_ints)),
-            )
-        }
-    }
+    };
+    (sorted, band_input)
 }
 
 /// Look up a single string band name in the string lookup table (used by arrow path).
-fn lookup_str_band(
-    lookup: &BandLookup,
-    sorted_bands: &[lcf::StringPassband],
-    s: &str,
-) -> Res<usize> {
+fn lookup_str_band(lookup: &BandLookup, sorted_bands: &[Passband], s: &str) -> Res<usize> {
     lookup.get_raw(s.as_bytes()).ok_or_else(|| {
         Exception::ValueError(format!(
             "unknown passband '{}'; configured bands are: {}",
@@ -830,7 +804,7 @@ fn lookup_str_band(
 /// Returns per-observation indices into `sorted_bands`.
 fn band_array_to_indices(
     band_py: &Bound<PyAny>,
-    sorted_bands: &[lcf::StringPassband],
+    sorted_bands: &[Passband],
     band_input: &BandInput,
 ) -> Res<Vec<usize>> {
     match band_input {
@@ -1041,14 +1015,13 @@ fn flat_mcts_from_indices<'a, T>(
     m: ndarray::ArrayView1<'a, T>,
     sigma: Option<ndarray::ArrayView1<'a, T>>,
     band_idx: &[usize],
-    sorted_bands: &'a [lcf::StringPassband],
+    sorted_bands: &'a [Passband],
     w_required: bool,
-) -> lcf::MultiColorTimeSeries<'a, lcf::StringPassband, T>
+) -> lcf::MultiColorTimeSeries<'a, Passband, T>
 where
     T: Float,
 {
-    let band_refs: Vec<&'a lcf::StringPassband> =
-        band_idx.iter().map(|&i| &sorted_bands[i]).collect();
+    let band_refs: Vec<&'a Passband> = band_idx.iter().map(|&i| &sorted_bands[i]).collect();
     // Skip the 1/σ² computation when the evaluator doesn't use weights. A contiguous
     // ones array keeps the per-band grouping on ndarray's slice fast path.
     let w_ds: lcf::DataSample<T> = match sigma.filter(|_| w_required) {
@@ -1075,9 +1048,9 @@ fn mcts_from_indices<'a, T>(
     m: ndarray::ArrayView1<'_, T>,
     sigma: Option<ndarray::ArrayView1<'_, T>>,
     band_idx: &[usize],
-    sorted_bands: &[lcf::StringPassband],
+    sorted_bands: &[Passband],
     w_required: bool,
-) -> lcf::MultiColorTimeSeries<'a, lcf::StringPassband, T>
+) -> lcf::MultiColorTimeSeries<'a, Passband, T>
 where
     T: Float,
 {
@@ -1201,19 +1174,17 @@ impl PyFeatureEvaluator {
         match &mut self.mode {
             FeatureEvalMode::MultiBand {
                 bands,
-                int_bands,
                 sorted_bands,
                 band_input,
                 ..
             }
             | FeatureEvalMode::Mixed {
                 bands,
-                int_bands,
                 sorted_bands,
                 band_input,
                 ..
             } => {
-                let (new_sorted, new_input) = make_sorted_bands_and_input(bands, int_bands);
+                let (new_sorted, new_input) = make_sorted_bands_and_input(bands);
                 *sorted_bands = new_sorted;
                 *band_input = new_input;
             }
@@ -1222,24 +1193,16 @@ impl PyFeatureEvaluator {
     }
 
     fn multi_band(
-        user_bands: UserBands,
-        mc_f32: lcf::MultiColorFeature<lcf::StringPassband, f32>,
-        mc_f64: lcf::MultiColorFeature<lcf::StringPassband, f64>,
+        bands: Vec<Passband>,
+        mc_f32: lcf::MultiColorFeature<Passband, f32>,
+        mc_f64: lcf::MultiColorFeature<Passband, f64>,
     ) -> Self {
-        let (bands, int_bands) = match user_bands {
-            UserBands::String(v) => (v, None),
-            UserBands::Integer {
-                str_bands,
-                int_vals,
-            } => (str_bands, Some(int_vals)),
-        };
-        let (sorted_bands, band_input) = make_sorted_bands_and_input(&bands, &int_bands);
+        let (sorted_bands, band_input) = make_sorted_bands_and_input(&bands);
         Self {
             mode: FeatureEvalMode::MultiBand {
                 band_input,
                 sorted_bands,
                 bands,
-                int_bands,
                 feature_evaluator_f32: Box::new(mc_f32),
                 feature_evaluator_f64: Box::new(mc_f64),
             },
@@ -1453,12 +1416,12 @@ impl PyFeatureEvaluator {
     }
 
     fn many_multiband_impl<T>(
-        evaluator: &lcf::MultiColorFeature<lcf::StringPassband, T>,
+        evaluator: &lcf::MultiColorFeature<Passband, T>,
         lcs: Vec<OwnedMultibandLc<T>>,
         check: bool,
         fill_value: Option<T>,
         n_jobs: i64,
-        uniq_bands: &[lcf::StringPassband],
+        uniq_bands: &[Passband],
     ) -> Res<ndarray::Array2<T>>
     where
         T: Float + numpy::Element,
@@ -1510,7 +1473,7 @@ impl PyFeatureEvaluator {
     #[allow(clippy::too_many_arguments)]
     fn py_many_multiband<'py, T>(
         &self,
-        evaluator: &lcf::MultiColorFeature<lcf::StringPassband, T>,
+        evaluator: &lcf::MultiColorFeature<Passband, T>,
         py: Python<'py>,
         lcs: PyMultibandLcs<'py>,
         sorted: Option<bool>,
@@ -1884,8 +1847,8 @@ impl PyFeatureEvaluator {
 
     #[allow(clippy::too_many_arguments)]
     fn many_arrow_multiband_impl<T: ArrowFloat>(
-        evaluator: &lcf::MultiColorFeature<lcf::StringPassband, T>,
-        bands: &[lcf::StringPassband],
+        evaluator: &lcf::MultiColorFeature<Passband, T>,
+        bands: &[Passband],
         band_input: &BandInput,
         chunked: &PyChunkedArray,
         schema: &ArrowLcsSchema,
@@ -1941,8 +1904,8 @@ impl PyFeatureEvaluator {
 
     #[allow(clippy::too_many_arguments)]
     fn many_arrow_multiband_chunks<T: ArrowFloat, O: arrow_array::OffsetSizeTrait>(
-        evaluator: &lcf::MultiColorFeature<lcf::StringPassband, T>,
-        bands: &[lcf::StringPassband],
+        evaluator: &lcf::MultiColorFeature<Passband, T>,
+        bands: &[Passband],
         band_input: &BandInput,
         chunked: &PyChunkedArray,
         t_idx: usize,
@@ -2120,13 +2083,13 @@ impl PyFeatureEvaluator {
 
     #[allow(clippy::too_many_arguments)]
     fn call_multiband_impl<'py, T>(
-        evaluator: &lcf::MultiColorFeature<lcf::StringPassband, T>,
+        evaluator: &lcf::MultiColorFeature<Passband, T>,
         py: Python<'py>,
         t: Arr<'py, T>,
         m: Arr<'py, T>,
         sigma: Option<Arr<'py, T>>,
         band_idx: &[usize],
-        sorted_bands: &[lcf::StringPassband],
+        sorted_bands: &[Passband],
         sorted: Option<bool>,
         check: bool,
         fill_value: Option<T>,
@@ -2182,12 +2145,12 @@ impl PyFeatureEvaluator {
 
     #[allow(clippy::too_many_arguments)]
     fn call_multiband_impl_vec<T>(
-        evaluator: &lcf::MultiColorFeature<lcf::StringPassband, T>,
+        evaluator: &lcf::MultiColorFeature<Passband, T>,
         t: Arr<T>,
         m: Arr<T>,
         sigma: Option<Arr<T>>,
         band_idx: &[usize],
-        sorted_bands: &[lcf::StringPassband],
+        sorted_bands: &[Passband],
         sorted: Option<bool>,
         check: bool,
         fill_value: Option<T>,
@@ -2246,13 +2209,13 @@ impl PyFeatureEvaluator {
     #[allow(clippy::too_many_arguments)]
     fn call_mixed_impl<'py, T>(
         sb_eval: &Feature<T>,
-        mc_eval: &lcf::MultiColorFeature<lcf::StringPassband, T>,
+        mc_eval: &lcf::MultiColorFeature<Passband, T>,
         py: Python<'py>,
         t: Arr<'py, T>,
         m: Arr<'py, T>,
         sigma: Option<Arr<'py, T>>,
         band_idx: &[usize],
-        sorted_bands: &[lcf::StringPassband],
+        sorted_bands: &[Passband],
         sb_mask: &[bool],
         sorted: Option<bool>,
         check: bool,
@@ -2575,8 +2538,8 @@ impl PyFeatureEvaluator {
     fn to_json(&self) -> Res<String> {
         #[derive(Serialize)]
         struct MultiBandJson<'a> {
-            bands: &'a Vec<lcf::StringPassband>,
-            feature: &'a lcf::MultiColorFeature<lcf::StringPassband, f64>,
+            bands: &'a Vec<Passband>,
+            feature: &'a lcf::MultiColorFeature<Passband, f64>,
         }
 
         match &self.mode {
@@ -2662,17 +2625,22 @@ impl PyFeatureEvaluator {
         let np = PyModule::import(py, "numpy")?;
         match &self.mode {
             FeatureEvalMode::SingleBand { .. } => Ok(None),
-            FeatureEvalMode::MultiBand {
-                bands, int_bands, ..
-            }
-            | FeatureEvalMode::Mixed {
-                bands, int_bands, ..
-            } => {
-                if let Some(ints) = int_bands {
-                    Ok(Some(np.getattr("array")?.call1((ints.as_slice(),))?))
-                } else {
-                    let names: Vec<&str> = bands.iter().map(|pb| pb.name()).collect();
-                    Ok(Some(np.getattr("array")?.call1((names,))?))
+            FeatureEvalMode::MultiBand { bands, .. } | FeatureEvalMode::Mixed { bands, .. } => {
+                match bands.first() {
+                    Some(Passband::Integer(_)) => {
+                        let ints: Vec<i64> = bands
+                            .iter()
+                            .map(|p| match p {
+                                Passband::Integer(lp) => lp.label,
+                                Passband::String(_) => unreachable!(),
+                            })
+                            .collect();
+                        Ok(Some(np.getattr("array")?.call1((ints,))?))
+                    }
+                    _ => {
+                        let names: Vec<&str> = bands.iter().map(|p| p.name()).collect();
+                        Ok(Some(np.getattr("array")?.call1((names,))?))
+                    }
                 }
             }
         }
@@ -2746,8 +2714,8 @@ impl Extractor {
         enum FeatureItem {
             Single(Feature<f32>, Feature<f64>),
             Multi(
-                lcf::MultiColorFeature<lcf::StringPassband, f32>,
-                lcf::MultiColorFeature<lcf::StringPassband, f64>,
+                lcf::MultiColorFeature<Passband, f32>,
+                lcf::MultiColorFeature<Passband, f64>,
             ),
         }
         let items: Vec<FeatureItem> = features
@@ -2805,7 +2773,7 @@ impl Extractor {
             }
             let mc_extractor_f32 = lcf::MultiColorExtractor::new(mc_f32_evals);
             let mc_extractor_f64 = lcf::MultiColorExtractor::new(mc_f64_evals);
-            let bands_vec: Vec<lcf::StringPassband> = {
+            let bands_vec: Vec<Passband> = {
                 use lcf::MultiColorPassbandSetTrait;
                 mc_extractor_f64
                     .get_passband_set()
@@ -2815,15 +2783,12 @@ impl Extractor {
                     .collect()
             };
             {
-                let int_bands: Option<Vec<i64>> = None;
-                let (sorted_bands, band_input) =
-                    make_sorted_bands_and_input(&bands_vec, &int_bands);
+                let (sorted_bands, band_input) = make_sorted_bands_and_input(&bands_vec);
                 PyFeatureEvaluator {
                     mode: FeatureEvalMode::Mixed {
                         band_input,
                         sorted_bands,
                         bands: bands_vec,
-                        int_bands,
                         sb_f32: FeatureExtractor::new(sb_f32_evals).into(),
                         sb_f64: FeatureExtractor::new(sb_f64_evals).into(),
                         mc_f32: Box::new(lcf::MultiColorFeature::MultiColorExtractor(
@@ -2846,7 +2811,7 @@ impl Extractor {
                 .unzip();
             let mc_extractor_f32 = lcf::MultiColorExtractor::new(mc_f32);
             let mc_extractor_f64 = lcf::MultiColorExtractor::new(mc_f64);
-            let bands_vec: Vec<lcf::StringPassband> = {
+            let bands_vec: Vec<Passband> = {
                 use lcf::MultiColorPassbandSetTrait;
                 mc_extractor_f64
                     .get_passband_set()
@@ -2856,7 +2821,7 @@ impl Extractor {
                     .collect()
             };
             PyFeatureEvaluator::multi_band(
-                UserBands::String(bands_vec),
+                bands_vec,
                 lcf::MultiColorFeature::MultiColorExtractor(mc_extractor_f32),
                 lcf::MultiColorFeature::MultiColorExtractor(mc_extractor_f64),
             )
@@ -2950,11 +2915,11 @@ macro_rules! evaluator {
                         let user_bands = extract_passband_bands(&bands_py)?;
                         let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(
                             <$eval>::new(),
-                            user_bands.str_bands().to_vec(),
+                            user_bands.clone(),
                         );
                         let mc_f64 = lcf::MultiColorFeature::from_per_band_feature(
                             <$eval>::new(),
-                            user_bands.str_bands().to_vec(),
+                            user_bands.clone(),
                         );
                         PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64)
                     }
@@ -3301,8 +3266,8 @@ macro_rules! fit_evaluator {
                             return Err(PyValueError::new_err("transform is not supported in multiband mode"));
                         }
                         let user_bands = extract_passband_bands(&bands_py)?;
-                        let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(fe_f32, user_bands.str_bands().to_vec());
-                        let mc_f64 = lcf::MultiColorFeature::from_per_band_feature(fe_f64, user_bands.str_bands().to_vec());
+                        let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(fe_f32, user_bands.clone());
+                        let mc_f64 = lcf::MultiColorFeature::from_per_band_feature(fe_f64, user_bands.clone());
                         PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64)
                     }
                 };
@@ -3489,11 +3454,11 @@ impl BeyondNStd {
                 let user_bands = extract_passband_bands(&bands_py)?;
                 let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(
                     lcf::BeyondNStd::new(nstd),
-                    user_bands.str_bands().to_vec(),
+                    user_bands.clone(),
                 );
                 let mc_f64 = lcf::MultiColorFeature::from_per_band_feature(
                     lcf::BeyondNStd::new(nstd),
-                    user_bands.str_bands().to_vec(),
+                    user_bands.clone(),
                 );
                 PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64)
             }
@@ -3614,11 +3579,11 @@ impl Bins {
                         } => {
                             mc_bins_f32.add_feature(lcf::MultiColorFeature::from_per_band_feature(
                                 feature_evaluator_f32.clone(),
-                                user_bands.str_bands().to_vec(),
+                                user_bands.clone(),
                             ));
                             mc_bins_f64.add_feature(lcf::MultiColorFeature::from_per_band_feature(
                                 feature_evaluator_f64.clone(),
-                                user_bands.str_bands().to_vec(),
+                                user_bands.clone(),
                             ));
                         }
                         FeatureEvalMode::MultiBand {
@@ -3720,23 +3685,22 @@ macro_rules! color_two_band_feature {
                     ));
                 }
                 let user_bands = extract_passband_bands(&bands)?;
-                if user_bands.str_bands().len() != 2 {
+                if user_bands.len() != 2 {
                     return Err(Exception::ValueError(format!(
                         "bands must contain exactly 2 passbands, got {}",
-                        user_bands.str_bands().len()
+                        user_bands.len()
                     )));
                 }
-                let str_bands = user_bands.str_bands();
                 let mc_f32 = lcf::MultiColorFeature::$name(
                     lcf::multicolor::features::$lcf_type::new([
-                        str_bands[0].clone(),
-                        str_bands[1].clone(),
+                        user_bands[0].clone(),
+                        user_bands[1].clone(),
                     ]),
                 );
                 let mc_f64 = lcf::MultiColorFeature::$name(
                     lcf::multicolor::features::$lcf_type::new([
-                        str_bands[0].clone(),
-                        str_bands[1].clone(),
+                        user_bands[0].clone(),
+                        user_bands[1].clone(),
                     ]),
                 );
                 Ok((Self {}, PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64)))
@@ -3805,17 +3769,17 @@ impl ColorSpread {
             ));
         }
         let user_bands = extract_passband_bands(&bands)?;
-        if user_bands.str_bands().len() < 2 {
+        if user_bands.len() < 2 {
             return Err(Exception::ValueError(format!(
                 "bands must contain at least 2 passbands, got {}",
-                user_bands.str_bands().len()
+                user_bands.len()
             )));
         }
         let mc_f32 = lcf::MultiColorFeature::ColorSpread(
-            lcf::multicolor::features::ColorSpread::new(user_bands.str_bands().iter().cloned()),
+            lcf::multicolor::features::ColorSpread::new(user_bands.iter().cloned()),
         );
         let mc_f64 = lcf::MultiColorFeature::ColorSpread(
-            lcf::multicolor::features::ColorSpread::new(user_bands.str_bands().iter().cloned()),
+            lcf::multicolor::features::ColorSpread::new(user_bands.iter().cloned()),
         );
         Ok((
             Self {},
@@ -3897,11 +3861,11 @@ impl InterPercentileRange {
                 let user_bands = extract_passband_bands(&bands_py)?;
                 let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(
                     lcf::InterPercentileRange::new(quantile),
-                    user_bands.str_bands().to_vec(),
+                    user_bands.clone(),
                 );
                 let mc_f64 = lcf::MultiColorFeature::from_per_band_feature(
                     lcf::InterPercentileRange::new(quantile),
-                    user_bands.str_bands().to_vec(),
+                    user_bands.clone(),
                 );
                 PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64)
             }
@@ -4008,11 +3972,11 @@ impl MagnitudePercentageRatio {
                 let user_bands = extract_passband_bands(&bands_py)?;
                 let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(
                     lcf::MagnitudePercentageRatio::new(quantile_numerator, quantile_denominator),
-                    user_bands.str_bands().to_vec(),
+                    user_bands.clone(),
                 );
                 let mc_f64 = lcf::MultiColorFeature::from_per_band_feature(
                     lcf::MagnitudePercentageRatio::new(quantile_numerator, quantile_denominator),
-                    user_bands.str_bands().to_vec(),
+                    user_bands.clone(),
                 );
                 PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64)
             }
@@ -4098,11 +4062,11 @@ impl MedianBufferRangePercentage {
                 let user_bands = extract_passband_bands(&bands_py)?;
                 let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(
                     lcf::MedianBufferRangePercentage::new(quantile),
-                    user_bands.str_bands().to_vec(),
+                    user_bands.clone(),
                 );
                 let mc_f64 = lcf::MultiColorFeature::from_per_band_feature(
                     lcf::MedianBufferRangePercentage::new(quantile),
-                    user_bands.str_bands().to_vec(),
+                    user_bands.clone(),
                 );
                 PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64)
             }
@@ -4179,11 +4143,11 @@ impl PercentDifferenceMagnitudePercentile {
                 let user_bands = extract_passband_bands(&bands_py)?;
                 let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(
                     lcf::PercentDifferenceMagnitudePercentile::new(quantile),
-                    user_bands.str_bands().to_vec(),
+                    user_bands.clone(),
                 );
                 let mc_f64 = lcf::MultiColorFeature::from_per_band_feature(
                     lcf::PercentDifferenceMagnitudePercentile::new(quantile),
-                    user_bands.str_bands().to_vec(),
+                    user_bands.clone(),
                 );
                 PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64)
             }
@@ -4220,8 +4184,7 @@ quantile : positive float, default {quantile_default:.2}
 }
 
 type LcfPeriodogram<T> = lcf::Periodogram<T, Feature<T>>;
-type McPeriodogram<T> =
-    lcf::multicolor::features::MultiColorPeriodogram<lcf::StringPassband, T, Feature<T>>;
+type McPeriodogram<T> = lcf::multicolor::features::MultiColorPeriodogram<Passband, T, Feature<T>>;
 type McPeriodogramNorm = lcf::multicolor::features::MultiColorPeriodogramNormalisation;
 type CreateEvalsResult = (
     LcfPeriodogram<f32>,
@@ -4278,7 +4241,7 @@ impl Periodogram {
         features: Option<Bound<PyAny>>,
         phase_features: Option<Bound<PyAny>>,
         normalization: PeriodogramNormalization,
-        mc_params: Option<(Vec<lcf::StringPassband>, McPeriodogramNorm)>,
+        mc_params: Option<(Vec<Passband>, McPeriodogramNorm)>,
     ) -> PyResult<CreateEvalsResult> {
         let peaks_val = peaks.unwrap_or_else(LcfPeriodogram::<f32>::default_peaks);
         let mut eval_f32 = match peaks {
@@ -4482,7 +4445,7 @@ impl Periodogram {
         if let Some(phase_features) = phase_features {
             // For multiband: register all passbands as phase bands before adding features
             if let Some((mc_f32, mc_f64)) = mc.as_mut() {
-                let phase_bands: Vec<lcf::StringPassband> = mc_params.as_ref().unwrap().0.to_vec();
+                let phase_bands: Vec<Passband> = mc_params.as_ref().unwrap().0.to_vec();
                 mc_f32.set_phase_bands(phase_bands.clone());
                 mc_f64.set_phase_bands(phase_bands);
             }
@@ -4554,7 +4517,7 @@ impl Periodogram {
     #[allow(clippy::too_many_arguments)]
     fn freq_power_mc_impl<'py, T>(
         mc: &McPeriodogram<T>,
-        sorted_bands: &[lcf::StringPassband],
+        sorted_bands: &[Passband],
         band_input: &BandInput,
         py: Python<'py>,
         t: Arr<T>,
@@ -4628,7 +4591,7 @@ impl Periodogram {
             ));
         }
         let normalization = Self::parse_normalization(normalization)?;
-        let mc_params: Option<(UserBands, McPeriodogramNorm)> = match bands.as_ref() {
+        let mc_params: Option<(Vec<Passband>, McPeriodogramNorm)> = match bands.as_ref() {
             None => None,
             Some(bands_py) => {
                 let user_bands = extract_passband_bands(bands_py)?;
@@ -4646,9 +4609,7 @@ impl Periodogram {
             features,
             phase_features,
             normalization,
-            mc_params
-                .as_ref()
-                .map(|(ub, mn)| (ub.str_bands().to_vec(), mn.clone())),
+            mc_params.clone(),
         )?;
         let parent = match mc_params {
             None => PyFeatureEvaluator {
@@ -4657,10 +4618,10 @@ impl Periodogram {
                     feature_evaluator_f64: eval_f64.clone().into(),
                 },
             },
-            Some((user_bands, _)) => {
+            Some((bands, _)) => {
                 let (mc_f32, mc_f64) = mc.expect("mc_params was Some so mc must be Some");
                 PyFeatureEvaluator::multi_band(
-                    user_bands,
+                    bands,
                     lcf::MultiColorFeature::MultiColorPeriodogram(mc_f32),
                     lcf::MultiColorFeature::MultiColorPeriodogram(mc_f64),
                 )
@@ -4998,11 +4959,11 @@ impl OtsuSplit {
                 let user_bands = extract_passband_bands(&bands_py)?;
                 let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(
                     lcf::OtsuSplit::new(),
-                    user_bands.str_bands().to_vec(),
+                    user_bands.clone(),
                 );
                 let mc_f64 = lcf::MultiColorFeature::from_per_band_feature(
                     lcf::OtsuSplit::new(),
-                    user_bands.str_bands().to_vec(),
+                    user_bands.clone(),
                 );
                 PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64)
             }
@@ -5063,14 +5024,14 @@ impl JsonDeserializedFeature {
     fn __new__(s: String) -> Res<(Self, PyFeatureEvaluator)> {
         #[derive(Deserialize)]
         struct MultiBandJsonF64 {
-            bands: Vec<lcf::StringPassband>,
-            feature: lcf::MultiColorFeature<lcf::StringPassband, f64>,
+            bands: Vec<Passband>,
+            feature: lcf::MultiColorFeature<Passband, f64>,
         }
         #[derive(Deserialize)]
         struct MultiBandJsonF32 {
             #[serde(rename = "bands")]
             _bands: serde::de::IgnoredAny,
-            feature: lcf::MultiColorFeature<lcf::StringPassband, f32>,
+            feature: lcf::MultiColorFeature<Passband, f32>,
         }
 
         // Detect multiband format by presence of the "bands" key.
@@ -5082,11 +5043,7 @@ impl JsonDeserializedFeature {
             })?;
             return Ok((
                 Self {},
-                PyFeatureEvaluator::multi_band(
-                    UserBands::String(mb_f64.bands),
-                    mb_f32.feature,
-                    mb_f64.feature,
-                ),
+                PyFeatureEvaluator::multi_band(mb_f64.bands, mb_f32.feature, mb_f64.feature),
             ));
         }
 
