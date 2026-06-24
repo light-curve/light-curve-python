@@ -21,7 +21,7 @@ use light_curve_feature::{
 };
 use macro_const::macro_const;
 use ndarray::IntoNdProducer;
-use num_traits::{CheckedSub, Zero};
+use num_traits::Zero;
 use numpy::prelude::*;
 use numpy::{AllowTypeChange, PyArray1, PyArrayLike1, PyUntypedArray};
 use once_cell::sync::OnceCell;
@@ -427,52 +427,21 @@ impl Clone for PyFeatureEvaluator {
     }
 }
 
-/// Convert raw LE bytes to i64 for a numpy integer dtype (kind 'i' or 'u').
-fn bytes_to_i64(chunk: &[u8], kind: u8) -> Res<i64> {
-    Ok(match (kind, chunk.len()) {
-        (b'i', 1) => i8::from_le_bytes([chunk[0]]) as i64,
-        (b'i', 2) => i16::from_le_bytes(chunk.try_into().unwrap()) as i64,
-        (b'i', 4) => i32::from_le_bytes(chunk.try_into().unwrap()) as i64,
-        (b'i', 8) => i64::from_le_bytes(chunk.try_into().unwrap()),
-        (b'u', 1) => u8::from_le_bytes([chunk[0]]) as i64,
-        (b'u', 2) => u16::from_le_bytes(chunk.try_into().unwrap()) as i64,
-        (b'u', 4) => u32::from_le_bytes(chunk.try_into().unwrap()) as i64,
-        (b'u', 8) => {
-            let v = u64::from_le_bytes(chunk.try_into().unwrap());
-            i64::try_from(v).map_err(|_| {
-                Exception::ValueError(format!(
-                    "band value {v} exceeds i64::MAX and cannot be used as a passband"
-                ))
-            })?
-        }
-        _ => {
-            return Err(Exception::TypeError(format!(
-                "unsupported integer dtype: kind='{}', itemsize={}",
-                kind as char,
-                chunk.len()
-            )));
-        }
-    })
-}
-
 /// Extract integer bands from a 1-D C-contiguous numpy integer array.
+///
+/// Delegates byte-order and width conversion to numpy (`astype("int64")`), so
+/// big-endian arrays (e.g. from FITS files) are handled correctly.
 fn extract_int_bands_numpy(arr: &Bound<'_, PyUntypedArray>) -> Res<Vec<Passband>> {
-    let kind = arr.dtype().kind();
-    let itemsize = arr.dtype().itemsize();
-    let raw = arr
-        .call_method1("view", ("uint8",))?
-        .cast_into::<PyArray1<u8>>()
-        .map_err(|e| Exception::TypeError(format!("band array view cast failed: {e}")))?;
-    let data = raw.readonly();
-    let bytes = data
+    let i64_arr = arr
+        .call_method1("astype", ("int64",))?
+        .cast_into::<PyArray1<i64>>()
+        .map_err(|e| Exception::TypeError(format!("band array to int64 failed: {e}")))?;
+    let data = i64_arr.readonly();
+    let int_vals = data
         .as_slice()
         .map_err(|_| Exception::ValueError("band array is not contiguous".to_string()))?;
-    let int_vals: Vec<i64> = bytes
-        .chunks_exact(itemsize)
-        .map(|chunk| bytes_to_i64(chunk, kind))
-        .collect::<Res<_>>()?;
     let mut seen = BTreeSet::new();
-    for &v in &int_vals {
+    for &v in int_vals {
         if !seen.insert(v) {
             return Err(Exception::ValueError(format!(
                 "bands must be unique; duplicate: {v}"
@@ -480,8 +449,8 @@ fn extract_int_bands_numpy(arr: &Bound<'_, PyUntypedArray>) -> Res<Vec<Passband>
         }
     }
     Ok(int_vals
-        .into_iter()
-        .map(|v| Passband::Integer(lcf::LabeledPassband::new(v)))
+        .iter()
+        .map(|&v| Passband::Integer(lcf::LabeledPassband::new(v)))
         .collect())
 }
 
@@ -489,7 +458,7 @@ fn extract_int_bands_numpy(arr: &Bound<'_, PyUntypedArray>) -> Res<Vec<Passband>
 ///
 /// Integer numpy arrays and Python lists/tuples of integers produce `Passband::Integer` entries;
 /// string numpy arrays and lists of str produce `Passband::String` entries.
-fn extract_passband_bands(bands_py: &Bound<PyAny>) -> Res<Vec<Passband>> {
+fn parse_bands(bands_py: &Bound<PyAny>) -> Res<Vec<Passband>> {
     // Fast path for numpy arrays: dispatch on dtype kind.
     if let Ok(arr) = bands_py.cast::<PyUntypedArray>()
         && arr.ndim() == 1
@@ -650,8 +619,6 @@ fn build_band_lookup(bands: &[Passband]) -> BandLookup {
     }
 }
 
-/// Integer passband lookup table.
-///
 type IntNativeLookup<T> = (Option<(T, usize)>, Vec<(T, usize)>);
 
 /// Maps i64 band IDs → indices into `sorted_bands`. The IDs are in the same order as
@@ -701,21 +668,21 @@ impl IntBandLookup {
         }
     }
 
-    /// Cast `entries` and `range` to native type `T` once.
-    /// Entries that don't fit in `T` are silently dropped (they can never match a `T` value).
+    /// Cast the k-element lookup table to native type `T` once before an O(N) loop.
+    /// Entries that don't fit in `T` are dropped (they can never match a `T` value).
     pub(crate) fn native_lookup<T>(&self) -> IntNativeLookup<T>
     where
         T: TryFrom<i64> + Copy,
     {
-        let range_native = self
+        let range = self
             .range
             .and_then(|(s, len)| T::try_from(s).ok().map(|st| (st, len)));
-        let entries_native = self
+        let entries = self
             .entries
             .iter()
             .filter_map(|&(v, i)| T::try_from(v).ok().map(|vv| (vv, i)))
             .collect();
-        (range_native, entries_native)
+        (range, entries)
     }
 
     pub(crate) fn sorted_values_display(&self) -> String {
@@ -727,14 +694,13 @@ impl IntBandLookup {
     }
 }
 
-/// O(1) or O(n_bands) lookup in the native element type — no widening per observation.
 fn native_lookup_get<T>(
     value: T,
     range: Option<(T, usize)>,
     entries: &[(T, usize)],
 ) -> Option<usize>
 where
-    T: Copy + PartialEq + CheckedSub,
+    T: Copy + PartialEq + num_traits::CheckedSub,
     usize: TryFrom<T>,
 {
     if let Some((start, len)) = range {
@@ -850,7 +816,7 @@ fn band_array_to_indices(
     }
 }
 
-/// Iterate a typed `PyArray1<T>` (borrowed from `band_py`), look up in native type (no widening).
+/// Iterate a typed `PyArray1<T>` (borrowed from `band_py`), widening each element to i64 for lookup.
 macro_rules! int_lookup_typed {
     ($band_py:expr, $T:ty, $lookup:expr) => {{
         let typed = $band_py
@@ -860,11 +826,10 @@ macro_rules! int_lookup_typed {
         let values = ro
             .as_slice()
             .map_err(|_| Exception::ValueError("band array is not contiguous".to_string()))?;
-        let (range_native, entries_native) = $lookup.native_lookup::<$T>();
         values
             .iter()
             .map(|&raw| {
-                native_lookup_get(raw, range_native, &entries_native).ok_or_else(|| {
+                $lookup.get(raw as i64).ok_or_else(|| {
                     Exception::ValueError(format!(
                         "unknown passband {raw}; configured bands are: {}",
                         $lookup.sorted_values_display()
@@ -887,15 +852,31 @@ fn try_int_band_view_lookup(
         _ => return Ok(None),
     };
     let dtype = arr.dtype();
-    match (dtype.kind(), dtype.itemsize()) {
-        (b'i', 1) => int_lookup_typed!(band_py, i8, lookup),
-        (b'i', 2) => int_lookup_typed!(band_py, i16, lookup),
-        (b'i', 4) => int_lookup_typed!(band_py, i32, lookup),
-        (b'i', 8) => int_lookup_typed!(band_py, i64, lookup),
-        (b'u', 1) => int_lookup_typed!(band_py, u8, lookup),
-        (b'u', 2) => int_lookup_typed!(band_py, u16, lookup),
-        (b'u', 4) => int_lookup_typed!(band_py, u32, lookup),
-        (b'u', 8) => int_lookup_typed!(band_py, u64, lookup),
+    // Big-endian arrays give wrong values when read as native-endian typed slices;
+    // fall back to Python iteration which extracts each element correctly.
+    if dtype.is_native_byteorder() == Some(false) {
+        return Ok(None);
+    }
+    let dtype_char = dtype.char() as char;
+    match dtype_char {
+        'b' => int_lookup_typed!(band_py, i8, lookup),
+        'h' => int_lookup_typed!(band_py, i16, lookup),
+        'i' => int_lookup_typed!(band_py, i32, lookup),
+        'l' => match dtype.itemsize() {
+            4 => int_lookup_typed!(band_py, i32, lookup),
+            8 => int_lookup_typed!(band_py, i64, lookup),
+            _ => Ok(None),
+        },
+        'q' => int_lookup_typed!(band_py, i64, lookup),
+        'B' => int_lookup_typed!(band_py, u8, lookup),
+        'H' => int_lookup_typed!(band_py, u16, lookup),
+        'I' => int_lookup_typed!(band_py, u32, lookup),
+        'L' => match dtype.itemsize() {
+            4 => int_lookup_typed!(band_py, u32, lookup),
+            8 => int_lookup_typed!(band_py, u64, lookup),
+            _ => Ok(None),
+        },
+        'Q' => int_lookup_typed!(band_py, u64, lookup),
         _ => Ok(None),
     }
 }
@@ -2008,16 +1989,13 @@ impl PyFeatureEvaluator {
                                 use arrow_array::types::*;
                                 let band_col = struct_arr.column(band_idx);
 
-                                // Hoist type dispatch + typed-slice access outside the element loop.
-                                // Cast the tiny lookup table (n_bands entries) to the column's
-                                // native type once, then compare without widening millions of elements.
                                 macro_rules! arrow_int_lookup_native {
                                     ($ArrowType:ty) => {{
                                         type NT = <$ArrowType as ArrowPrimitiveType>::Native;
                                         let values: &[NT] = band_col.as_primitive::<$ArrowType>().values();
-                                        let (range_native, entries_native) = lookup.native_lookup::<NT>();
+                                        let (range_n, entries_n) = lookup.native_lookup::<NT>();
                                         values[start..end].iter().map(|&raw| {
-                                            native_lookup_get(raw, range_native, &entries_native)
+                                            native_lookup_get(raw, range_n, &entries_n)
                                                 .ok_or_else(|| Exception::ValueError(format!(
                                                     "unknown passband {raw}; configured bands are: {}",
                                                     lookup.sorted_values_display()
@@ -2912,7 +2890,7 @@ macro_rules! evaluator {
                         Self::DEFAULT_TRANSFORMER,
                     )?,
                     Some(bands_py) => {
-                        let user_bands = extract_passband_bands(&bands_py)?;
+                        let user_bands = parse_bands(&bands_py)?;
                         let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(
                             <$eval>::new(),
                             user_bands.clone(),
@@ -3265,7 +3243,7 @@ macro_rules! fit_evaluator {
                         if make_transformation {
                             return Err(PyValueError::new_err("transform is not supported in multiband mode"));
                         }
-                        let user_bands = extract_passband_bands(&bands_py)?;
+                        let user_bands = parse_bands(&bands_py)?;
                         let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(fe_f32, user_bands.clone());
                         let mc_f64 = lcf::MultiColorFeature::from_per_band_feature(fe_f64, user_bands.clone());
                         PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64)
@@ -3451,7 +3429,7 @@ impl BeyondNStd {
                 Self::DEFAULT_TRANSFORMER,
             )?,
             Some(bands_py) => {
-                let user_bands = extract_passband_bands(&bands_py)?;
+                let user_bands = parse_bands(&bands_py)?;
                 let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(
                     lcf::BeyondNStd::new(nstd),
                     user_bands.clone(),
@@ -3567,7 +3545,7 @@ impl Bins {
                 }
             }
             Some(bands_py) => {
-                let user_bands = extract_passband_bands(&bands_py)?;
+                let user_bands = parse_bands(&bands_py)?;
                 let mut mc_bins_f32 = lcf::MultiColorBins::new(window, offset);
                 let mut mc_bins_f64 = lcf::MultiColorBins::new(window, offset);
                 for x in features.try_iter()? {
@@ -3684,7 +3662,7 @@ macro_rules! color_two_band_feature {
                         concat!(stringify!($name), " does not support transform").to_string(),
                     ));
                 }
-                let user_bands = extract_passband_bands(&bands)?;
+                let user_bands = parse_bands(&bands)?;
                 if user_bands.len() != 2 {
                     return Err(Exception::ValueError(format!(
                         "bands must contain exactly 2 passbands, got {}",
@@ -3768,7 +3746,7 @@ impl ColorSpread {
                 "ColorSpread does not support transform".to_string(),
             ));
         }
-        let user_bands = extract_passband_bands(&bands)?;
+        let user_bands = parse_bands(&bands)?;
         if user_bands.len() < 2 {
             return Err(Exception::ValueError(format!(
                 "bands must contain at least 2 passbands, got {}",
@@ -3858,7 +3836,7 @@ impl InterPercentileRange {
                 Self::DEFAULT_TRANSFORMER,
             )?,
             Some(bands_py) => {
-                let user_bands = extract_passband_bands(&bands_py)?;
+                let user_bands = parse_bands(&bands_py)?;
                 let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(
                     lcf::InterPercentileRange::new(quantile),
                     user_bands.clone(),
@@ -3969,7 +3947,7 @@ impl MagnitudePercentageRatio {
                 Self::DEFAULT_TRANSFORMER,
             )?,
             Some(bands_py) => {
-                let user_bands = extract_passband_bands(&bands_py)?;
+                let user_bands = parse_bands(&bands_py)?;
                 let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(
                     lcf::MagnitudePercentageRatio::new(quantile_numerator, quantile_denominator),
                     user_bands.clone(),
@@ -4059,7 +4037,7 @@ impl MedianBufferRangePercentage {
                 Self::DEFAULT_TRANSFORMER,
             )?,
             Some(bands_py) => {
-                let user_bands = extract_passband_bands(&bands_py)?;
+                let user_bands = parse_bands(&bands_py)?;
                 let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(
                     lcf::MedianBufferRangePercentage::new(quantile),
                     user_bands.clone(),
@@ -4140,7 +4118,7 @@ impl PercentDifferenceMagnitudePercentile {
                 Self::DEFAULT_TRANSFORMER,
             )?,
             Some(bands_py) => {
-                let user_bands = extract_passband_bands(&bands_py)?;
+                let user_bands = parse_bands(&bands_py)?;
                 let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(
                     lcf::PercentDifferenceMagnitudePercentile::new(quantile),
                     user_bands.clone(),
@@ -4594,7 +4572,7 @@ impl Periodogram {
         let mc_params: Option<(Vec<Passband>, McPeriodogramNorm)> = match bands.as_ref() {
             None => None,
             Some(bands_py) => {
-                let user_bands = extract_passband_bands(bands_py)?;
+                let user_bands = parse_bands(bands_py)?;
                 let mc_norm = Self::parse_mc_normalization(multiband_normalization)?;
                 Some((user_bands, mc_norm))
             }
@@ -4956,7 +4934,7 @@ impl OtsuSplit {
                 },
             },
             Some(bands_py) => {
-                let user_bands = extract_passband_bands(&bands_py)?;
+                let user_bands = parse_bands(&bands_py)?;
                 let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(
                     lcf::OtsuSplit::new(),
                     user_bands.clone(),
