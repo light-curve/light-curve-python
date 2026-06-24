@@ -153,8 +153,6 @@ class ATCAT(MultiBandModel):
 
         Downloads (and caches) the ONNX model file, creates an
         ``onnxruntime.InferenceSession``, and returns a ready-to-use instance.
-        Only the requested output is computed at inference time — onnxruntime
-        prunes the unused computation graph automatically.
 
         Parameters
         ----------

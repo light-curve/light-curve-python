@@ -23,10 +23,11 @@ If you already have the ONNX model file locally, `huggingface_hub` is not requir
 
 | Model | Bands | Input | Embedding dim | Pretrained on |
 |-------|-------|-------|---------------|---------------|
+| `AstraCLR` | 3 (gri jointly) | time, mag, mag\_err, band index | 512 | ZTF (Zubercal DR16) |
 | `Astromer1` | single (or per-band) | time, mag | 256 | MACHO R-band |
 | `Astromer2` | single (or per-band) | time, mag | 256 | MACHO (1.5 M light curves) |
+| `ATAT` | 6 (ugrizY jointly) | time, flux, band index | 192 | ELAsTiCC |
 | `ATCAT` | 6 (ugrizY jointly) | time, flux, flux\_err, band index | 384 | ELAsTiCC |
-| `AstraCLR` | 3 (gri jointly) | time, mag, mag\_err, band index | 512 | ZTF (Zubercal DR16) |
 
 ## Single-band: Astromer2
 
@@ -56,31 +57,6 @@ model = Astromer2.from_hf(output="mean", bands=["g", "r"])
 embedding = model(time, mag, band=band)
 print(embedding.shape)  # (2, 1, 1, 256)
 ```
-
-## Multi-band: ATCAT
-
-[ATCAT](https://ui.adsabs.harvard.edu/abs/2025arXiv251100614T/abstract) processes all six
-LSST ugrizY bands jointly and returns 384-dimensional embeddings.
-Inputs are flux (AB, zero-point 31.4 by default), flux error, time, and integer band index
-(u=0, g=1, r=2, i=3, z=4, Y=5):
-
-```python
-from light_curve.embed import ATCAT
-
-model = ATCAT.from_hf(output="last")
-
-rng = np.random.default_rng(2)
-n = 120
-time     = np.sort(rng.uniform(0, 500, n)).astype(np.float32)
-flux     = rng.normal(100, 10, n).astype(np.float32)
-flux_err = np.full(n, 5.0, dtype=np.float32)
-band     = np.array([i % 6 for i in range(n)])  # ugrizY → 0–5
-
-embedding = model(time, flux, flux_err, band)
-print(embedding.shape)  # (1, 1, 1, 384)
-```
-
-Set `mag_zp=27.5` for ELAsTiCC/SNANA FITS data, or `mag_zp=8.9` for Jy.
 
 ## Multi-band: AstraCLR
 
@@ -151,6 +127,58 @@ model = AstraCLR.from_hf(reduction=["beginning", "end", "middle"])
 embedding = model(mjd, mag, magerr, band)
 print(embedding.shape)  # (1, 3, 1, 512) — one embedding per reduction
 ```
+
+## Multi-band: ATAT
+
+[ATAT](https://ui.adsabs.harvard.edu/abs/2024A%26A...691A.163B/abstract) processes all six
+LSST ugrizY bands jointly and returns 192-dimensional embeddings.  Each band is embedded with
+a learned sinusoidal time modulation, the bands are merged and sorted by time, and a learnable
+CLS token is read out (the `"token"` output used in the paper).  Inputs are flux
+(AB, zero-point 31.4 by default, no normalisation), time, and integer band index
+(u=0, g=1, r=2, i=3, z=4, Y=5):
+
+```python
+import numpy as np
+from light_curve.embed import ATAT
+
+model = ATAT.from_hf(output="token")
+
+rng = np.random.default_rng(4)
+n = 120
+time = np.sort(rng.uniform(0, 500, n)).astype(np.float32)
+flux = rng.normal(100, 10, n).astype(np.float32)
+band = np.array([i % 6 for i in range(n)])  # ugrizY → 0–5
+
+embedding = model(time, flux, band)
+print(embedding.shape)  # (1, 1, 1, 192)
+```
+
+Set `mag_zp=27.5` for ELAsTiCC/SNANA FITS data, or `mag_zp=8.9` for Jy.
+
+## Multi-band: ATCAT
+
+[ATCAT](https://ui.adsabs.harvard.edu/abs/2025arXiv251100614T/abstract) processes all six
+LSST ugrizY bands jointly and returns 384-dimensional embeddings.
+Inputs are flux (AB, zero-point 31.4 by default), flux error, time, and integer band index
+(u=0, g=1, r=2, i=3, z=4, Y=5):
+
+```python
+from light_curve.embed import ATCAT
+
+model = ATCAT.from_hf(output="last")
+
+rng = np.random.default_rng(2)
+n = 120
+time     = np.sort(rng.uniform(0, 500, n)).astype(np.float32)
+flux     = rng.normal(100, 10, n).astype(np.float32)
+flux_err = np.full(n, 5.0, dtype=np.float32)
+band     = np.array([i % 6 for i in range(n)])  # ugrizY → 0–5
+
+embedding = model(time, flux, flux_err, band)
+print(embedding.shape)  # (1, 1, 1, 384)
+```
+
+Set `mag_zp=27.5` for ELAsTiCC/SNANA FITS data, or `mag_zp=8.9` for Jy.
 
 ## GPU and alternative runtimes
 
