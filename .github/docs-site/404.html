@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Page not found · light-curve</title>
+  <!--
+    Root 404 page for the versioned docs site (https://light-curve.snad.space).
+
+    Docs are versioned with `mike`, so every page lives under a version prefix
+    (e.g. /dev/embed/, /latest/embed/).  mike only redirects the bare root `/`
+    to the default version; unversioned deep links such as /embed/api/ would
+    otherwise 404.  GitHub Pages serves this file for ANY missing path, so it
+    does double duty:
+
+      * unversioned link  ->  redirect /<path> to /<default>/<path>
+                              (preserving query + hash);
+      * already-versioned link (a genuine in-version 404, e.g. a redirect
+        target that doesn't exist, or /<version>/typo) -> show this "page not
+        found" message instead of looping.
+
+    The default version mirrors the deploy workflow's `mike set-default` logic:
+    "latest" if a release has been published, otherwise "dev".
+
+    This file is deployed to the docs-site repository root by
+    .github/workflows/docs.yml; it is intentionally NOT part of the mkdocs
+    build (which would place it under a version prefix instead of the root).
+  -->
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #fff;
+      color: #1a1a1a;
+    }
+    main { max-width: 34rem; text-align: center; }
+    .code {
+      font-size: clamp(4rem, 18vw, 8rem);
+      font-weight: 700;
+      line-height: 1;
+      margin: 0;
+      color: #5e35b1;
+      letter-spacing: 0.02em;
+    }
+    h1 { font-size: 1.5rem; margin: 0.5rem 0 0.75rem; }
+    p { margin: 0.5rem 0; line-height: 1.6; }
+    .path {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.95em;
+      padding: 0.15em 0.45em;
+      border-radius: 0.35em;
+      background: rgba(94, 53, 177, 0.1);
+      word-break: break-all;
+    }
+    .actions { margin-top: 1.75rem; display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; }
+    a.btn {
+      display: inline-block;
+      padding: 0.6rem 1.2rem;
+      border-radius: 0.4rem;
+      text-decoration: none;
+      font-weight: 600;
+      background: #5e35b1;
+      color: #fff;
+      transition: opacity 0.15s ease;
+    }
+    a.btn.secondary { background: transparent; color: #5e35b1; box-shadow: inset 0 0 0 1.5px #5e35b1; }
+    a.btn:hover { opacity: 0.85; }
+    .muted { color: #6b6b6b; font-size: 0.9rem; }
+    #redirecting { display: none; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #1b1b1f; color: #e6e6e6; }
+      .code, a.btn.secondary { color: #b39ddb; }
+      a.btn.secondary { box-shadow: inset 0 0 0 1.5px #b39ddb; }
+      a.btn { background: #7e57c2; }
+      .path { background: rgba(179, 157, 219, 0.18); }
+      .muted { color: #9a9a9a; }
+    }
+  </style>
+  <script>
+    (function () {
+      var loc = window.location;
+      var rest = (loc.pathname || "/").replace(/^\/+/, "");
+      var firstSeg = rest.split("/")[0];
+
+      function show(id) {
+        var el = document.getElementById(id);
+        if (el) { el.style.display = "block"; }
+      }
+      function notFound(versionHome) {
+        document.addEventListener("DOMContentLoaded", function () {
+          var pathEl = document.getElementById("path");
+          if (pathEl) { pathEl.textContent = loc.pathname + loc.search + loc.hash; }
+          if (versionHome) {
+            var vh = document.getElementById("version-home");
+            if (vh) { vh.href = versionHome; vh.style.display = "inline-block"; }
+          }
+          show("notfound");
+        });
+      }
+      function redirect(target) {
+        show("redirecting");
+        loc.replace(target + loc.search + loc.hash);
+      }
+
+      fetch("/versions.json", { cache: "no-store" })
+        .then(function (r) { return r.ok ? r.json() : []; })
+        .then(function (versions) {
+          var known = Object.create(null);
+          (versions || []).forEach(function (v) {
+            if (v && v.version) { known[v.version] = true; }
+            (v && v.aliases || []).forEach(function (a) { known[a] = true; });
+          });
+
+          // Default version: "latest" if published, otherwise "dev"
+          // (mirrors `mike set-default` in .github/workflows/docs.yml).
+          var def = known.latest ? "latest" : "dev";
+
+          if (firstSeg && known[firstSeg]) {
+            // Already inside a known version -> a genuine page-not-found.
+            // Show the 404 message (no re-prefixing, so no redirect loop).
+            notFound("/" + firstSeg + "/");
+          } else {
+            // Unversioned link -> send it to the default version, keep the path.
+            redirect("/" + def + "/" + rest);
+          }
+        })
+        .catch(function () {
+          // versions.json unreachable: can't determine the default safely, so
+          // just show the not-found page with a link to the site root.
+          notFound(null);
+        });
+    })();
+  </script>
+</head>
+<body>
+  <main>
+    <div id="redirecting">
+      <p class="code">···</p>
+      <p>Redirecting to the <a href="/">documentation</a>…</p>
+    </div>
+    <div id="notfound" style="display: none">
+      <p class="code">404</p>
+      <h1>Page not found</h1>
+      <p>We couldn't find <span id="path" class="path"></span>.</p>
+      <p class="muted">The page may have moved or never existed. Try the documentation home or search from there.</p>
+      <div class="actions">
+        <a class="btn" href="/">Documentation home</a>
+        <a class="btn secondary" id="version-home" href="/" style="display: none">This version's home</a>
+      </div>
+    </div>
+  </main>
+  <noscript>
+    <main>
+      <div style="display: block; text-align: center">
+        <p class="code">404</p>
+        <h1>Page not found</h1>
+        <p>Go to the <a href="/">documentation home</a>.</p>
+      </div>
+    </main>
+  </noscript>
+</body>
+</html>

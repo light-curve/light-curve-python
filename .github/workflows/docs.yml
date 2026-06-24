@@ -97,6 +97,32 @@ jobs:
             --update-aliases latest
           mike set-default --push --remote docs-site --branch "${DOCS_BRANCH}" latest
 
+      - name: Deploy root 404 redirect to default version
+        # mike only redirects the bare root `/` to the default version; this root
+        # 404.html redirects unversioned deep links (/<path> -> /<default>/<path>).
+        # It lives at the docs-site root (outside any version dir) and survives
+        # mike deploys, so we just keep it in sync after each deploy.
+        env:
+          DOCS_DEPLOY_TOKEN: ${{ secrets.DOCS_DEPLOY_TOKEN }}
+        run: |
+          git clone --depth=1 --branch="${DOCS_BRANCH}" \
+            "https://x-access-token:${DOCS_DEPLOY_TOKEN}@github.com/${DOCS_REPO}.git" \
+            /tmp/docs-404
+          cd /tmp/docs-404
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          cp "${GITHUB_WORKSPACE}/.github/docs-site/404.html" 404.html
+          git add 404.html
+          if git diff --cached --quiet; then
+            echo "Root 404.html already up to date."
+          else
+            git commit -m "docs: update root 404 redirect to default version"
+            for i in 1 2 3; do
+              git push && break
+              git pull --rebase origin "${DOCS_BRANCH}"
+            done
+          fi
+
       - name: Remove stale PR previews
         # pull_request.closed doesn't fire for bot-merged PRs (copilot[bot],
         # pre-commit-ci[bot]).  Run this after every deploy to catch leftovers.
