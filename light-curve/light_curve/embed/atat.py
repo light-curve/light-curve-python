@@ -68,12 +68,6 @@ class ATAT(MultiBandModel):
     Pass a ``band_groups`` dict (e.g. ``{"u": 0, "g": 1, ...}``) to use string
     band labels instead of integers.
 
-    .. important::
-
-        Observation times **must be in days** (e.g. MJD).  The model's internal
-        time modulator uses ``T_max = 1500`` days, so it is calibrated for light
-        curves spanning up to roughly four years.
-
     Parameters
     ----------
     session :
