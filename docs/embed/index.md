@@ -25,6 +25,7 @@ If you already have the ONNX model file locally, `huggingface_hub` is not requir
 |-------|-------|-------|---------------|---------------|
 | `AstraCLR` | 3 (gri jointly) | time, mag, mag\_err, band index | 512 | ZTF (Zubercal DR16) |
 | `Astromer1` | single (or per-band) | time, mag | 256 | MACHO R-band |
+| `Astromer1ZTF` | single (or per-band) | time, mag | 256 | ZTF DR20 *g*-band |
 | `Astromer2` | single (or per-band) | time, mag | 256 | MACHO (1.5 M light curves) |
 | `ATAT` | 6 (ugrizY jointly) | time, flux, band index | 192 | ELAsTiCC |
 | `ATCAT` | 6 (ugrizY jointly) | time, flux, flux\_err, band index | 384 | ELAsTiCC |

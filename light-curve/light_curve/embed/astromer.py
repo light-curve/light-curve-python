@@ -278,6 +278,58 @@ class Astromer1(_AstromerModel):
     hf_filename: str = "astromer1.onnx"
 
 
+class Astromer1ZTF(_AstromerModel):
+    """Astromer 1 embedding model fine-tuned on ZTF DR20 *g*-band.
+
+    The Astromer 1 encoder retrained on ZTF DR20 *g*-band light curves for the
+    QZO quasar catalog (Nakoneczny et al. 2025).  Architecture matches the
+    original Astromer 1 (2 layers, 4 attention heads); accepts single-band
+    *g*-band photometry and returns a 256-dimensional embedding.
+
+    The ONNX model is hosted on HuggingFace at
+    ``https://huggingface.co/light-curve/astromer1-ztfdr20``
+    (``astromer1_ztfdr20.onnx``).  Three named outputs are available; select
+    with the ``output`` parameter:
+
+    * ``"mean"`` (default) — masked mean pooling → shape ``(batch, 256)``
+    * ``"max"`` — masked max pooling → shape ``(batch, 256)``
+    * ``"sequence"`` — per-timestep features → shape ``(batch, 200, 256)``
+
+    Use :meth:`from_hf` to download and load the model directly.
+
+    Model license
+    -------------
+    GPL-3.0 (upstream ZTF DR20 weights license).
+
+    References
+    ----------
+    Nakoneczny et al. (2025), *QZO: A Catalog of 5 Million Quasars from the
+    Zwicky Transient Facility*, ApJ 992, 153.
+    https://ui.adsabs.harvard.edu/abs/2025ApJ...992..153N/abstract
+
+    Original Astromer 1 architecture — Donoso-Oliva et al. (2023), *ASTROMER:
+    A transformer-based embedding for the representation of light curves*,
+    A&A 670, A54.
+    https://ui.adsabs.harvard.edu/abs/2023A%26A...670A..54D/abstract
+
+    Parameters
+    ----------
+    session :
+        ONNX inference session for the Astromer 1 (ZTF DR20) model file.
+    output : str, optional
+        Which named output to return: ``"mean"``, ``"max"``, or ``"sequence"``.
+        Defaults to ``"mean"``.
+    bands : sequence of str or int, optional
+        Band labels.  ``None`` (default) treats the whole light curve as one
+        band.
+    reduction : str, list of str, or Reduction
+        Windowing strategy.  Defaults to :class:`NonOverlappingWindows`.
+    """
+
+    hf_repo: str = "light-curve/astromer1-ztfdr20"
+    hf_filename: str = "astromer1_ztfdr20.onnx"
+
+
 class Astromer2(_AstromerModel):
     """Astromer 2 embedding model.
 
