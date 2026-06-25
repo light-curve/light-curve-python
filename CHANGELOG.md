@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `light_curve.embed.Chronos2` and `light_curve.embed.ChronosBolt`: ONNX-backed univariate
+  (magnitude-only) Chronos time-series foundation models, exposing `mean` / `sequence` outputs.
+  `Chronos2` is 768-dim; `ChronosBolt` has tiny/mini/small/base sizes (256/384/512/768-dim).
 - `light_curve.embed.ATAT`: ONNX-backed multiband (LSST ugrizY) transformer embedding model
   trained on ELAsTiCC, exposing `token` / `mean` / `sequence` outputs
   ([#788](https://github.com/light-curve/light-curve-python/pull/788)).

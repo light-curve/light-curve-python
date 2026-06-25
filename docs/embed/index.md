@@ -29,6 +29,8 @@ If you already have the ONNX model file locally, `huggingface_hub` is not requir
 | `Astromer2` | single (or per-band) | time, mag | 256 | MACHO (1.5 M light curves) |
 | `ATAT` | 6 (ugrizY jointly) | time, flux, band index | 192 | ELAsTiCC |
 | `ATCAT` | 6 (ugrizY jointly) | time, flux, flux\_err, band index | 384 | ELAsTiCC |
+| `Chronos2` | single (magnitude only) | mag | 768 | time-series corpus |
+| `ChronosBolt` | single (magnitude only) | mag | 256–768 | time-series corpus |
 
 ## Single-band: Astromer2
 
@@ -180,6 +182,33 @@ print(embedding.shape)  # (1, 1, 1, 384)
 ```
 
 Set `mag_zp=27.5` for ELAsTiCC/SNANA FITS data, or `mag_zp=8.9` for Jy.
+
+## Single-band: Chronos 2 and Chronos-Bolt
+
+[Chronos](https://huggingface.co/amazon/chronos-2) models are univariate
+time-series foundation models.  They embed a **magnitude sequence only** —
+timestamps are discarded and observations are treated as sequentially ordered
+(the StarEmbed approach).  `Chronos2` returns 768-dim embeddings; `ChronosBolt`
+comes in four sizes (`tiny`/`mini`/`small`/`base` → 256/384/512/768-dim).
+
+```python
+import numpy as np
+from light_curve.embed import Chronos2, ChronosBolt
+
+rng = np.random.default_rng(6)
+mag = rng.normal(18.0, 0.3, 150).astype(np.float32)  # chronological order
+
+model = Chronos2.from_hf(output="mean")
+embedding = model(mag)
+print(embedding.shape)  # (1, 1, 1, 768)
+
+bolt = ChronosBolt.from_hf(size="small", output="mean")
+print(bolt(mag).shape)  # (1, 1, 1, 512)
+```
+
+Series longer than the native context (8192 for Chronos 2, 2048 for
+Chronos-Bolt) are reduced first; the default `reduction="end"` keeps the most
+recent observations.
 
 ## GPU and alternative runtimes
 

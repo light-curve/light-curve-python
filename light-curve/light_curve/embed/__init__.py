@@ -2,6 +2,7 @@ from .astra_clr import AstraCLR
 from .astromer import Astromer1, Astromer1ZTF, Astromer2
 from .atat import ATAT
 from .atcat import ATCAT
+from .chronos import Chronos2, ChronosBolt
 from .model import EmbeddingSession, SingleBandModel
 from .reduction import (
     Beginning,
@@ -21,6 +22,8 @@ __all__ = [
     "ATAT",
     "ATCAT",
     "Beginning",
+    "Chronos2",
+    "ChronosBolt",
     "EmbeddingSession",
     "End",
     "Middle",
