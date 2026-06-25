@@ -23,8 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   been published, otherwise `dev`) via a root `404.html` handler on the docs site. Genuinely
   missing pages get a branded "page not found" page (matching the site's light/dark theme)
   instead of GitHub's default 404.
-- Multiband features now accept **integer band arrays**: any numpy integer dtype.
-- Integer band dispatch is ~2.4× faster than string band dispatch (14 µs vs 35 µs at
+- Multiband features now accept **integer band arrays**.
+  Integer band dispatch is ~2.4× faster than string band dispatch (14 µs vs 35 µs at
   3 bands × 1000 observations per band)
   ([#790](https://github.com/light-curve/light-curve-python/pull/790)).
 
