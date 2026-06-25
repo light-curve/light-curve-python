@@ -151,3 +151,23 @@ to https://light-curve.snad.space/dev/. Pushing a `v*` tag deploys the `latest` 
 Every code block in the docs must be **self-contained**: include all imports and any
 variable definitions needed to run it in isolation. Do not rely on variables defined in
 a preceding block on the same page.
+
+## Releasing a New Version
+
+Steps (from `docs/developer/contributing.md`):
+
+1. `git checkout -b release-vX.Y.Z` from `main`
+2. Update `CHANGELOG.md`:
+   - Add a new `## [X.Y.Z] YYYY-MM-DD` section **below** `## [Unreleased]` with the content
+     currently under `[Unreleased]`.
+   - Reset `## [Unreleased]` to the empty template (all sections present with `--` placeholder).
+   - **In the new versioned section, omit any subsections that have no entries** — only keep
+     `### Added`, `### Changed`, etc. if they have actual bullet points. Never leave empty `--`
+     placeholders in a released version section.
+3. Bump `version` in `light-curve/Cargo.toml`, then run `cargo update --workspace` (from
+   `light-curve/`) to update `Cargo.lock`.
+4. Commit, push branch, open PR into `main`.
+5. Tag the branch HEAD and push: `git tag vX.Y.Z && git push origin vX.Y.Z` — triggers CI to
+   build wheels and publish to PyPI.
+6. After PyPI publish, merge the PR into `main`.
+7. Create a GitHub release from the tag (paste the relevant CHANGELOG section as release notes).
