@@ -9,30 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `light_curve.embed.Chronos2` and `light_curve.embed.ChronosBolt`: ONNX-backed univariate
-  (magnitude-only) Chronos time-series foundation models, exposing `mean` / `sequence` outputs.
-  `Chronos2` is 768-dim; `ChronosBolt` has tiny/mini/small/base sizes (256/384/512/768-dim).
-- `light_curve.embed.ATAT`: ONNX-backed multiband (LSST ugrizY) transformer embedding model
-  trained on ELAsTiCC, exposing `token` / `mean` / `sequence` outputs
-  ([#788](https://github.com/light-curve/light-curve-python/pull/788)).
-- `light_curve.embed.Astromer1ZTF`: Astromer 1 encoder fine-tuned on ZTF DR20 *g*-band (QZO
-  quasar catalog, Nakoneczny et al. 2025); same single-band interface and 256-dim output as
-  `Astromer1`. Load with `Astromer1ZTF.from_hf()`.
-- Docs: unversioned deep links (e.g. `/embed/api/`) now redirect to the same page under the
-  default docs version (`/<default>/embed/api/`, where `<default>` is `latest` if a release has
-  been published, otherwise `dev`) via a root `404.html` handler on the docs site. Genuinely
-  missing pages get a branded "page not found" page (matching the site's light/dark theme)
-  instead of GitHub's default 404.
-- Multiband features now accept **integer band arrays**.
-  Integer band dispatch is ~2.4× faster than string band dispatch (14 µs vs 35 µs at
-  3 bands × 1000 observations per band)
-  ([#790](https://github.com/light-curve/light-curve-python/pull/790)).
+--
 
 ### Changed
 
-- Multiband feature evaluation is up to ~4× faster thanks to reduced per-call overhead and the
-  `light-curve-feature` 0.17 → 0.18.1 upgrade
-  ([#783](https://github.com/light-curve/light-curve-python/pull/783)).
+--
 
 ### Deprecated
 
@@ -44,14 +25,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Via `light-curve-feature` 0.18.1: `Periodogram` with weight-using phase features (e.g.
-  `features=[StetsonK()]`) silently ignored `sigma`; `MultiColorPeriodogram` reported wrong
-  `w_required` / `variability_required`
-  ([light-curve-feature#300](https://github.com/light-curve/light-curve-feature/pull/300)).
+--
 
 ### Security
 
 --
+
+## [0.13.1] 2026-06-25
+
+### Added
+
+- `light_curve.embed.Chronos2` and `light_curve.embed.ChronosBolt`: ONNX-backed univariate
+  (magnitude-only) Chronos time-series foundation models, exposing `mean` / `sequence` outputs.
+  `Chronos2` is 768-dim; `ChronosBolt` has tiny/mini/small/base sizes (256/384/512/768-dim)
+  ([#792](https://github.com/light-curve/light-curve-python/pull/792)).
+- `light_curve.embed.ATAT`: ONNX-backed multiband (LSST ugrizY) transformer embedding model
+  trained on ELAsTiCC, exposing `token` / `mean` / `sequence` outputs
+  ([#788](https://github.com/light-curve/light-curve-python/pull/788)).
+- `light_curve.embed.Astromer1ZTF`: Astromer 1 encoder fine-tuned on ZTF DR20 *g*-band (QZO
+  quasar catalog, Nakoneczny et al. 2025); same single-band interface and 256-dim output as
+  `Astromer1`. Load with `Astromer1ZTF.from_hf()`
+  ([#791](https://github.com/light-curve/light-curve-python/pull/791)).
+- Multiband features now accept **integer band arrays**.
+  Integer band dispatch is ~2.4× faster than string band dispatch (14 µs vs 35 µs at
+  3 bands × 1000 observations per band)
+  ([#790](https://github.com/light-curve/light-curve-python/pull/790)).
+
+### Changed
+
+- Multiband feature evaluation is up to ~4× faster thanks to reduced per-call overhead and the
+  `light-curve-feature` 0.17 → 0.18.1 upgrade
+  ([#783](https://github.com/light-curve/light-curve-python/pull/783)).
+
+### Fixed
+
+- Via `light-curve-feature` 0.18.1: `Periodogram` with weight-using phase features (e.g.
+  `features=[StetsonK()]`) silently ignored `sigma`; `MultiColorPeriodogram` reported wrong
+  `w_required` / `variability_required`
+  ([light-curve-feature#300](https://github.com/light-curve/light-curve-feature/pull/300)).
 
 ## [0.13.0] 2026-06-10
 
