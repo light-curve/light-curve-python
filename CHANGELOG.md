@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `light_curve.embed.ATAT`: ONNX-backed multiband (LSST ugrizY) transformer embedding model
   trained on ELAsTiCC, exposing `token` / `mean` / `sequence` outputs
   ([#788](https://github.com/light-curve/light-curve-python/pull/788)).
+- `light_curve.embed.Astromer1ZTF`: Astromer 1 encoder fine-tuned on ZTF DR20 *g*-band (QZO
+  quasar catalog, Nakoneczny et al. 2025); same single-band interface and 256-dim output as
+  `Astromer1`. Load with `Astromer1ZTF.from_hf()`.
 - Docs: unversioned deep links (e.g. `/embed/api/`) now redirect to the same page under the
   default docs version (`/<default>/embed/api/`, where `<default>` is `latest` if a release has
   been published, otherwise `dev`) via a root `404.html` handler on the docs site. Genuinely

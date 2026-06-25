@@ -12,6 +12,11 @@
       inherited_members: true
       members:
         - from_hf
+::: light_curve.embed.Astromer1ZTF
+    options:
+      inherited_members: true
+      members:
+        - from_hf
 ::: light_curve.embed.Astromer2
     options:
       inherited_members: true

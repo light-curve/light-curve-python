@@ -28,9 +28,15 @@ CONFIGS = [
         cos_sim_threshold=0.97,
     ),
     AstromerConfig(
+        model_name="Astromer1ZTF",
+        test_parquet=PREP_MODELS_DIR / "astromer1-ztfdr20" / "out" / "test-data" / "astromer1_ztfdr20_test.parquet",
+        ref_reduction="beginning",
+        cos_sim_threshold=0.97,
+    ),
+    AstromerConfig(
         model_name="Astromer2",
         test_parquet=PREP_MODELS_DIR / "astromer2" / "out" / "test-data" / "astromer2_test.parquet",
-        ref_reduction="non-overlapping-windows",
+        ref_reduction="beginning",
         cos_sim_threshold=0.999,
     ),
 ]
@@ -55,7 +61,7 @@ def data_table(config):
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("model_class_name", ["Astromer1", "Astromer2"])
+@pytest.mark.parametrize("model_class_name", ["Astromer1", "Astromer1ZTF", "Astromer2"])
 def test_astromer_preprocess_normalises(model_class_name):
     """preprocess_lc produces zero-mean time and mag for each window."""
 
