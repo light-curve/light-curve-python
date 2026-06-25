@@ -11,6 +11,7 @@ use crate::transform::{StockTransformer, parse_transform};
 
 use arrow_array::Array;
 use arrow_array::cast::AsArray;
+use arrow_array::types::ArrowPrimitiveType;
 use const_format::formatcp;
 use conv::ConvUtil;
 use itertools::Itertools;
@@ -21,7 +22,7 @@ use light_curve_feature::{
 };
 use macro_const::macro_const;
 use ndarray::IntoNdProducer;
-use num_traits::Zero;
+use num_traits::{AsPrimitive, Zero};
 use numpy::prelude::*;
 use numpy::{AllowTypeChange, PyArray1, PyArrayLike1, PyUntypedArray};
 use once_cell::sync::OnceCell;
@@ -34,7 +35,9 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::convert::TryInto;
+use std::fmt;
 use std::ops::Deref;
+use std::ops::Range;
 // Details of pickle support implementation
 // ----------------------------------------
 // [PyFeatureEvaluator] implements __getstate__ and __setstate__ required for pickle serialisation,
@@ -427,21 +430,15 @@ impl Clone for PyFeatureEvaluator {
     }
 }
 
-/// Extract integer bands from a 1-D C-contiguous numpy integer array.
-///
-/// Delegates byte-order and width conversion to numpy (`astype("int64")`), so
-/// big-endian arrays (e.g. from FITS files) are handled correctly.
+/// Extract integer bands from a 1-D numpy integer array.
 fn extract_int_bands_numpy(arr: &Bound<'_, PyUntypedArray>) -> Res<Vec<Passband>> {
     let i64_arr = arr
-        .call_method1("astype", ("int64",))?
-        .cast_into::<PyArray1<i64>>()
+        .as_any()
+        .extract::<PyArrayLike1<i64, AllowTypeChange>>()
         .map_err(|e| Exception::TypeError(format!("band array to int64 failed: {e}")))?;
-    let data = i64_arr.readonly();
-    let int_vals = data
-        .as_slice()
-        .map_err(|_| Exception::ValueError("band array is not contiguous".to_string()))?;
+    let int_vals = i64_arr.as_array();
     let mut seen = BTreeSet::new();
-    for &v in int_vals {
+    for &v in int_vals.iter() {
         if !seen.insert(v) {
             return Err(Exception::ValueError(format!(
                 "bands must be unique; duplicate: {v}"
@@ -619,99 +616,110 @@ fn build_band_lookup(bands: &[Passband]) -> BandLookup {
     }
 }
 
-type IntNativeLookup<T> = (Option<(T, usize)>, Vec<(T, usize)>);
-
 /// Maps i64 band IDs → indices into `sorted_bands`. The IDs are in the same order as
 /// `sorted_bands` (sorted numerically, i.e. `LabeledPassband<i64>::Ord` = `i64::Ord`).
 ///
-/// When the IDs form a contiguous integer range in that order, lookup is O(1) via a
-/// subtraction; otherwise a linear scan is used.
-pub(crate) struct IntBandLookup {
-    /// `(id, index)` pairs in string-sort order of `format!("{id}")`.
-    entries: Vec<(i64, usize)>,
-    /// If `Some((start, len))`, the IDs are `[start, start+1, ..., start+len-1]` in order
-    /// and `get(v)` = `v - start` (O(1)).
-    range: Option<(i64, usize)>,
+/// `Range` is used when the IDs form a contiguous integer sequence — lookup is O(1) via
+/// subtraction. Otherwise `Entries` holds `(id, index)` pairs for a linear scan.
+pub(crate) enum IntBandLookup {
+    Range(Range<i64>),
+    Entries(Vec<(i64, usize)>),
 }
 
 impl IntBandLookup {
     fn build(sorted_values: &[i64]) -> Self {
-        let entries: Vec<(i64, usize)> = sorted_values
-            .iter()
-            .copied()
-            .enumerate()
-            .map(|(i, v)| (v, i))
-            .collect();
-        let range = (!sorted_values.is_empty())
-            .then(|| {
-                let first = sorted_values[0];
-                let is_contiguous = sorted_values
-                    .iter()
-                    .enumerate()
-                    .all(|(i, &v)| first.checked_add(i as i64) == Some(v));
-                is_contiguous.then_some((first, sorted_values.len()))
-            })
-            .flatten();
-        Self { entries, range }
+        if let Some(&first) = sorted_values.first() {
+            let is_contiguous = sorted_values
+                .iter()
+                .enumerate()
+                .all(|(i, &v)| first.checked_add(i as i64) == Some(v));
+            if is_contiguous {
+                return Self::Range(first..first + sorted_values.len() as i64);
+            }
+        }
+        Self::Entries(
+            sorted_values
+                .iter()
+                .copied()
+                .enumerate()
+                .map(|(i, v)| (v, i))
+                .collect(),
+        )
     }
 
     pub(crate) fn get(&self, value: i64) -> Option<usize> {
-        if let Some((start, len)) = self.range {
-            value
-                .checked_sub(start)
-                .and_then(|d| usize::try_from(d).ok())
-                .filter(|&idx| idx < len)
-        } else {
-            self.entries
-                .iter()
-                .find_map(|&(v, i)| (v == value).then_some(i))
+        match self {
+            Self::Range(r) => r
+                .contains(&value)
+                .then(|| usize::try_from(value - r.start).ok())
+                .flatten(),
+            Self::Entries(entries) => entries.iter().find_map(|&(v, i)| (v == value).then_some(i)),
         }
     }
 
     /// Cast the k-element lookup table to native type `T` once before an O(N) loop.
-    /// Entries that don't fit in `T` are dropped (they can never match a `T` value).
+    /// Values that don't fit in `T` are dropped (they can never match a `T` value).
     pub(crate) fn native_lookup<T>(&self) -> IntNativeLookup<T>
     where
         T: TryFrom<i64> + Copy,
     {
-        let range = self
-            .range
-            .and_then(|(s, len)| T::try_from(s).ok().map(|st| (st, len)));
-        let entries = self
-            .entries
-            .iter()
-            .filter_map(|&(v, i)| T::try_from(v).ok().map(|vv| (vv, i)))
-            .collect();
-        (range, entries)
+        match self {
+            Self::Range(r) => match (T::try_from(r.start), T::try_from(r.end)) {
+                (Ok(start), Ok(end)) => IntNativeLookup::Range(start..end),
+                _ => IntNativeLookup::Entries(
+                    r.clone()
+                        .enumerate()
+                        .filter_map(|(i, v)| T::try_from(v).ok().map(|vv| (vv, i)))
+                        .collect(),
+                ),
+            },
+            Self::Entries(entries) => IntNativeLookup::Entries(
+                entries
+                    .iter()
+                    .filter_map(|&(v, i)| T::try_from(v).ok().map(|vv| (vv, i)))
+                    .collect(),
+            ),
+        }
     }
 
     pub(crate) fn sorted_values_display(&self) -> String {
-        self.entries
-            .iter()
-            .map(|(v, _)| v.to_string())
-            .collect::<Vec<_>>()
-            .join(", ")
+        match self {
+            Self::Range(r) => r
+                .clone()
+                .map(|v| v.to_string())
+                .collect::<Vec<_>>()
+                .join(", "),
+            Self::Entries(entries) => entries
+                .iter()
+                .map(|(v, _)| v.to_string())
+                .collect::<Vec<_>>()
+                .join(", "),
+        }
     }
 }
 
-fn native_lookup_get<T>(
-    value: T,
-    range: Option<(T, usize)>,
-    entries: &[(T, usize)],
-) -> Option<usize>
+pub(crate) enum IntNativeLookup<T> {
+    Range(Range<T>),
+    Entries(Vec<(T, usize)>),
+}
+
+impl<T> IntNativeLookup<T>
 where
-    T: Copy + PartialEq + num_traits::CheckedSub,
+    T: Copy + PartialOrd + num_traits::CheckedSub,
     usize: TryFrom<T>,
 {
-    if let Some((start, len)) = range {
-        return value
-            .checked_sub(&start)
-            .and_then(|d| usize::try_from(d).ok())
-            .filter(|&i| i < len);
+    fn get(&self, value: T) -> Option<usize> {
+        match self {
+            Self::Range(r) => r
+                .contains(&value)
+                .then(|| value.checked_sub(&r.start))
+                .flatten()
+                .and_then(|d| usize::try_from(d).ok()),
+            Self::Entries(entries) => entries
+                .iter()
+                .find_map(|&(bv, bi)| (bv == value).then_some(bi)),
+        }
     }
-    entries
-        .iter()
-        .find_map(|&(bv, bi)| (bv == value).then_some(bi))
 }
 
 /// How to parse the band array at call time.
@@ -817,28 +825,28 @@ fn band_array_to_indices(
 }
 
 /// Iterate a typed `PyArray1<T>` (borrowed from `band_py`), widening each element to i64 for lookup.
-macro_rules! int_lookup_typed {
-    ($band_py:expr, $T:ty, $lookup:expr) => {{
-        let typed = $band_py
-            .cast::<PyArray1<$T>>()
-            .map_err(|e| Exception::TypeError(format!("int band downcast failed: {e}")))?;
-        let ro = typed.readonly();
-        let values = ro
-            .as_slice()
-            .map_err(|_| Exception::ValueError("band array is not contiguous".to_string()))?;
-        values
-            .iter()
-            .map(|&raw| {
-                $lookup.get(raw as i64).ok_or_else(|| {
-                    Exception::ValueError(format!(
-                        "unknown passband {raw}; configured bands are: {}",
-                        $lookup.sorted_values_display()
-                    ))
-                })
+fn int_band_view_lookup_typed<T>(band_py: &Bound<PyAny>, lookup: &IntBandLookup) -> Res<Vec<usize>>
+where
+    T: numpy::Element + AsPrimitive<i64> + fmt::Display,
+{
+    let typed = band_py
+        .cast::<PyArray1<T>>()
+        .map_err(|e| Exception::TypeError(format!("int band downcast failed: {e}")))?;
+    let ro = typed.readonly();
+    let values = ro
+        .as_slice()
+        .map_err(|_| Exception::ValueError("band array is not contiguous".to_string()))?;
+    values
+        .iter()
+        .map(|&raw| {
+            lookup.get(raw.as_()).ok_or_else(|| {
+                Exception::ValueError(format!(
+                    "unknown passband {raw}; configured bands are: {}",
+                    lookup.sorted_values_display()
+                ))
             })
-            .collect::<Res<Vec<usize>>>()
-            .map(Some)
-    }};
+        })
+        .collect()
 }
 
 /// Try to parse an integer band array using typed `PyArray1<T>` slices (zero-copy, no byte dispatch).
@@ -859,26 +867,52 @@ fn try_int_band_view_lookup(
     }
     let dtype_char = dtype.char() as char;
     match dtype_char {
-        'b' => int_lookup_typed!(band_py, i8, lookup),
-        'h' => int_lookup_typed!(band_py, i16, lookup),
-        'i' => int_lookup_typed!(band_py, i32, lookup),
+        'b' => int_band_view_lookup_typed::<i8>(band_py, lookup).map(Some),
+        'h' => int_band_view_lookup_typed::<i16>(band_py, lookup).map(Some),
+        'i' => int_band_view_lookup_typed::<i32>(band_py, lookup).map(Some),
         'l' => match dtype.itemsize() {
-            4 => int_lookup_typed!(band_py, i32, lookup),
-            8 => int_lookup_typed!(band_py, i64, lookup),
+            4 => int_band_view_lookup_typed::<i32>(band_py, lookup).map(Some),
+            8 => int_band_view_lookup_typed::<i64>(band_py, lookup).map(Some),
             _ => Ok(None),
         },
-        'q' => int_lookup_typed!(band_py, i64, lookup),
-        'B' => int_lookup_typed!(band_py, u8, lookup),
-        'H' => int_lookup_typed!(band_py, u16, lookup),
-        'I' => int_lookup_typed!(band_py, u32, lookup),
+        'q' => int_band_view_lookup_typed::<i64>(band_py, lookup).map(Some),
+        'B' => int_band_view_lookup_typed::<u8>(band_py, lookup).map(Some),
+        'H' => int_band_view_lookup_typed::<u16>(band_py, lookup).map(Some),
+        'I' => int_band_view_lookup_typed::<u32>(band_py, lookup).map(Some),
         'L' => match dtype.itemsize() {
-            4 => int_lookup_typed!(band_py, u32, lookup),
-            8 => int_lookup_typed!(band_py, u64, lookup),
+            4 => int_band_view_lookup_typed::<u32>(band_py, lookup).map(Some),
+            8 => int_band_view_lookup_typed::<u64>(band_py, lookup).map(Some),
             _ => Ok(None),
         },
-        'Q' => int_lookup_typed!(band_py, u64, lookup),
+        'Q' => int_band_view_lookup_typed::<u64>(band_py, lookup).map(Some),
         _ => Ok(None),
     }
+}
+
+/// Slice an Arrow primitive band column and resolve each value to a band index.
+fn arrow_int_band_lookup<AT: ArrowPrimitiveType>(
+    band_col: &dyn Array,
+    lookup: &IntBandLookup,
+    start: usize,
+    end: usize,
+) -> Res<Vec<usize>>
+where
+    AT::Native: TryFrom<i64> + Copy + PartialOrd + num_traits::CheckedSub + fmt::Display,
+    usize: TryFrom<AT::Native>,
+{
+    let values: &[AT::Native] = band_col.as_primitive::<AT>().values();
+    let lookup_n = lookup.native_lookup::<AT::Native>();
+    values[start..end]
+        .iter()
+        .map(|&raw| {
+            lookup_n.get(raw).ok_or_else(|| {
+                Exception::ValueError(format!(
+                    "unknown passband {raw}; configured bands are: {}",
+                    lookup.sorted_values_display()
+                ))
+            })
+        })
+        .collect()
 }
 
 /// Try to parse a band array via one `view("uint8")` Python call (zero-copy buffer sharing).
@@ -1988,31 +2022,15 @@ impl PyFeatureEvaluator {
                             (int_arrow_type, BandInput::Integer(lookup)) => {
                                 use arrow_array::types::*;
                                 let band_col = struct_arr.column(band_idx);
-
-                                macro_rules! arrow_int_lookup_native {
-                                    ($ArrowType:ty) => {{
-                                        type NT = <$ArrowType as ArrowPrimitiveType>::Native;
-                                        let values: &[NT] = band_col.as_primitive::<$ArrowType>().values();
-                                        let (range_n, entries_n) = lookup.native_lookup::<NT>();
-                                        values[start..end].iter().map(|&raw| {
-                                            native_lookup_get(raw, range_n, &entries_n)
-                                                .ok_or_else(|| Exception::ValueError(format!(
-                                                    "unknown passband {raw}; configured bands are: {}",
-                                                    lookup.sorted_values_display()
-                                                )))
-                                        }).collect::<Res<_>>()?
-                                    }};
-                                }
-
                                 match int_arrow_type {
-                                    ArrowBandType::Int8   => arrow_int_lookup_native!(Int8Type),
-                                    ArrowBandType::Int16  => arrow_int_lookup_native!(Int16Type),
-                                    ArrowBandType::Int32  => arrow_int_lookup_native!(Int32Type),
-                                    ArrowBandType::Int64  => arrow_int_lookup_native!(Int64Type),
-                                    ArrowBandType::UInt8  => arrow_int_lookup_native!(UInt8Type),
-                                    ArrowBandType::UInt16 => arrow_int_lookup_native!(UInt16Type),
-                                    ArrowBandType::UInt32 => arrow_int_lookup_native!(UInt32Type),
-                                    ArrowBandType::UInt64 => arrow_int_lookup_native!(UInt64Type),
+                                    ArrowBandType::Int8   => arrow_int_band_lookup::<Int8Type>(band_col, lookup, start, end)?,
+                                    ArrowBandType::Int16  => arrow_int_band_lookup::<Int16Type>(band_col, lookup, start, end)?,
+                                    ArrowBandType::Int32  => arrow_int_band_lookup::<Int32Type>(band_col, lookup, start, end)?,
+                                    ArrowBandType::Int64  => arrow_int_band_lookup::<Int64Type>(band_col, lookup, start, end)?,
+                                    ArrowBandType::UInt8  => arrow_int_band_lookup::<UInt8Type>(band_col, lookup, start, end)?,
+                                    ArrowBandType::UInt16 => arrow_int_band_lookup::<UInt16Type>(band_col, lookup, start, end)?,
+                                    ArrowBandType::UInt32 => arrow_int_band_lookup::<UInt32Type>(band_col, lookup, start, end)?,
+                                    ArrowBandType::UInt64 => arrow_int_band_lookup::<UInt64Type>(band_col, lookup, start, end)?,
                                     _ => unreachable!("integer band_input but string arrow band type"),
                                 }
                             }
