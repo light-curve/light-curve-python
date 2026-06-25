@@ -27,6 +27,16 @@
       inherited_members: true
       members:
         - from_hf
+::: light_curve.embed.Chronos2
+    options:
+      inherited_members: true
+      members:
+        - from_hf
+::: light_curve.embed.ChronosBolt
+    options:
+      inherited_members: true
+      members:
+        - from_hf
 
 ## Reduction strategies
 
