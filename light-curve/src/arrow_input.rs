@@ -33,12 +33,20 @@ pub(crate) enum ArrowListType {
     LargeList,
 }
 
-/// Whether the band column uses Utf8 (i32 offsets), LargeUtf8 (i64 offsets), or Utf8View.
+/// Whether the band column uses Utf8/LargeUtf8/Utf8View (string) or a signed/unsigned integer type.
 #[derive(Clone)]
 pub(crate) enum ArrowBandType {
     Utf8,
     LargeUtf8,
     Utf8View,
+    Int8,
+    Int16,
+    Int32,
+    Int64,
+    UInt8,
+    UInt16,
+    UInt32,
+    UInt64,
 }
 
 /// A column reference: either a field name or a zero-based index.
@@ -198,9 +206,18 @@ pub(crate) fn validate_arrow_lcs(
                 DataType::Utf8 => ArrowBandType::Utf8,
                 DataType::LargeUtf8 => ArrowBandType::LargeUtf8,
                 DataType::Utf8View => ArrowBandType::Utf8View,
+                DataType::Int8 => ArrowBandType::Int8,
+                DataType::Int16 => ArrowBandType::Int16,
+                DataType::Int32 => ArrowBandType::Int32,
+                DataType::Int64 => ArrowBandType::Int64,
+                DataType::UInt8 => ArrowBandType::UInt8,
+                DataType::UInt16 => ArrowBandType::UInt16,
+                DataType::UInt32 => ArrowBandType::UInt32,
+                DataType::UInt64 => ArrowBandType::UInt64,
                 other => {
                     return Err(Exception::TypeError(format!(
-                        "band field must be Utf8, LargeUtf8, or Utf8View, got {other:?}"
+                        "band field must be a string (Utf8, LargeUtf8, Utf8View) \
+                        or integer type, got {other:?}"
                     )));
                 }
             };

@@ -1464,7 +1464,7 @@ def test_many_arrow_multiband_missing_band_field_raises():
 
 
 def test_many_arrow_multiband_non_string_band_raises():
-    """Arrow multiband with a non-string band column raises TypeError."""
+    """Arrow integer band column with a string-bands feature raises TypeError (mode mismatch)."""
     rng = np.random.default_rng(13)
     band_labels = ["g", "r"]
     lcs = [_make_multiband_lc(band_labels, n_per_band=10, rng=rng)]
@@ -1478,7 +1478,7 @@ def test_many_arrow_multiband_non_string_band_raises():
     arrow_arr = pa.array([inner], type=pa.list_(struct_type))
 
     feat = licu_ext.Amplitude(bands=band_labels)
-    with pytest.raises(TypeError, match="Utf8, LargeUtf8, or Utf8View"):
+    with pytest.raises(TypeError):
         feat.many(arrow_arr, sorted=True, fill_value=-999.0, arrow_fields={"t": "t", "m": "m", "band": "band"})
 
 
@@ -1681,3 +1681,307 @@ def test_extractor_mixed_arrow_raises():
             sorted=True,
             arrow_fields={"t": "t", "m": "m", "sigma": "sigma", "band": "band"},
         )
+
+
+# ── Integer passband tests ─────────────────────────────────────────────────────
+
+
+def _make_int_multiband_lc(band_ids, n_per_band=50, rng=None, dtype=np.int64):
+    """Return (t, m, sigma, band) with integer band labels, time-sorted."""
+    rng = np.random.default_rng(rng)
+    parts_t, parts_m, parts_s, parts_b = [], [], [], []
+    for bid in band_ids:
+        t_b = rng.uniform(0, 100, n_per_band)
+        m_b = rng.normal(0, 0.5, n_per_band)
+        s_b = np.full(n_per_band, 0.1)
+        parts_t.append(t_b)
+        parts_m.append(m_b)
+        parts_s.append(s_b)
+        parts_b.extend([bid] * n_per_band)
+    t = np.concatenate(parts_t)
+    m = np.concatenate(parts_m)
+    sigma = np.concatenate(parts_s)
+    band = np.array(parts_b, dtype=dtype)
+    idx = np.argsort(t)
+    return t[idx], m[idx], sigma[idx], band[idx]
+
+
+def test_integer_bands_basic():
+    """Integer bands [0, 1] produce the same results as string bands ['0', '1']."""
+    rng = np.random.default_rng(100)
+    n = 50
+    t_0 = np.sort(rng.uniform(0, 100, n))
+    m_0 = rng.normal(0, 0.5, n)
+    sigma_0 = np.full(n, 0.1)
+    t_1 = np.sort(rng.uniform(0, 100, n))
+    m_1 = rng.normal(0, 0.5, n)
+    sigma_1 = np.full(n, 0.1)
+
+    t = np.concatenate([t_0, t_1])
+    m = np.concatenate([m_0, m_1])
+    sigma = np.concatenate([sigma_0, sigma_1])
+    idx = np.argsort(t)
+    t, m, sigma = t[idx], m[idx], sigma[idx]
+
+    band_str = np.where(idx < n, "0", "1")
+    band_int = np.where(idx < n, 0, 1).astype(np.int64)
+
+    amp_str = licu_ext.Amplitude(bands=["0", "1"])
+    amp_int = licu_ext.Amplitude(bands=[0, 1])
+
+    result_str = amp_str(t, m, sigma, band_str, sorted=True)
+    result_int = amp_int(t, m, sigma, band_int, sorted=True)
+    assert_allclose(result_int, result_str)
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [np.int8, np.int16, np.int32, np.int64, np.uint8, np.uint16, np.uint32, np.uint64],
+)
+def test_integer_bands_numpy_dtypes(dtype):
+    """Integer bands work with all numpy integer dtypes."""
+    band_ids = [0, 1, 2]
+    t, m, sigma, band = _make_int_multiband_lc(band_ids, n_per_band=40, rng=101, dtype=dtype)
+    amp = licu_ext.Amplitude(bands=band_ids)
+    result = amp(t, m, sigma, band, sorted=True)
+    assert result.shape == (3,)
+    assert np.all(np.isfinite(result))
+
+
+def test_integer_bands_reversed_order():
+    """Integer bands specified in reversed order still produce correct per-band results."""
+    rng = np.random.default_rng(102)
+    band_ids = [2, 1, 0]  # user order: 2, 1, 0
+    t, m, sigma, band = _make_int_multiband_lc(band_ids, n_per_band=50, rng=rng)
+
+    amp = licu_ext.Amplitude(bands=band_ids)
+    result = amp(t, m, sigma, band, sorted=True)
+
+    amp_sb = licu_ext.Amplitude()
+    for i, bid in enumerate(band_ids):
+        mask = band == bid
+        expected = amp_sb(t[mask], m[mask], sigma[mask])[0]
+        assert_allclose(result[i], expected, err_msg=f"band {bid} mismatch")
+
+
+def test_integer_bands_scrambled_order():
+    """Integer bands in non-monotone order still produce correct per-band results."""
+    rng = np.random.default_rng(103)
+    band_ids = [5, 2, 8]  # non-contiguous, scrambled
+    t, m, sigma, band = _make_int_multiband_lc(band_ids, n_per_band=50, rng=rng)
+
+    amp = licu_ext.Amplitude(bands=band_ids)
+    result = amp(t, m, sigma, band, sorted=True)
+
+    amp_sb = licu_ext.Amplitude()
+    for i, bid in enumerate(band_ids):
+        mask = band == bid
+        expected = amp_sb(t[mask], m[mask], sigma[mask])[0]
+        assert_allclose(result[i], expected, err_msg=f"band {bid} mismatch")
+
+
+def test_integer_bands_contiguous_range():
+    """Contiguous integer range [0,1,2] triggers O(1) lookup and gives correct results."""
+    rng = np.random.default_rng(104)
+    band_ids = [0, 1, 2]
+    t, m, sigma, band = _make_int_multiband_lc(band_ids, n_per_band=50, rng=rng)
+
+    amp = licu_ext.Amplitude(bands=band_ids)
+    result = amp(t, m, sigma, band, sorted=True)
+
+    amp_sb = licu_ext.Amplitude()
+    for i, bid in enumerate(band_ids):
+        mask = band == bid
+        expected = amp_sb(t[mask], m[mask], sigma[mask])[0]
+        assert_allclose(result[i], expected, err_msg=f"band {bid} mismatch")
+
+
+def test_integer_bands_non_contiguous():
+    """Non-contiguous integer bands (e.g., 0, 2, 5) fall back to linear lookup correctly."""
+    rng = np.random.default_rng(105)
+    band_ids = [0, 2, 5]
+    t, m, sigma, band = _make_int_multiband_lc(band_ids, n_per_band=50, rng=rng)
+
+    amp = licu_ext.Amplitude(bands=band_ids)
+    result = amp(t, m, sigma, band, sorted=True)
+
+    amp_sb = licu_ext.Amplitude()
+    for i, bid in enumerate(band_ids):
+        mask = band == bid
+        expected = amp_sb(t[mask], m[mask], sigma[mask])[0]
+        assert_allclose(result[i], expected, err_msg=f"band {bid} mismatch")
+
+
+def test_integer_bands_negative():
+    """Negative integer band IDs are handled correctly."""
+    rng = np.random.default_rng(106)
+    band_ids = [-2, -1, 0]
+    t, m, sigma, band = _make_int_multiband_lc(band_ids, n_per_band=50, rng=rng)
+
+    amp = licu_ext.Amplitude(bands=band_ids)
+    result = amp(t, m, sigma, band, sorted=True)
+
+    amp_sb = licu_ext.Amplitude()
+    for i, bid in enumerate(band_ids):
+        mask = band == bid
+        expected = amp_sb(t[mask], m[mask], sigma[mask])[0]
+        assert_allclose(result[i], expected, err_msg=f"band {bid} mismatch")
+
+
+def test_integer_bands_property_returns_int64_array():
+    """The .bands property returns a numpy int64 array when constructed with integers."""
+    amp = licu_ext.Amplitude(bands=[3, 1, 2])
+    bands = amp.bands
+    assert bands is not None
+    assert bands.dtype == np.int64
+    assert_array_equal(bands, np.array([3, 1, 2], dtype=np.int64))
+
+
+def test_integer_bands_property_after_pickle():
+    """Integer bands property reconstructs correctly after a pickle round-trip."""
+    amp = licu_ext.Amplitude(bands=[0, 1, 2])
+    amp2 = pickle.loads(pickle.dumps(amp))
+    assert amp2.bands is not None
+    assert amp2.bands.dtype == np.int64
+    assert_array_equal(amp2.bands, np.array([0, 1, 2], dtype=np.int64))
+
+
+def test_integer_bands_unknown_raises():
+    """Passing an unrecognized integer band ID raises ValueError."""
+    t, m, sigma, band = _make_int_multiband_lc([0, 1], n_per_band=30, rng=107)
+    amp = licu_ext.Amplitude(bands=[0, 1])
+    band_bad = band.copy()
+    band_bad[band_bad == 1] = 99
+    with pytest.raises(ValueError, match="unknown passband"):
+        amp(t, m, sigma, band_bad, sorted=True, check=True)
+
+
+def test_integer_bands_matches_string_bands():
+    """Integer bands produce identical results to equivalent string bands."""
+    rng = np.random.default_rng(108)
+    band_ids = [1, 2, 3]
+    t, m, sigma, band_int = _make_int_multiband_lc(band_ids, n_per_band=50, rng=rng)
+    band_str = np.array([str(b) for b in band_int])
+
+    amp_int = licu_ext.Amplitude(bands=band_ids)
+    amp_str = licu_ext.Amplitude(bands=["1", "2", "3"])
+
+    result_int = amp_int(t, m, sigma, band_int, sorted=True)
+    result_str = amp_str(t, m, sigma, band_str, sorted=True)
+    assert_allclose(result_int, result_str)
+
+
+def test_integer_bands_many_matches_call():
+    """many() with integer bands produces the same result as repeated __call__."""
+    rng = np.random.default_rng(109)
+    band_ids = [0, 1, 2]
+    n_lcs = 5
+    lcs = [_make_int_multiband_lc(band_ids, n_per_band=30, rng=rng) for _ in range(n_lcs)]
+
+    amp = licu_ext.Amplitude(bands=band_ids)
+    call_results = np.stack([amp(t, m, sigma, band, sorted=True) for t, m, sigma, band in lcs])
+    many_results = amp.many([(t, m, sigma, band) for t, m, sigma, band in lcs], sorted=True)
+    assert_allclose(call_results, many_results)
+
+
+def _make_arrow_int_multiband_lcs(band_lcs, band_col_type=pa.int64()):
+    """Build a pyarrow List<Struct<t, m, sigma, band>> with an integer band column."""
+    struct_type = pa.struct(
+        [
+            ("t", pa.float64()),
+            ("m", pa.float64()),
+            ("sigma", pa.float64()),
+            ("band", band_col_type),
+        ]
+    )
+    all_lcs = []
+    for t, m, sigma, band in band_lcs:
+        rows = [
+            {"t": float(t[i]), "m": float(m[i]), "sigma": float(sigma[i]), "band": int(band[i])} for i in range(len(t))
+        ]
+        all_lcs.append(rows)
+    return pa.array(all_lcs, type=pa.list_(struct_type))
+
+
+@pytest.mark.parametrize(
+    "pa_type",
+    [pa.int8(), pa.int16(), pa.int32(), pa.int64(), pa.uint8(), pa.uint16(), pa.uint32()],
+)
+def test_integer_bands_arrow_dtype(pa_type):
+    """Arrow multiband with integer band column type matches numpy result."""
+    rng = np.random.default_rng(110)
+    band_ids = [0, 1, 2]
+    lcs = [_make_int_multiband_lc(band_ids, n_per_band=30, rng=rng) for _ in range(4)]
+
+    feat = licu_ext.Amplitude(bands=band_ids)
+    expected = feat.many([(t, m, sigma, band) for t, m, sigma, band in lcs], sorted=True)
+
+    arrow_arr = _make_arrow_int_multiband_lcs(lcs, band_col_type=pa_type)
+    result = feat.many(
+        arrow_arr,
+        sorted=True,
+        fill_value=-999.0,
+        arrow_fields={"t": "t", "m": "m", "sigma": "sigma", "band": "band"},
+    )
+    assert_allclose(result, expected)
+
+
+def test_integer_bands_arrow_string_feature_mismatch_raises():
+    """Arrow integer band column with a string-bands feature raises TypeError."""
+    rng = np.random.default_rng(111)
+    lcs = [_make_int_multiband_lc([0, 1], n_per_band=20, rng=rng) for _ in range(2)]
+    arrow_arr = _make_arrow_int_multiband_lcs(lcs, band_col_type=pa.int32())
+
+    feat = licu_ext.Amplitude(bands=["0", "1"])
+    with pytest.raises(TypeError):
+        feat.many(
+            arrow_arr,
+            sorted=True,
+            fill_value=-999.0,
+            arrow_fields={"t": "t", "m": "m", "sigma": "sigma", "band": "band"},
+        )
+
+
+# ---------------------------------------------------------------------------
+# Benchmarks: integer vs string band dispatch
+# ---------------------------------------------------------------------------
+
+_BENCH_N_PER_BAND = 1_000
+_BENCH_BANDS_STR = ["g", "r", "i"]
+_BENCH_BANDS_INT = [0, 1, 2]
+
+
+@pytest.fixture(scope="module")
+def _bench_str_lc():
+    return _make_multiband_lc(_BENCH_BANDS_STR, n_per_band=_BENCH_N_PER_BAND, rng=200)
+
+
+@pytest.fixture(scope="module")
+def _bench_int_lc():
+    return _make_int_multiband_lc(_BENCH_BANDS_INT, n_per_band=_BENCH_N_PER_BAND, rng=200)
+
+
+@pytest.fixture(scope="module")
+def _bench_str_feat():
+    return licu_ext.ObservationCount(bands=_BENCH_BANDS_STR)
+
+
+@pytest.fixture(scope="module")
+def _bench_int_feat():
+    return licu_ext.ObservationCount(bands=_BENCH_BANDS_INT)
+
+
+def test_benchmark_multiband_string_bands(benchmark, _bench_str_feat, _bench_str_lc):
+    """Benchmark multiband evaluation with string band labels (numpy input)."""
+    t, m, sigma, band = _bench_str_lc
+    benchmark.group = "multiband_band_dispatch"
+    benchmark.name = "string_bands"
+    benchmark(lambda: _bench_str_feat(t, m, sigma, band, sorted=True, check=False))
+
+
+def test_benchmark_multiband_integer_bands(benchmark, _bench_int_feat, _bench_int_lc):
+    """Benchmark multiband evaluation with integer band labels (numpy int64 input)."""
+    t, m, sigma, band = _bench_int_lc
+    benchmark.group = "multiband_band_dispatch"
+    benchmark.name = "integer_bands"
+    benchmark(lambda: _bench_int_feat(t, m, sigma, band, sorted=True, check=False))
