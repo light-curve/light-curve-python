@@ -13,7 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
---
+- **Experimental feature broken**: `light_curve.embed.ChronosBolt.from_hf()` now requires an
+  explicit `size` argument instead of defaulting to `"base"`. The four sizes have different
+  embedding dimensions, so a silent default was error-prone; callers must now pass e.g.
+  `ChronosBolt.from_hf(size="base")`.
 
 ### Deprecated
 

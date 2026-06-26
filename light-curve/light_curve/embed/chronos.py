@@ -263,15 +263,7 @@ class ChronosBolt(_ChronosModel):
 
     A faster, patch-based Chronos variant available in four sizes with
     different embedding dimensions (native context up to 2048 observations):
-
-    ===== =========
-    size  embed_dim
-    ===== =========
-    tiny  256
-    mini  384
-    small 512
-    base  768
-    ===== =========
+    ``tiny`` (256), ``mini`` (384), ``small`` (512), and ``base`` (768).
 
     The ONNX models are hosted on HuggingFace at
     ``https://huggingface.co/light-curve/chronos-bolt-<size>``.
@@ -331,7 +323,7 @@ class ChronosBolt(_ChronosModel):
     @classmethod
     def from_hf(
         cls,
-        size: str = "base",
+        size: str,
         output: str = "mean",
         *,
         reduction: str | list[str] | Reduction = "end",
@@ -342,8 +334,9 @@ class ChronosBolt(_ChronosModel):
 
         Parameters
         ----------
-        size : {"tiny", "mini", "small", "base"}, optional
-            Model size to load.  Defaults to ``"base"``.
+        size : {"tiny", "mini", "small", "base"}
+            Model size to load.  Required: the sizes have different embedding
+            dimensions, so there is no meaningful default.
         output : str, optional
             ``"mean"`` (default) or ``"sequence"``.
         reduction : str, list of str, or Reduction, optional
