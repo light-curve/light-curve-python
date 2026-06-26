@@ -100,11 +100,9 @@ def test_sequence_rejects_multiwindow():
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("row_idx", range(5))
+@pytest.mark.parametrize("row_idx", range(10))
 def test_mean_matches_reference(config, data_table, row_idx):
     """'mean' output matches the reference embedding from the parquet."""
-    if row_idx >= len(data_table["lightcurve"]):
-        pytest.skip("fewer reference rows than requested")
     model = config.make_model(output="mean")
     mag = _mags(data_table["lightcurve"][row_idx])
     expected = np.array(data_table["embedding_mean"][row_idx])
