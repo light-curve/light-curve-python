@@ -31,6 +31,7 @@ If you already have the ONNX model file locally, `huggingface_hub` is not requir
 | `ATCAT` | 6 (ugrizY jointly) | time, flux, flux\_err, band index | 384 | ELAsTiCC |
 | `Chronos2` | single (magnitude only) | mag | 768 | time-series corpus |
 | `ChronosBolt` | single (magnitude only) | mag | 256–768 | time-series corpus |
+| `Moment1` | single (magnitude only) | mag | 512–1024 | Time-series Pile |
 
 ## Single-band: Astromer2
 
@@ -209,6 +210,29 @@ print(bolt(mag).shape)  # (1, 1, 1, 512)
 Series longer than the native context (8192 for Chronos 2, 2048 for
 Chronos-Bolt) are reduced first; the default `reduction="end"` keeps the most
 recent observations.
+
+## Single-band: MOMENT-1
+
+[MOMENT](https://huggingface.co/AutonLab/MOMENT-1-base) is a T5-based time-series
+foundation model.  Like Chronos it embeds a **magnitude sequence only** with
+timestamps discarded.  It comes in three sizes (`small`/`base`/`large` →
+512/768/1024-dim) and uses a **fixed** 512-observation context (64 patches of 8):
+
+```python
+import numpy as np
+from light_curve.embed import Moment1
+
+rng = np.random.default_rng(7)
+mag = rng.normal(18.0, 0.3, 150).astype(np.float32)  # chronological order
+
+model = Moment1.from_hf(size="base", output="mean")
+embedding = model(mag)
+print(embedding.shape)  # (1, 1, 1, 768)
+```
+
+Light curves longer than 512 observations are reduced first; the default
+`reduction="end"` keeps the most recent 512.  The `"sequence"` output always has
+64 patches and supports only single-window reductions.
 
 ## GPU and alternative runtimes
 

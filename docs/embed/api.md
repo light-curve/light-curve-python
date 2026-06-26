@@ -42,6 +42,11 @@
       inherited_members: true
       members:
         - from_hf
+::: light_curve.embed.Moment1
+    options:
+      inherited_members: true
+      members:
+        - from_hf
 
 ## Reduction strategies
 
