@@ -4,6 +4,7 @@ from .atat import ATAT
 from .atcat import ATCAT
 from .chronos import Chronos2, ChronosBolt
 from .model import EmbeddingSession, SingleBandModel
+from .moment import Moment1
 from .reduction import (
     Beginning,
     End,
@@ -27,6 +28,7 @@ __all__ = [
     "EmbeddingSession",
     "End",
     "Middle",
+    "Moment1",
     "MultipleReductions",
     "NonOverlappingWindows",
     "RandomSubsample",

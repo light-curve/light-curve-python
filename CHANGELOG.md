@@ -9,7 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
---
+- `light_curve.embed.Moment1`: ONNX-backed univariate (magnitude-only) MOMENT-1 time-series
+  foundation model (Goswami et al. 2024, MIT license), exposing `mean` / `sequence` outputs.
+  Available in small/base/large sizes (512/768/1024-dim) via `Moment1.from_hf(size=...)`; uses a
+  fixed 512-observation context (64 patches of 8).
 
 ### Changed
 
