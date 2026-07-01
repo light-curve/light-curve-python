@@ -341,7 +341,7 @@ jobs:
           cargo llvm-cov report --lcov --output-path lcov.info
       - name: Upload coverage to Codecov
         if: env.CODECOV_TOKEN != '' || github.repository == 'light-curve/light-curve-python'
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           files: lcov.info
           fail_ci_if_error: true
