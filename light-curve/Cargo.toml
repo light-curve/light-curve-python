@@ -58,7 +58,7 @@ pyo3 = { version = "0.28.2", features = [
     "extension-module",
     "multiple-pymethods",
 ] }
-pyo3-arrow = { version = "0.17", default-features = false }
+pyo3-arrow = { version = "0.18", default-features = false }
 rand = "0.10"
 rand_xoshiro = "0.8"
 rayon = "1.11.0"
