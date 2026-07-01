@@ -71,7 +71,7 @@ unarray = "0.1.4"
 unzip3 = "1.0.0"
 # Transitive deps of pyo3-arrow:
 arrow-array = "58"
-arrow-buffer = "58"
+arrow-buffer = "59"
 arrow-schema = "58"
 comfy-table = "7"
 
