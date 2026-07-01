@@ -39,7 +39,7 @@ const_format = "0.2.35"
 conv = "0.3.3"
 enum-iterator = "2.3.0"
 enumflags2 = { version = "0.7.12", features = ["serde"] }
-itertools = "0.14.0"
+itertools = "0.15.0"
 macro_const = "0.1.0"
 # v2: mimalloc v3.3.0+ crashes when two instances coexist in the same process
 # (our .so + pyarrow's libarrow both bundle mimalloc). v2 uses a separate
