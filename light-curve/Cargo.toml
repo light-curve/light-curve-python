@@ -58,7 +58,7 @@ pyo3 = { version = "0.28.2", features = [
     "extension-module",
     "multiple-pymethods",
 ] }
-pyo3-arrow = { version = "0.17", default-features = false }
+pyo3-arrow = { version = "0.19", default-features = false }
 rand = "0.10"
 rand_xoshiro = "0.8"
 rayon = "1.11.0"
@@ -70,9 +70,9 @@ thiserror = "2"
 unarray = "0.1.4"
 unzip3 = "1.0.0"
 # Transitive deps of pyo3-arrow:
-arrow-array = "58"
-arrow-buffer = "58"
-arrow-schema = "58"
+arrow-array = "59"
+arrow-buffer = "59"
+arrow-schema = "59"
 comfy-table = "7"
 
 [dependencies.light-curve-feature]
