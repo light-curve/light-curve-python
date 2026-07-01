@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-slim
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
@@ -68,7 +68,7 @@ jobs:
             cibw_build: cp310-musllinux_aarch64
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: true
 
@@ -137,7 +137,7 @@ jobs:
         working-directory: ./light-curve
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup Python
         uses: actions/setup-python@v6
@@ -200,7 +200,7 @@ jobs:
         working-directory: light-curve-python
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Python
         uses: actions/setup-python@v6
