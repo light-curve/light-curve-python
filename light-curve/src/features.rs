@@ -2698,7 +2698,7 @@ impl Extractor {
     fn __new__(
         features: Bound<PyTuple>,
         transform: Option<Bound<PyAny>>,
-    ) -> PyResult<(Self, PyFeatureEvaluator)> {
+    ) -> PyResult<PyClassInitializer<Self>> {
         if transform.is_some() {
             return Err(Exception::NotImplementedError(
                 "transform is not implemented for Extractor, transform individual features instead"
@@ -2836,7 +2836,7 @@ impl Extractor {
                 },
             }
         };
-        Ok((Self {}, parent))
+        Ok(PyClassInitializer::from(parent).add_subclass(Self {}))
     }
 
     #[classattr]
@@ -3125,7 +3125,7 @@ macro_rules! fit_evaluator {
                 ln_prior: Option<FitLnPrior>,
                 transform: Option<Bound<PyAny>>,
                 bands: Option<Bound<'_, PyAny>>,
-            ) -> PyResult<(Self, PyFeatureEvaluator)> {
+            ) -> PyResult<PyClassInitializer<Self>> {
                 let mcmc_niter = mcmc_niter.unwrap_or_else(lcf::McmcCurveFit::default_niterations);
 
                 #[cfg(feature = "gsl")]
@@ -3268,7 +3268,7 @@ macro_rules! fit_evaluator {
                     }
                 };
 
-                Ok((Self{}, fe))
+                Ok(PyClassInitializer::from(fe).add_subclass(Self{}))
             }
 
             /// Required by pickle.dump / pickle.dumps
@@ -3521,7 +3521,7 @@ impl Bins {
         offset: f64,
         transform: Option<Bound<PyAny>>,
         bands: Option<Bound<'_, PyAny>>,
-    ) -> PyResult<(Self, PyFeatureEvaluator)> {
+    ) -> PyResult<PyClassInitializer<Self>> {
         if transform.is_some() {
             return Err(Exception::NotImplementedError(
                 "transform is not supported by Bins, apply transformations to individual features"
@@ -3606,7 +3606,7 @@ impl Bins {
             }
         };
 
-        Ok((Self {}, parent))
+        Ok(PyClassInitializer::from(parent).add_subclass(Self {}))
     }
 
     /// Use __getnewargs_ex__ instead
@@ -3674,7 +3674,7 @@ macro_rules! color_two_band_feature {
         impl $name {
             #[new]
             #[pyo3(signature = (bands, *, transform=None))]
-            fn __new__(bands: Bound<'_, PyAny>, transform: Option<Bound<PyAny>>) -> Res<(Self, PyFeatureEvaluator)> {
+            fn __new__(bands: Bound<'_, PyAny>, transform: Option<Bound<PyAny>>) -> Res<PyClassInitializer<Self>> {
                 if transform.is_some() {
                     return Err(Exception::NotImplementedError(
                         concat!(stringify!($name), " does not support transform").to_string(),
@@ -3699,7 +3699,7 @@ macro_rules! color_two_band_feature {
                         user_bands[1].clone(),
                     ]),
                 );
-                Ok((Self {}, PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64)))
+                Ok(PyClassInitializer::from(PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64)).add_subclass(Self {}))
             }
 
             #[staticmethod]
@@ -3758,7 +3758,7 @@ impl ColorSpread {
     fn __new__(
         bands: Bound<'_, PyAny>,
         transform: Option<Bound<PyAny>>,
-    ) -> Res<(Self, PyFeatureEvaluator)> {
+    ) -> Res<PyClassInitializer<Self>> {
         if transform.is_some() {
             return Err(Exception::NotImplementedError(
                 "ColorSpread does not support transform".to_string(),
@@ -3777,10 +3777,10 @@ impl ColorSpread {
         let mc_f64 = lcf::MultiColorFeature::ColorSpread(
             lcf::multicolor::features::ColorSpread::new(user_bands.iter().cloned()),
         );
-        Ok((
-            Self {},
-            PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64),
-        ))
+        Ok(
+            PyClassInitializer::from(PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64))
+                .add_subclass(Self {}),
+        )
     }
 
     #[staticmethod]
@@ -4575,7 +4575,7 @@ impl Periodogram {
         transform: Option<Bound<PyAny>>,
         bands: Option<Bound<'_, PyAny>>,
         multiband_normalization: &str,
-    ) -> PyResult<(Self, PyFeatureEvaluator)> {
+    ) -> PyResult<PyClassInitializer<Self>> {
         if transform.is_some() {
             return Err(PyNotImplementedError::new_err(
                 "transform is not supported by Periodogram, peak-related features are not transformed, but you still may apply transformation for the underlying features",
@@ -4623,13 +4623,10 @@ impl Periodogram {
                 )
             }
         };
-        Ok((
-            Self {
-                eval_f32: eval_f32.clone(),
-                eval_f64: eval_f64.clone(),
-            },
-            parent,
-        ))
+        Ok(PyClassInitializer::from(parent).add_subclass(Self {
+            eval_f32: eval_f32.clone(),
+            eval_f64: eval_f64.clone(),
+        }))
     }
 
     /// Periodogram values
@@ -4938,7 +4935,7 @@ impl OtsuSplit {
     fn __new__(
         transform: Option<Bound<PyAny>>,
         bands: Option<Bound<'_, PyAny>>,
-    ) -> Res<(Self, PyFeatureEvaluator)> {
+    ) -> Res<PyClassInitializer<Self>> {
         if transform.is_some() {
             return Err(Exception::NotImplementedError(
                 "OtsuSplit does not support transformations yet".to_string(),
@@ -4964,7 +4961,7 @@ impl OtsuSplit {
                 PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64)
             }
         };
-        Ok((Self {}, base))
+        Ok(PyClassInitializer::from(base).add_subclass(Self {}))
     }
 
     #[staticmethod]
@@ -5017,7 +5014,7 @@ impl_pickle_serialisation!(JsonDeserializedFeature);
 impl JsonDeserializedFeature {
     #[new]
     #[pyo3(text_signature = "(json_string)")]
-    fn __new__(s: String) -> Res<(Self, PyFeatureEvaluator)> {
+    fn __new__(s: String) -> Res<PyClassInitializer<Self>> {
         #[derive(Deserialize)]
         struct MultiBandJsonF64 {
             bands: Vec<Passband>,
@@ -5037,10 +5034,12 @@ impl JsonDeserializedFeature {
                     "Cannot deserialize multiband feature from JSON: {err}"
                 ))
             })?;
-            return Ok((
-                Self {},
-                PyFeatureEvaluator::multi_band(mb_f64.bands, mb_f32.feature, mb_f64.feature),
-            ));
+            return Ok(PyClassInitializer::from(PyFeatureEvaluator::multi_band(
+                mb_f64.bands,
+                mb_f32.feature,
+                mb_f64.feature,
+            ))
+            .add_subclass(Self {}));
         }
 
         let feature_evaluator_f32: Feature<f32> = serde_json::from_str(&s).map_err(|err| {
@@ -5050,14 +5049,12 @@ impl JsonDeserializedFeature {
             Exception::ValueError(format!("Cannot deserialize feature from JSON: {err}"))
         })?;
 
-        Ok((
-            Self {},
-            PyFeatureEvaluator {
-                mode: FeatureEvalMode::SingleBand {
-                    feature_evaluator_f32,
-                    feature_evaluator_f64,
-                },
+        Ok(PyClassInitializer::from(PyFeatureEvaluator {
+            mode: FeatureEvalMode::SingleBand {
+                feature_evaluator_f32,
+                feature_evaluator_f64,
             },
-        ))
+        })
+        .add_subclass(Self {}))
     }
 }
