@@ -33,6 +33,9 @@ ceres-system = ["light-curve-feature/ceres-system"]
 mkl = ["light-curve-feature/fftw-mkl"]
 gsl = ["light-curve-feature/gsl"]
 mimalloc = ["dep:mimalloc"]
+# RainbowFit, opt-in like the other optional backends. Requires the light-curve-feature
+# git override below, since it isn't released on crates.io yet.
+rainbow = ["light-curve-feature/rainbow"]
 
 [dependencies]
 const_format = "0.2.35"
@@ -78,6 +81,12 @@ comfy-table = "7"
 [dependencies.light-curve-feature]
 version = "0.18.1"
 default-features = false
+# TEMPORARY: pinned to the RainbowFit branch pending review of
+# https://github.com/light-curve/light-curve-feature (PR not yet open, branch pushed to
+# https://github.com/erusseil/light-curve-feature/tree/add-rainbow-multicolor-fit).
+# Swap back to a plain crates.io dependency once RainbowFit is merged and released.
+git = "https://github.com/erusseil/light-curve-feature.git"
+branch = "add-rainbow-multicolor-fit"
 
 [dependencies.light-curve-dmdt]
 version = "0.9.0"

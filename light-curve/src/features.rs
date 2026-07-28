@@ -290,19 +290,69 @@ fn transform_parameter_doc(default: StockTransformer) -> String {
 
 type PyLightCurve<'a, T> = (Arr<'a, T>, Arr<'a, T>, Option<Arr<'a, T>>);
 
-/// A passband label: either a string name (e.g. "g", "r") or an integer ID.
+/// An owned passband carrying an explicit effective wavelength, used by [`RainbowFit`].
 ///
-/// Unifies [`lcf::StringPassband`] and [`lcf::LabeledPassband<i64>`] under a single type
-/// that satisfies [`PassbandTrait`], so [`lcf::MultiColorFeature`] can be parameterised with
-/// one concrete passband type regardless of how the user supplied the band labels.
+/// [`lcf::MonochromePassband`] borrows its name (`&'a str`), which doesn't fit `Passband`'s
+/// need to be owned and long-lived inside a Python object, so this is a small owned
+/// equivalent. `f64` has no total order in general, but wavelengths are validated positive
+/// and finite at construction time (see `parse_band_wave_cm`), so `partial_cmp` never
+/// returns `None` here.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub(crate) struct OwnedMonochromePassband {
+    name: String,
+    /// Effective wavelength, in cm.
+    wavelength_cm: f64,
+}
+
+impl PartialEq for OwnedMonochromePassband {
+    fn eq(&self, other: &Self) -> bool {
+        self.wavelength_cm == other.wavelength_cm
+    }
+}
+
+impl Eq for OwnedMonochromePassband {}
+
+impl PartialOrd for OwnedMonochromePassband {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for OwnedMonochromePassband {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.wavelength_cm
+            .partial_cmp(&other.wavelength_cm)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    }
+}
+
+impl PassbandTrait for OwnedMonochromePassband {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn wavelength(&self) -> Option<f64> {
+        Some(self.wavelength_cm)
+    }
+}
+
+/// A passband label: either a string name (e.g. "g", "r"), an integer ID, or (for
+/// [`RainbowFit`], the only feature that needs it) a name with an explicit wavelength.
+///
+/// Unifies [`lcf::StringPassband`], [`lcf::LabeledPassband<i64>`] and
+/// [`OwnedMonochromePassband`] under a single type that satisfies [`PassbandTrait`], so
+/// [`lcf::MultiColorFeature`] can be parameterised with one concrete passband type
+/// regardless of how the user supplied the band labels.
 ///
 /// Serde uses the untagged representation: string bands serialise as bare JSON strings
-/// (e.g. `"g"`), integer bands as `{"label": 0}`.
+/// (e.g. `"g"`), integer bands as `{"label": 0}`, monochrome bands as
+/// `{"name": ..., "wavelength_cm": ...}`.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, JsonSchema)]
 #[serde(untagged)]
 pub(crate) enum Passband {
     String(lcf::StringPassband),
     Integer(lcf::LabeledPassband<i64>),
+    Monochrome(OwnedMonochromePassband),
 }
 
 impl PassbandTrait for Passband {
@@ -310,6 +360,14 @@ impl PassbandTrait for Passband {
         match self {
             Passband::String(p) => p.name(),
             Passband::Integer(p) => p.name(),
+            Passband::Monochrome(p) => p.name(),
+        }
+    }
+
+    fn wavelength(&self) -> Option<f64> {
+        match self {
+            Passband::Monochrome(p) => p.wavelength(),
+            Passband::String(_) | Passband::Integer(_) => None,
         }
     }
 }
@@ -534,6 +592,39 @@ fn parse_bands(bands_py: &Bound<PyAny>) -> Res<Vec<Passband>> {
     }
 }
 
+/// Parse `RainbowFit`'s `band_wave_cm` constructor argument: a `dict` mapping band name to
+/// effective wavelength in cm.
+#[cfg(feature = "rainbow")]
+fn parse_band_wave_cm(band_wave_cm: &Bound<'_, pyo3::types::PyDict>) -> Res<Vec<Passband>> {
+    if band_wave_cm.is_empty() {
+        return Err(Exception::ValueError(
+            "band_wave_cm must not be empty".to_string(),
+        ));
+    }
+    band_wave_cm
+        .iter()
+        .map(|(key, value)| {
+            let name: String = key.extract().map_err(|_| {
+                Exception::TypeError("band_wave_cm keys must be strings".to_string())
+            })?;
+            let wavelength_cm: f64 = value.extract().map_err(|_| {
+                Exception::TypeError(format!(
+                    "band_wave_cm['{name}'] must be a float wavelength in cm"
+                ))
+            })?;
+            if !(wavelength_cm.is_finite() && wavelength_cm > 0.0) {
+                return Err(Exception::ValueError(format!(
+                    "band_wave_cm['{name}'] must be a positive finite wavelength, got {wavelength_cm}"
+                )));
+            }
+            Ok(Passband::Monochrome(OwnedMonochromePassband {
+                name,
+                wavelength_cm,
+            }))
+        })
+        .collect()
+}
+
 /// Pre-built per-dtype lookup tables for the fast numpy band-array path.
 ///
 /// The number of configured bands is small (typically ≤ 10), so a linear scan over a
@@ -743,13 +834,15 @@ fn make_sorted_bands_and_input(bands: &[Passband]) -> (Vec<Passband>, BandInput)
     let mut sorted = bands.to_vec();
     sorted.sort();
     let band_input = match sorted.first() {
-        None | Some(Passband::String(_)) => BandInput::String(build_band_lookup(&sorted)),
+        None | Some(Passband::String(_)) | Some(Passband::Monochrome(_)) => {
+            BandInput::String(build_band_lookup(&sorted))
+        }
         Some(Passband::Integer(_)) => {
             let sorted_ints: Vec<i64> = sorted
                 .iter()
                 .map(|p| match p {
                     Passband::Integer(lp) => lp.label,
-                    Passband::String(_) => unreachable!(),
+                    Passband::String(_) | Passband::Monochrome(_) => unreachable!(),
                 })
                 .collect();
             BandInput::Integer(IntBandLookup::build(&sorted_ints))
@@ -2628,7 +2721,7 @@ impl PyFeatureEvaluator {
                             .iter()
                             .map(|p| match p {
                                 Passband::Integer(lp) => lp.label,
-                                Passband::String(_) => unreachable!(),
+                                Passband::String(_) | Passband::Monochrome(_) => unreachable!(),
                             })
                             .collect();
                         Ok(Some(np.getattr("array")?.call1((ints,))?))
@@ -3815,6 +3908,281 @@ impl ColorSpread {
              Extract features and return them as a numpy array\n\
          many(self, lcs, *, fill_value=None, sorted=None, check=True, cast=False, n_jobs=-1)\n\
              Extract features from multiple light curves in parallel"
+    }
+}
+
+#[cfg(feature = "rainbow")]
+fn parse_bolometric(s: &str) -> Res<lcf::Bolometric> {
+    match s {
+        "bazin" => Ok(lcf::Bolometric::Bazin),
+        "sigmoid" => Ok(lcf::Bolometric::Sigmoid),
+        "doublexp" => Ok(lcf::Bolometric::Doublexp),
+        "linexp" => Err(Exception::NotImplementedError(
+            "bolometric='linexp' is not implemented in the Rust backend: the Python \
+             reference's own docstring flags its guesses/limits as unstable. Use 'bazin', \
+             'sigmoid', or 'doublexp', or use the pure-Python light_curve_py.RainbowFit."
+                .to_string(),
+        )),
+        other => Err(Exception::ValueError(format!(
+            "unknown bolometric term {other:?}; supported: 'bazin', 'sigmoid', 'doublexp'"
+        ))),
+    }
+}
+
+#[cfg(feature = "rainbow")]
+fn parse_temperature(s: &str) -> Res<lcf::Temperature> {
+    match s {
+        "constant" => Ok(lcf::Temperature::Constant),
+        "sigmoid" => Ok(lcf::Temperature::Sigmoid),
+        "delayed_sigmoid" => Ok(lcf::Temperature::DelayedSigmoid),
+        other => Err(Exception::ValueError(format!(
+            "unknown temperature term {other:?}; supported: 'constant', 'sigmoid', 'delayed_sigmoid'"
+        ))),
+    }
+}
+
+#[cfg(feature = "rainbow")]
+fn parse_spectral(s: &str) -> Res<lcf::Spectral> {
+    match s {
+        "planck" => Ok(lcf::Spectral::Planck),
+        "genwien" => Ok(lcf::Spectral::GenWien),
+        "modified_bb" => Ok(lcf::Spectral::ModifiedBlackBody),
+        "logparabola" => Ok(lcf::Spectral::LogParabola),
+        "blanketed" => Err(Exception::NotImplementedError(
+            "spectral='blanketed' is not implemented in the Rust backend: it anchors its \
+             extinction depth to the temperature term's own characteristic T parameter via \
+             cross-term sharing that hasn't been ported. Use 'planck', 'genwien', \
+             'modified_bb', or 'logparabola', or use the pure-Python light_curve_py.RainbowFit."
+                .to_string(),
+        )),
+        other => Err(Exception::ValueError(format!(
+            "unknown spectral term {other:?}; supported: 'planck', 'genwien', 'modified_bb', 'logparabola'"
+        ))),
+    }
+}
+
+/// Multiband blackbody fit to the light curve (Bazin/Sigmoid/Doublexp bolometric envelope
+/// times a Planck-family spectral energy distribution, with a temperature evolving over
+/// time). Based on Russeil et al. 2023, arXiv:2310.02916.
+///
+/// This is the Rust-native counterpart of `light_curve_py.RainbowFit`: same model and
+/// parametrization, but fit with a bounded Levenberg-Marquardt optimizer instead of
+/// iminuit/scipy, so it doesn't take an `optimizer=` argument and always uses its own
+/// analytic Jacobian. `linexp` (bolometric) and `blanketed` (spectral) are not implemented
+/// here yet -- use `light_curve_py.RainbowFit` for those.
+#[cfg(feature = "rainbow")]
+#[derive(Serialize, Deserialize)]
+#[pyclass(extends = PyFeatureEvaluator, module = "light_curve.light_curve_ext")]
+pub struct RainbowFit {
+    peak_time_eval: lcf::RainbowFit<Passband, f64>,
+}
+
+#[cfg(feature = "rainbow")]
+impl_pickle_serialisation!(RainbowFit);
+
+#[cfg(feature = "rainbow")]
+impl RainbowFit {
+    #[allow(clippy::too_many_arguments)]
+    fn build(
+        band_wave_cm: &Bound<'_, pyo3::types::PyDict>,
+        bolometric: &str,
+        temperature: &str,
+        spectral: &str,
+        with_baseline: bool,
+        transform: Option<Bound<PyAny>>,
+    ) -> Res<PyClassInitializer<Self>> {
+        if transform.is_some() {
+            return Err(Exception::NotImplementedError(
+                "RainbowFit does not support transform".to_string(),
+            ));
+        }
+        let bol = parse_bolometric(bolometric)?;
+        let temp = parse_temperature(temperature)?;
+        let spec = parse_spectral(spectral)?;
+        let user_bands = parse_band_wave_cm(band_wave_cm)?;
+
+        let peak_time_eval = lcf::RainbowFit::<Passband, f64>::new(
+            user_bands.iter().cloned(),
+            bol,
+            temp,
+            spec,
+            with_baseline,
+        )
+        .map_err(|err| Exception::ValueError(err.to_string()))?;
+        let mc_f32 = lcf::MultiColorFeature::RainbowFit(
+            lcf::RainbowFit::<Passband, f32>::new(
+                user_bands.iter().cloned(),
+                bol,
+                temp,
+                spec,
+                with_baseline,
+            )
+            .map_err(|err| Exception::ValueError(err.to_string()))?,
+        );
+        let mc_f64 = lcf::MultiColorFeature::RainbowFit(peak_time_eval.clone());
+
+        Ok(
+            PyClassInitializer::from(PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64))
+                .add_subclass(Self { peak_time_eval }),
+        )
+    }
+}
+
+#[cfg(feature = "rainbow")]
+#[pymethods]
+impl RainbowFit {
+    #[new]
+    #[pyo3(signature = (
+        band_wave_cm,
+        *,
+        bolometric = "bazin",
+        temperature = "sigmoid",
+        spectral = "planck",
+        with_baseline = true,
+        transform = None,
+    ))]
+    fn __new__(
+        band_wave_cm: &Bound<'_, pyo3::types::PyDict>,
+        bolometric: &str,
+        temperature: &str,
+        spectral: &str,
+        with_baseline: bool,
+        transform: Option<Bound<PyAny>>,
+    ) -> Res<PyClassInitializer<Self>> {
+        Self::build(
+            band_wave_cm,
+            bolometric,
+            temperature,
+            spectral,
+            with_baseline,
+            transform,
+        )
+    }
+
+    #[staticmethod]
+    #[pyo3(signature = (
+        band_wave_nm,
+        *,
+        bolometric = "bazin",
+        temperature = "sigmoid",
+        spectral = "planck",
+        with_baseline = true,
+        transform = None,
+    ))]
+    #[allow(clippy::too_many_arguments)]
+    fn from_nm(
+        py: Python<'_>,
+        band_wave_nm: &Bound<'_, pyo3::types::PyDict>,
+        bolometric: &str,
+        temperature: &str,
+        spectral: &str,
+        with_baseline: bool,
+        transform: Option<Bound<PyAny>>,
+    ) -> Res<Py<Self>> {
+        let band_wave_cm = pyo3::types::PyDict::new(py);
+        for (name, wavelength_nm) in band_wave_nm.iter() {
+            let wavelength_nm: f64 = wavelength_nm.extract()?;
+            band_wave_cm.set_item(name, 1e-7 * wavelength_nm)?;
+        }
+        let initializer = Self::build(
+            &band_wave_cm,
+            bolometric,
+            temperature,
+            spectral,
+            with_baseline,
+            transform,
+        )?;
+        Ok(Py::new(py, initializer)?)
+    }
+
+    /// Dummy args to satisfy `__new__` during unpickling; `__setstate__` overwrites the
+    /// resulting object's actual state right afterwards, so these values themselves never
+    /// surface to the user.
+    #[staticmethod]
+    fn __getnewargs__() -> (BTreeMap<&'static str, f64>,) {
+        (BTreeMap::from([("g", 5000e-8)]),)
+    }
+
+    #[staticmethod]
+    #[pyo3(signature = (
+        band_wave_aa,
+        *,
+        bolometric = "bazin",
+        temperature = "sigmoid",
+        spectral = "planck",
+        with_baseline = true,
+        transform = None,
+    ))]
+    #[allow(clippy::too_many_arguments)]
+    fn from_angstrom(
+        py: Python<'_>,
+        band_wave_aa: &Bound<'_, pyo3::types::PyDict>,
+        bolometric: &str,
+        temperature: &str,
+        spectral: &str,
+        with_baseline: bool,
+        transform: Option<Bound<PyAny>>,
+    ) -> Res<Py<Self>> {
+        let band_wave_cm = pyo3::types::PyDict::new(py);
+        for (name, wavelength_aa) in band_wave_aa.iter() {
+            let wavelength_aa: f64 = wavelength_aa.extract()?;
+            band_wave_cm.set_item(name, 1e-8 * wavelength_aa)?;
+        }
+        let initializer = Self::build(
+            &band_wave_cm,
+            bolometric,
+            temperature,
+            spectral,
+            with_baseline,
+            transform,
+        )?;
+        Ok(Py::new(py, initializer)?)
+    }
+
+    /// Bolometric peak time for the given fitted parameters (same units as input `t`).
+    fn peak_time(&self, params: Vec<f64>) -> Option<f64> {
+        self.peak_time_eval.peak_time(&params)
+    }
+
+    #[classattr]
+    fn __doc__() -> &'static str {
+        "Multiband blackbody fit to the light curve using functions to be chosen by the user.\n\n\
+         Note that `m` and the corresponding `sigma` are assumed to be flux densities.\n\
+         Based on Russeil et al. 2023, arXiv:2310.02916.\n\n\
+         Parameters\n\
+         ----------\n\
+         band_wave_cm : dict\n\
+             Mapping of band names to their effective wavelengths, in cm.\n\
+         bolometric : str, default 'bazin'\n\
+             Shape of the bolometric term: 'bazin', 'sigmoid', or 'doublexp'.\n\
+         temperature : str, default 'sigmoid'\n\
+             Shape of the temperature-vs-time term: 'constant', 'sigmoid', or 'delayed_sigmoid'.\n\
+         spectral : str, default 'planck'\n\
+             Spectral energy distribution: 'planck', 'genwien', 'modified_bb', or 'logparabola'.\n\
+         with_baseline : bool, default True\n\
+             Whether to fit an additive per-band baseline offset alongside the model.\n\
+         \n\
+         Attributes\n\
+         ----------\n\
+         names : list of str\n\
+             Feature names: fitted parameters, then their uncertainties, then reduced Chi^2.\n\
+         descriptions : list of str\n\
+             Feature descriptions\n\
+         bands : numpy.ndarray of str\n\
+             Passband names, in `band_wave_cm` order\n\
+         \n\
+         Methods\n\
+         -------\n\
+         __call__(self, t, m, sigma=None, band=None, *, fill_value=None, sorted=None, check=True, cast=False)\n\
+             Extract features and return them as a numpy array\n\
+         many(self, lcs, *, fill_value=None, sorted=None, check=True, cast=False, n_jobs=-1)\n\
+             Extract features from multiple light curves in parallel\n\
+         peak_time(self, params)\n\
+             Bolometric peak time for the given fitted parameters\n\
+         from_nm(band_wave_nm, **kwargs)\n\
+             Alternate constructor: wavelengths given in nm instead of cm\n\
+         from_angstrom(band_wave_aa, **kwargs)\n\
+             Alternate constructor: wavelengths given in angstrom instead of cm"
     }
 }
 

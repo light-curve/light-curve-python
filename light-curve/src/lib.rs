@@ -89,6 +89,8 @@ fn light_curve(py: Python, m: Bound<PyModule>) -> PyResult<()> {
     m.add_class::<f::PercentAmplitude>()?;
     m.add_class::<f::PercentDifferenceMagnitudePercentile>()?;
     m.add_class::<f::Periodogram>()?;
+    #[cfg(feature = "rainbow")]
+    m.add_class::<f::RainbowFit>()?;
     m.add_class::<f::ReducedChi2>()?;
     m.add_class::<f::Roms>()?;
     m.add_class::<f::Skew>()?;
