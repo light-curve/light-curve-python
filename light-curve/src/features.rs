@@ -292,11 +292,9 @@ type PyLightCurve<'a, T> = (Arr<'a, T>, Arr<'a, T>, Option<Arr<'a, T>>);
 
 /// An owned passband carrying an explicit effective wavelength, used by [`RainbowFit`].
 ///
-/// [`lcf::MonochromePassband`] borrows its name (`&'a str`), which doesn't fit `Passband`'s
-/// need to be owned and long-lived inside a Python object, so this is a small owned
-/// equivalent. `f64` has no total order in general, but wavelengths are validated positive
-/// and finite at construction time (see `parse_band_wave_cm`), so `partial_cmp` never
-/// returns `None` here.
+/// [`lcf::MonochromePassband`] borrows its name, which doesn't fit `Passband`'s need to be
+/// owned and long-lived in a Python object. Wavelengths are validated positive and finite in
+/// `parse_band_wave_cm`, so `Ord`/`PartialOrd` below never hit the NaN case.
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub(crate) struct OwnedMonochromePassband {
     name: String,
