@@ -385,7 +385,7 @@ jobs:
           exit 1
       - name: Run benchmarks
         if: env.CODSPEED_TOKEN != ''
-        uses: CodSpeedHQ/action@v4
+        uses: CodSpeedHQ/action@v5
         with:
           token: ${{ env.CODSPEED_TOKEN }}
           mode: simulation
