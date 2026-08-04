@@ -2040,9 +2040,7 @@ def test_rainbow_fit_recovers_injected_parameters():
     band_wave_cm = {"g": 4770e-8, "r": 6231e-8}
     t0, amplitude, rise_time, fall_time, temperature = 10.0, 100.0, 3.0, 15.0, 8000.0
     rng = np.random.default_rng(1)
-    t, m, sigma, band = _rainbow_synthetic_lc(
-        band_wave_cm, t0, amplitude, rise_time, fall_time, temperature, rng
-    )
+    t, m, sigma, band = _rainbow_synthetic_lc(band_wave_cm, t0, amplitude, rise_time, fall_time, temperature, rng)
 
     feat = licu_ext.RainbowFit(
         band_wave_cm,
