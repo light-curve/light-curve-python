@@ -290,19 +290,64 @@ fn transform_parameter_doc(default: StockTransformer) -> String {
 
 type PyLightCurve<'a, T> = (Arr<'a, T>, Arr<'a, T>, Option<Arr<'a, T>>);
 
-/// A passband label: either a string name (e.g. "g", "r") or an integer ID.
+/// An owned passband carrying an explicit effective wavelength, used to build
+/// [`RainbowFit`]'s `(passband, wavelength_cm)` constructor pairs.
 ///
-/// Unifies [`lcf::StringPassband`] and [`lcf::LabeledPassband<i64>`] under a single type
-/// that satisfies [`PassbandTrait`], so [`lcf::MultiColorFeature`] can be parameterised with
-/// one concrete passband type regardless of how the user supplied the band labels.
+/// [`lcf::MonochromePassband`] borrows its name, which doesn't fit `Passband`'s need to be
+/// owned and long-lived in a Python object. Wavelengths are validated positive and finite in
+/// `parse_band_wave_cm`, so `Ord`/`PartialOrd` below never hit the NaN case.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub(crate) struct OwnedMonochromePassband {
+    name: String,
+    /// Effective wavelength, in cm.
+    wavelength_cm: f64,
+}
+
+impl PartialEq for OwnedMonochromePassband {
+    fn eq(&self, other: &Self) -> bool {
+        self.wavelength_cm == other.wavelength_cm
+    }
+}
+
+impl Eq for OwnedMonochromePassband {}
+
+impl PartialOrd for OwnedMonochromePassband {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for OwnedMonochromePassband {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.wavelength_cm
+            .partial_cmp(&other.wavelength_cm)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    }
+}
+
+impl PassbandTrait for OwnedMonochromePassband {
+    fn name(&self) -> &str {
+        &self.name
+    }
+}
+
+/// A passband label: either a string name (e.g. "g", "r"), an integer ID, or (for
+/// [`RainbowFit`], the only feature that needs it) a name with an explicit wavelength.
+///
+/// Unifies [`lcf::StringPassband`], [`lcf::LabeledPassband<i64>`] and
+/// [`OwnedMonochromePassband`] under a single type that satisfies [`PassbandTrait`], so
+/// [`lcf::MultiColorFeature`] can be parameterised with one concrete passband type
+/// regardless of how the user supplied the band labels.
 ///
 /// Serde uses the untagged representation: string bands serialise as bare JSON strings
-/// (e.g. `"g"`), integer bands as `{"label": 0}`.
+/// (e.g. `"g"`), integer bands as `{"label": 0}`, monochrome bands as
+/// `{"name": ..., "wavelength_cm": ...}`.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, JsonSchema)]
 #[serde(untagged)]
 pub(crate) enum Passband {
     String(lcf::StringPassband),
     Integer(lcf::LabeledPassband<i64>),
+    Monochrome(OwnedMonochromePassband),
 }
 
 impl PassbandTrait for Passband {
@@ -310,6 +355,7 @@ impl PassbandTrait for Passband {
         match self {
             Passband::String(p) => p.name(),
             Passband::Integer(p) => p.name(),
+            Passband::Monochrome(p) => p.name(),
         }
     }
 }
@@ -534,6 +580,44 @@ fn parse_bands(bands_py: &Bound<PyAny>) -> Res<Vec<Passband>> {
     }
 }
 
+/// Parse `RainbowFit`'s `band_wave_cm` constructor argument: a `dict` mapping band name to
+/// effective wavelength in cm, into `(passband, wavelength_cm)` pairs for
+/// [`lcf::RainbowFit::new`].
+fn parse_band_wave_cm(
+    band_wave_cm: &Bound<'_, pyo3::types::PyDict>,
+) -> Res<Vec<(Passband, f64)>> {
+    if band_wave_cm.is_empty() {
+        return Err(Exception::ValueError(
+            "band_wave_cm must not be empty".to_string(),
+        ));
+    }
+    band_wave_cm
+        .iter()
+        .map(|(key, value)| {
+            let name: String = key.extract().map_err(|_| {
+                Exception::TypeError("band_wave_cm keys must be strings".to_string())
+            })?;
+            let wavelength_cm: f64 = value.extract().map_err(|_| {
+                Exception::TypeError(format!(
+                    "band_wave_cm['{name}'] must be a float wavelength in cm"
+                ))
+            })?;
+            if !(wavelength_cm.is_finite() && wavelength_cm > 0.0) {
+                return Err(Exception::ValueError(format!(
+                    "band_wave_cm['{name}'] must be a positive finite wavelength, got {wavelength_cm}"
+                )));
+            }
+            Ok((
+                Passband::Monochrome(OwnedMonochromePassband {
+                    name,
+                    wavelength_cm,
+                }),
+                wavelength_cm,
+            ))
+        })
+        .collect()
+}
+
 /// Pre-built per-dtype lookup tables for the fast numpy band-array path.
 ///
 /// The number of configured bands is small (typically ≤ 10), so a linear scan over a
@@ -743,13 +827,15 @@ fn make_sorted_bands_and_input(bands: &[Passband]) -> (Vec<Passband>, BandInput)
     let mut sorted = bands.to_vec();
     sorted.sort();
     let band_input = match sorted.first() {
-        None | Some(Passband::String(_)) => BandInput::String(build_band_lookup(&sorted)),
+        None | Some(Passband::String(_)) | Some(Passband::Monochrome(_)) => {
+            BandInput::String(build_band_lookup(&sorted))
+        }
         Some(Passband::Integer(_)) => {
             let sorted_ints: Vec<i64> = sorted
                 .iter()
                 .map(|p| match p {
                     Passband::Integer(lp) => lp.label,
-                    Passband::String(_) => unreachable!(),
+                    Passband::String(_) | Passband::Monochrome(_) => unreachable!(),
                 })
                 .collect();
             BandInput::Integer(IntBandLookup::build(&sorted_ints))
@@ -2628,7 +2714,7 @@ impl PyFeatureEvaluator {
                             .iter()
                             .map(|p| match p {
                                 Passband::Integer(lp) => lp.label,
-                                Passband::String(_) => unreachable!(),
+                                Passband::String(_) | Passband::Monochrome(_) => unreachable!(),
                             })
                             .collect();
                         Ok(Some(np.getattr("array")?.call1((ints,))?))
@@ -2986,6 +3072,24 @@ const SUPPORTED_ALGORITHMS_CURVE_FIT: [&str; N_ALGO_CURVE_FIT] = [
     "nuts-lmsder",
 ];
 
+// `RainbowFit` doesn't offer Lmsder: it ignores box bounds, which `RainbowFit` relies on to
+// keep parameters physical (see `lcf::RainbowFit::new`'s own validation).
+const N_ALGO_RAINBOW_PURE_MCMC: usize = 1;
+const N_ALGO_RAINBOW_NUTS: usize = 1 + N_ALGO_CURVE_FIT_CERES / 2;
+const N_ALGO_RAINBOW: usize =
+    N_ALGO_CURVE_FIT_CERES + N_ALGO_RAINBOW_PURE_MCMC + N_ALGO_RAINBOW_NUTS;
+
+const SUPPORTED_ALGORITHMS_RAINBOW: [&str; N_ALGO_RAINBOW] = [
+    "mcmc",
+    #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+    "ceres",
+    #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+    "mcmc-ceres",
+    "nuts",
+    #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+    "nuts-ceres",
+];
+
 macro_const! {
     const FIT_METHOD_MODEL_DOC: &str = r#"model(t, params, *, cast=False)
     Underlying parametric model function
@@ -3184,15 +3288,14 @@ macro_rules! fit_evaluator {
                         FitLnPrior::Name(s) => match s.as_str() $ln_prior_by_str,
                         FitLnPrior::ListLnPrior1D(v) => {
                             let v: Vec<_> = v.into_iter().map(|py_ln_prior1d| py_ln_prior1d.0).collect();
-                            lcf::LnPrior::ind_components(
-                                v.try_into().map_err(|v: Vec<_>| Exception::ValueError(
-                                    format!(
-                                        "ln_prior must have length of {}, not {}",
-                                        $nparam,
-                                        v.len())
-                                    )
-                                )?
-                            ).into()
+                            if v.len() != $nparam {
+                                return Err(Exception::ValueError(format!(
+                                    "ln_prior must have length of {}, not {}",
+                                    $nparam,
+                                    v.len()
+                                )).into());
+                            }
+                            lcf::LnPrior::ind_components(v).into()
                         }
                     },
                     None => lcf::LnPrior::none().into(),
@@ -3815,6 +3918,441 @@ impl ColorSpread {
              Extract features and return them as a numpy array\n\
          many(self, lcs, *, fill_value=None, sorted=None, check=True, cast=False, n_jobs=-1)\n\
              Extract features from multiple light curves in parallel"
+    }
+}
+
+fn parse_bolometric(s: &str) -> Res<lcf::Bolometric> {
+    match s {
+        "bazin" => Ok(lcf::Bolometric::Bazin),
+        "sigmoid" => Ok(lcf::Bolometric::Sigmoid),
+        "doublexp" => Ok(lcf::Bolometric::Doublexp),
+        "linexp" => Err(Exception::NotImplementedError(
+            "bolometric='linexp' is not implemented in the Rust backend: the Python \
+             reference's own docstring flags its guesses/limits as unstable. Use 'bazin', \
+             'sigmoid', or 'doublexp', or use the pure-Python light_curve_py.RainbowFit."
+                .to_string(),
+        )),
+        other => Err(Exception::ValueError(format!(
+            "unknown bolometric term {other:?}; supported: 'bazin', 'sigmoid', 'doublexp'"
+        ))),
+    }
+}
+
+fn parse_temperature(s: &str) -> Res<lcf::Temperature> {
+    match s {
+        "constant" => Ok(lcf::Temperature::Constant),
+        "sigmoid" => Ok(lcf::Temperature::Sigmoid),
+        "delayed_sigmoid" => Ok(lcf::Temperature::DelayedSigmoid),
+        other => Err(Exception::ValueError(format!(
+            "unknown temperature term {other:?}; supported: 'constant', 'sigmoid', 'delayed_sigmoid'"
+        ))),
+    }
+}
+
+fn parse_spectral(s: &str) -> Res<lcf::Spectral> {
+    match s {
+        "planck" => Ok(lcf::Spectral::Planck),
+        "genwien" => Ok(lcf::Spectral::GenWien),
+        "modified_bb" => Ok(lcf::Spectral::ModifiedBlackBody),
+        "logparabola" => Ok(lcf::Spectral::LogParabola),
+        "blanketed" => Err(Exception::NotImplementedError(
+            "spectral='blanketed' is not implemented in the Rust backend: it anchors its \
+             extinction depth to the temperature term's own characteristic T parameter via \
+             cross-term sharing that hasn't been ported. Use 'planck', 'genwien', \
+             'modified_bb', or 'logparabola', or use the pure-Python light_curve_py.RainbowFit."
+                .to_string(),
+        )),
+        other => Err(Exception::ValueError(format!(
+            "unknown spectral term {other:?}; supported: 'planck', 'genwien', 'modified_bb', 'logparabola'"
+        ))),
+    }
+}
+
+/// Multiband blackbody fit to the light curve (Bazin/Sigmoid/Doublexp bolometric envelope
+/// times a Planck-family spectral energy distribution, with a temperature evolving over
+/// time). Based on Russeil et al. 2023, arXiv:2310.02916.
+///
+/// This is the Rust-native counterpart of `light_curve_py.RainbowFit`: same model and
+/// parametrization, fit through the same Ceres/MCMC/NUTS optimizer infrastructure as
+/// `BazinFit`/`VillarFit` instead of iminuit/scipy. `linexp` (bolometric) and `blanketed`
+/// (spectral) are not implemented here yet -- use `light_curve_py.RainbowFit` for those.
+#[derive(Serialize, Deserialize)]
+#[pyclass(extends = PyFeatureEvaluator, module = "light_curve.light_curve_ext")]
+pub struct RainbowFit {
+    peak_time_eval: lcf::RainbowFit<Passband, f64>,
+}
+
+impl_pickle_serialisation!(RainbowFit);
+
+impl RainbowFit {
+    fn supported_algorithms_str() -> String {
+        SUPPORTED_ALGORITHMS_RAINBOW.join(", ")
+    }
+
+    fn default_ceres_iterations() -> Option<u16> {
+        #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+        {
+            lcf::CeresCurveFit::default_niterations().into()
+        }
+        #[cfg(not(any(feature = "ceres-source", feature = "ceres-system")))]
+        {
+            None
+        }
+    }
+
+    fn default_nuts_ntune() -> u32 {
+        lcf::NutsCurveFit::default_num_tune()
+    }
+
+    fn default_nuts_niter() -> u32 {
+        lcf::NutsCurveFit::default_num_draws()
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn build(
+        band_wave_cm: &Bound<'_, pyo3::types::PyDict>,
+        bolometric: &str,
+        temperature: &str,
+        spectral: &str,
+        with_baseline: bool,
+        algorithm: &str,
+        mcmc_niter: Option<u32>,
+        // The first Option is for Python's None, the second is for compile-time None from
+        // Self::default_ceres_iterations()
+        ceres_niter: Option<Option<u16>>,
+        ceres_loss_reg: Option<f64>,
+        nuts_ntune: u32,
+        nuts_niter: u32,
+        transform: Option<Bound<PyAny>>,
+    ) -> Res<PyClassInitializer<Self>> {
+        if transform.is_some() {
+            return Err(Exception::NotImplementedError(
+                "RainbowFit does not support transform".to_string(),
+            ));
+        }
+        let bol = parse_bolometric(bolometric)?;
+        let temp = parse_temperature(temperature)?;
+        let spec = parse_spectral(spectral)?;
+        let band_wavelength_pairs = parse_band_wave_cm(band_wave_cm)?;
+        let user_bands: Vec<Passband> = band_wavelength_pairs
+            .iter()
+            .map(|(p, _)| p.clone())
+            .collect();
+
+        let mcmc_niter = mcmc_niter.unwrap_or_else(lcf::McmcCurveFit::default_niterations);
+
+        #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+        let ceres_fit: lcf::CurveFitAlgorithm = lcf::CeresCurveFit::new(
+            ceres_niter
+                .unwrap_or_else(Self::default_ceres_iterations)
+                .expect("logical error: default ceres_niter is None but Ceres is enabled"),
+            ceres_loss_reg.or_else(lcf::CeresCurveFit::default_loss_factor),
+        )
+        .into();
+        #[cfg(not(any(feature = "ceres-source", feature = "ceres-system")))]
+        if ceres_niter.flatten().is_some() || ceres_loss_reg.is_some() {
+            return Err(Exception::ValueError(
+                "Compiled without Ceres support, ceres_niter and ceres_loss_reg are not supported"
+                    .to_string(),
+            ));
+        }
+
+        let curve_fit_algorithm: lcf::CurveFitAlgorithm = match algorithm {
+            "mcmc" => lcf::McmcCurveFit::new(mcmc_niter, None).into(),
+            #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+            "ceres" => ceres_fit,
+            #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+            "mcmc-ceres" => lcf::McmcCurveFit::new(mcmc_niter, Some(ceres_fit)).into(),
+            "nuts" => lcf::NutsCurveFit::new(nuts_ntune, nuts_niter, None).into(),
+            #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+            "nuts-ceres" => lcf::NutsCurveFit::new(nuts_ntune, nuts_niter, Some(ceres_fit)).into(),
+            _ => {
+                return Err(Exception::ValueError(format!(
+                    r#"wrong algorithm value "{}", supported values are: {}"#,
+                    algorithm,
+                    Self::supported_algorithms_str()
+                )));
+            }
+        };
+
+        let peak_time_eval = lcf::RainbowFit::<Passband, f64>::new(
+            band_wavelength_pairs.iter().cloned(),
+            bol,
+            temp,
+            spec,
+            with_baseline,
+            curve_fit_algorithm.clone(),
+        )
+        .map_err(|err| Exception::ValueError(err.to_string()))?;
+        let mc_f32 = lcf::MultiColorFeature::RainbowFit(
+            lcf::RainbowFit::<Passband, f32>::new(
+                band_wavelength_pairs.iter().cloned(),
+                bol,
+                temp,
+                spec,
+                with_baseline,
+                curve_fit_algorithm.clone(),
+            )
+            .map_err(|err| Exception::ValueError(err.to_string()))?,
+        );
+        let mc_f64 = lcf::MultiColorFeature::RainbowFit(peak_time_eval.clone());
+
+        Ok(
+            PyClassInitializer::from(PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64))
+                .add_subclass(Self { peak_time_eval }),
+        )
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+#[pymethods]
+impl RainbowFit {
+    #[new]
+    #[pyo3(signature = (
+        band_wave_cm,
+        *,
+        bolometric = "bazin",
+        temperature = "sigmoid",
+        spectral = "planck",
+        with_baseline = true,
+        algorithm = "mcmc",
+        mcmc_niter = None,
+        ceres_niter = Self::default_ceres_iterations(),
+        ceres_loss_reg = None,
+        nuts_ntune = Self::default_nuts_ntune(),
+        nuts_niter = Self::default_nuts_niter(),
+        transform = None,
+    ))]
+    fn __new__(
+        band_wave_cm: &Bound<'_, pyo3::types::PyDict>,
+        bolometric: &str,
+        temperature: &str,
+        spectral: &str,
+        with_baseline: bool,
+        algorithm: &str,
+        mcmc_niter: Option<u32>,
+        ceres_niter: Option<Option<u16>>,
+        ceres_loss_reg: Option<f64>,
+        nuts_ntune: u32,
+        nuts_niter: u32,
+        transform: Option<Bound<PyAny>>,
+    ) -> Res<PyClassInitializer<Self>> {
+        Self::build(
+            band_wave_cm,
+            bolometric,
+            temperature,
+            spectral,
+            with_baseline,
+            algorithm,
+            mcmc_niter,
+            ceres_niter,
+            ceres_loss_reg,
+            nuts_ntune,
+            nuts_niter,
+            transform,
+        )
+    }
+
+    #[staticmethod]
+    #[pyo3(signature = (
+        band_wave_nm,
+        *,
+        bolometric = "bazin",
+        temperature = "sigmoid",
+        spectral = "planck",
+        with_baseline = true,
+        algorithm = "mcmc",
+        mcmc_niter = None,
+        ceres_niter = Self::default_ceres_iterations(),
+        ceres_loss_reg = None,
+        nuts_ntune = Self::default_nuts_ntune(),
+        nuts_niter = Self::default_nuts_niter(),
+        transform = None,
+    ))]
+    #[allow(clippy::too_many_arguments)]
+    fn from_nm(
+        py: Python<'_>,
+        band_wave_nm: &Bound<'_, pyo3::types::PyDict>,
+        bolometric: &str,
+        temperature: &str,
+        spectral: &str,
+        with_baseline: bool,
+        algorithm: &str,
+        mcmc_niter: Option<u32>,
+        ceres_niter: Option<Option<u16>>,
+        ceres_loss_reg: Option<f64>,
+        nuts_ntune: u32,
+        nuts_niter: u32,
+        transform: Option<Bound<PyAny>>,
+    ) -> Res<Py<Self>> {
+        let band_wave_cm = pyo3::types::PyDict::new(py);
+        for (name, wavelength_nm) in band_wave_nm.iter() {
+            let wavelength_nm: f64 = wavelength_nm.extract()?;
+            band_wave_cm.set_item(name, 1e-7 * wavelength_nm)?;
+        }
+        let initializer = Self::build(
+            &band_wave_cm,
+            bolometric,
+            temperature,
+            spectral,
+            with_baseline,
+            algorithm,
+            mcmc_niter,
+            ceres_niter,
+            ceres_loss_reg,
+            nuts_ntune,
+            nuts_niter,
+            transform,
+        )?;
+        Ok(Py::new(py, initializer)?)
+    }
+
+    /// Dummy args to satisfy `__new__` during unpickling; `__setstate__` overwrites the
+    /// resulting object's actual state right afterwards, so these values themselves never
+    /// surface to the user.
+    #[staticmethod]
+    fn __getnewargs__() -> (BTreeMap<&'static str, f64>,) {
+        (BTreeMap::from([("g", 5000e-8)]),)
+    }
+
+    #[staticmethod]
+    #[pyo3(signature = (
+        band_wave_aa,
+        *,
+        bolometric = "bazin",
+        temperature = "sigmoid",
+        spectral = "planck",
+        with_baseline = true,
+        algorithm = "mcmc",
+        mcmc_niter = None,
+        ceres_niter = Self::default_ceres_iterations(),
+        ceres_loss_reg = None,
+        nuts_ntune = Self::default_nuts_ntune(),
+        nuts_niter = Self::default_nuts_niter(),
+        transform = None,
+    ))]
+    #[allow(clippy::too_many_arguments)]
+    fn from_angstrom(
+        py: Python<'_>,
+        band_wave_aa: &Bound<'_, pyo3::types::PyDict>,
+        bolometric: &str,
+        temperature: &str,
+        spectral: &str,
+        with_baseline: bool,
+        algorithm: &str,
+        mcmc_niter: Option<u32>,
+        ceres_niter: Option<Option<u16>>,
+        ceres_loss_reg: Option<f64>,
+        nuts_ntune: u32,
+        nuts_niter: u32,
+        transform: Option<Bound<PyAny>>,
+    ) -> Res<Py<Self>> {
+        let band_wave_cm = pyo3::types::PyDict::new(py);
+        for (name, wavelength_aa) in band_wave_aa.iter() {
+            let wavelength_aa: f64 = wavelength_aa.extract()?;
+            band_wave_cm.set_item(name, 1e-8 * wavelength_aa)?;
+        }
+        let initializer = Self::build(
+            &band_wave_cm,
+            bolometric,
+            temperature,
+            spectral,
+            with_baseline,
+            algorithm,
+            mcmc_niter,
+            ceres_niter,
+            ceres_loss_reg,
+            nuts_ntune,
+            nuts_niter,
+            transform,
+        )?;
+        Ok(Py::new(py, initializer)?)
+    }
+
+    /// Bolometric peak time for the given fitted parameters (same units as input `t`).
+    fn peak_time(&self, params: Vec<f64>) -> Option<f64> {
+        self.peak_time_eval.peak_time(&params)
+    }
+
+    #[classattr]
+    fn supported_algorithms() -> [&'static str; N_ALGO_RAINBOW] {
+        SUPPORTED_ALGORITHMS_RAINBOW
+    }
+
+    #[classattr]
+    fn __doc__() -> String {
+        #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
+        let ceres_args = format!(
+            r#"ceres_niter : int, default {niter}
+    Number of Ceres iterations
+
+ceres_loss_reg : float or None, default None
+    Ceres loss regularization. If set to a number, the loss function is
+    regularized to discriminate outlier residuals larger than this value.
+    ``None`` means no regularization.
+
+"#,
+            niter = lcf::CeresCurveFit::default_niterations()
+        );
+        #[cfg(not(any(feature = "ceres-source", feature = "ceres-system")))]
+        let ceres_args = "";
+
+        format!(
+            r#"Multiband blackbody fit to the light curve using functions to be chosen by the user.
+
+Note that `m` and the corresponding `sigma` are assumed to be flux densities.
+Based on Russeil et al. 2023, arXiv:2310.02916.
+
+Parameters
+----------
+band_wave_cm : dict
+    Mapping of band names to their effective wavelengths, in cm.
+bolometric : str, default 'bazin'
+    Shape of the bolometric term: 'bazin', 'sigmoid', or 'doublexp'.
+temperature : str, default 'sigmoid'
+    Shape of the temperature-vs-time term: 'constant', 'sigmoid', or 'delayed_sigmoid'.
+spectral : str, default 'planck'
+    Spectral energy distribution: 'planck', 'genwien', 'modified_bb', or 'logparabola'.
+with_baseline : bool, default True
+    Whether to fit an additive per-band baseline offset alongside the model.
+algorithm : str, default 'mcmc'
+    Non-linear least-square algorithm, supported values are: {supported_algo}. Note that
+    'lmsder'/'mcmc-lmsder'/'nuts-lmsder' are not offered here: they ignore box bounds, which
+    this feature relies on to keep parameters physical.
+mcmc_niter : int or None, default None
+    Number of MCMC iterations
+
+{ceres_args}nuts_ntune : int, default {nuts_ntune}
+    Number of NUTS tuning iterations
+
+nuts_niter : int, default {nuts_niter}
+    Number of NUTS iterations
+
+Attributes
+----------
+names : list of str
+    Feature names: fitted parameters, then reduced Chi^2.
+descriptions : list of str
+    Feature descriptions
+bands : numpy.ndarray of str
+    Passband names, in `band_wave_cm` order
+
+Methods
+-------
+__call__(self, t, m, sigma=None, band=None, *, fill_value=None, sorted=None, check=True, cast=False)
+    Extract features and return them as a numpy array
+many(self, lcs, *, fill_value=None, sorted=None, check=True, cast=False, n_jobs=-1)
+    Extract features from multiple light curves in parallel
+peak_time(self, params)
+    Bolometric peak time for the given fitted parameters
+from_nm(band_wave_nm, **kwargs)
+    Alternate constructor: wavelengths given in nm instead of cm
+from_angstrom(band_wave_aa, **kwargs)
+    Alternate constructor: wavelengths given in angstrom instead of cm"#,
+            supported_algo = Self::supported_algorithms_str(),
+            nuts_ntune = Self::default_nuts_ntune(),
+            nuts_niter = Self::default_nuts_niter(),
+        )
     }
 }
 

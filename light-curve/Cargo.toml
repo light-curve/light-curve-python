@@ -78,6 +78,12 @@ comfy-table = "7"
 [dependencies.light-curve-feature]
 version = "0.18.1"
 default-features = false
+# TEMPORARY: pinned to the RainbowFit branch pending review of
+# https://github.com/light-curve/light-curve-feature (branch to be pushed to
+# https://github.com/erusseil/light-curve-feature/tree/rainbow-on-nl-fit).
+# Swap back to a plain crates.io dependency once RainbowFit is merged and released.
+git = "https://github.com/erusseil/light-curve-feature.git"
+branch = "rainbow-on-nl-fit"
 
 [dependencies.light-curve-dmdt]
 version = "0.9.0"
