@@ -1607,7 +1607,7 @@ dependencies = [
 [[package]]
 name = "light-curve-feature"
 version = "0.18.1"
-source = "git+https://github.com/erusseil/light-curve-feature.git?branch=rainbow-on-nl-fit#77555980b9023bffc96a2406f5e01279c67081d5"
+source = "git+https://github.com/erusseil/light-curve-feature.git?branch=rainbow-on-nl-fit#4960d7a4900971d401743fc9f9229c803a520ed0"
 dependencies = [
  "GSL",
  "ceres-solver",

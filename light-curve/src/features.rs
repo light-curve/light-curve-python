@@ -583,9 +583,7 @@ fn parse_bands(bands_py: &Bound<PyAny>) -> Res<Vec<Passband>> {
 /// Parse `RainbowFit`'s `band_wave_cm` constructor argument: a `dict` mapping band name to
 /// effective wavelength in cm, into `(passband, wavelength_cm)` pairs for
 /// [`lcf::RainbowFit::new`].
-fn parse_band_wave_cm(
-    band_wave_cm: &Bound<'_, pyo3::types::PyDict>,
-) -> Res<Vec<(Passband, f64)>> {
+fn parse_band_wave_cm(band_wave_cm: &Bound<'_, pyo3::types::PyDict>) -> Res<Vec<(Passband, f64)>> {
     if band_wave_cm.is_empty() {
         return Err(Exception::ValueError(
             "band_wave_cm must not be empty".to_string(),
@@ -3989,10 +3987,14 @@ impl RainbowFit {
         SUPPORTED_ALGORITHMS_RAINBOW.join(", ")
     }
 
+    /// Higher than the generic `CeresCurveFit::default_niterations()` (10), which is tuned for
+    /// simpler single-band features: Rainbow's larger multi-band parameter space needs more to
+    /// reach a comparable optimum (25/90 vs. 82/90 real light curves converging close to the
+    /// Python reference at niter=10 vs. niter=200).
     fn default_ceres_iterations() -> Option<u16> {
         #[cfg(any(feature = "ceres-source", feature = "ceres-system"))]
         {
-            lcf::CeresCurveFit::default_niterations().into()
+            Some(200)
         }
         #[cfg(not(any(feature = "ceres-source", feature = "ceres-system")))]
         {
