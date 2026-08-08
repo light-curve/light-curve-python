@@ -381,6 +381,7 @@ jobs:
           name: wheels-linux-x86_64
           path: wheels/
       - name: Run benchmarks
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         uses: CodSpeedHQ/action@v5
         with:
           mode: simulation
