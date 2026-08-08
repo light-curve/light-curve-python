@@ -31,7 +31,7 @@ err = np.full(100, 0.1)
 # Statistical and variability feature extraction
 extractor = licu.Extractor(licu.Amplitude(), licu.BeyondNStd(nstd=1), licu.LinearFit())
 result = extractor(t, m, err)
-print("\n".join(f"{name} = {value:.4f}" for name, value in zip(extractor.names, result)))
+print('\n'.join(f"{name} = {value:.4f}" for name, value in zip(extractor.names, result)))
 
 # Multi-band: per-band features and cross-band color in one Extractor
 band = np.tile(["g", "r"], 50)  # 50 interleaved g/r observations
