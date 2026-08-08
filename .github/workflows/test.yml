@@ -350,10 +350,12 @@ jobs:
   benchmarks:
     runs-on: ubuntu-latest
     needs: [build-wheel-linux-x86_64, prepare-hf-models]
+    permissions:
+      contents: read # required for actions/checkout
+      id-token: write # required for OIDC authentication with CodSpeed
 
     env:
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
-      CODSPEED_TOKEN: ${{ secrets.CODSPEED_TOKEN }}
 
     steps:
       - uses: actions/checkout@v7
@@ -378,14 +380,8 @@ jobs:
         with:
           name: wheels-linux-x86_64
           path: wheels/
-      - name: Check CodSpeed token
-        if: github.repository == 'light-curve/light-curve-python' && env.CODSPEED_TOKEN == ''
-        run: |
-          echo "::error::CODSPEED_TOKEN secret is missing or expired — please renew it."
-          exit 1
       - name: Run benchmarks
-        if: env.CODSPEED_TOKEN != ''
-        uses: CodSpeedHQ/action@v4
+        uses: CodSpeedHQ/action@v5
         with:
           token: ${{ env.CODSPEED_TOKEN }}
           mode: simulation
