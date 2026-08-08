@@ -383,7 +383,6 @@ jobs:
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v5
         with:
-          token: ${{ env.CODSPEED_TOKEN }}
           mode: simulation
           run: |
             cd light-curve
