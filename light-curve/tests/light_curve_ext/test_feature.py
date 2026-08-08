@@ -56,12 +56,20 @@ def _try_pure_multiband(cls):
         return False
 
 
+# RainbowFit is multiband-only like the other pure multiband features, but its mandatory
+# argument is a `band_wave_cm` dict (name -> wavelength), not a plain `bands` list, so it's
+# special-cased everywhere `_MULTIBAND_BANDS` (a list) would otherwise be passed to it.
+_non_list_multiband_feature_classes = frozenset({licu_ext.RainbowFit})
+
 # Pure multiband features: always multiband-only, no single-band mode.
 # Their constructor takes `bands` as the first (and only mandatory) argument.
 pure_multiband_feature_classes = frozenset(
     cls
     for cls in all_feature_classes
-    if cls not in fit_feature_classes | {licu_ext.Extractor, licu_ext.Periodogram, licu_ext.JSONDeserializedFeature}
+    if cls
+    not in fit_feature_classes
+    | {licu_ext.Extractor, licu_ext.Periodogram, licu_ext.JSONDeserializedFeature}
+    | _non_list_multiband_feature_classes
     and hasattr(cls, "__getnewargs__")
     and _try_pure_multiband(cls)
 )
@@ -144,8 +152,10 @@ def construct_example_objects(cls, *, parametric_variants=1, rng=None):
     if cls is licu_ext.Extractor:
         return [cls(licu_ext.BeyondNStd(1.5), licu_ext.LinearFit())]
 
-    # Pure multiband features have no single-band mode; skip them here
-    if cls in pure_multiband_feature_classes:
+    # Pure multiband features have no single-band mode; skip them here. RainbowFit is pure
+    # multiband too, but takes `band_wave_cm` (a dict) rather than `bands` (a list) as its
+    # mandatory arg, so it's classified separately (see `_non_list_multiband_feature_classes`).
+    if cls in pure_multiband_feature_classes | _non_list_multiband_feature_classes:
         return []
 
     # Periodogram
@@ -204,7 +214,15 @@ _MULTIBAND_BANDS = ["g", "r"]
 
 def _try_construct_multiband(cls):
     """Return a multiband instance of *cls*, or None if not supported."""
-    if cls in fit_feature_classes or cls in (licu_ext.Extractor, licu_ext.Bins, licu_ext.JSONDeserializedFeature):
+    # RainbowFit is a nonlinear fit, like the `fit_feature_classes` below: fitting random
+    # noise (the generic multiband harness's test data) isn't guaranteed to converge, so it
+    # gets its own dedicated tests instead (see the "RainbowFit tests" section) rather than
+    # participating in this fully-generic one.
+    if (
+        cls in fit_feature_classes
+        or cls in (licu_ext.Extractor, licu_ext.Bins, licu_ext.JSONDeserializedFeature)
+        or cls in _non_list_multiband_feature_classes
+    ):
         return None
     if cls is licu_ext.Periodogram:
         return licu_ext.Periodogram(peaks=2, bands=_MULTIBAND_BANDS)
@@ -1985,3 +2003,124 @@ def test_benchmark_multiband_integer_bands(benchmark, _bench_int_feat, _bench_in
     benchmark.group = "multiband_band_dispatch"
     benchmark.name = "integer_bands"
     benchmark(lambda: _bench_int_feat(t, m, sigma, band, sorted=True, check=False))
+
+
+# ── RainbowFit tests ────────────────────────────────────────────────────────
+
+
+def _rainbow_synthetic_lc(band_wave_cm, t0, amplitude, rise_time, fall_time, temperature, rng):
+    """Bazin bolometric x Planck SED synthetic light curve, with 2% multiplicative noise."""
+    h, c, k_b = 6.62607004e-27, 2.99792458e10, 1.380649e-16
+    parts_t, parts_m, parts_s, parts_b = [], [], [], []
+    for name, wave_cm in band_wave_cm.items():
+        t = np.sort(rng.uniform(t0 - 3 * rise_time, t0 + 4 * fall_time, 50))
+        bol = amplitude * np.exp(-(t - t0) / fall_time) / (1 + np.exp(-(t - t0) / rise_time))
+        nu = c / wave_cm
+        planck = (2 * h * nu**3 / c**2) / np.expm1(h * nu / (k_b * temperature))
+        m = bol * planck * (1 + rng.normal(0, 0.02, t.size))
+        sigma = 0.02 * np.abs(m)
+        parts_t.append(t)
+        parts_m.append(m)
+        parts_s.append(sigma)
+        parts_b.extend([name] * t.size)
+    t = np.concatenate(parts_t)
+    m = np.concatenate(parts_m)
+    sigma = np.concatenate(parts_s)
+    band = np.array(parts_b)
+    idx = np.argsort(t)
+    return t[idx], m[idx], sigma[idx], band[idx]
+
+
+def test_rainbow_fit_recovers_injected_parameters():
+    """RainbowFit(bolometric='bazin', temperature='constant') recovers injected values.
+
+    Uses algorithm='ceres': the default 'mcmc' needs many more iterations than its default
+    to converge tightly on this data, which isn't what this test is checking.
+    """
+    band_wave_cm = {"g": 4770e-8, "r": 6231e-8}
+    t0, amplitude, rise_time, fall_time, temperature = 10.0, 100.0, 3.0, 15.0, 8000.0
+    rng = np.random.default_rng(1)
+    t, m, sigma, band = _rainbow_synthetic_lc(band_wave_cm, t0, amplitude, rise_time, fall_time, temperature, rng)
+
+    feat = licu_ext.RainbowFit(
+        band_wave_cm,
+        bolometric="bazin",
+        temperature="constant",
+        spectral="planck",
+        with_baseline=False,
+        algorithm="ceres",
+    )
+    result = feat(t, m, sigma, band)
+    values = dict(zip(feat.names, result))
+
+    assert_allclose(values["rainbow_reference_time"], t0, atol=1.0)
+    assert_allclose(values["rainbow_rise_time"], rise_time, rtol=0.3)
+    assert_allclose(values["rainbow_fall_time"], fall_time, rtol=0.2)
+    assert_allclose(values["rainbow_T"], temperature, rtol=0.1)
+    assert values["rainbow_reduced_chi2"] < 3.0
+
+
+def test_rainbow_fit_names_and_shape():
+    """Output layout is [params..., reduced_chi2]."""
+    feat = licu_ext.RainbowFit({"g": 4770e-8, "r": 6231e-8}, with_baseline=True)
+    assert feat.names[-1] == "rainbow_reduced_chi2"
+    assert "rainbow_baseline_g" in feat.names
+    assert "rainbow_baseline_r" in feat.names
+    assert not any(name.endswith("_sigma") for name in feat.names)
+
+
+def test_rainbow_fit_from_nm_and_from_angstrom_equivalent_to_cm():
+    """from_nm/from_angstrom are unit-converted shorthands for band_wave_cm."""
+    cm = licu_ext.RainbowFit({"g": 4770e-8, "r": 6231e-8})
+    nm = licu_ext.RainbowFit.from_nm({"g": 477.0, "r": 623.1})
+    aa = licu_ext.RainbowFit.from_angstrom({"g": 4770.0, "r": 6231.0})
+    assert cm.names == nm.names == aa.names
+
+
+def test_rainbow_fit_peak_time():
+    """peak_time() returns a finite time close to the fitted reference_time for a Bazin term."""
+    band_wave_cm = {"g": 4770e-8, "r": 6231e-8}
+    rng = np.random.default_rng(2)
+    t, m, sigma, band = _rainbow_synthetic_lc(band_wave_cm, 10.0, 100.0, 3.0, 15.0, 8000.0, rng)
+    feat = licu_ext.RainbowFit(
+        band_wave_cm, bolometric="bazin", temperature="constant", with_baseline=False, algorithm="ceres"
+    )
+    result = feat(t, m, sigma, band)
+    n_params = len(feat.names) - 1
+    peak = feat.peak_time(list(result[:n_params]))
+    assert np.isfinite(peak)
+
+
+def test_rainbow_fit_empty_bands_raises():
+    with pytest.raises(ValueError, match="not be empty"):
+        licu_ext.RainbowFit({})
+
+
+def test_rainbow_fit_unimplemented_terms_raise_not_implemented():
+    with pytest.raises(NotImplementedError):
+        licu_ext.RainbowFit({"g": 4770e-8}, bolometric="linexp")
+    with pytest.raises(NotImplementedError):
+        licu_ext.RainbowFit({"g": 4770e-8}, spectral="blanketed")
+
+
+def test_rainbow_fit_unknown_term_raises_value_error():
+    with pytest.raises(ValueError, match="unknown bolometric term"):
+        licu_ext.RainbowFit({"g": 4770e-8}, bolometric="not_a_term")
+
+
+def test_rainbow_fit_lmsder_not_supported():
+    """Lmsder ignores box bounds, which RainbowFit relies on; it isn't offered as an option."""
+    with pytest.raises(ValueError, match="wrong algorithm value"):
+        licu_ext.RainbowFit({"g": 4770e-8}, algorithm="lmsder")
+
+
+def test_rainbow_fit_pickle_roundtrip():
+    band_wave_cm = {"g": 4770e-8, "r": 6231e-8}
+    feat = licu_ext.RainbowFit(
+        band_wave_cm, bolometric="bazin", temperature="constant", with_baseline=False, algorithm="ceres"
+    )
+    restored = pickle.loads(pickle.dumps(feat))
+    assert restored.names == feat.names
+    rng = np.random.default_rng(5)
+    t, m, sigma, band = _rainbow_synthetic_lc(band_wave_cm, 10.0, 100.0, 3.0, 15.0, 8000.0, rng)
+    assert_allclose(feat(t, m, sigma, band), restored(t, m, sigma, band))

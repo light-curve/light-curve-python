@@ -1607,8 +1607,7 @@ dependencies = [
 [[package]]
 name = "light-curve-feature"
 version = "0.18.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "14d3a7f7feb58db41465a3618ee064859cb60377ab7ff7476da3ab52e932fe47"
+source = "git+https://github.com/erusseil/light-curve-feature.git?branch=rainbow-on-nl-fit#4960d7a4900971d401743fc9f9229c803a520ed0"
 dependencies = [
  "GSL",
  "ceres-solver",
@@ -1616,7 +1615,7 @@ dependencies = [
  "emcee",
  "enum_dispatch",
  "fftw",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "lazy_static",
  "libm",
  "macro_const",
@@ -1635,6 +1634,7 @@ dependencies = [
  "rustfft",
  "schemars",
  "serde",
+ "smallvec",
  "special",
  "take_mut",
  "thiserror 2.0.19",

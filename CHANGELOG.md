@@ -13,6 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   foundation model (Goswami et al. 2024, MIT license), exposing `mean` / `sequence` outputs.
   Available in small/base/large sizes (512/768/1024-dim) via `Moment1.from_hf(size=...)`; uses a
   fixed 512-observation context (64 patches of 8).
+- `light_curve.RainbowFit`: Rust-native counterpart of `light_curve_py.RainbowFit`, the
+  multiband Bazin/Sigmoid/Doublexp-envelope x Planck-family SED fit (Russeil et al. 2023,
+  arXiv:2310.02916). Fit through the same Ceres/MCMC/NUTS optimizer infrastructure as
+  `BazinFit`/`VillarFit` (`algorithm=` selects between them), instead of iminuit/scipy. Takes
+  bands as a `band_wave_cm` dict of name to effective wavelength in cm (`from_nm`/`from_angstrom`
+  alternate constructors also provided). `bolometric='linexp'` and `spectral='blanketed'` aren't
+  implemented yet; use `light_curve_py.RainbowFit` for those. **Depends on an unreleased
+  `light-curve-feature` version** (temporarily pinned to a fork branch in `Cargo.toml`) pending
+  upstream review.
 
 ### Changed
 
