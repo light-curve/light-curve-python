@@ -36,7 +36,7 @@ jobs:
           submodules: true
           persist-credentials: false
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.14"
 
@@ -206,7 +206,7 @@ jobs:
           path: docs-deploy
           fetch-depth: 1
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.14"
 

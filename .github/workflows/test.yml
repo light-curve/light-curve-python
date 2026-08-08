@@ -39,7 +39,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
       - name: Set up Python 3.14
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.14"
       - name: Build abi3 wheel
@@ -50,7 +50,7 @@ jobs:
           name: wheels-linux-x86_64
           path: light-curve/target/wheels/
       - name: Set up Python 3.14t
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.14t"
       - name: Build free-threading wheel
@@ -91,7 +91,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
       - name: Set up Python 3.14
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.14"
       - name: Build abi3 wheel
@@ -119,7 +119,7 @@ jobs:
         with:
           submodules: true
       - name: Set up Python 3.14
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.14"
       - name: Install uv
@@ -171,7 +171,7 @@ jobs:
         with:
           submodules: true
       - name: Set up Python 3.${{ matrix.python_minor }}
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.${{ matrix.python_minor }}"
       - name: Install uv
@@ -216,7 +216,7 @@ jobs:
         with:
           submodules: true
       - name: Set up Python 3.${{ matrix.python_minor }}
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.${{ matrix.python_minor }}"
       - name: Install uv
@@ -311,7 +311,7 @@ jobs:
           shared-key: "${{ runner.os }}_stable-rust_maturin-develop"
           workspaces: "light-curve"
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.14"
       - name: Install uv
@@ -360,7 +360,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.13"
       - name: Install uv
@@ -404,11 +404,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Set up Python 3.10
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: '3.10'
       - name: Set up Python 3.14t
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: '3.14t'
       - name: Get minimum supported Rust version
@@ -446,7 +446,7 @@ jobs:
         with:
           submodules: true
       - name: Set up Python 3.14
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.14"
       - name: Install uv
