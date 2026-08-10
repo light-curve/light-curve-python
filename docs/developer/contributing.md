@@ -157,9 +157,10 @@ offer different hooks:
 - **README** — a `<picture>` with a `prefers-color-scheme` source, which GitHub resolves
   against its own theme setting.
 
-The brand palette is available as CSS variables (`--lc-purple`, `--lc-magenta`,
-`--lc-orange`, `--lc-amber`) defined in `extra.css`, with `--lc-purple` redefined for the
-`slate` scheme.
+The palette is defined in `extra.css`. Style with the role tokens `--lc-fg` and
+`--lc-fg-accent`, not with the raw `--lc-purple` / `--lc-magenta` / `--lc-orange` /
+`--lc-amber` — no single brand colour is legible in both schemes, so the roles swap between
+them and feed Material's own link and accent variables. See the comments in `extra.css`.
 
 ### README images
 

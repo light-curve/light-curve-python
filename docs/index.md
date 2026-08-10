@@ -52,17 +52,17 @@ pip install 'light-curve[full]'
   <circle fill="#FFFFFF" cx="198.840" cy="32.678" r="2.986"/>
   <circle fill="#FFFFFF" cx="208.491" cy="45.121" r="2.985"/>
   <g class="lc-feat-s1">
-    <line stroke="#94CEC8" stroke-width="1.049" stroke-dasharray="3.147,3.147" x1="9.873" y1="53.211" x2="210.191" y2="53.211"/>
-    <line stroke="#F3BEA8" stroke-width="1.119" x1="222.316" y1="31.429" x2="222.316" y2="53.212"/>
-    <line stroke="#F3BEA8" stroke-width="1.119" x1="219.379" y1="31.429" x2="225.255" y2="31.429"/>
-    <line stroke="#F3BEA8" stroke-width="1.119" x1="219.379" y1="53.212" x2="225.255" y2="53.212"/>
-    <text x="229.221" y="45.121" fill="#F3BEA8" font-family="'Inter',sans-serif" font-size="11.193">A</text>
+    <line stroke="#ffa324" stroke-width="1.049" stroke-dasharray="3.147,3.147" x1="9.873" y1="53.211" x2="210.191" y2="53.211"/>
+    <line stroke="#ffa324" stroke-width="1.119" x1="222.316" y1="31.429" x2="222.316" y2="53.212"/>
+    <line stroke="#ffa324" stroke-width="1.119" x1="219.379" y1="31.429" x2="225.255" y2="31.429"/>
+    <line stroke="#ffa324" stroke-width="1.119" x1="219.379" y1="53.212" x2="225.255" y2="53.212"/>
+    <text x="229.221" y="45.121" fill="#ffa324" font-family="'Inter',sans-serif" font-size="11.193">A</text>
   </g>
   <g class="lc-feat-s2">
-    <line stroke="#ACDEC7" stroke-width="1.119" x1="91.694" y1="21.689" x2="192.867" y2="21.689"/>
-    <line stroke="#ACDEC7" stroke-width="1.119" x1="91.694" y1="18.751" x2="91.694"  y2="24.627"/>
-    <line stroke="#ACDEC7" stroke-width="1.119" x1="192.867" y1="18.751" x2="192.867" y2="24.627"/>
-    <text x="138.545" y="17.371" fill="#ACDEC7" font-family="'Inter',sans-serif" font-size="11.193">P</text>
+    <line stroke="#ffa324" stroke-width="1.119" x1="91.694" y1="21.689" x2="192.867" y2="21.689"/>
+    <line stroke="#ffa324" stroke-width="1.119" x1="91.694" y1="18.751" x2="91.694"  y2="24.627"/>
+    <line stroke="#ffa324" stroke-width="1.119" x1="192.867" y1="18.751" x2="192.867" y2="24.627"/>
+    <text x="138.545" y="17.371" fill="#ffa324" font-family="'Inter',sans-serif" font-size="11.193">P</text>
   </g>
 </svg>
 </div>
@@ -86,8 +86,8 @@ pip install 'light-curve[full]'
   <circle fill="#FFFFFF" cx="8.282"  cy="48.596" r="1.579"/>
   <circle fill="#FFFFFF" cx="2.869"  cy="60.162" r="1.580"/>
   <circle fill="#FFFFFF" cx="26.909" cy="37.979" r="1.579"/>
-  <line stroke="#94CEC8" x1="69.722" y1="55" x2="82.187" y2="55"/>
-  <polygon fill="#94CEC8" points="79.537,58.271 78.991,57.686 81.880,55.001 78.991,52.315 79.537,51.729 83.055,55.001"/>
+  <line stroke="#ffa324" x1="69.722" y1="55" x2="82.187" y2="55"/>
+  <polygon fill="#ffa324" points="79.537,58.271 78.991,57.686 81.880,55.001 78.991,52.315 79.537,51.729 83.055,55.001"/>
   <circle fill="#FFFFFF" opacity="0.5" cx="95.911" cy="27.875" r="5.5"/>
   <circle fill="#FFFFFF" opacity="0.7" cx="95.911" cy="55"     r="5.5"/>
   <circle fill="#FFFFFF" opacity="0.5" cx="95.911" cy="82.125" r="5.5"/>
@@ -108,13 +108,13 @@ pip install 'light-curve[full]'
     <polyline stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round" points="144.961,43.293 171.132,55.278 144.961,66.707"/>
   </g>
   <g class="lc-vec-text">
-    <text x="189" y="21.667" fill="#F3BEA8" font-family="'JetBrains Mono',monospace" font-size="8">&nbsp;0.73,</text>
-    <text x="189" y="33.667" fill="#F3BEA8" font-family="'JetBrains Mono',monospace" font-size="8">&nbsp;0.31,</text>
-    <text x="189" y="45.667" fill="#F3BEA8" font-family="'JetBrains Mono',monospace" font-size="8">&#x2013;1.22,</text>
-    <text x="189" y="57.667" fill="#F3BEA8" font-family="'JetBrains Mono',monospace" font-size="8">&nbsp;0.84,</text>
-    <text x="189" y="69.667" fill="#F3BEA8" font-family="'JetBrains Mono',monospace" font-size="8">&#x2013;0.28,</text>
-    <text x="189" y="81.667" fill="#F3BEA8" font-family="'JetBrains Mono',monospace" font-size="8">&nbsp;...,</text>
-    <text x="189" y="93.667" fill="#F3BEA8" font-family="'JetBrains Mono',monospace" font-size="8">&nbsp;2.03</text>
+    <text x="189" y="21.667" fill="#ffa324" font-family="'JetBrains Mono',monospace" font-size="8">&nbsp;0.73,</text>
+    <text x="189" y="33.667" fill="#ffa324" font-family="'JetBrains Mono',monospace" font-size="8">&nbsp;0.31,</text>
+    <text x="189" y="45.667" fill="#ffa324" font-family="'JetBrains Mono',monospace" font-size="8">&#x2013;1.22,</text>
+    <text x="189" y="57.667" fill="#ffa324" font-family="'JetBrains Mono',monospace" font-size="8">&nbsp;0.84,</text>
+    <text x="189" y="69.667" fill="#ffa324" font-family="'JetBrains Mono',monospace" font-size="8">&#x2013;0.28,</text>
+    <text x="189" y="81.667" fill="#ffa324" font-family="'JetBrains Mono',monospace" font-size="8">&nbsp;...,</text>
+    <text x="189" y="93.667" fill="#ffa324" font-family="'JetBrains Mono',monospace" font-size="8">&nbsp;2.03</text>
   </g>
 </g>
 </svg>
@@ -134,8 +134,8 @@ pip install 'light-curve[full]'
   <circle fill="#FFFFFF" cx="45.267" cy="52.785" r="3.184"/>
   <circle fill="#FFFFFF" cx="60.601" cy="35.535" r="3.184"/>
   <circle fill="#FFFFFF" cx="75.851" cy="59.618" r="3.184"/>
-  <line stroke="#94CEC8" x1="82.768" y1="53.25" x2="103.899" y2="53.25"/>
-  <polygon fill="#94CEC8" points="101.249,56.522 100.703,55.936 103.592,53.251 100.703,50.565 101.249,49.979 104.767,53.251"/>
+  <line stroke="#ffa324" x1="82.768" y1="53.25" x2="103.899" y2="53.25"/>
+  <polygon fill="#ffa324" points="101.249,56.522 100.703,55.936 103.592,53.251 100.703,50.565 101.249,49.979 104.767,53.251"/>
   <path opacity="0.2" fill="#FFFFFF" d="M114.225,12.315c0-.55.451-1,1-1h13.834c.549,0,1,.45,1,1v13.833c0,.55-.451,1-1,1h-13.834c-.549,0-1-.45-1-1z"/>
   <path opacity="0.4" fill="#FFFFFF" d="M132.381,12.315c0-.55.451-1,1-1h13.834c.549,0,1,.45,1,1v13.833c0,.55-.451,1-1,1h-13.834c-.549,0-1-.45-1-1z"/>
   <path opacity="0.3" fill="#FFFFFF" d="M150.538,12.315c0-.55.451-1,1-1h13.834c.549,0,1,.45,1,1v13.833c0,.55-.451,1-1,1h-13.834c-.549,0-1-.45-1-1z"/>
@@ -156,25 +156,25 @@ pip install 'light-curve[full]'
   <path opacity="0.3" fill="#FFFFFF" d="M150.538,67.978c0-.55.451-1,1-1h13.834c.549,0,1,.45,1,1v13.833c0,.55-.451,1-1,1h-13.834c-.549,0-1-.45-1-1z"/>
   <path opacity="0.5" fill="#FFFFFF" d="M168.694,67.978c0-.55.451-1,1-1h13.834c.549,0,1,.45,1,1v13.833c0,.55-.451,1-1,1h-13.834c-.549,0-1-.45-1-1z"/>
   <path opacity="0.5" fill="#FFFFFF" d="M186.85,67.978c0-.55.451-1,1-1h13.834c.549,0,1,.45,1,1v13.833c0,.55-.451,1-1,1H187.85c-.549,0-1-.45-1-1z"/>
-  <text x="210.538" y="49.731" fill="#94CEC8" font-family="'Inter',sans-serif" font-size="10">Δm</text>
-  <text x="147.632" y="95.773" fill="#94CEC8" font-family="'Inter',sans-serif" font-size="10">lg Δt</text>
+  <text x="210.538" y="49.731" fill="#ffa324" font-family="'Inter',sans-serif" font-size="10">Δm</text>
+  <text x="147.632" y="95.773" fill="#ffa324" font-family="'Inter',sans-serif" font-size="10">lg Δt</text>
   <g class="lc-dmdt-s1">
-    <line stroke="#FF8000" x1="14.684" y1="45.373" x2="29.797" y2="70.036"/>
-    <circle fill="#FF8000" cx="14.684" cy="45.373" r="3.184"/>
-    <circle fill="#FF8000" cx="30.101" cy="70.161" r="3.184"/>
-    <path fill="#FF8000" d="M114.225,67.978c0-.55.451-1,1-1h13.834c.549,0,1,.45,1,1v13.833c0,.55-.451,1-1,1h-13.834c-.549,0-1-.45-1-1z"/>
+    <line stroke="#ffa324" x1="14.684" y1="45.373" x2="29.797" y2="70.036"/>
+    <circle fill="#ffa324" cx="14.684" cy="45.373" r="3.184"/>
+    <circle fill="#ffa324" cx="30.101" cy="70.161" r="3.184"/>
+    <path fill="#ffa324" d="M114.225,67.978c0-.55.451-1,1-1h13.834c.549,0,1,.45,1,1v13.833c0,.55-.451,1-1,1h-13.834c-.549,0-1-.45-1-1z"/>
   </g>
   <g class="lc-dmdt-s2">
-    <line stroke="#2CB0CF" x1="14.684" y1="45.373" x2="60.601" y2="35.535"/>
-    <circle fill="#2CB0CF" cx="14.684" cy="45.373" r="3.184"/>
-    <circle fill="#2CB0CF" cx="60.601" cy="35.535" r="3.184"/>
-    <path fill="#2CB0CF" d="M150.538,30.87c0-.55.451-1,1-1h13.834c.549,0,1,.45,1,1v13.833c0,.549-.451,1-1,1h-13.834c-.549,0-1-.451-1-1z"/>
+    <line stroke="#ff8a6b" x1="14.684" y1="45.373" x2="60.601" y2="35.535"/>
+    <circle fill="#ff8a6b" cx="14.684" cy="45.373" r="3.184"/>
+    <circle fill="#ff8a6b" cx="60.601" cy="35.535" r="3.184"/>
+    <path fill="#ff8a6b" d="M150.538,30.87c0-.55.451-1,1-1h13.834c.549,0,1,.45,1,1v13.833c0,.549-.451,1-1,1h-13.834c-.549,0-1-.451-1-1z"/>
   </g>
   <g class="lc-dmdt-s3">
-    <line stroke="#AB3D9B" x1="45.267" y1="52.785" x2="75.851" y2="59.772"/>
-    <circle fill="#AB3D9B" cx="45.267" cy="52.785" r="3.184"/>
-    <circle fill="#AB3D9B" cx="75.851" cy="59.618" r="3.184"/>
-    <path fill="#AB3D9B" d="M114.225,49.424c0-.551.451-1,1-1h13.834c.549,0,1,.449,1,1v13.832c0,.551-.451,1-1,1h-13.834c-.549,0-1-.449-1-1z"/>
+    <line stroke="#ff8fc4" x1="45.267" y1="52.785" x2="75.851" y2="59.772"/>
+    <circle fill="#ff8fc4" cx="45.267" cy="52.785" r="3.184"/>
+    <circle fill="#ff8fc4" cx="75.851" cy="59.618" r="3.184"/>
+    <path fill="#ff8fc4" d="M114.225,49.424c0-.551.451-1,1-1h13.834c.549,0,1,.449,1,1v13.832c0,.551-.451,1-1,1h-13.834c-.549,0-1-.449-1-1z"/>
   </g>
 </svg>
 </div>

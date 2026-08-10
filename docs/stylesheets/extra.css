@@ -4,18 +4,56 @@
 }
 
 /* ── Brand ────────────────────────────────────────────────────────────── */
-/* Logo colours. Only the purple changes with the background; it is lightened
-   on dark so the tail stays visible. */
+/* Palette taken from the logo. The purple gets a lightened variant for use
+   against a dark background — the same split the two logo files use. */
 
 :root {
   --lc-purple: #532969;
+  --lc-purple-lifted: #653280;
   --lc-magenta: #a3195b;
   --lc-orange: #f25613;
   --lc-amber: #ffa324;
 }
 
+/* Which half of the palette is legible depends entirely on the background,
+   and the two halves do not overlap: against white, purple and magenta clear
+   AA while amber and orange do not; against slate it is exactly the other way
+   round. So the roles swap wholesale between schemes rather than shifting
+   shade. */
+
+:root,
+[data-md-color-scheme="default"] {
+  --lc-fg: var(--lc-purple);
+  --lc-fg-accent: var(--lc-magenta);
+}
+
 [data-md-color-scheme="slate"] {
-  --lc-purple: #653280;
+  --lc-fg: var(--lc-amber);
+  --lc-fg-accent: var(--lc-orange);
+}
+
+/* Hand the roles to Material. Body links, link hover, search highlighting,
+   the back-to-top button and the nav rules further down all follow from
+   these. Two attributes to outweigh Material's own palette selectors. */
+
+[data-md-color-scheme="default"][data-md-color-primary="white"],
+[data-md-color-scheme="slate"][data-md-color-primary="indigo"] {
+  --md-typeset-a-color: var(--lc-fg);
+  --md-accent-fg-color: var(--lc-fg-accent);
+  --md-accent-fg-color--transparent: color-mix(in srgb, var(--lc-fg-accent) 10%, transparent);
+}
+
+/* Dark header in brand purple instead of Material indigo. The light scheme
+   keeps its white header, so it is left alone. */
+
+[data-md-color-scheme="slate"][data-md-color-primary="indigo"] {
+  --md-primary-fg-color: var(--lc-purple-lifted);
+  --md-primary-fg-color--dark: var(--lc-purple);
+}
+
+::selection {
+  background: var(--lc-fg);
+  color: var(--md-default-bg-color);
 }
 
 /* Show the logo variant matching the active palette. Paired images are marked
@@ -128,11 +166,12 @@
   border: 1px solid var(--md-default-fg-color--lightest);
   border-radius: 0.5rem;
   overflow: hidden;
-  transition: box-shadow 0.25s, transform 0.25s;
+  transition: box-shadow 0.25s, border-color 0.25s, transform 0.25s;
 }
 
 .lc-card:hover {
-  box-shadow: 0 4px 24px rgba(0,0,0,.12);
+  border-color: color-mix(in srgb, var(--lc-fg) 45%, transparent);
+  box-shadow: 0 4px 24px color-mix(in srgb, var(--lc-fg) 22%, transparent);
   transform: translateY(-3px);
 }
 
@@ -142,9 +181,18 @@
   text-underline-offset: 3px;
 }
 
-/* Fixed dark background so the white SVG elements are always visible */
+/* A brand-purple panel, the same in both schemes, so the white line art stays
+   readable either way. The illustrations in index.md spell their colours out
+   as literal hexes — SVG presentation attributes cannot take var(), and
+   everything inside sits on this one fixed background regardless of the
+   palette, so there is nothing for them to react to.
+   Data is white; annotation is amber #ffa324. The dm-dt animation needs three
+   telling-apart colours, so it adds #ff8a6b and #ff8fc4 — orange and magenta
+   lightened onto the purple the same way --lc-purple-lifted is. Brand orange
+   and magenta themselves only reach 3.2:1 and 1.5:1 here, so neither is
+   usable on this panel unlifted. */
 .lc-card-svg-wrap {
-  background: #1a237e !important;
+  background: var(--lc-purple) !important;
   aspect-ratio: 240 / 110;
   overflow: hidden;
 }
@@ -381,19 +429,9 @@
   .lc-dmdt-s1, .lc-dmdt-s2, .lc-dmdt-s3 { opacity: 0.9 !important; animation: none; }
 }
 
-/* ── Dark mode: use accent (deep-orange) for all links ───────────────── */
-/* In slate+indigo, --md-typeset-a-color defaults to blue — hard to read  */
-/* on the dark indigo backgrounds.  The deep-orange accent has good        */
-/* contrast and is already used as the theme accent colour.                */
-
-/* Match Material's two-attribute specificity so our rule wins */
-[data-md-color-scheme="slate"][data-md-color-primary="indigo"] {
-  --md-typeset-a-color: var(--md-accent-fg-color);
-}
-
 /* ── Navigation links ──────────────────────────────────────────────── */
 
-/* Left sidebar — non-active links: blue + underline */
+/* Left sidebar — non-active links: brand + underline */
 .md-sidebar--primary .md-nav__link:not(.md-nav__link--active):not([aria-current="page"]) {
   color: var(--md-typeset-a-color) !important;
   text-decoration: underline;
@@ -439,7 +477,7 @@
   text-decoration: none;
 }
 
-/* Top tabs — non-active: blue, no opacity fade, bold, underline */
+/* Top tabs — non-active: brand, no opacity fade, bold, underline */
 .md-tabs__item:not(.md-tabs__item--active) .md-tabs__link {
   color: var(--md-typeset-a-color) !important;
   opacity: 1 !important;

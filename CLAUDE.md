@@ -173,8 +173,18 @@ selected three different ways, because each context offers a different hook:
 - **README** — `<picture>` with a `prefers-color-scheme` source; GitHub resolves it against its
   own theme setting.
 
-Brand palette is exposed as CSS variables in `extra.css`: `--lc-purple` (redefined for `slate`),
-`--lc-magenta`, `--lc-orange`, `--lc-amber`.
+Brand palette lives in `extra.css` as fixed CSS variables — `--lc-purple`, `--lc-magenta`,
+`--lc-orange`, `--lc-amber`, plus `--lc-purple-lifted` for the purple on dark backgrounds.
+Never reach for these directly in a rule that sits on the page background: the palette does
+not survive both schemes (purple and magenta only clear AA on white, amber and orange only on
+slate). Use the role tokens `--lc-fg` and `--lc-fg-accent`, which swap per scheme, and which
+`extra.css` also feeds into Material's `--md-typeset-a-color`, `--md-accent-fg-color` and
+(slate only) `--md-primary-fg-color`.
+
+The landing-page card illustrations in `docs/index.md` are the exception: they sit on a fixed
+`--lc-purple` panel in both schemes, so they hardcode hexes as SVG presentation attributes,
+which cannot take `var()`. White for data, amber for annotation; the dm-dt animation adds two
+lightened hues because brand orange and magenta are too dark against purple.
 
 `light-curve/README.md` is the PyPI long description, so image URLs must be **absolute** — they
 point at the branding repo. PyPI's sanitiser drops `<source>` and keeps `<img>`, so the
