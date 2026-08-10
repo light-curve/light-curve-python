@@ -9,17 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `light_curve.embed.Moment1`: ONNX-backed univariate (magnitude-only) MOMENT-1 time-series
-  foundation model (Goswami et al. 2024, MIT license), exposing `mean` / `sequence` outputs.
-  Available in small/base/large sizes (512/768/1024-dim) via `Moment1.from_hf(size=...)`; uses a
-  fixed 512-observation context (64 patches of 8).
+--
 
 ### Changed
 
-- **Experimental feature broken**: `light_curve.embed.ChronosBolt.from_hf()` now requires an
-  explicit `size` argument instead of defaulting to `"base"`. The four sizes have different
-  embedding dimensions, so a silent default was error-prone; callers must now pass e.g.
-  `ChronosBolt.from_hf(size="base")`.
+--
 
 ### Deprecated
 
@@ -36,6 +30,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 --
+
+## [0.13.2] 2026-08-10
+
+### Added
+
+- `light_curve.embed.Moment1`: ONNX-backed univariate (magnitude-only) MOMENT-1 time-series
+  foundation model (Goswami et al. 2024, MIT license), exposing `mean` / `sequence` outputs.
+  Available in small/base/large sizes (512/768/1024-dim) via `Moment1.from_hf(size=...)`; uses a
+  fixed 512-observation context (64 patches of 8)
+  ([#795](https://github.com/light-curve/light-curve-python/pull/795)).
+- A logo, a mascot and a brand palette, used across the documentation site and `README.md`. The
+  favicon and the README banner now follow the reader's colour scheme. Designed by
+  [Anastasiia Voloshina](https://www.behance.net/anastasvoloshi2) and released under
+  [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) in the
+  [light-curve/branding](https://github.com/light-curve/branding) repository
+  ([#827](https://github.com/light-curve/light-curve-python/pull/827)).
+
+### Changed
+
+- **Experimental feature broken**: `light_curve.embed.ChronosBolt.from_hf()` now requires an
+  explicit `size` argument instead of defaulting to `"base"`. The four sizes have different
+  embedding dimensions, so a silent default was error-prone; callers must now pass e.g.
+  `ChronosBolt.from_hf(size="base")`
+  ([#794](https://github.com/light-curve/light-curve-python/pull/794)).
+- Bump `pyO3` and `rust-numpy` from 0.28.0 to 0.29.0
+  ([#808](https://github.com/light-curve/light-curve-python/pull/808)).
+- Bump `arrow-rs` from 58 to 59 and `pyo3-arrow` from 0.17 to 0.19, used by the Arrow input
+  support ([#808](https://github.com/light-curve/light-curve-python/pull/808)).
+
+### Fixed
+
+- The `ChronosBolt` size / embedding-dimension table was written as a reStructuredText grid
+  table, which mkdocstrings renders as Markdown, so it appeared as a broken inline blob on the
+  documentation site ([#794](https://github.com/light-curve/light-curve-python/pull/794)).
 
 ## [0.13.1] 2026-06-25
 
