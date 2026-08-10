@@ -125,6 +125,62 @@ mkdocs serve   # live preview at http://127.0.0.1:8000
 The API reference prose (parameter descriptions, equations) is read from the Python
 docstrings, so updating those in the source is enough — no manual copy-paste needed.
 
+## Branding
+
+Logo and brand assets live in a separate repository,
+[`light-curve/branding`](https://github.com/light-curve/branding), together with the
+Illustrator sources and the scripts that derive some of the SVGs. Do not edit the copies
+under `docs/assets/logo/` — change them upstream and copy the result across, so the two stay
+byte-identical.
+
+Only what the site actually renders is vendored here:
+
+| File | Used by |
+|---|---|
+| `mark-light.svg`, `mark-dark.svg` | header and drawer logo |
+| `mark-adaptive.svg` | favicon |
+| `mark-wide-light.svg`, `mark-wide-dark.svg` | landing page hero |
+
+Keep it that way. MkDocs copies **everything** under `docs/` into the built site verbatim,
+so an Illustrator file or a font archive dropped in here ships to visitors.
+
+Each asset comes in a light-background and a dark-background variant, differing only in the
+purple. Which one to show is chosen in three different ways, because the three contexts
+offer different hooks:
+
+- **Header and drawer** — `overrides/partials/logo.html` emits both, and
+  `docs/stylesheets/extra.css` shows the one matching the active scheme. Material's palette
+  toggle is independent of the reader's OS setting, so the switch has to follow the toggle.
+- **Favicon** — `mark-adaptive.svg` carries both purples and picks between them with an
+  internal `prefers-color-scheme` block. Nothing on the page can style a favicon, so this is
+  the only option, and it follows the OS rather than the toggle.
+- **README** — a `<picture>` with a `prefers-color-scheme` source, which GitHub resolves
+  against its own theme setting.
+
+The brand palette is available as CSS variables (`--lc-purple`, `--lc-magenta`,
+`--lc-orange`, `--lc-amber`) defined in `extra.css`, with `--lc-purple` redefined for the
+`slate` scheme.
+
+### README images
+
+`light-curve/README.md` is also the PyPI long description, so its image URLs must be
+absolute, and they point at the branding repository. Two constraints are easy to trip over:
+
+- PyPI sanitises the HTML with `readme_renderer` and **drops `<source>`**, keeping the
+  `<img>`. The light-background variant therefore has to be the `<img>` fallback, since
+  PyPI renders on a white page.
+- Images must be served with an image content type. `raw.githubusercontent.com` serves SVG
+  as `image/svg+xml`, so it works; not every host does.
+
+To check a README change before pushing, render it the way PyPI will:
+
+```bash
+uvx --from 'readme_renderer[md]' python -c "
+import readme_renderer.markdown, sys
+print(readme_renderer.markdown.render(open('light-curve/README.md').read(), stream=sys.stderr))
+"
+```
+
 ## Docs preview CI
 
 Every pull request gets an automatic docs preview at `https://light-curve.snad.space/pr<N>/`, posted as a comment by the bot.

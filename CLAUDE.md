@@ -152,6 +152,35 @@ Every code block in the docs must be **self-contained**: include all imports and
 variable definitions needed to run it in isolation. Do not rely on variables defined in
 a preceding block on the same page.
 
+## Branding
+
+Logo assets live in a **separate repo**, https://github.com/light-curve/branding (Illustrator
+sources, all SVG variants, and the scripts that derive some of them). `docs/assets/logo/` holds
+only the five files the site renders — never edit them here, change them upstream and copy
+across so both stay byte-identical.
+
+MkDocs copies everything under `docs/` into the built site verbatim, so never put `.ai` files,
+font archives, or unused variants there. `docs/assets` should stay at a few hundred KB.
+
+Assets come in light-bg and dark-bg variants differing only in the purple. The variant is
+selected three different ways, because each context offers a different hook:
+
+- **Header/drawer logo** — `overrides/partials/logo.html` emits both; `extra.css` shows the one
+  matching the palette. Must follow Material's toggle, which is independent of the OS setting,
+  so a self-adapting SVG is wrong here.
+- **Favicon** — `mark-adaptive.svg`, which switches internally on `prefers-color-scheme`. The
+  only mechanism a favicon has; follows the OS, not the toggle.
+- **README** — `<picture>` with a `prefers-color-scheme` source; GitHub resolves it against its
+  own theme setting.
+
+Brand palette is exposed as CSS variables in `extra.css`: `--lc-purple` (redefined for `slate`),
+`--lc-magenta`, `--lc-orange`, `--lc-amber`.
+
+`light-curve/README.md` is the PyPI long description, so image URLs must be **absolute** — they
+point at the branding repo. PyPI's sanitiser drops `<source>` and keeps `<img>`, so the
+light-background variant must be the `<img>` fallback. Verify a README change with
+`uvx --from 'readme_renderer[md]'` before pushing.
+
 ## Releasing a New Version
 
 Steps (from `docs/developer/contributing.md`):
