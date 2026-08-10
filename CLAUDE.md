@@ -156,8 +156,17 @@ a preceding block on the same page.
 
 Logo assets live in a **separate repo**, https://github.com/light-curve/branding (Illustrator
 sources, all SVG variants, and the scripts that derive some of them). `docs/assets/logo/` holds
-only the five files the site renders — never edit them here, change them upstream and copy
+only the files the site renders — never edit them here, change them upstream and copy
 across so both stay byte-identical.
+
+A commit that **vendors new artwork** credits the designer:
+
+```
+Co-authored-by: Anastasiia Voloshina <21056935+mayamolodec@users.noreply.github.com>
+```
+
+Only those. A commit that writes our own CSS, hooks or prose about the branding does not get
+the trailer, even when it is entirely about the logo.
 
 MkDocs copies everything under `docs/` into the built site verbatim, so never put `.ai` files,
 font archives, or unused variants there. `docs/assets` should stay at a few hundred KB.
