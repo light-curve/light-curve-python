@@ -4,9 +4,19 @@ hide:
   - navigation
 ---
 
+<div class="lc-hero" markdown>
+
+<div class="lc-hero-mark"><img src="assets/logo/mark-wide-light.svg" alt="" class="lc-logo--light"><img src="assets/logo/mark-wide-dark.svg" alt="" aria-hidden="true" class="lc-logo--dark"></div>
+
+<div class="lc-hero-body" markdown>
+
 # light-curve
 
 **High-performance time-series feature extraction for astrophysics.**
+
+</div>
+
+</div>
 
 `light-curve` is a Python package for analyzing photometric light curves at the scale of millions of objects.
 It provides multiple tools for ML pre-processing pipelines as well as 40+ statistical and variability features

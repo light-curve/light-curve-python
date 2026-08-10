@@ -3,6 +3,37 @@
   border-bottom: 1px solid var(--md-default-fg-color--lightest);
 }
 
+/* ── Brand ────────────────────────────────────────────────────────────── */
+/* Logo colours. Only the purple changes with the background; it is lightened
+   on dark so the tail stays visible. */
+
+:root {
+  --lc-purple: #532969;
+  --lc-magenta: #a3195b;
+  --lc-orange: #f25613;
+  --lc-amber: #ffa324;
+}
+
+[data-md-color-scheme="slate"] {
+  --lc-purple: #653280;
+}
+
+/* Show the logo variant matching the active palette. Paired images are marked
+   up as .lc-logo--light / .lc-logo--dark wherever the mark appears. */
+
+[data-md-color-scheme="default"] .lc-logo--dark,
+[data-md-color-scheme="slate"] .lc-logo--light {
+  display: none;
+}
+
+/* The header and drawer marks come from overrides/partials/logo.html, where
+   Material's own `.md-header__button.md-logo img` would otherwise win. */
+
+[data-md-color-scheme="default"] .md-logo img.lc-logo--dark,
+[data-md-color-scheme="slate"] .md-logo img.lc-logo--light {
+  display: none;
+}
+
 /* ── Fix >>> doctest blocks (Markdown reads >>> as 3-level blockquote) ── */
 
 .md-typeset blockquote > blockquote > blockquote {
@@ -34,6 +65,51 @@
 
 .md-footer {
   display: none !important;
+}
+
+/* ── Landing hero ────────────────────────────────────────────────── */
+/* Mark plus a real heading rather than the wordmark SVG, so the name stays
+   selectable and reflows on narrow screens. */
+
+.lc-hero {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem 2rem;
+  margin: 0 0 2rem;
+}
+
+/* Licu without lettering: the name is the heading beside it, not artwork. */
+.lc-hero-mark {
+  flex: none;
+  line-height: 0;
+}
+
+.lc-hero-mark img {
+  width: 13rem;
+  max-width: 100%;
+  height: auto;
+}
+
+.lc-hero-body {
+  flex: 1;
+  min-width: 12rem;
+}
+
+.md-typeset .lc-hero-body h1 {
+  margin: 0 0 0.3rem;
+  font-family: var(--md-code-font-family);
+  font-weight: 700;
+}
+
+.md-typeset .lc-hero-body p {
+  margin: 0;
+}
+
+@media screen and (max-width: 44.984375em) {
+  .lc-hero-mark img {
+    width: 10rem;
+  }
 }
 
 /* ── Hero cards ──────────────────────────────────────────────────── */

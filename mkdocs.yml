@@ -6,14 +6,15 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
-  logo: assets/logo.png
-  favicon: assets/logo.png
+  custom_dir: overrides
+  logo: assets/logo/mark-light.svg
+  favicon: assets/logo/mark-adaptive.svg
   icon:
     repo: fontawesome/brands/github
     edit: material/pencil
   font:
     text: Inter
-    code: JetBrains Mono
+    code: Cascadia Mono
   palette:
     - scheme: default
       primary: white
@@ -39,6 +40,8 @@ theme:
 
 extra:
   generator: false
+  # Read by overrides/partials/logo.html; theme.logo is the light-background one.
+  logo_dark: assets/logo/mark-dark.svg
   version:
     provider: mike
     alias: true

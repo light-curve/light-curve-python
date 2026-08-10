@@ -1,0 +1,14 @@
+{#-
+  Emit both background variants of the mark; stylesheets/extra.css shows the
+  one matching the active palette. Falls back to upstream when extra.logo_dark
+  is unset.
+-#}
+{% if config.theme.logo and config.extra.logo_dark %}
+  <img src="{{ config.theme.logo | url }}" alt="logo" class="lc-logo lc-logo--light">
+  <img src="{{ config.extra.logo_dark | url }}" alt="" aria-hidden="true" class="lc-logo lc-logo--dark">
+{% elif config.theme.logo %}
+  <img src="{{ config.theme.logo | url }}" alt="logo">
+{% else %}
+  {% set icon = config.theme.icon.logo or "material/library" %}
+  {% include ".icons/" ~ icon ~ ".svg" %}
+{% endif %}
