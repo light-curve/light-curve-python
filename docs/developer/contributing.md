@@ -3,6 +3,11 @@ hide:
   - navigation
 ---
 
+```lockup
+maturin develop
+--release
+```
+
 # Contributing
 
 ## Environment setup
@@ -124,6 +129,56 @@ mkdocs serve   # live preview at http://127.0.0.1:8000
 
 The API reference prose (parameter descriptions, equations) is read from the Python
 docstrings, so updating those in the source is enough — no manual copy-paste needed.
+
+## Branding
+
+Logo and brand assets live in a separate repository,
+[`light-curve/branding`](https://github.com/light-curve/branding), together with the
+Illustrator sources and the scripts that derive some of the SVGs. Do not edit the copies
+under `docs/assets/logo/` — change them upstream and copy the result across, so the two stay
+byte-identical.
+
+Only the files the site renders are vendored, and MkDocs copies everything under `docs/`
+into the built site verbatim — so nothing else belongs in `docs/assets/logo/`.
+
+Most assets come in a light-background and a dark-background variant. The header, the
+favicon and the README each pick between them by a different mechanism; `extra.css` and
+`overrides/partials/logo.html` explain why.
+
+For colour, style with the role tokens `--lc-fg` and `--lc-fg-accent` rather than the raw
+`--lc-purple` / `--lc-magenta` / `--lc-orange` / `--lc-amber`: no single brand colour is
+legible in both schemes, so the roles swap between them. See the comments in `extra.css`.
+
+A page can open with Licu beside two lines of Cascadia Mono by naming the wording:
+
+````markdown
+```lockup
+pip install
+light-curve
+```
+````
+
+`docs/hooks.py` expands that into the artwork at build time.
+
+### README images
+
+`light-curve/README.md` is also the PyPI long description, so its image URLs must be
+absolute, and they point at the branding repository. Two constraints are easy to trip over:
+
+- PyPI sanitises the HTML with `readme_renderer` and **drops `<source>`**, keeping the
+  `<img>`. The light-background variant therefore has to be the `<img>` fallback, since
+  PyPI renders on a white page.
+- Images must be served with an image content type. `raw.githubusercontent.com` serves SVG
+  as `image/svg+xml`, so it works; not every host does.
+
+To check a README change before pushing, render it the way PyPI will:
+
+```bash
+uvx --from 'readme_renderer[md]' python -c "
+import readme_renderer.markdown, sys
+print(readme_renderer.markdown.render(open('light-curve/README.md').read(), stream=sys.stderr))
+"
+```
 
 ## Docs preview CI
 

@@ -152,6 +152,54 @@ Every code block in the docs must be **self-contained**: include all imports and
 variable definitions needed to run it in isolation. Do not rely on variables defined in
 a preceding block on the same page.
 
+## Branding
+
+Logo assets live in a **separate repo**, https://github.com/light-curve/branding (Illustrator
+sources, all SVG variants, and the scripts that derive some of them). `docs/assets/logo/` holds
+only the files the site renders — never edit them here, change them upstream and copy
+across so both stay byte-identical.
+
+A commit that **vendors new artwork** credits the designer:
+
+```
+Co-authored-by: Anastasiia Voloshina <21056935+mayamolodec@users.noreply.github.com>
+```
+
+Only those. A commit that writes our own CSS, hooks or prose about the branding does not get
+the trailer, even when it is entirely about the logo.
+
+MkDocs copies everything under `docs/` into the built site verbatim, so never put `.ai` files,
+font archives, or unused variants there. `docs/assets` should stay at a few hundred KB.
+
+Assets come in light-bg and dark-bg variants differing only in the purple. The variant is
+selected three different ways, because each context offers a different hook:
+
+- **Header/drawer logo** — `overrides/partials/logo.html` emits both; `extra.css` shows the one
+  matching the palette. Must follow Material's toggle, which is independent of the OS setting,
+  so a self-adapting SVG is wrong here.
+- **Favicon** — `mark-adaptive.svg`, which switches internally on `prefers-color-scheme`. The
+  only mechanism a favicon has; follows the OS, not the toggle.
+- **README** — `<picture>` with a `prefers-color-scheme` source; GitHub resolves it against its
+  own theme setting.
+
+Brand palette lives in `extra.css` as fixed CSS variables — `--lc-purple`, `--lc-magenta`,
+`--lc-orange`, `--lc-amber`, plus `--lc-purple-lifted` for the purple on dark backgrounds.
+Never reach for these directly in a rule that sits on the page background: the palette does
+not survive both schemes (purple and magenta only clear AA on white, amber and orange only on
+slate). Use the role tokens `--lc-fg` and `--lc-fg-accent`, which swap per scheme, and which
+`extra.css` also feeds into Material's `--md-typeset-a-color`, `--md-accent-fg-color` and
+(slate only) `--md-primary-fg-color`.
+
+The landing-page card illustrations in `docs/index.md` are the exception: they sit on a fixed
+`--lc-purple` panel in both schemes, so they hardcode hexes as SVG presentation attributes,
+which cannot take `var()`. White for data, amber for annotation; the dm-dt animation adds two
+lightened hues because brand orange and magenta are too dark against purple.
+
+`light-curve/README.md` is the PyPI long description, so image URLs must be **absolute** — they
+point at the branding repo. PyPI's sanitiser drops `<source>` and keeps `<img>`, so the
+light-background variant must be the `<img>` fallback. Verify a README change with
+`uvx --from 'readme_renderer[md]'` before pushing.
+
 ## Releasing a New Version
 
 Steps (from `docs/developer/contributing.md`):

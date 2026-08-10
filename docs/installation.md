@@ -3,6 +3,11 @@ hide:
   - navigation
 ---
 
+```lockup
+pip install
+light-curve
+```
+
 # Installation
 
 ## Quick install

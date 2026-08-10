@@ -1,3 +1,12 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)"
+            srcset="https://raw.githubusercontent.com/light-curve/branding/main/wordmark/wordmark-for-dark-bg.svg">
+    <img src="https://raw.githubusercontent.com/light-curve/branding/main/wordmark/wordmark-for-light-bg.svg"
+         alt="light-curve" width="320">
+  </picture>
+</p>
+
 # `light-curve` processing toolbox for Python
 
 A Python wrapper for the [`light-curve-feature`](https://github.com/light-curve/light-curve-feature) and

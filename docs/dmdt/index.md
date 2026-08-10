@@ -1,3 +1,8 @@
+```lockup
+from light_curve
+import DmDt
+```
+
 # Overview
 
 A dm-dt map is a 2D histogram of magnitude differences (dm) versus log-time differences
