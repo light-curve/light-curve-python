@@ -13,6 +13,20 @@
   --lc-magenta: #a3195b;
   --lc-orange: #f25613;
   --lc-amber: #ffa324;
+
+  /* How tall Licu is drawn when a page opens with him. Every asset he appears
+     in is cropped tight to him, so his height is the canvas height and this
+     one number is one size — the hero and the lockups cannot drift apart. */
+  --lc-mark-height: 5.88rem;
+}
+
+/* 44.984375em is 719.75px — Material's own phone/tablet breakpoint, which it
+   pairs with min-width: 45em. The quarter pixel is how it stops both queries
+   matching at the boundary. */
+@media screen and (max-width: 44.984375em) {
+  :root {
+    --lc-mark-height: 4.52rem;
+  }
 }
 
 /* Which half of the palette is legible depends entirely on the background,
@@ -105,6 +119,48 @@
   display: none !important;
 }
 
+/* ── Lockups ─────────────────────────────────────────────────────── */
+/* Licu with two lines of Cascadia Mono, expanded from a ```lockup fence by
+   docs/hooks.py. Both background variants are inlined and the .lc-logo--light
+   / .lc-logo--dark rules above show the matching one.
+
+   The canvas is cropped tight to Licu, exactly as mark-wide-*.svg is, so
+   setting his height here draws him at the same size as on the landing page
+   with nothing to convert. The lettering's descent metric reaches a fraction
+   of a unit below him, hence overflow: visible — real descenders sit well
+   inside, but a clipped tail would be worse than a hair of overhang. */
+
+/* Width and aspect-ratio come from the hook; the height follows from them. */
+.lc-lockup,
+.lc-mark {
+  position: relative;
+}
+
+.lc-lockup {
+  margin: 0 0 0.5rem;
+}
+
+/* Absolutely positioned so the artwork ignores floats. An <svg> is a replaced
+   element, and a block-level replaced element is not allowed to overlap a
+   float — so in normal flow Material's floated "edit this page" button shoves
+   a wide lockup down past its own wrapper and into the heading below. Taking
+   it out of flow sidesteps that; the wrapper still reserves the right space. */
+.lc-lockup svg,
+.lc-mark svg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  height: 100%;
+  width: 100%;
+  overflow: visible;
+}
+
+/* The lockup already reads as the page's banner, so the heading under it does
+   not need the usual leading space. */
+.md-typeset .lc-lockup + h1 {
+  margin-top: 0;
+}
+
 /* ── Landing hero ────────────────────────────────────────────────── */
 /* Mark plus a real heading rather than the wordmark SVG, so the name stays
    selectable and reflows on narrow screens. */
@@ -118,15 +174,8 @@
 }
 
 /* Licu without lettering: the name is the heading beside it, not artwork. */
-.lc-hero-mark {
+.lc-hero > .lc-mark {
   flex: none;
-  line-height: 0;
-}
-
-.lc-hero-mark img {
-  width: 13rem;
-  max-width: 100%;
-  height: auto;
 }
 
 .lc-hero-body {
@@ -144,11 +193,6 @@
   margin: 0;
 }
 
-@media screen and (max-width: 44.984375em) {
-  .lc-hero-mark img {
-    width: 10rem;
-  }
-}
 
 /* ── Hero cards ──────────────────────────────────────────────────── */
 

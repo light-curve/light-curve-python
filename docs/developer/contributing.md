@@ -3,6 +3,11 @@ hide:
   - navigation
 ---
 
+```lockup
+maturin develop
+--release
+```
+
 # Contributing
 
 ## Environment setup
@@ -133,34 +138,27 @@ Illustrator sources and the scripts that derive some of the SVGs. Do not edit th
 under `docs/assets/logo/` — change them upstream and copy the result across, so the two stay
 byte-identical.
 
-Only what the site actually renders is vendored here:
+Only the files the site renders are vendored, and MkDocs copies everything under `docs/`
+into the built site verbatim — so nothing else belongs in `docs/assets/logo/`.
 
-| File | Used by |
-|---|---|
-| `mark-light.svg`, `mark-dark.svg` | header and drawer logo |
-| `mark-adaptive.svg` | favicon |
-| `mark-wide-light.svg`, `mark-wide-dark.svg` | landing page hero |
+Most assets come in a light-background and a dark-background variant. The header, the
+favicon and the README each pick between them by a different mechanism; `extra.css` and
+`overrides/partials/logo.html` explain why.
 
-Keep it that way. MkDocs copies **everything** under `docs/` into the built site verbatim,
-so an Illustrator file or a font archive dropped in here ships to visitors.
+For colour, style with the role tokens `--lc-fg` and `--lc-fg-accent` rather than the raw
+`--lc-purple` / `--lc-magenta` / `--lc-orange` / `--lc-amber`: no single brand colour is
+legible in both schemes, so the roles swap between them. See the comments in `extra.css`.
 
-Each asset comes in a light-background and a dark-background variant, differing only in the
-purple. Which one to show is chosen in three different ways, because the three contexts
-offer different hooks:
+A page can open with Licu beside two lines of Cascadia Mono by naming the wording:
 
-- **Header and drawer** — `overrides/partials/logo.html` emits both, and
-  `docs/stylesheets/extra.css` shows the one matching the active scheme. Material's palette
-  toggle is independent of the reader's OS setting, so the switch has to follow the toggle.
-- **Favicon** — `mark-adaptive.svg` carries both purples and picks between them with an
-  internal `prefers-color-scheme` block. Nothing on the page can style a favicon, so this is
-  the only option, and it follows the OS rather than the toggle.
-- **README** — a `<picture>` with a `prefers-color-scheme` source, which GitHub resolves
-  against its own theme setting.
+````markdown
+```lockup
+pip install
+light-curve
+```
+````
 
-The palette is defined in `extra.css`. Style with the role tokens `--lc-fg` and
-`--lc-fg-accent`, not with the raw `--lc-purple` / `--lc-magenta` / `--lc-orange` /
-`--lc-amber` — no single brand colour is legible in both schemes, so the roles swap between
-them and feed Material's own link and accent variables. See the comments in `extra.css`.
+`docs/hooks.py` expands that into the artwork at build time.
 
 ### README images
 

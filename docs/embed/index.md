@@ -1,3 +1,8 @@
+```lockup
+from light_curve
+import embed
+```
+
 # Light-curve embeddings
 
 `light_curve.embed` provides pretrained neural-network models that map raw photometric

@@ -1,3 +1,8 @@
+```lockup
+import light_curve
+as licu
+```
+
 # Feature extractors
 
 `light_curve` provides 40+ hand-crafted feature extractors for astrophysical light curves.

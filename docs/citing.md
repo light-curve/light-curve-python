@@ -3,6 +3,11 @@ hide:
   - navigation
 ---
 
+```lockup
+gh issue
+create
+```
+
 # Cite & Contact
 
 ## Contact

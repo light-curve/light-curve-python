@@ -6,7 +6,10 @@ hide:
 
 <div class="lc-hero" markdown>
 
-<div class="lc-hero-mark"><img src="assets/logo/mark-wide-light.svg" alt="" class="lc-logo--light"><img src="assets/logo/mark-wide-dark.svg" alt="" aria-hidden="true" class="lc-logo--dark"></div>
+```mark
+mark-wide
+light-curve
+```
 
 <div class="lc-hero-body" markdown>
 
