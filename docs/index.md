@@ -108,13 +108,13 @@ pip install 'light-curve[full]'
     <polyline stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round" points="144.961,43.293 171.132,55.278 144.961,66.707"/>
   </g>
   <g class="lc-vec-text">
-    <text x="189" y="21.667" fill="#ffa324" font-family="'JetBrains Mono',monospace" font-size="8">&nbsp;0.73,</text>
-    <text x="189" y="33.667" fill="#ffa324" font-family="'JetBrains Mono',monospace" font-size="8">&nbsp;0.31,</text>
-    <text x="189" y="45.667" fill="#ffa324" font-family="'JetBrains Mono',monospace" font-size="8">&#x2013;1.22,</text>
-    <text x="189" y="57.667" fill="#ffa324" font-family="'JetBrains Mono',monospace" font-size="8">&nbsp;0.84,</text>
-    <text x="189" y="69.667" fill="#ffa324" font-family="'JetBrains Mono',monospace" font-size="8">&#x2013;0.28,</text>
-    <text x="189" y="81.667" fill="#ffa324" font-family="'JetBrains Mono',monospace" font-size="8">&nbsp;...,</text>
-    <text x="189" y="93.667" fill="#ffa324" font-family="'JetBrains Mono',monospace" font-size="8">&nbsp;2.03</text>
+    <text x="189" y="21.667" fill="#ffa324" font-family="'Cascadia Mono',monospace" font-size="8">&nbsp;0.73,</text>
+    <text x="189" y="33.667" fill="#ffa324" font-family="'Cascadia Mono',monospace" font-size="8">&nbsp;0.31,</text>
+    <text x="189" y="45.667" fill="#ffa324" font-family="'Cascadia Mono',monospace" font-size="8">&#x2013;1.22,</text>
+    <text x="189" y="57.667" fill="#ffa324" font-family="'Cascadia Mono',monospace" font-size="8">&nbsp;0.84,</text>
+    <text x="189" y="69.667" fill="#ffa324" font-family="'Cascadia Mono',monospace" font-size="8">&#x2013;0.28,</text>
+    <text x="189" y="81.667" fill="#ffa324" font-family="'Cascadia Mono',monospace" font-size="8">&nbsp;...,</text>
+    <text x="189" y="93.667" fill="#ffa324" font-family="'Cascadia Mono',monospace" font-size="8">&nbsp;2.03</text>
   </g>
 </g>
 </svg>

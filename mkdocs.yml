@@ -47,6 +47,12 @@ extra:
     alias: true
 
 plugins:
+  # Self-hosts Google Fonts at build time. KaTeX is left on its CDN: its
+  # stylesheet points at its fonts with relative url(), which the plugin does
+  # not follow, so vendoring it would serve CSS whose fonts 404.
+  - privacy:
+      assets_exclude:
+        - cdnjs.cloudflare.com/*
   - search
   - mkdocs-jupyter:
       execute: true
@@ -109,6 +115,12 @@ extra_javascript:
 
 hooks:
   - docs/hooks.py
+
+# Everything under docs/ is copied into the site verbatim, including bytecode
+# that hooks.py leaves behind and any stale local Sphinx build.
+exclude_docs: |
+  __pycache__/
+  _build/
 
 watch:
   - CHANGELOG.md
