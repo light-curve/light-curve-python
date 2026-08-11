@@ -1644,7 +1644,7 @@ dependencies = [
 
 [[package]]
 name = "light-curve-python"
-version = "0.13.1"
+version = "0.13.2"
 dependencies = [
  "arrow-array",
  "arrow-buffer",
