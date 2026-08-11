@@ -216,7 +216,8 @@ Pre-built free-threaded wheels are not yet published to PyPI.
 ## Publishing a release
 
 1. Create a `release-vX.Y.Z` branch from `main`.
-2. Update `CHANGELOG.md` with the new version and date.
+2. Update `CHANGELOG.md` with the new version and date — the **UTC** date you expect the release
+   to land on PyPI.
 3. Update the version in `Cargo.toml` (the Python package version is read from there), then run
    `cargo update` to update `Cargo.lock`.
 4. Commit, push the branch, and open a PR into `main`.
