@@ -9,24 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `BiweightScale`: Tukey's biweight robust scale of magnitude (Beers, Flynn & Gebhardt 1990), a
-  robust alternative to the standard deviation, with tuning constant `c` defaulting to 9
-  ([light-curve-feature#303](https://github.com/light-curve/light-curve-feature/pull/303)).
-- `QnScale`: the \(Q_n\) robust scale of magnitude (Rousseeuw & Croux 1993), built from pairwise
-  differences instead of deviations from a centre
-  ([light-curve-feature#304](https://github.com/light-curve/light-curve-feature/pull/304)).
-- `ParabolaFit`: curvature, extremum value and reduced \(\chi^2\) of the weighted parabolic fit
-  ([light-curve-feature#302](https://github.com/light-curve/light-curve-feature/pull/302)).
-- `Bootstrap`: meta-feature estimating feature uncertainties by bagging, returning each wrapped
-  value plus its standard deviation over the resamples, or the levels given by `quantiles=`.
-  `bands=` switches to the multiband counterpart, where `band_strategy=` selects `'stratified'`
-  or `'rejection'` resampling
-  ([light-curve-feature#305](https://github.com/light-curve/light-curve-feature/pull/305)).
+--
 
 ### Changed
 
-- Bump `light-curve-feature` from 0.18.1 to 0.19.0
-  ([#834](https://github.com/light-curve/light-curve-python/pull/834)).
+--
 
 ### Deprecated
 
@@ -38,13 +25,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Via `light-curve-feature` 0.19.0: `fill_value` replaced every passband when a single passband
-  was absent or unusable; a multiband feature, or a multiband `Bins`, now fills only the failing
-  passband ([light-curve-feature#324](https://github.com/light-curve/light-curve-feature/pull/324)).
+--
 
 ### Security
 
 --
+
+## [0.13.3] 2026-08-18
+
+### Added
+
+- `BiweightScale`: Tukey's biweight robust scale of magnitude (Beers, Flynn & Gebhardt 1990), a
+  robust alternative to the standard deviation, with tuning constant `c` defaulting to 9
+  ([#834](https://github.com/light-curve/light-curve-python/pull/834)).
+- `QnScale`: the \(Q_n\) robust scale of magnitude (Rousseeuw & Croux 1993), built from pairwise
+  differences instead of deviations from a centre
+  ([#834](https://github.com/light-curve/light-curve-python/pull/834)).
+- `ParabolaFit`: curvature, extremum value and reduced \(\chi^2\) of the weighted parabolic fit
+  ([#834](https://github.com/light-curve/light-curve-python/pull/834)).
+- `Bootstrap`: meta-feature estimating feature uncertainties by bagging, returning each wrapped
+  value plus its standard deviation over the resamples, or the levels given by `quantiles=`.
+  `bands=` switches to the multiband counterpart, where `band_strategy=` selects `'stratified'`
+  or `'rejection'` resampling
+  ([#834](https://github.com/light-curve/light-curve-python/pull/834)).
+
+### Changed
+
+- Bump `light-curve-feature` from 0.18.1 to 0.19.0
+  ([#834](https://github.com/light-curve/light-curve-python/pull/834)).
+
+### Fixed
+
+- Via `light-curve-feature` 0.19.0: `fill_value` replaced every passband when a single passband
+  was absent or unusable; a multiband feature, or a multiband `Bins`, now fills only the failing
+  passband ([light-curve-feature#324](https://github.com/light-curve/light-curve-feature/pull/324), [#834](https://github.com/light-curve/light-curve-python/pull/834)).
+
 
 ## [0.13.2] 2026-08-10
 
