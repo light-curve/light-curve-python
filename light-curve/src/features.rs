@@ -3653,6 +3653,38 @@ bands : list of str or None, optional
     }
 }
 
+/// Header for [Bootstrap]'s Python docstring.
+///
+/// Unlike every other feature, this one does not reuse the upstream Rust doc: that text refers
+/// to `BootstrapUncertainty`, `Bootstrap::add_feature` and `eval_or_fill`, none of which exist
+/// in the Python API. Keep this in sync with the upstream doc's substance by hand.
+const BOOTSTRAP_DOC: &str = r"Bootstrap uncertainty meta-feature
+
+Estimates the uncertainty of feature values by bagging: it draws ``n_bootstrap`` resamples of
+the light curve, sampling observations *with replacement* and keeping the original length, and
+evaluates the wrapped features on each resample. For every wrapped feature value it returns the
+value on the original light curve, followed by a summary of that value's spread over the
+resamples — either the sample standard deviation, or the levels given by ``quantiles``.
+
+In single-band mode all ``n_bootstrap`` resamples are always evaluated, so the uncertainty is
+always defined. In multiband mode the ``'rejection'`` strategy may collect too few valid
+resamples, in which case the feature fails and ``fill_value`` applies as it does to any other
+feature.
+
+Features that cannot be evaluated on a resample are rejected with ``ValueError``:
+
+- features requiring **sorting** — bagging duplicates observations, which divides by a zero time
+  interval for features that also read time and, even where time is not read, biases statistics
+  built from consecutive differences, since duplicated points sort adjacent and contribute
+  spurious zero-difference terms,
+- features requiring **variability** — a resample may be constant.
+
+- Depends on: as required by sub-features
+- Minimum number of observations: as required by sub-features, but at least **1**
+- Number of features: ``(1 + n_uncertainty)`` per sub-feature value, where ``n_uncertainty`` is
+  1 for the standard deviation, or the number of quantile levels
+";
+
 #[derive(Serialize, Deserialize)]
 #[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
 pub struct Bootstrap {}
@@ -3916,7 +3948,7 @@ max_attempts_factor : int, default {max_attempts_default}
     ``n_bootstrap * max_attempts_factor`` total draws. Ignored by 'stratified'
 {footer}
 "#,
-            header = prepare_upstream_doc(lcf::Bootstrap::<f64, Feature<f64>>::doc()),
+            header = BOOTSTRAP_DOC,
             n_bootstrap_default = lcf::Bootstrap::<f64, Feature<f64>>::default_n_bootstrap(),
             seed_default = lcf::Bootstrap::<f64, Feature<f64>>::default_seed(),
             band_strategy_default = Self::DEFAULT_BAND_STRATEGY,
