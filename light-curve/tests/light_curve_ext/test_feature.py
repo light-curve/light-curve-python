@@ -2160,3 +2160,134 @@ def test_parabola_fit_reduced_chi2_with_noise():
     assert g == pytest.approx(2.0, rel=1e-2)
     assert m0 == pytest.approx(5.0, abs=0.05)
     assert reduced_chi2 == pytest.approx(1.0, rel=0.2)
+
+
+def _bootstrap_lc(n=200, seed=400):
+    rng = np.random.default_rng(seed)
+    t = np.sort(rng.uniform(0.0, 10.0, n))
+    m = rng.normal(0.0, 1.0, n)
+    sigma = np.full(n, 0.1)
+    return t, m, sigma
+
+
+def test_bootstrap_names_and_values():
+    """The wrapped value is the one from the original light curve, followed by its sigma."""
+    t, m, sigma = _bootstrap_lc()
+
+    feature = licu_ext.Bootstrap([licu_ext.Mean(), licu_ext.StandardDeviation()], n_bootstrap=100, seed=42)
+    assert feature.names == [
+        "bootstrap_mean",
+        "bootstrap_mean_sigma",
+        "bootstrap_standard_deviation",
+        "bootstrap_standard_deviation_sigma",
+    ]
+
+    values = feature(t, m, sigma)
+    assert values.shape == (4,)
+    np.testing.assert_allclose(values[0], licu_ext.Mean()(t, m, sigma))
+    np.testing.assert_allclose(values[2], licu_ext.StandardDeviation()(t, m, sigma))
+    # The bootstrap error of the mean should match the analytic sigma / sqrt(n)
+    assert values[1] == pytest.approx(np.std(m, ddof=1) / np.sqrt(len(m)), rel=0.2)
+    assert values[3] > 0.0
+
+
+def test_bootstrap_is_reproducible():
+    """The same seed gives the same uncertainties, a different one does not."""
+    t, m, sigma = _bootstrap_lc()
+
+    def run(seed):
+        return licu_ext.Bootstrap([licu_ext.Mean()], n_bootstrap=100, seed=seed)(t, m, sigma)
+
+    np.testing.assert_array_equal(run(1), run(1))
+    assert run(1)[1] != run(2)[1]
+
+
+def test_bootstrap_quantiles():
+    """Quantile levels replace the sigma column and are named by integer percentile."""
+    t, m, sigma = _bootstrap_lc()
+
+    feature = licu_ext.Bootstrap([licu_ext.Mean()], n_bootstrap=200, seed=1, quantiles=[0.16, 0.84])
+    assert feature.names == [
+        "bootstrap_mean",
+        "bootstrap_mean_quantile_16",
+        "bootstrap_mean_quantile_84",
+    ]
+
+    value, low, high = feature(t, m, sigma)
+    assert low < value < high
+
+
+@pytest.mark.parametrize("feature", [licu_ext.Eta(), licu_ext.LinearTrend()])
+def test_bootstrap_rejects_sorting_features(feature):
+    """Bagging duplicates points, which sort adjacent and bias consecutive-difference statistics."""
+    with pytest.raises(ValueError, match="requires sorting"):
+        licu_ext.Bootstrap([feature])
+
+
+@pytest.mark.parametrize("feature", [licu_ext.Skew(), licu_ext.Kurtosis(), licu_ext.StetsonK()])
+def test_bootstrap_rejects_variability_features(feature):
+    """A resample may turn out constant, so features requiring variability cannot be wrapped."""
+    with pytest.raises(ValueError, match="requires variability"):
+        licu_ext.Bootstrap([feature])
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"n_bootstrap": 1},
+        {"quantiles": []},
+        {"quantiles": [1.5]},
+        {"quantiles": [np.nan]},
+    ],
+)
+def test_bootstrap_rejects_bad_arguments(kwargs):
+    with pytest.raises(ValueError):
+        licu_ext.Bootstrap([licu_ext.Mean()], **kwargs)
+
+
+def test_bootstrap_rejects_multiband_feature_without_bands():
+    with pytest.raises(ValueError):
+        licu_ext.Bootstrap([licu_ext.Mean(bands=["g", "r"])])
+
+
+def test_bootstrap_rejects_transform():
+    with pytest.raises(NotImplementedError):
+        licu_ext.Bootstrap([licu_ext.Mean()], transform=True)
+
+
+@pytest.mark.parametrize("band_strategy", ["stratified", "rejection"])
+def test_bootstrap_multiband(band_strategy):
+    """Multiband Bootstrap wraps each single-band feature per passband."""
+    t, m, sigma, band = _make_multiband_lc(_MULTIBAND_BANDS, n_per_band=100, rng=401)
+
+    feature = licu_ext.Bootstrap(
+        [licu_ext.Mean()],
+        bands=_MULTIBAND_BANDS,
+        n_bootstrap=100,
+        seed=7,
+        band_strategy=band_strategy,
+    )
+    assert feature.names == ["bootstrap_mean_g", "bootstrap_mean_g_sigma", "bootstrap_mean_r", "bootstrap_mean_r_sigma"]
+
+    values = feature(t, m, sigma, band=band)
+    # The values themselves come from the original light curve, so both strategies agree on them
+    np.testing.assert_allclose(values[::2], licu_ext.Mean(bands=_MULTIBAND_BANDS)(t, m, sigma, band=band))
+    assert np.all(values[1::2] > 0.0)
+
+
+def test_bootstrap_multiband_color_feature():
+    """A pure multiband feature is passed through and gets its own uncertainty."""
+    t, m, sigma, band = _make_multiband_lc(_MULTIBAND_BANDS, n_per_band=100, rng=402)
+
+    color = licu_ext.ColorOfMedian(_MULTIBAND_BANDS)
+    feature = licu_ext.Bootstrap([color], bands=_MULTIBAND_BANDS, n_bootstrap=100, seed=8)
+    assert feature.names == ["bootstrap_color_median_g_r", "bootstrap_color_median_g_r_sigma"]
+
+    value, sigma_value = feature(t, m, sigma, band=band)
+    np.testing.assert_allclose(value, color(t, m, sigma, band=band))
+    assert sigma_value > 0.0
+
+
+def test_bootstrap_rejects_bad_band_strategy():
+    with pytest.raises(ValueError, match="band_strategy"):
+        licu_ext.Bootstrap([licu_ext.Mean()], bands=_MULTIBAND_BANDS, band_strategy="nope")

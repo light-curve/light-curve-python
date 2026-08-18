@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([light-curve-feature#304](https://github.com/light-curve/light-curve-feature/pull/304)).
 - `ParabolaFit`: curvature, extremum value and reduced \(\chi^2\) of the weighted parabolic fit
   ([light-curve-feature#302](https://github.com/light-curve/light-curve-feature/pull/302)).
+- `Bootstrap`: meta-feature estimating feature uncertainties by bagging, returning each wrapped
+  value plus its standard deviation over the resamples, or the levels given by `quantiles=`.
+  `bands=` switches to the multiband counterpart, where `band_strategy=` selects `'stratified'`
+  or `'rejection'` resampling
+  ([light-curve-feature#305](https://github.com/light-curve/light-curve-feature/pull/305)).
 
 ### Changed
 

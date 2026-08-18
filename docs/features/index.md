@@ -134,3 +134,4 @@ See the [API reference](api/variability.md) for full signatures, parameters, and
 |---------|-------------|
 | [`Extractor`](api/meta.md#light_curve.Extractor) | Combine multiple feature extractors into a single callable |
 | [`Bins`](api/meta.md#light_curve.Bins) | Bin a time series, then apply any set of features to each bin |
+| [`Bootstrap`](api/meta.md#light_curve.Bootstrap) | Estimate feature uncertainties by bagging: each wrapped value plus its bootstrap spread |
