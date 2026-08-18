@@ -149,8 +149,11 @@ exclude = [
     "docs",
     "dist",
     "target",
-    "tests/light-curve-test-data",
-    "tests/prep-models",
+    # Both are git submodules with their own formatting rules. The patterns are anchored with
+    # `**/` because pre-commit invokes ruff from the repo root via `--config=`, which makes ruff
+    # resolve relative excludes against the repo root rather than against this file's directory.
+    "**/tests/light-curve-test-data",
+    "**/tests/prep-models",
     "wheelhouse",
     ".benchmarks",
     ".idea",
