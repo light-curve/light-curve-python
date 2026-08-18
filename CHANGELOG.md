@@ -9,7 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
---
+- `BiweightScale`: Tukey's biweight robust scale of magnitude (Beers, Flynn & Gebhardt 1990), a
+  robust alternative to the standard deviation, with tuning constant `c` defaulting to 9
+  ([light-curve-feature#303](https://github.com/light-curve/light-curve-feature/pull/303)).
+- `QnScale`: the \(Q_n\) robust scale of magnitude (Rousseeuw & Croux 1993), built from pairwise
+  differences instead of deviations from a centre
+  ([light-curve-feature#304](https://github.com/light-curve/light-curve-feature/pull/304)).
+- `ParabolaFit`: curvature, extremum value and reduced \(\chi^2\) of the weighted parabolic fit
+  ([light-curve-feature#302](https://github.com/light-curve/light-curve-feature/pull/302)).
 
 ### Changed
 

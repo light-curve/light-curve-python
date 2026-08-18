@@ -186,9 +186,16 @@ def construct_example_objects(cls, *, parametric_variants=1, rng=None):
     return objects
 
 
-def gen_feature_evaluators(*, parametric_variants=0, skip_fit=False, rng=None):
+# gen_lc() returns an exactly straight light curve, m = t. ParabolaFit is undefined there:
+# the curvature is zero, so the extremum value diverges and the feature errors out.
+straight_lc_degenerate_classes = frozenset({licu_ext.ParabolaFit})
+
+
+def gen_feature_evaluators(*, parametric_variants=0, skip_fit=False, skip_straight_lc_degenerate=False, rng=None):
     if parametric_variants == 0:
         for cls in non_param_feature_classes:
+            if skip_straight_lc_degenerate and cls in straight_lc_degenerate_classes:
+                continue
             yield cls()
         return
     rng = np.random.default_rng(rng)
@@ -282,7 +289,7 @@ def test_negative_strides(feature):
 
 
 # We don't want *Fit features here: not precise
-@pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=0))
+@pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=0, skip_straight_lc_degenerate=True))
 def test_float32_vs_float64(feature):
     rng = np.random.default_rng(0)
     n = 128
@@ -305,7 +312,7 @@ def test_multiband_output_length_matches_names(feature):
 
 
 # We don't want *Fit features here: too slow
-@pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=0))
+@pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=0, skip_straight_lc_degenerate=True))
 def test_many_vs_call(feature):
     rng = np.random.default_rng(0)
     n_obs = 128
@@ -2047,3 +2054,109 @@ def test_multiband_fill_value_only_unusable_band():
     assert result.shape == (6,)
     np.testing.assert_allclose(result[:3], licu_ext.LinearFit()(t[:n], m[:n], sigma[:n]))
     np.testing.assert_array_equal(result[3:], -999.0)
+
+
+def test_biweight_scale_vs_std_with_outlier():
+    """BiweightScale is barely moved by an outlier that inflates the standard deviation."""
+    rng = np.random.default_rng(170)
+    n = 200
+    t = np.arange(n, dtype=float)
+    m = rng.normal(0.0, 1.0, n)
+    sigma = np.full(n, 0.1)
+
+    clean_biweight = licu_ext.BiweightScale()(t, m, sigma)[0]
+    clean_std = licu_ext.StandardDeviation()(t, m, sigma)[0]
+
+    m_outlier = m.copy()
+    m_outlier[0] = 1000.0
+    dirty_biweight = licu_ext.BiweightScale()(t, m_outlier, sigma)[0]
+    dirty_std = licu_ext.StandardDeviation()(t, m_outlier, sigma)[0]
+
+    assert dirty_biweight == pytest.approx(clean_biweight, rel=1e-2)
+    assert dirty_std > 10 * clean_std
+
+
+def test_biweight_scale_tuning_constant():
+    """c controls how wide the rejection window is, and shows up in the feature name."""
+    assert licu_ext.BiweightScale().names == ["biweight_scale_9"]
+    assert licu_ext.BiweightScale(6.0).names == ["biweight_scale_6"]
+
+    rng = np.random.default_rng(171)
+    n = 200
+    t = np.arange(n, dtype=float)
+    m = rng.normal(0.0, 1.0, n)
+    sigma = np.full(n, 0.1)
+    clean = licu_ext.BiweightScale()(t, m, sigma)[0]
+
+    m[:10] = 20.0
+    # The default window is narrow enough to reject the outliers entirely...
+    assert licu_ext.BiweightScale()(t, m, sigma)[0] == pytest.approx(clean, rel=0.05)
+    # ...while a window this wide admits them and inflates the estimate.
+    assert licu_ext.BiweightScale(50.0)(t, m, sigma)[0] > 2 * clean
+
+
+@pytest.mark.parametrize("c", [0.0, -1.0, np.inf, np.nan])
+def test_biweight_scale_rejects_bad_c(c):
+    with pytest.raises(ValueError):
+        licu_ext.BiweightScale(c)
+
+
+def test_qn_scale_vs_std_gaussian():
+    """Qn is normalized to agree with the standard deviation for Gaussian noise."""
+    rng = np.random.default_rng(172)
+    n = 10_000
+    t = np.arange(n, dtype=float)
+    m = rng.normal(0.0, 2.5, n)
+    sigma = np.full(n, 0.1)
+
+    assert licu_ext.QnScale()(t, m, sigma)[0] == pytest.approx(2.5, rel=0.05)
+
+
+def test_qn_scale_is_robust():
+    """Qn has a 50% breakdown point, so a few outliers barely move it."""
+    rng = np.random.default_rng(173)
+    n = 200
+    t = np.arange(n, dtype=float)
+    m = rng.normal(0.0, 1.0, n)
+    sigma = np.full(n, 0.1)
+
+    clean = licu_ext.QnScale()(t, m, sigma)[0]
+    m_outlier = m.copy()
+    m_outlier[:5] = 1000.0
+    assert licu_ext.QnScale()(t, m_outlier, sigma)[0] == pytest.approx(clean, rel=0.1)
+
+
+def test_parabola_fit_exact():
+    """An exactly parabolic light curve is recovered with zero reduced chi2."""
+    t = np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0])
+    g, t0, m0 = 2.0, 3.0, 5.0
+    m = g * (t - t0) ** 2 + m0
+    sigma = np.ones_like(t)
+
+    feature = licu_ext.ParabolaFit()
+    assert feature.names == ["parabola_fit_g", "parabola_fit_m0", "parabola_fit_reduced_chi2"]
+    np.testing.assert_allclose(feature(t, m, sigma), [g, m0, 0.0], atol=1e-10)
+
+
+def test_parabola_fit_straight_line_raises():
+    """A straight light curve has zero curvature, so the extremum value is undefined."""
+    t = np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0])
+    m = 2.0 * t + 1.0
+    sigma = np.ones_like(t)
+
+    with pytest.raises(ValueError):
+        licu_ext.ParabolaFit()(t, m, sigma)
+
+
+def test_parabola_fit_reduced_chi2_with_noise():
+    """Noise consistent with the reported errors gives a reduced chi2 of about one."""
+    rng = np.random.default_rng(174)
+    n = 1000
+    t = np.linspace(0.0, 10.0, n)
+    sigma = np.full(n, 0.1)
+    m = 2.0 * (t - 3.0) ** 2 + 5.0 + rng.normal(0.0, sigma)
+
+    g, m0, reduced_chi2 = licu_ext.ParabolaFit()(t, m, sigma)
+    assert g == pytest.approx(2.0, rel=1e-2)
+    assert m0 == pytest.approx(5.0, abs=0.05)
+    assert reduced_chi2 == pytest.approx(1.0, rel=0.2)

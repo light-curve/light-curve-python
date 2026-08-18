@@ -142,7 +142,7 @@ nav:
           - Base class: features/api/base.md
           - Meta (Extractor, Bins): features/api/meta.md
           - Variability: features/api/variability.md
-          - Linear trend: features/api/linear.md
+          - Linear and parabola: features/api/linear.md
           - Time sampling: features/api/time.md
           - Periodogram: features/api/periodogram.md
           - Non-linear parametric fits: features/api/fitting.md

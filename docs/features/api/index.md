@@ -6,7 +6,7 @@
 |---|---|
 | [Meta](meta.md) | `Extractor`, `Bins` |
 | [Variability](variability.md) | Amplitude, BeyondNStd, Chi2Pvar, Eta, EtaE, ExcessVariance, Kurtosis, … |
-| [Linear trend](linear.md) | LinearFit, LinearTrend |
+| [Linear and parabola](linear.md) | LinearFit, LinearTrend, ParabolaFit |
 | [Time sampling](time.md) | Duration, ObservationCount, TimeMean, TimeStandardDeviation, … |
 | [Periodogram](periodogram.md) | Periodogram |
 | [Non-linear parametric fits](fitting.md) | BazinFit, LinexpFit, VillarFit |

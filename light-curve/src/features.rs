@@ -3660,6 +3660,80 @@ bands : list of str or None, optional
     }
 }
 
+#[derive(Serialize, Deserialize)]
+#[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
+pub struct BiweightScale {}
+
+impl_stock_transform!(BiweightScale, StockTransformer::Identity);
+impl_pickle_serialisation!(BiweightScale);
+
+#[pymethods]
+impl BiweightScale {
+    #[new]
+    #[pyo3(signature = (c=lcf::BiweightScale::<f32>::default_c(), *, transform=None, bands=None))]
+    fn __new__(
+        c: f32,
+        transform: Option<Bound<PyAny>>,
+        bands: Option<Bound<'_, PyAny>>,
+    ) -> Res<PyClassInitializer<Self>> {
+        if !(c.is_finite() && c > 0.0) {
+            return Err(Exception::ValueError(format!(
+                "c must be a positive finite number, got {c}"
+            )));
+        }
+        let base = match bands {
+            None => PyFeatureEvaluator::single_band(
+                lcf::BiweightScale::new(c).into(),
+                lcf::BiweightScale::new(c).into(),
+                transform,
+                Self::DEFAULT_TRANSFORMER,
+            )?,
+            Some(bands_py) => {
+                let user_bands = parse_bands(&bands_py)?;
+                let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(
+                    lcf::BiweightScale::new(c),
+                    user_bands.clone(),
+                );
+                let mc_f64 = lcf::MultiColorFeature::from_per_band_feature(
+                    lcf::BiweightScale::new(c),
+                    user_bands.clone(),
+                );
+                PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64)
+            }
+        };
+        Ok(PyClassInitializer::from(base).add_subclass(Self {}))
+    }
+
+    /// Required by pickle.load / pickle.loads
+    #[staticmethod]
+    fn __getnewargs__() -> (f32,) {
+        (lcf::BiweightScale::<f32>::default_c(),)
+    }
+
+    #[classattr]
+    fn __doc__() -> String {
+        format!(
+            r#"{header}
+
+Parameters
+----------
+c : positive float, default {c_default:.1}
+    Tuning constant — how many MADs away from the median a point is still
+    given weight. Smaller values reject outliers more aggressively, larger
+    values approach the standard deviation
+
+{transform}
+{bands}
+{footer}"#,
+            header = prepare_upstream_doc(lcf::BiweightScale::<f64>::doc()),
+            c_default = lcf::BiweightScale::<f64>::default_c(),
+            transform = transform_parameter_doc(Self::DEFAULT_TRANSFORMER),
+            bands = BANDS_PARAMETER_DOC,
+            footer = COMMON_FEATURE_DOC,
+        )
+    }
+}
+
 evaluator!(Chi2Pvar, lcf::Chi2Pvar, StockTransformer::Identity);
 
 macro_rules! color_two_band_feature {
@@ -4097,6 +4171,8 @@ quantile : positive float, default {quantile_default:.2}
         )
     }
 }
+
+evaluator!(ParabolaFit, lcf::ParabolaFit, StockTransformer::Identity);
 
 evaluator!(
     PercentAmplitude,
@@ -4867,6 +4943,8 @@ Examples
         )
     }
 }
+
+evaluator!(QnScale, lcf::QnScale, StockTransformer::Identity);
 
 evaluator!(ReducedChi2, lcf::ReducedChi2, StockTransformer::Ln1p);
 

@@ -9,7 +9,7 @@ mode.  Full API documentation is available in the per-category reference pages:
   single-band + multiband, `Bins` supports `bands=` for per-passband binning.
 - [Periodogram](../api/periodogram.md) — `Periodogram` supports `bands=` and
   `multiband_normalization=`.
-- [Variability](../api/variability.md), [Linear trend](../api/linear.md),
+- [Variability](../api/variability.md), [Linear and parabola](../api/linear.md),
   [Time sampling](../api/time.md), [Non-linear parametric fits](../api/fitting.md) —
   all accept `bands=`.
 
