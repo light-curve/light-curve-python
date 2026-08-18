@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
---
+- Bump `light-curve-feature` from 0.18.1 to 0.19.0
+  ([#834](https://github.com/light-curve/light-curve-python/pull/834)).
 
 ### Deprecated
 
@@ -25,7 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
---
+- Via `light-curve-feature` 0.19.0: `fill_value` replaced every passband when a single passband
+  was absent or unusable; a multiband feature, or a multiband `Bins`, now fills only the failing
+  passband ([light-curve-feature#324](https://github.com/light-curve/light-curve-feature/pull/324)).
 
 ### Security
 

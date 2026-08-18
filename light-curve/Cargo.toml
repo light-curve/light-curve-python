@@ -76,7 +76,7 @@ arrow-schema = "59"
 comfy-table = "7"
 
 [dependencies.light-curve-feature]
-version = "0.18.1"
+version = "0.19.0"
 default-features = false
 
 [dependencies.light-curve-dmdt]

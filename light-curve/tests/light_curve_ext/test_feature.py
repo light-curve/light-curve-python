@@ -1985,3 +1985,65 @@ def test_benchmark_multiband_integer_bands(benchmark, _bench_int_feat, _bench_in
     benchmark.group = "multiband_band_dispatch"
     benchmark.name = "integer_bands"
     benchmark(lambda: _bench_int_feat(t, m, sigma, band, sorted=True, check=False))
+
+
+def test_multiband_fill_value_only_missing_band():
+    """fill_value replaces only the absent passband, not the usable ones.
+
+    Regression test for light-curve-feature#324, where a single absent or
+    unusable passband made `eval_or_fill_multicolor` fill *every* passband.
+    """
+    rng = np.random.default_rng(324)
+    n = 20
+    t = np.sort(rng.uniform(0, 10, n))
+    m = rng.normal(0, 1, n)
+    sigma = np.full(n, 0.1)
+    band = np.array(["g"] * n)
+
+    feature = licu_ext.Amplitude(bands=["g", "r"])
+    result = feature(t, m, sigma, band=band, fill_value=-999.0)
+
+    assert result[0] != -999.0
+    np.testing.assert_allclose(result[0], licu_ext.Amplitude()(t, m, sigma))
+    assert result[1] == -999.0
+
+
+def test_multiband_bins_fill_value_only_missing_band():
+    """Multiband Bins fills only the absent passband.
+
+    Regression test for light-curve-feature#324, covering `MultiColorBins`.
+    """
+    rng = np.random.default_rng(325)
+    n = 20
+    t = np.sort(rng.uniform(0, 10, n))
+    m = rng.normal(0, 1, n)
+    sigma = np.full(n, 0.1)
+    band = np.array(["g"] * n)
+
+    bins_mb = licu_ext.Bins([licu_ext.Amplitude()], window=1.0, offset=0.0, bands=["g", "r"])
+    result = bins_mb(t, m, sigma, band=band, fill_value=-999.0)
+
+    bins_sb = licu_ext.Bins([licu_ext.Amplitude()], window=1.0, offset=0.0)
+    np.testing.assert_allclose(result[0], bins_sb(t, m, sigma)[0])
+    assert result[1] == -999.0
+
+
+def test_multiband_fill_value_only_unusable_band():
+    """A passband with too few observations is filled without spoiling the others.
+
+    Regression test for light-curve-feature#324. `LinearFit` needs at least
+    three observations, so the single-point r band cannot be evaluated.
+    """
+    rng = np.random.default_rng(326)
+    n = 20
+    t = np.concatenate([np.sort(rng.uniform(0, 10, n)), [10.5]])
+    m = np.concatenate([rng.normal(0, 1, n), [0.0]])
+    sigma = np.full(n + 1, 0.1)
+    band = np.array(["g"] * n + ["r"])
+
+    feature = licu_ext.LinearFit(bands=["g", "r"])
+    result = feature(t, m, sigma, band=band, fill_value=-999.0)
+
+    assert result.shape == (6,)
+    np.testing.assert_allclose(result[:3], licu_ext.LinearFit()(t[:n], m[:n], sigma[:n]))
+    np.testing.assert_array_equal(result[3:], -999.0)

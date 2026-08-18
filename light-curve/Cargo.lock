@@ -771,9 +771,9 @@ checksum = "91622ff5e7162018101f2fea40d6ebf4a78bbe5a49736a2020649edf9693679e"
 
 [[package]]
 name = "ellip"
-version = "1.1.0"
+version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c398315af820159155f5161699396ac1277b82f3c44052816b098a0de28a14d0"
+checksum = "ddf8add35b2174706baf49bac13fd472a423b62829c0a1878e4e57926a8c8c89"
 dependencies = [
  "num-lazy",
  "num-traits",
@@ -1606,9 +1606,9 @@ dependencies = [
 
 [[package]]
 name = "light-curve-feature"
-version = "0.18.1"
+version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "14d3a7f7feb58db41465a3618ee064859cb60377ab7ff7476da3ab52e932fe47"
+checksum = "b8579743f5dabb51e8b936bfd765a74a0cf54b5a52bcc5adaaf4abe9b7bd6204"
 dependencies = [
  "GSL",
  "ceres-solver",
@@ -1616,7 +1616,7 @@ dependencies = [
  "emcee",
  "enum_dispatch",
  "fftw",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "lazy_static",
  "libm",
  "macro_const",
@@ -2856,9 +2856,9 @@ checksum = "8ed6a63f02c8539c91a8685a86f4099661ba3da017932f6ebbea6de3f0fa7c90"
 
 [[package]]
 name = "special"
-version = "0.13.1"
+version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2059cab5d76b5fa47f0c847f889071627a78b4fb6d9c582b67d9afbc75006da5"
+checksum = "89da6d910fda05fcf6b8cadaaafe9f8ca1e51d5c78d3832917b569e8db38111e"
 dependencies = [
  "ellip",
  "lambert_w",
