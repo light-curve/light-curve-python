@@ -156,11 +156,7 @@ def construct_example_objects(cls, *, parametric_variants=1, rng=None):
     if cls in fit_feature_classes:
         return list(chain.from_iterable(gen_fit_variants(cls, rng=rng) for _ in range(parametric_variants)))
 
-    # No mandatory arguments
-    if not hasattr(cls, "__getnewargs__"):
-        return [cls()]
-
-    # default mandatory arguments
+    # Default constructor arguments; empty for a class that takes none
     args, kwargs = get_new_args_kwargs(cls)
 
     # Add Mean feature for metafeatures
@@ -219,8 +215,6 @@ def _try_construct_multiband(cls):
     if cls in pure_multiband_feature_classes:
         return cls(_MULTIBAND_BANDS)
     try:
-        if not hasattr(cls, "__getnewargs__"):
-            return cls(bands=_MULTIBAND_BANDS)
         args, kwargs = get_new_args_kwargs(cls)
         args = [[licu_ext.Mean()] if arg == () else arg for arg in args]
         return cls(*args, **kwargs, bands=_MULTIBAND_BANDS)

@@ -3609,14 +3609,6 @@ impl Bins {
         Ok(PyClassInitializer::from(parent).add_subclass(Self {}))
     }
 
-    /// Use __getnewargs_ex__ instead
-    #[staticmethod]
-    fn __getnewargs__() -> PyResult<()> {
-        Err(PyNotImplementedError::new_err(
-            "use __getnewargs_ex__ instead",
-        ))
-    }
-
     /// Required by pickle.load / pickle.loads
     #[staticmethod]
     fn __getnewargs_ex__(py: Python) -> ((Bound<PyTuple>,), HashMap<&'static str, f64>) {
@@ -3850,14 +3842,6 @@ impl Bootstrap {
         };
 
         Ok(PyClassInitializer::from(parent).add_subclass(Self {}))
-    }
-
-    /// Use __getnewargs_ex__ instead
-    #[staticmethod]
-    fn __getnewargs__() -> PyResult<()> {
-        Err(PyNotImplementedError::new_err(
-            "use __getnewargs_ex__ instead",
-        ))
     }
 
     /// Required by pickle.load / pickle.loads
