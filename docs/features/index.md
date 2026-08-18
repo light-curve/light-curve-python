@@ -41,6 +41,7 @@ See the [API reference](api/variability.md) for full signatures, parameters, and
 | [`Amplitude`](api/variability.md#light_curve.Amplitude) | Half peak-to-peak amplitude | 1 |
 | [`AndersonDarlingNormal`](api/variability.md#light_curve.AndersonDarlingNormal) | Unbiased Anderson–Darling normality test statistic | 1 |
 | [`BeyondNStd`](api/variability.md#light_curve.BeyondNStd) | Fraction of observations beyond \(n\,\sigma_m\) from \(\langle m \rangle\) | 1 |
+| [`BiweightScale`](api/variability.md#light_curve.BiweightScale) | Tukey's biweight robust scale of magnitude, a robust alternative to \(\sigma_m\) | 1 |
 | [`Chi2Pvar`](api/variability.md#light_curve.Chi2Pvar) | Probability of variability from the \(\chi^2\) test | 1 |
 | [`Cusum`](api/variability.md#light_curve.Cusum) | Range of cumulative sums | 1 |
 | [`Eta`](api/variability.md#light_curve.Eta) | Von Neumann \(\eta\) | 1 |
@@ -58,6 +59,7 @@ See the [API reference](api/variability.md) for full signatures, parameters, and
 | [`OtsuSplit`](api/variability.md#light_curve.OtsuSplit) | Otsu thresholding: bimodality measure (subset means, std devs, fraction) | 4 |
 | [`PercentAmplitude`](api/variability.md#light_curve.PercentAmplitude) | Maximum deviation of magnitude from its median | 1 |
 | [`PercentDifferenceMagnitudePercentile`](api/variability.md#light_curve.PercentDifferenceMagnitudePercentile) | Ratio of inter-percentile range to median | 1 |
+| [`QnScale`](api/variability.md#light_curve.QnScale) | Rousseeuw–Croux \(Q_n\) robust scale of magnitude, from pairwise differences | 1 |
 | [`ReducedChi2`](api/variability.md#light_curve.ReducedChi2) | Reduced \(\chi^2\) of magnitude measurements | 1 |
 | [`Roms`](api/variability.md#light_curve.Roms) | Robust median statistic *(experimental)* | 1 |
 | [`Skew`](api/variability.md#light_curve.Skew) | Skewness \(G_1\) of magnitude | 1 |
@@ -65,14 +67,15 @@ See the [API reference](api/variability.md) for full signatures, parameters, and
 | [`StetsonK`](api/variability.md#light_curve.StetsonK) | Stetson \(K\) light-curve shape coefficient | 1 |
 | [`WeightedMean`](api/variability.md#light_curve.WeightedMean) | Inverse-variance weighted mean magnitude | 1 |
 
-### Linear trend
+### Linear and parabola
 
-*Fast: both features combined ~10 µs on 1,000 observations, single band.*
+*Fast: the linear features combined ~10 µs on 1,000 observations, single band.*
 
 | Feature | Description | Outputs |
 |---------|-------------|---------|
 | [`LinearFit`](api/linear.md#light_curve.LinearFit) | Slope, its error, and reduced \(\chi^2\) of the weighted linear fit | 3 |
 | [`LinearTrend`](api/linear.md#light_curve.LinearTrend) | Slope, its error, and noise level of the unweighted linear fit | 3 |
+| [`ParabolaFit`](api/linear.md#light_curve.ParabolaFit) | Curvature, extremum value, and reduced \(\chi^2\) of the weighted parabolic fit | 3 |
 
 ### Time sampling
 
@@ -131,3 +134,4 @@ See the [API reference](api/variability.md) for full signatures, parameters, and
 |---------|-------------|
 | [`Extractor`](api/meta.md#light_curve.Extractor) | Combine multiple feature extractors into a single callable |
 | [`Bins`](api/meta.md#light_curve.Bins) | Bin a time series, then apply any set of features to each bin |
+| [`Bootstrap`](api/meta.md#light_curve.Bootstrap) | Estimate feature uncertainties by bagging: each wrapped value plus its bootstrap spread |

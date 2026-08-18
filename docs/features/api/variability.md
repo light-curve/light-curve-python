@@ -12,6 +12,10 @@
 
 ---
 
+::: light_curve.BiweightScale
+
+---
+
 ::: light_curve.Chi2Pvar
 
 ---
@@ -81,6 +85,10 @@
 ---
 
 ::: light_curve.PercentDifferenceMagnitudePercentile
+
+---
+
+::: light_curve.QnScale
 
 ---
 

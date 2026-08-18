@@ -58,6 +58,8 @@ fn light_curve(py: Python, m: Bound<PyModule>) -> PyResult<()> {
     m.add_class::<f::BazinFit>()?;
     m.add_class::<f::BeyondNStd>()?;
     m.add_class::<f::Bins>()?;
+    m.add_class::<f::BiweightScale>()?;
+    m.add_class::<f::Bootstrap>()?;
     m.add_class::<f::Chi2Pvar>()?;
     m.add_class::<f::ColorOfMaximum>()?;
     m.add_class::<f::ColorOfMedian>()?;
@@ -86,9 +88,11 @@ fn light_curve(py: Python, m: Bound<PyModule>) -> PyResult<()> {
     m.add_class::<f::MedianAbsoluteDeviation>()?;
     m.add_class::<f::MedianBufferRangePercentage>()?;
     m.add_class::<f::MinimumTimeInterval>()?;
+    m.add_class::<f::ParabolaFit>()?;
     m.add_class::<f::PercentAmplitude>()?;
     m.add_class::<f::PercentDifferenceMagnitudePercentile>()?;
     m.add_class::<f::Periodogram>()?;
+    m.add_class::<f::QnScale>()?;
     m.add_class::<f::ReducedChi2>()?;
     m.add_class::<f::Roms>()?;
     m.add_class::<f::Skew>()?;

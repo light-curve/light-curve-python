@@ -3609,14 +3609,6 @@ impl Bins {
         Ok(PyClassInitializer::from(parent).add_subclass(Self {}))
     }
 
-    /// Use __getnewargs_ex__ instead
-    #[staticmethod]
-    fn __getnewargs__() -> PyResult<()> {
-        Err(PyNotImplementedError::new_err(
-            "use __getnewargs_ex__ instead",
-        ))
-    }
-
     /// Required by pickle.load / pickle.loads
     #[staticmethod]
     fn __getnewargs_ex__(py: Python) -> ((Bound<PyTuple>,), HashMap<&'static str, f64>) {
@@ -3648,6 +3640,7 @@ offset : float
 
 transform : None, default None
     Not supported, apply transformations to individual features
+
 bands : list of str or None, optional
     Passband names for multiband mode. If given, each single-band feature in
     ``features`` is evaluated independently per passband; multiband features
@@ -3655,6 +3648,385 @@ bands : list of str or None, optional
 {footer}
 "#,
             header = prepare_upstream_doc(lcf::Bins::<f64, Feature<f64>>::doc()),
+            footer = COMMON_FEATURE_DOC,
+        )
+    }
+}
+
+/// Header for [Bootstrap]'s Python docstring.
+///
+/// Unlike every other feature, this one does not reuse the upstream Rust doc: that text refers
+/// to `BootstrapUncertainty`, `Bootstrap::add_feature` and `eval_or_fill`, none of which exist
+/// in the Python API. Keep this in sync with the upstream doc's substance by hand.
+const BOOTSTRAP_DOC: &str = r"Bootstrap uncertainty meta-feature
+
+Estimates the uncertainty of feature values by bagging: it draws ``n_bootstrap`` resamples of
+the light curve, sampling observations *with replacement* and keeping the original length, and
+evaluates the wrapped features on each resample. For every wrapped feature value it returns the
+value on the original light curve, followed by a summary of that value's spread over the
+resamples — either the sample standard deviation, or the levels given by ``quantiles``.
+
+In single-band mode all ``n_bootstrap`` resamples are always evaluated, so the uncertainty is
+always defined. In multiband mode the ``'rejection'`` strategy may collect too few valid
+resamples, in which case the feature fails and ``fill_value`` applies as it does to any other
+feature.
+
+Features that cannot be evaluated on a resample are rejected with ``ValueError``:
+
+- features requiring **sorting** — bagging duplicates observations, which divides by a zero time
+  interval for features that also read time and, even where time is not read, biases statistics
+  built from consecutive differences, since duplicated points sort adjacent and contribute
+  spurious zero-difference terms,
+- features requiring **variability** — a resample may be constant.
+
+- Depends on: as required by sub-features
+- Minimum number of observations: as required by sub-features, but at least **1**
+- Number of features: ``(1 + n_uncertainty)`` per sub-feature value, where ``n_uncertainty`` is
+  1 for the standard deviation, or the number of quantile levels
+";
+
+#[derive(Serialize, Deserialize)]
+#[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
+pub struct Bootstrap {}
+
+impl_pickle_serialisation!(Bootstrap);
+
+impl Bootstrap {
+    const DEFAULT_BAND_STRATEGY: &'static str = "stratified";
+
+    /// Build the uncertainty summary: the sample standard deviation, or the given quantile levels.
+    fn parse_uncertainty(quantiles: Option<Vec<f32>>) -> Res<lcf::BootstrapUncertainty> {
+        let Some(levels) = quantiles else {
+            return Ok(lcf::BootstrapUncertainty::Std);
+        };
+        if levels.is_empty() {
+            return Err(Exception::ValueError(
+                "quantiles must not be empty, pass None to get the standard deviation instead"
+                    .to_string(),
+            ));
+        }
+        if let Some(&q) = levels
+            .iter()
+            .find(|q| !(q.is_finite() && (0.0..=1.0).contains(*q)))
+        {
+            return Err(Exception::ValueError(format!(
+                "quantile level must be a finite number in [0, 1], got {q}"
+            )));
+        }
+        Ok(lcf::BootstrapUncertainty::quantiles(levels))
+    }
+
+    fn parse_band_strategy(
+        band_strategy: &str,
+        max_attempts_factor: usize,
+    ) -> Res<lcf::BandStrategy> {
+        match band_strategy {
+            "stratified" => Ok(lcf::BandStrategy::Stratified),
+            "rejection" => {
+                if max_attempts_factor < 1 {
+                    return Err(Exception::ValueError(
+                        "max_attempts_factor must be at least 1".to_string(),
+                    ));
+                }
+                Ok(lcf::BandStrategy::Rejection {
+                    max_attempts_factor,
+                })
+            }
+            s => Err(Exception::ValueError(format!(
+                "unsupported band_strategy '{s}', must be 'stratified' or 'rejection'"
+            ))),
+        }
+    }
+
+    /// `Bootstrap::add_feature` rejects sub-features it cannot resample; surface that as ValueError.
+    fn add_feature_error(error: lcf::BootstrapFeatureError) -> Exception {
+        Exception::ValueError(error.to_string())
+    }
+}
+
+#[pymethods]
+impl Bootstrap {
+    #[new]
+    #[pyo3(signature = (
+        features,
+        *,
+        n_bootstrap = lcf::Bootstrap::<f64, Feature<f64>>::default_n_bootstrap(),
+        seed = lcf::Bootstrap::<f64, Feature<f64>>::default_seed(),
+        quantiles = None,
+        transform = None,
+        bands = None,
+        band_strategy = Bootstrap::DEFAULT_BAND_STRATEGY,
+        max_attempts_factor = lcf::BandStrategy::default_max_attempts_factor(),
+    ))]
+    #[allow(clippy::too_many_arguments)]
+    fn __new__(
+        features: Bound<PyAny>,
+        n_bootstrap: usize,
+        seed: u64,
+        quantiles: Option<Vec<f32>>,
+        transform: Option<Bound<PyAny>>,
+        bands: Option<Bound<'_, PyAny>>,
+        band_strategy: &str,
+        max_attempts_factor: usize,
+    ) -> PyResult<PyClassInitializer<Self>> {
+        if transform.is_some() {
+            return Err(Exception::NotImplementedError(
+                "transform is not supported by Bootstrap, apply transformations to individual features"
+                    .to_string(),
+            )
+            .into());
+        }
+        if n_bootstrap < 2 {
+            return Err(Exception::ValueError(format!(
+                "n_bootstrap must be at least 2, got {n_bootstrap}"
+            ))
+            .into());
+        }
+        let uncertainty = Self::parse_uncertainty(quantiles)?;
+
+        let parent = match bands {
+            None => {
+                let mut eval_f32 = lcf::Bootstrap::new(n_bootstrap, seed, uncertainty.clone());
+                let mut eval_f64 = lcf::Bootstrap::new(n_bootstrap, seed, uncertainty);
+                for x in features.try_iter()? {
+                    let py_feature = x?.cast::<PyFeatureEvaluator>()?.borrow();
+                    let (f32_eval, f64_eval) = match &py_feature.mode {
+                        FeatureEvalMode::SingleBand {
+                            feature_evaluator_f32,
+                            feature_evaluator_f64,
+                        } => (feature_evaluator_f32.clone(), feature_evaluator_f64.clone()),
+                        FeatureEvalMode::MultiBand { .. } | FeatureEvalMode::Mixed { .. } => {
+                            return Err(Exception::ValueError(
+                                "Bootstrap without bands= does not support multiband features; pass bands= to enable multiband bootstrapping".to_string(),
+                            )
+                            .into())
+                        }
+                    };
+                    eval_f32
+                        .add_feature(f32_eval)
+                        .map_err(Self::add_feature_error)?;
+                    eval_f64
+                        .add_feature(f64_eval)
+                        .map_err(Self::add_feature_error)?;
+                }
+                PyFeatureEvaluator {
+                    mode: FeatureEvalMode::SingleBand {
+                        feature_evaluator_f32: eval_f32.into(),
+                        feature_evaluator_f64: eval_f64.into(),
+                    },
+                }
+            }
+            Some(bands_py) => {
+                let user_bands = parse_bands(&bands_py)?;
+                let strategy = Self::parse_band_strategy(band_strategy, max_attempts_factor)?;
+                let mut mc_f32 = lcf::MultiColorBootstrap::new(
+                    n_bootstrap,
+                    seed,
+                    uncertainty.clone(),
+                    strategy.clone(),
+                );
+                let mut mc_f64 =
+                    lcf::MultiColorBootstrap::new(n_bootstrap, seed, uncertainty, strategy);
+                for x in features.try_iter()? {
+                    let py_feature = x?.cast::<PyFeatureEvaluator>()?.borrow();
+                    let (mc_feature_f32, mc_feature_f64) = match &py_feature.mode {
+                        FeatureEvalMode::SingleBand {
+                            feature_evaluator_f32,
+                            feature_evaluator_f64,
+                        } => (
+                            lcf::MultiColorFeature::from_per_band_feature(
+                                feature_evaluator_f32.clone(),
+                                user_bands.clone(),
+                            ),
+                            lcf::MultiColorFeature::from_per_band_feature(
+                                feature_evaluator_f64.clone(),
+                                user_bands.clone(),
+                            ),
+                        ),
+                        FeatureEvalMode::MultiBand {
+                            feature_evaluator_f32,
+                            feature_evaluator_f64,
+                            ..
+                        } => (
+                            *feature_evaluator_f32.clone(),
+                            *feature_evaluator_f64.clone(),
+                        ),
+                        FeatureEvalMode::Mixed { .. } => {
+                            return Err(Exception::ValueError(
+                                "Bootstrap does not support mixed-mode features".to_string(),
+                            )
+                            .into());
+                        }
+                    };
+                    mc_f32
+                        .add_feature(mc_feature_f32)
+                        .map_err(Self::add_feature_error)?;
+                    mc_f64
+                        .add_feature(mc_feature_f64)
+                        .map_err(Self::add_feature_error)?;
+                }
+                PyFeatureEvaluator::multi_band(
+                    user_bands,
+                    lcf::MultiColorFeature::MultiColorBootstrap(mc_f32),
+                    lcf::MultiColorFeature::MultiColorBootstrap(mc_f64),
+                )
+            }
+        };
+
+        Ok(PyClassInitializer::from(parent).add_subclass(Self {}))
+    }
+
+    /// Required by pickle.load / pickle.loads
+    #[staticmethod]
+    fn __getnewargs_ex__(py: Python) -> ((Bound<PyTuple>,), HashMap<&'static str, usize>) {
+        (
+            (PyTuple::empty(py),),
+            [(
+                "n_bootstrap",
+                lcf::Bootstrap::<f64, Feature<f64>>::default_n_bootstrap(),
+            )]
+            .into(),
+        )
+    }
+
+    #[classattr]
+    fn __doc__() -> String {
+        format!(
+            r#"{header}
+
+Parameters
+----------
+features : iterable
+    Features to estimate the bootstrap uncertainty of. Features requiring
+    sorting or variability are rejected: bagging duplicates observations, and
+    a resample may turn out constant
+
+n_bootstrap : int, default {n_bootstrap_default}
+    Number of resamples to draw, at least 2
+
+seed : int, default {seed_default}
+    Seed of the random number generator drawing the resamples, which makes the
+    output reproducible
+
+quantiles : sequence of float or None, default None
+    Quantile levels in [0, 1] to summarise the spread of each feature over the
+    resamples, e.g. ``[0.16, 0.84]`` for a 1-sigma-like interval. If None, the
+    sample standard deviation is used instead
+
+transform : None, default None
+    Not supported, apply transformations to individual features
+
+bands : list of str or None, optional
+    Passband names for multiband mode. If given, each single-band feature in
+    ``features`` is evaluated independently per passband; multiband features
+    (e.g. color features) are passed through unchanged
+
+band_strategy : str, default '{band_strategy_default}'
+    How the multiband light curve is resampled, ignored unless ``bands`` is
+    given. The two strategies answer different questions and can give
+    noticeably different uncertainties on unevenly sampled data:
+
+    - 'stratified': resample each passband on its own, drawing exactly as many
+      observations as that passband started with. This conditions on the
+      per-band sample sizes, so the uncertainty leaves out the variance coming
+      from how observations happened to be split between bands. Every resample
+      keeps every passband at its original length, so none can fall below what
+      the wrapped features need and none is ever rejected. Use it when the
+      per-band cadence is a fixed property of the survey rather than a random
+      outcome,
+    - 'rejection': the classical i.i.d. bootstrap — resample all observations
+      jointly, ignoring which band they came from. Per-band counts then vary
+      between resamples, so the uncertainty also covers the allocation of
+      observations across bands, but a resample can leave a passband with too
+      few points for the wrapped features. Those resamples are thrown away and
+      redrawn, within the budget set by ``max_attempts_factor``. Use it when
+      you want the uncertainty of the light curve as a whole; be wary of it
+      when some band has few observations, as most resamples may be rejected
+
+max_attempts_factor : int, default {max_attempts_default}
+    Bounds the redrawing budget of the 'rejection' strategy at
+    ``n_bootstrap * max_attempts_factor`` total draws. Ignored by 'stratified'
+{footer}
+"#,
+            header = BOOTSTRAP_DOC,
+            n_bootstrap_default = lcf::Bootstrap::<f64, Feature<f64>>::default_n_bootstrap(),
+            seed_default = lcf::Bootstrap::<f64, Feature<f64>>::default_seed(),
+            band_strategy_default = Self::DEFAULT_BAND_STRATEGY,
+            max_attempts_default = lcf::BandStrategy::default_max_attempts_factor(),
+            footer = COMMON_FEATURE_DOC,
+        )
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+#[pyclass(extends = PyFeatureEvaluator, module="light_curve.light_curve_ext")]
+pub struct BiweightScale {}
+
+impl_stock_transform!(BiweightScale, StockTransformer::Identity);
+impl_pickle_serialisation!(BiweightScale);
+
+#[pymethods]
+impl BiweightScale {
+    #[new]
+    #[pyo3(signature = (c=lcf::BiweightScale::<f32>::default_c(), *, transform=None, bands=None))]
+    fn __new__(
+        c: f32,
+        transform: Option<Bound<PyAny>>,
+        bands: Option<Bound<'_, PyAny>>,
+    ) -> Res<PyClassInitializer<Self>> {
+        if !(c.is_finite() && c > 0.0) {
+            return Err(Exception::ValueError(format!(
+                "c must be a positive finite number, got {c}"
+            )));
+        }
+        let base = match bands {
+            None => PyFeatureEvaluator::single_band(
+                lcf::BiweightScale::new(c).into(),
+                lcf::BiweightScale::new(c).into(),
+                transform,
+                Self::DEFAULT_TRANSFORMER,
+            )?,
+            Some(bands_py) => {
+                let user_bands = parse_bands(&bands_py)?;
+                let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(
+                    lcf::BiweightScale::new(c),
+                    user_bands.clone(),
+                );
+                let mc_f64 = lcf::MultiColorFeature::from_per_band_feature(
+                    lcf::BiweightScale::new(c),
+                    user_bands.clone(),
+                );
+                PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64)
+            }
+        };
+        Ok(PyClassInitializer::from(base).add_subclass(Self {}))
+    }
+
+    /// Required by pickle.load / pickle.loads
+    #[staticmethod]
+    fn __getnewargs__() -> (f32,) {
+        (lcf::BiweightScale::<f32>::default_c(),)
+    }
+
+    #[classattr]
+    fn __doc__() -> String {
+        format!(
+            r#"{header}
+
+Parameters
+----------
+c : positive float, default {c_default:.1}
+    Tuning constant — how many MADs away from the median a point is still
+    given weight. Smaller values reject outliers more aggressively, larger
+    values approach the standard deviation
+
+{transform}
+{bands}
+{footer}"#,
+            header = prepare_upstream_doc(lcf::BiweightScale::<f64>::doc()),
+            c_default = lcf::BiweightScale::<f64>::default_c(),
+            transform = transform_parameter_doc(Self::DEFAULT_TRANSFORMER),
+            bands = BANDS_PARAMETER_DOC,
             footer = COMMON_FEATURE_DOC,
         )
     }
@@ -4097,6 +4469,8 @@ quantile : positive float, default {quantile_default:.2}
         )
     }
 }
+
+evaluator!(ParabolaFit, lcf::ParabolaFit, StockTransformer::Identity);
 
 evaluator!(
     PercentAmplitude,
@@ -4867,6 +5241,8 @@ Examples
         )
     }
 }
+
+evaluator!(QnScale, lcf::QnScale, StockTransformer::Identity);
 
 evaluator!(ReducedChi2, lcf::ReducedChi2, StockTransformer::Ln1p);
 
