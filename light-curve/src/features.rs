@@ -981,9 +981,8 @@ fn try_band_view_lookup(band_py: &Bound<PyAny>, lookup: &BandLookup) -> Res<Opti
                 // UCS-4 LE: 4 bytes per codepoint, null-padded to itemsize.
                 // Find the end of actual data (first all-zero codepoint) and look up
                 // the raw UCS-4 bytes directly — no decoding needed.
-                let end = chunk
-                    .as_chunks::<4>()
-                    .0
+                let (codepoints, _remainder) = chunk.as_chunks::<4>();
+                let end = codepoints
                     .iter()
                     .position(|cp| cp.iter().all(|&b| b == 0))
                     .map_or(chunk.len(), |i| i * 4);
@@ -1005,9 +1004,8 @@ fn try_band_view_lookup(band_py: &Bound<PyAny>, lookup: &BandLookup) -> Res<Opti
 /// Decode a null-padded numpy typed-string item for the "unknown passband" error message.
 fn unknown_passband_error(chunk: &[u8], kind: u8) -> Exception {
     let s: String = if kind == b'U' {
-        chunk
-            .as_chunks::<4>()
-            .0
+        let (codepoints, _remainder) = chunk.as_chunks::<4>();
+        codepoints
             .iter()
             .filter_map(|b| char::from_u32(u32::from_le_bytes(*b)))
             .take_while(|&c| c != '\0')
