@@ -982,7 +982,9 @@ fn try_band_view_lookup(band_py: &Bound<PyAny>, lookup: &BandLookup) -> Res<Opti
                 // Find the end of actual data (first all-zero codepoint) and look up
                 // the raw UCS-4 bytes directly — no decoding needed.
                 let end = chunk
-                    .chunks_exact(4)
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
                     .position(|cp| cp.iter().all(|&b| b == 0))
                     .map_or(chunk.len(), |i| i * 4);
                 lookup
@@ -1004,8 +1006,10 @@ fn try_band_view_lookup(band_py: &Bound<PyAny>, lookup: &BandLookup) -> Res<Opti
 fn unknown_passband_error(chunk: &[u8], kind: u8) -> Exception {
     let s: String = if kind == b'U' {
         chunk
-            .chunks_exact(4)
-            .filter_map(|b| char::from_u32(u32::from_le_bytes(b.try_into().unwrap())))
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .filter_map(|b| char::from_u32(u32::from_le_bytes(*b)))
             .take_while(|&c| c != '\0')
             .collect()
     } else {
