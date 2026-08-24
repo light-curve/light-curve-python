@@ -62,20 +62,6 @@ jobs:
         with:
           name: wheels-linux-x86_64-ft
           path: light-curve/target/wheels/
-      - name: Set up Python 3.15t
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.15t"
-          allow-prereleases: true
-      - name: Build free-threading wheel (3.15t)
-        run: |
-          rm -f target/wheels/*.whl
-          uvx maturin build --release -i python3.15t
-      - name: Upload free-threading wheel (3.15t)
-        uses: actions/upload-artifact@v7
-        with:
-          name: wheels-linux-x86_64-ft-315
-          path: light-curve/target/wheels/
 
 
   build-wheel-linux-aarch64:
@@ -175,7 +161,7 @@ jobs:
         include:
           - {python_minor: "10", wheel_artifact: wheels-linux-x86_64}
           - {python_minor: "14t", wheel_artifact: wheels-linux-x86_64-ft}
-          - {python_minor: "15t", wheel_artifact: wheels-linux-x86_64-ft-315}
+          - {python_minor: "15t", wheel_artifact: wheels-linux-x86_64}
 
     defaults:
       run:
