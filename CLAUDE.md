@@ -84,7 +84,7 @@ first positional argument and have no single-band mode. `Periodogram` supports `
 (add `multiband_normalization=`). `Extractor` freely mixes single-band and multiband features; it filters the band
 array automatically for each sub-feature.
 
-**Rust edition**: 2024, MSRV 1.85. Clippy treats warnings as errors.
+**Rust edition**: 2024, MSRV 1.88. Clippy treats warnings as errors.
 
 **Cargo features**: `abi3` (stable Python ABI), `ceres-source`/`ceres-system`, `mkl` (Intel MKL for FFTW-based fast
 periodogram), `gsl`, `mimalloc`. Default features include abi3, ceres-source, gsl, mimalloc.
