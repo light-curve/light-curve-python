@@ -14,7 +14,7 @@ maturin develop
 
 Requires:
 
-- **Rust** ≥ 1.85 — install via [rustup](https://rustup.rs/) and keep updated with `rustup update`
+- **Rust** ≥ 1.88 — install via [rustup](https://rustup.rs/) and keep updated with `rustup update`
 - **Python** ≥ 3.10
 - **CMake** — needed to build the Ceres solver (skip with `--no-default-features` if you don't need fitting features)
 - **GSL** (optional) — enables the `"lmsder"` fitting backend; install via your system package manager (`libgsl-dev` on Debian/Ubuntu, `gsl` on Homebrew)

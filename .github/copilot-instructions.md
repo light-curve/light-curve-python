@@ -94,7 +94,7 @@ light-curve-python/
 #### Rust
 
 - **Edition**: 2024
-- **MSRV**: 1.85 (check `Cargo.toml` for current version)
+- **MSRV**: 1.88 (check `Cargo.toml` for current version)
 - **Formatter**: `rustfmt` (standard configuration)
 - **Linter**: `clippy` with `-D warnings` (warnings as errors)
 - Use PyO3 patterns for Python bindings in `src/`

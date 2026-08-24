@@ -67,7 +67,7 @@ If you already have the ONNX file locally, `huggingface_hub` is not needed.
 
 ## Build from source
 
-Building requires a **Rust toolchain** (≥ 1.85, install via [rustup](https://rustup.rs/))
+Building requires a **Rust toolchain** (≥ 1.88, install via [rustup](https://rustup.rs/))
 and **CMake** (for the Ceres solver). GSL is optional but enables the `"lmsder"` fitting backend.
 
 ```sh
