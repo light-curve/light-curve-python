@@ -49,18 +49,44 @@ jobs:
         with:
           name: wheels-linux-x86_64
           path: light-curve/target/wheels/
+      - name: Set up Python 3.15
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.15"
+      - name: Build abi3 wheel for 3.15
+        run: |
+          rm -f target/wheels/*.whl
+          uvx maturin build --release -i python3.15
+      - name: Upload abi3 wheel (3.15)
+        uses: actions/upload-artifact@v7
+        with:
+          name: wheels-linux-x86_64-315
+          path: light-curve/target/wheels/
       - name: Set up Python 3.14t
         uses: actions/setup-python@v7
         with:
           python-version: "3.14t"
-      - name: Build free-threading wheel
+      - name: Build free-threading wheel (3.14t)
         run: |
           rm -f target/wheels/*.whl
           uvx maturin build --release -i python3.14t
-      - name: Upload free-threading wheel
+      - name: Upload free-threading wheel (3.14t)
         uses: actions/upload-artifact@v7
         with:
           name: wheels-linux-x86_64-ft
+          path: light-curve/target/wheels/
+      - name: Set up Python 3.15t
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.15t"
+      - name: Build free-threading wheel (3.15t)
+        run: |
+          rm -f target/wheels/*.whl
+          uvx maturin build --release -i python3.15t
+      - name: Upload free-threading wheel (3.15t)
+        uses: actions/upload-artifact@v7
+        with:
+          name: wheels-linux-x86_64-ft-315
           path: light-curve/target/wheels/
 
 
@@ -94,12 +120,25 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: "3.14"
+      - name: Set up Python 3.15
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.15"
       - name: Build abi3 wheel
         run: uvx maturin build --release -i python3.14
       - name: Upload abi3 wheel
         uses: actions/upload-artifact@v7
         with:
           name: wheels-linux-aarch64
+          path: light-curve/target/wheels/
+      - name: Build abi3 wheel for 3.15
+        run: |
+          rm -f target/wheels/*.whl
+          uvx maturin build --release -i python3.15
+      - name: Upload abi3 wheel (3.15)
+        uses: actions/upload-artifact@v7
+        with:
+          name: wheels-linux-aarch64-315
           path: light-curve/target/wheels/
 
 
@@ -161,6 +200,8 @@ jobs:
         include:
           - {python_minor: "10", wheel_artifact: wheels-linux-x86_64}
           - {python_minor: "14t", wheel_artifact: wheels-linux-x86_64-ft}
+          - {python_minor: "15", wheel_artifact: wheels-linux-x86_64-315}
+          - {python_minor: "15t", wheel_artifact: wheels-linux-x86_64-ft-315}
 
     defaults:
       run:
@@ -205,7 +246,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_minor: ["11", "12", "13", "14"]
+        python_minor: ["11", "12", "13", "14", "15"]
 
     defaults:
       run:
@@ -411,6 +452,10 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: '3.14t'
+      - name: Set up Python 3.15t
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.15t'
       - name: Get minimum supported Rust version
         run: echo "msrv=$(grep '^rust-version = ' Cargo.toml | grep -o '[0-9.]\+')" >> $GITHUB_OUTPUT
         id: get_msrv
@@ -431,6 +476,7 @@ jobs:
         run: |
           uvx maturin build -i python3.10
           uvx maturin build -i python3.14t
+          uvx maturin build -i python3.15t
 
 
   slow-tests:
