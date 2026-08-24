@@ -6,7 +6,7 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
-  custom_dir: overrides
+  custom_dir: .mkdocs-overrides
   logo: assets/logo/mark-light.svg
   favicon: assets/logo/mark-adaptive.svg
   icon:
@@ -40,7 +40,7 @@ theme:
 
 extra:
   generator: false
-  # Read by overrides/partials/logo.html; theme.logo is the light-background one.
+  # Read by .mkdocs-overrides/partials/logo.html; theme.logo is the light-background one.
   logo_dark: assets/logo/mark-dark.svg
   version:
     provider: mike

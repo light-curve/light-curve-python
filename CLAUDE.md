@@ -174,7 +174,7 @@ font archives, or unused variants there. `docs/assets` should stay at a few hund
 Assets come in light-bg and dark-bg variants differing only in the purple. The variant is
 selected three different ways, because each context offers a different hook:
 
-- **Header/drawer logo** — `overrides/partials/logo.html` emits both; `extra.css` shows the one
+- **Header/drawer logo** — `.mkdocs-overrides/partials/logo.html` emits both; `extra.css` shows the one
   matching the palette. Must follow Material's toggle, which is independent of the OS setting,
   so a self-adapting SVG is wrong here.
 - **Favicon** — `mark-adaptive.svg`, which switches internally on `prefers-color-scheme`. The

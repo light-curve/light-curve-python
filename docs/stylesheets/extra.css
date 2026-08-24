@@ -78,7 +78,7 @@
   display: none;
 }
 
-/* The header and drawer marks come from overrides/partials/logo.html, where
+/* The header and drawer marks come from .mkdocs-overrides/partials/logo.html, where
    Material's own `.md-header__button.md-logo img` would otherwise win. */
 
 [data-md-color-scheme="default"] .md-logo img.lc-logo--dark,
