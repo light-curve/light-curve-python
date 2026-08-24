@@ -412,6 +412,21 @@ def test_pickling(feature, pickle_protocol):
     assert_array_equal(values, new_values)
 
 
+@pytest.mark.parametrize("pickle_protocol", tuple(range(2, pickle.HIGHEST_PROTOCOL + 1)))
+def test_parabola_fit_pickling(pickle_protocol):
+    t = np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0])
+    m = 2.0 * (t - 3.0) ** 2 + 5.0
+    sigma = np.ones_like(t)
+    feature = licu_ext.ParabolaFit()
+    values = feature(t, m, sigma)
+
+    b = pickle.dumps(feature, protocol=pickle_protocol)
+    new_feature = pickle.loads(b)
+
+    new_values = new_feature(t, m, sigma)
+    assert_array_equal(values, new_values)
+
+
 @pytest.mark.parametrize("feature", gen_multiband_feature_evaluators())
 @pytest.mark.parametrize("pickle_protocol", tuple(range(2, pickle.HIGHEST_PROTOCOL + 1)))
 def test_multiband_pickling(feature, pickle_protocol):
