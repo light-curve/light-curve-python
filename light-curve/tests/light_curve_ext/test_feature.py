@@ -189,17 +189,20 @@ straight_lc_degenerate_classes = frozenset({licu_ext.ParabolaFit})
 
 def gen_feature_evaluators(*, parametric_variants=0, skip_fit=False, skip_straight_lc_degenerate=False, rng=None):
     if parametric_variants == 0:
-        for cls in non_param_feature_classes:
-            if skip_straight_lc_degenerate and cls in straight_lc_degenerate_classes:
-                continue
+        classes = non_param_feature_classes
+    else:
+        rng = np.random.default_rng(rng)
+        classes = all_feature_classes
+        if skip_fit:
+            classes = classes - fit_feature_classes
+    if skip_straight_lc_degenerate:
+        classes = classes - straight_lc_degenerate_classes
+    if parametric_variants == 0:
+        for cls in classes:
             yield cls()
-        return
-    rng = np.random.default_rng(rng)
-    classes = all_feature_classes
-    if skip_fit:
-        classes = classes - fit_feature_classes
-    for cls in classes:
-        yield from construct_example_objects(cls, parametric_variants=parametric_variants, rng=rng)
+    else:
+        for cls in classes:
+            yield from construct_example_objects(cls, parametric_variants=parametric_variants, rng=rng)
 
 
 _MULTIBAND_BANDS = ["g", "r"]
@@ -393,7 +396,9 @@ def test_check_sigma(cls):
     feature(t, m, sigma, check=True)
 
 
-@pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=5, rng=None))
+@pytest.mark.parametrize(
+    "feature", gen_feature_evaluators(parametric_variants=5, skip_straight_lc_degenerate=True, rng=None)
+)
 @pytest.mark.parametrize("pickle_protocol", tuple(range(2, pickle.HIGHEST_PROTOCOL + 1)))
 def test_pickling(feature, pickle_protocol):
     n_obs = 128
@@ -404,6 +409,21 @@ def test_pickling(feature, pickle_protocol):
     new_feature = pickle.loads(b)
 
     new_values = new_feature(*data)
+    assert_array_equal(values, new_values)
+
+
+@pytest.mark.parametrize("pickle_protocol", tuple(range(2, pickle.HIGHEST_PROTOCOL + 1)))
+def test_parabola_fit_pickling(pickle_protocol):
+    t = np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0])
+    m = 2.0 * (t - 3.0) ** 2 + 5.0
+    sigma = np.ones_like(t)
+    feature = licu_ext.ParabolaFit()
+    values = feature(t, m, sigma)
+
+    b = pickle.dumps(feature, protocol=pickle_protocol)
+    new_feature = pickle.loads(b)
+
+    new_values = new_feature(t, m, sigma)
     assert_array_equal(values, new_values)
 
 
