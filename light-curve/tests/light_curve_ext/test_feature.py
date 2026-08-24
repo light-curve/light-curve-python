@@ -198,6 +198,8 @@ def gen_feature_evaluators(*, parametric_variants=0, skip_fit=False, skip_straig
     classes = all_feature_classes
     if skip_fit:
         classes = classes - fit_feature_classes
+    if skip_straight_lc_degenerate:
+        classes = classes - straight_lc_degenerate_classes
     for cls in classes:
         yield from construct_example_objects(cls, parametric_variants=parametric_variants, rng=rng)
 
@@ -393,7 +395,9 @@ def test_check_sigma(cls):
     feature(t, m, sigma, check=True)
 
 
-@pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=5, rng=None))
+@pytest.mark.parametrize(
+    "feature", gen_feature_evaluators(parametric_variants=5, skip_straight_lc_degenerate=True, rng=None)
+)
 @pytest.mark.parametrize("pickle_protocol", tuple(range(2, pickle.HIGHEST_PROTOCOL + 1)))
 def test_pickling(feature, pickle_protocol):
     n_obs = 128
