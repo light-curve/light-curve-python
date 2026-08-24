@@ -198,9 +198,9 @@ def gen_feature_evaluators(*, parametric_variants=0, skip_fit=False, skip_straig
     classes = all_feature_classes
     if skip_fit:
         classes = classes - fit_feature_classes
-    if skip_straight_lc_degenerate:
-        classes = classes - straight_lc_degenerate_classes
     for cls in classes:
+        if skip_straight_lc_degenerate and cls in straight_lc_degenerate_classes:
+            continue
         yield from construct_example_objects(cls, parametric_variants=parametric_variants, rng=rng)
 
 
