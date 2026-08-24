@@ -189,19 +189,20 @@ straight_lc_degenerate_classes = frozenset({licu_ext.ParabolaFit})
 
 def gen_feature_evaluators(*, parametric_variants=0, skip_fit=False, skip_straight_lc_degenerate=False, rng=None):
     if parametric_variants == 0:
-        for cls in non_param_feature_classes:
-            if skip_straight_lc_degenerate and cls in straight_lc_degenerate_classes:
-                continue
+        classes = non_param_feature_classes
+    else:
+        rng = np.random.default_rng(rng)
+        classes = all_feature_classes
+        if skip_fit:
+            classes = classes - fit_feature_classes
+    if skip_straight_lc_degenerate:
+        classes = classes - straight_lc_degenerate_classes
+    if parametric_variants == 0:
+        for cls in classes:
             yield cls()
-        return
-    rng = np.random.default_rng(rng)
-    classes = all_feature_classes
-    if skip_fit:
-        classes = classes - fit_feature_classes
-    for cls in classes:
-        if skip_straight_lc_degenerate and cls in straight_lc_degenerate_classes:
-            continue
-        yield from construct_example_objects(cls, parametric_variants=parametric_variants, rng=rng)
+    else:
+        for cls in classes:
+            yield from construct_example_objects(cls, parametric_variants=parametric_variants, rng=rng)
 
 
 _MULTIBAND_BANDS = ["g", "r"]
