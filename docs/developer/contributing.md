@@ -143,7 +143,7 @@ into the built site verbatim — so nothing else belongs in `docs/assets/logo/`.
 
 Most assets come in a light-background and a dark-background variant. The header, the
 favicon and the README each pick between them by a different mechanism; `extra.css` and
-`overrides/partials/logo.html` explain why.
+`.mkdocs-overrides/partials/logo.html` explain why.
 
 For colour, style with the role tokens `--lc-fg` and `--lc-fg-accent` rather than the raw
 `--lc-purple` / `--lc-magenta` / `--lc-orange` / `--lc-amber`: no single brand colour is
