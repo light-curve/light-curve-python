@@ -182,12 +182,7 @@ def construct_example_objects(cls, *, parametric_variants=1, rng=None):
     return objects
 
 
-# gen_lc() returns an exactly straight light curve, m = t. ParabolaFit is undefined there:
-# the curvature is zero, so the extremum value diverges and the feature errors out.
-straight_lc_degenerate_classes = frozenset({licu_ext.ParabolaFit})
-
-
-def gen_feature_evaluators(*, parametric_variants=0, skip_fit=False, skip_straight_lc_degenerate=False, rng=None):
+def gen_feature_evaluators(*, parametric_variants=0, skip_fit=False, rng=None):
     if parametric_variants == 0:
         classes = non_param_feature_classes
     else:
@@ -195,8 +190,6 @@ def gen_feature_evaluators(*, parametric_variants=0, skip_fit=False, skip_straig
         classes = all_feature_classes
         if skip_fit:
             classes = classes - fit_feature_classes
-    if skip_straight_lc_degenerate:
-        classes = classes - straight_lc_degenerate_classes
     if parametric_variants == 0:
         for cls in classes:
             yield cls()
@@ -238,7 +231,7 @@ def gen_lc(n, rng=None):
     rng = np.random.default_rng(rng)
 
     t = np.sort(rng.normal(0, 1, n))
-    m = t.copy()
+    m = t + 0.1 * t**2
     sigma = np.full_like(t, 0.1)
 
     return t, m, sigma
@@ -286,7 +279,7 @@ def test_negative_strides(feature):
 
 
 # We don't want *Fit features here: not precise
-@pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=0, skip_straight_lc_degenerate=True))
+@pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=0))
 def test_float32_vs_float64(feature):
     rng = np.random.default_rng(0)
     n = 128
@@ -309,7 +302,7 @@ def test_multiband_output_length_matches_names(feature):
 
 
 # We don't want *Fit features here: too slow
-@pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=0, skip_straight_lc_degenerate=True))
+@pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=0))
 def test_many_vs_call(feature):
     rng = np.random.default_rng(0)
     n_obs = 128
@@ -396,9 +389,7 @@ def test_check_sigma(cls):
     feature(t, m, sigma, check=True)
 
 
-@pytest.mark.parametrize(
-    "feature", gen_feature_evaluators(parametric_variants=5, skip_straight_lc_degenerate=True, rng=None)
-)
+@pytest.mark.parametrize("feature", gen_feature_evaluators(parametric_variants=5, rng=None))
 @pytest.mark.parametrize("pickle_protocol", tuple(range(2, pickle.HIGHEST_PROTOCOL + 1)))
 def test_pickling(feature, pickle_protocol):
     n_obs = 128
@@ -409,21 +400,6 @@ def test_pickling(feature, pickle_protocol):
     new_feature = pickle.loads(b)
 
     new_values = new_feature(*data)
-    assert_array_equal(values, new_values)
-
-
-@pytest.mark.parametrize("pickle_protocol", tuple(range(2, pickle.HIGHEST_PROTOCOL + 1)))
-def test_parabola_fit_pickling(pickle_protocol):
-    t = np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0])
-    m = 2.0 * (t - 3.0) ** 2 + 5.0
-    sigma = np.ones_like(t)
-    feature = licu_ext.ParabolaFit()
-    values = feature(t, m, sigma)
-
-    b = pickle.dumps(feature, protocol=pickle_protocol)
-    new_feature = pickle.loads(b)
-
-    new_values = new_feature(t, m, sigma)
     assert_array_equal(values, new_values)
 
 
