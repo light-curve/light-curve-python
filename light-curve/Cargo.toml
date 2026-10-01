@@ -73,7 +73,7 @@ unzip3 = "1.0.0"
 arrow-array = "59"
 arrow-buffer = "59"
 arrow-schema = "59"
-comfy-table = "7"
+comfy-table = "8"
 
 [dependencies.light-curve-feature]
 version = "0.19.0"
