@@ -13,7 +13,18 @@ updates:
     directory: "/light-curve"
     schedule:
       interval: "monthly"
+    groups:
+      python-rust-interop:
+        patterns:
+          - "pyo3*"
+          - "numpy"
+          - "arrow-*"
+          - "comfy-table"
   - package-ecosystem: "pip"
     directory: "/light-curve"
     schedule:
       interval: "monthly"
+    groups:
+      numpy:
+        patterns:
+          - "numpy"
