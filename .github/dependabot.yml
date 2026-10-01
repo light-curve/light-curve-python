@@ -24,7 +24,3 @@ updates:
     directory: "/light-curve"
     schedule:
       interval: "monthly"
-    groups:
-      numpy:
-        patterns:
-          - "numpy"
