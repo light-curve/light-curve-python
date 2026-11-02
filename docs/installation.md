@@ -36,14 +36,14 @@ Minimum Python version: **3.10**. Binary wheels are provided for all major platf
 | Arch \ OS | Linux glibc 2.17+ | Linux musl 1.2+ | macOS | Windows |
 |-----------|-------------------|-----------------|-------|---------|
 | **x86-64** | PyPI (MKL), conda | PyPI (MKL) | PyPI (macOS 15+), conda | PyPI, conda |
-| **aarch64** | PyPI | PyPI | PyPI (macOS 14+), conda | not tested |
+| **aarch64** | PyPI | PyPI | PyPI (macOS 15+), conda | not tested |
 | **i686 / ppc64le** | build from source | — | — | — |
 
 Notes:
 
 - **MKL**: Linux x86-64 PyPI wheels use Intel MKL for a significantly faster periodogram. Conda and other platforms use the pure-Rust [RustFFT](https://crates.io/crates/rustfft) backend.
 - **Windows conda**: Excludes GSL, so the `"lmsder"` fitting backend is unavailable. PyPI wheels on Windows include GSL.
-- **macOS**: Requires macOS 14+ (aarch64) or 15+ (x86-64). Open an [issue](https://github.com/light-curve/light-curve-python/issues) if you need support for an older version.
+- **macOS**: Requires macOS 15+. Open an [issue](https://github.com/light-curve/light-curve-python/issues) if you need support for an older version.
 
 ## Embeddings (`light_curve.embed`)
 
