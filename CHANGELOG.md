@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
---
+- macOS ARM64 wheels are now built on the `macos-15` GitHub Actions runner (`macos-14` is
+  deprecated), so they require macOS 15+ instead of macOS 14+
 
 ### Deprecated
 
