@@ -1127,64 +1127,53 @@ where
 }
 
 impl PyFeatureEvaluator {
-    fn single_band(
-        fe_f32: Feature<f32>,
-        fe_f64: Feature<f64>,
-        transform: Option<Bound<PyAny>>,
-        default_transformer: StockTransformer,
-    ) -> Res<Self> {
-        let transform = parse_transform(transform, default_transformer)?;
-        let (fe_f32, fe_f64) = match transform {
-            Some(transform) => {
-                let (tr_f32, tr_f64) = transform.into();
-                let fe_f32 = lcf::Transformed::new(fe_f32, tr_f32)
-                    .map_err(|err| {
-                        Exception::ValueError(format!(
-                            "feature and transformation are incompatible: {err:?}"
-                        ))
-                    })?
-                    .into();
-                let fe_f64 = lcf::Transformed::new(fe_f64, tr_f64)
-                    .map_err(|err| {
-                        Exception::ValueError(format!(
-                            "feature and transformation are incompatible: {err:?}"
-                        ))
-                    })?
-                    .into();
-                (fe_f32, fe_f64)
-            }
-            None => (fe_f32, fe_f64),
-        };
-        Ok(Self {
-            mode: FeatureEvalMode::SingleBand {
-                feature_evaluator_f32: fe_f32,
-                feature_evaluator_f64: fe_f64,
-            },
-        })
+    fn transformed<T: Float>(
+        feature: Feature<T>,
+        transformer: lcf::Transformer<T>,
+    ) -> Res<Feature<T>> {
+        lcf::Transformed::new(feature, transformer)
+            .map(Into::into)
+            .map_err(|err| {
+                Exception::ValueError(format!(
+                    "feature and transformation are incompatible: {err:?}"
+                ))
+            })
     }
 
-    fn single_band_with_transform(
+    fn per_band(
         (fe_f32, fe_f64): (Feature<f32>, Feature<f64>),
-        (tr_f32, tr_f64): (lcf::Transformer<f32>, lcf::Transformer<f64>),
+        transformers: Option<(lcf::Transformer<f32>, lcf::Transformer<f64>)>,
+        bands: Option<Bound<PyAny>>,
     ) -> Res<Self> {
-        Ok(Self {
-            mode: FeatureEvalMode::SingleBand {
-                feature_evaluator_f32: lcf::Transformed::new(fe_f32, tr_f32)
-                    .map_err(|err| {
-                        Exception::ValueError(format!(
-                            "feature and transformation are incompatible: {err:?}"
-                        ))
-                    })?
-                    .into(),
-                feature_evaluator_f64: lcf::Transformed::new(fe_f64, tr_f64)
-                    .map_err(|err| {
-                        Exception::ValueError(format!(
-                            "feature and transformation are incompatible: {err:?}"
-                        ))
-                    })?
-                    .into(),
-            },
-        })
+        let (fe_f32, fe_f64) = match transformers {
+            Some((tr_f32, tr_f64)) => (
+                Self::transformed(fe_f32, tr_f32)?,
+                Self::transformed(fe_f64, tr_f64)?,
+            ),
+            None => (fe_f32, fe_f64),
+        };
+        let Some(bands_py) = bands else {
+            return Ok(Self {
+                mode: FeatureEvalMode::SingleBand {
+                    feature_evaluator_f32: fe_f32,
+                    feature_evaluator_f64: fe_f64,
+                },
+            });
+        };
+        let user_bands = parse_bands(&bands_py)?;
+        let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(fe_f32, user_bands.clone());
+        let mc_f64 = lcf::MultiColorFeature::from_per_band_feature(fe_f64, user_bands.clone());
+        Ok(Self::multi_band(user_bands, mc_f32, mc_f64))
+    }
+
+    fn per_band_with_stock_transform(
+        features: (Feature<f32>, Feature<f64>),
+        transform: Option<Bound<PyAny>>,
+        default_transformer: StockTransformer,
+        bands: Option<Bound<PyAny>>,
+    ) -> Res<Self> {
+        let transformers = parse_transform(transform, default_transformer)?.map(Into::into);
+        Self::per_band(features, transformers, bands)
     }
 
     fn rebuild_band_lookup(&mut self) {
@@ -2902,26 +2891,12 @@ macro_rules! evaluator {
                 transform: Option<Bound<PyAny>>,
                 bands: Option<Bound<'_, PyAny>>,
             ) -> Res<PyClassInitializer<Self>> {
-                let base = match bands {
-                    None => PyFeatureEvaluator::single_band(
-                        <$eval>::new().into(),
-                        <$eval>::new().into(),
-                        transform,
-                        Self::DEFAULT_TRANSFORMER,
-                    )?,
-                    Some(bands_py) => {
-                        let user_bands = parse_bands(&bands_py)?;
-                        let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(
-                            <$eval>::new(),
-                            user_bands.clone(),
-                        );
-                        let mc_f64 = lcf::MultiColorFeature::from_per_band_feature(
-                            <$eval>::new(),
-                            user_bands.clone(),
-                        );
-                        PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64)
-                    }
-                };
+                let base = PyFeatureEvaluator::per_band_with_stock_transform(
+                    (<$eval>::new().into(), <$eval>::new().into()),
+                    transform,
+                    Self::DEFAULT_TRANSFORMER,
+                    bands,
+                )?;
                 Ok(PyClassInitializer::from(base).add_subclass(Self {}))
             }
 
@@ -3246,29 +3221,8 @@ macro_rules! fit_evaluator {
                         )),
                     }
                 };
-                let fe = match bands {
-                    None => {
-                        if make_transformation {
-                            PyFeatureEvaluator::single_band_with_transform((fe_f32, fe_f64), ($transform.into(), $transform.into()))?
-                        } else {
-                            PyFeatureEvaluator {
-                                mode: FeatureEvalMode::SingleBand {
-                                    feature_evaluator_f32: fe_f32,
-                                    feature_evaluator_f64: fe_f64,
-                                },
-                            }
-                        }
-                    }
-                    Some(bands_py) => {
-                        if make_transformation {
-                            return Err(PyValueError::new_err("transform is not supported in multiband mode"));
-                        }
-                        let user_bands = parse_bands(&bands_py)?;
-                        let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(fe_f32, user_bands.clone());
-                        let mc_f64 = lcf::MultiColorFeature::from_per_band_feature(fe_f64, user_bands.clone());
-                        PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64)
-                    }
-                };
+                let transformers = make_transformation.then(|| ($transform.into(), $transform.into()));
+                let fe = PyFeatureEvaluator::per_band((fe_f32, fe_f64), transformers, bands)?;
 
                 Ok(PyClassInitializer::from(fe).add_subclass(Self{}))
             }
@@ -3441,26 +3395,15 @@ impl BeyondNStd {
         transform: Option<Bound<PyAny>>,
         bands: Option<Bound<'_, PyAny>>,
     ) -> Res<PyClassInitializer<Self>> {
-        let base = match bands {
-            None => PyFeatureEvaluator::single_band(
+        let base = PyFeatureEvaluator::per_band_with_stock_transform(
+            (
                 lcf::BeyondNStd::new(nstd).into(),
                 lcf::BeyondNStd::new(nstd).into(),
-                transform,
-                Self::DEFAULT_TRANSFORMER,
-            )?,
-            Some(bands_py) => {
-                let user_bands = parse_bands(&bands_py)?;
-                let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(
-                    lcf::BeyondNStd::new(nstd),
-                    user_bands.clone(),
-                );
-                let mc_f64 = lcf::MultiColorFeature::from_per_band_feature(
-                    lcf::BeyondNStd::new(nstd),
-                    user_bands.clone(),
-                );
-                PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64)
-            }
-        };
+            ),
+            transform,
+            Self::DEFAULT_TRANSFORMER,
+            bands,
+        )?;
         Ok(PyClassInitializer::from(base).add_subclass(Self {}))
     }
 
@@ -3981,26 +3924,15 @@ impl BiweightScale {
                 "c must be a positive finite number, got {c}"
             )));
         }
-        let base = match bands {
-            None => PyFeatureEvaluator::single_band(
+        let base = PyFeatureEvaluator::per_band_with_stock_transform(
+            (
                 lcf::BiweightScale::new(c).into(),
                 lcf::BiweightScale::new(c).into(),
-                transform,
-                Self::DEFAULT_TRANSFORMER,
-            )?,
-            Some(bands_py) => {
-                let user_bands = parse_bands(&bands_py)?;
-                let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(
-                    lcf::BiweightScale::new(c),
-                    user_bands.clone(),
-                );
-                let mc_f64 = lcf::MultiColorFeature::from_per_band_feature(
-                    lcf::BiweightScale::new(c),
-                    user_bands.clone(),
-                );
-                PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64)
-            }
-        };
+            ),
+            transform,
+            Self::DEFAULT_TRANSFORMER,
+            bands,
+        )?;
         Ok(PyClassInitializer::from(base).add_subclass(Self {}))
     }
 
@@ -4220,26 +4152,15 @@ impl InterPercentileRange {
         transform: Option<Bound<PyAny>>,
         bands: Option<Bound<'_, PyAny>>,
     ) -> Res<PyClassInitializer<Self>> {
-        let base = match bands {
-            None => PyFeatureEvaluator::single_band(
+        let base = PyFeatureEvaluator::per_band_with_stock_transform(
+            (
                 lcf::InterPercentileRange::new(quantile).into(),
                 lcf::InterPercentileRange::new(quantile).into(),
-                transform,
-                Self::DEFAULT_TRANSFORMER,
-            )?,
-            Some(bands_py) => {
-                let user_bands = parse_bands(&bands_py)?;
-                let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(
-                    lcf::InterPercentileRange::new(quantile),
-                    user_bands.clone(),
-                );
-                let mc_f64 = lcf::MultiColorFeature::from_per_band_feature(
-                    lcf::InterPercentileRange::new(quantile),
-                    user_bands.clone(),
-                );
-                PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64)
-            }
-        };
+            ),
+            transform,
+            Self::DEFAULT_TRANSFORMER,
+            bands,
+        )?;
         Ok(PyClassInitializer::from(base).add_subclass(Self {}))
     }
 
@@ -4331,26 +4252,15 @@ impl MagnitudePercentageRatio {
                 "quantile_denumerator must be between 0.0 and 0.5".to_string(),
             ));
         }
-        let base = match bands {
-            None => PyFeatureEvaluator::single_band(
+        let base = PyFeatureEvaluator::per_band_with_stock_transform(
+            (
                 lcf::MagnitudePercentageRatio::new(quantile_numerator, quantile_denominator).into(),
                 lcf::MagnitudePercentageRatio::new(quantile_numerator, quantile_denominator).into(),
-                transform,
-                Self::DEFAULT_TRANSFORMER,
-            )?,
-            Some(bands_py) => {
-                let user_bands = parse_bands(&bands_py)?;
-                let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(
-                    lcf::MagnitudePercentageRatio::new(quantile_numerator, quantile_denominator),
-                    user_bands.clone(),
-                );
-                let mc_f64 = lcf::MultiColorFeature::from_per_band_feature(
-                    lcf::MagnitudePercentageRatio::new(quantile_numerator, quantile_denominator),
-                    user_bands.clone(),
-                );
-                PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64)
-            }
-        };
+            ),
+            transform,
+            Self::DEFAULT_TRANSFORMER,
+            bands,
+        )?;
         Ok(PyClassInitializer::from(base).add_subclass(Self {}))
     }
 
@@ -4421,26 +4331,15 @@ impl MedianBufferRangePercentage {
         transform: Option<Bound<PyAny>>,
         bands: Option<Bound<'_, PyAny>>,
     ) -> Res<PyClassInitializer<Self>> {
-        let base = match bands {
-            None => PyFeatureEvaluator::single_band(
+        let base = PyFeatureEvaluator::per_band_with_stock_transform(
+            (
                 lcf::MedianBufferRangePercentage::new(quantile).into(),
                 lcf::MedianBufferRangePercentage::new(quantile).into(),
-                transform,
-                Self::DEFAULT_TRANSFORMER,
-            )?,
-            Some(bands_py) => {
-                let user_bands = parse_bands(&bands_py)?;
-                let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(
-                    lcf::MedianBufferRangePercentage::new(quantile),
-                    user_bands.clone(),
-                );
-                let mc_f64 = lcf::MultiColorFeature::from_per_band_feature(
-                    lcf::MedianBufferRangePercentage::new(quantile),
-                    user_bands.clone(),
-                );
-                PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64)
-            }
-        };
+            ),
+            transform,
+            Self::DEFAULT_TRANSFORMER,
+            bands,
+        )?;
         Ok(PyClassInitializer::from(base).add_subclass(Self {}))
     }
 
@@ -4504,26 +4403,15 @@ impl PercentDifferenceMagnitudePercentile {
                 "quantile must be between 0.0 and 0.5".to_string(),
             ));
         }
-        let base = match bands {
-            None => PyFeatureEvaluator::single_band(
+        let base = PyFeatureEvaluator::per_band_with_stock_transform(
+            (
                 lcf::PercentDifferenceMagnitudePercentile::new(quantile).into(),
                 lcf::PercentDifferenceMagnitudePercentile::new(quantile).into(),
-                transform,
-                Self::DEFAULT_TRANSFORMER,
-            )?,
-            Some(bands_py) => {
-                let user_bands = parse_bands(&bands_py)?;
-                let mc_f32 = lcf::MultiColorFeature::from_per_band_feature(
-                    lcf::PercentDifferenceMagnitudePercentile::new(quantile),
-                    user_bands.clone(),
-                );
-                let mc_f64 = lcf::MultiColorFeature::from_per_band_feature(
-                    lcf::PercentDifferenceMagnitudePercentile::new(quantile),
-                    user_bands.clone(),
-                );
-                PyFeatureEvaluator::multi_band(user_bands, mc_f32, mc_f64)
-            }
-        };
+            ),
+            transform,
+            Self::DEFAULT_TRANSFORMER,
+            bands,
+        )?;
         Ok(PyClassInitializer::from(base).add_subclass(Self {}))
     }
 
