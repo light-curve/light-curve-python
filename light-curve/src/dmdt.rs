@@ -466,7 +466,7 @@ where
     ) -> Res<Self> {
         let rng = match random_seed {
             Some(seed) => Xoshiro256PlusPlus::seed_from_u64(seed),
-            None => Xoshiro256PlusPlus::from_rng(&mut rand::rng()),
+            None => rand::make_rng(),
         };
         let drop_nobs = match drop_nobs {
             DropNObsType::Int(0) => None,

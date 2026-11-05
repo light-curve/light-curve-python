@@ -12,7 +12,7 @@ readme = "README.md"
 repository = "https://github.com/light-curve/light-curve-python"
 license = "GPL-3.0-or-later"
 edition = "2024"
-rust-version = "1.88"
+rust-version = "1.98"
 
 [lib]
 name = "light_curve"
@@ -35,50 +35,43 @@ gsl = ["light-curve-feature/gsl"]
 mimalloc = ["dep:mimalloc"]
 
 [dependencies]
-const_format = "0.2.35"
+arrow-array = "60.1"
+arrow-buffer = "60.1"
+arrow-schema = "60.1"
+# Transitive dep of pyo3-arrow, default "tty" feature pulls crossterm
+comfy-table = { version = "8", default-features = false }
+const_format = "0.2.37"
 conv = "0.3.3"
 enum-iterator = "2.3.0"
 enumflags2 = { version = "0.7.12", features = ["serde"] }
 itertools = "0.15.0"
+light-curve-dmdt = { version = "0.9.0", features = ["serde"] }
+light-curve-feature = { version = "0.21.0", default-features = false, features = ["fast-math"] }
 macro_const = "0.1.0"
 # v2: mimalloc v3.3.0+ crashes when two instances coexist in the same process
 # (our .so + pyarrow's libarrow both bundle mimalloc). v2 uses a separate
 # code path that does not conflict with pyarrow's v3 instance.
 # See https://github.com/microsoft/mimalloc/issues/1287
-mimalloc = { version = "0.1.48", features = [
+mimalloc = { version = "0.1.52", features = [
     "local_dynamic_tls",
     "v2",
 ], optional = true }
-ndarray = { version = "0.17.0", features = ["rayon"] }
-numpy = "0.30.0"
+ndarray = { version = "0.17.2", features = ["rayon"] }
+num-traits = "0.2.19"
 num_cpus = "1.17.0"
-num-traits = "0.2"
-once_cell = "1"
+numpy = "0.30.0"
 pyo3 = { version = "0.30.1", features = [
     "extension-module",
     "multiple-pymethods",
 ] }
 pyo3-arrow = { version = "0.21", default-features = false }
-rand = "0.10"
-rand_xoshiro = "0.8"
-rayon = "1.11.0"
-schemars = "0.8"
+rand = { version = "0.10.3", default-features = false, features = ["alloc", "sys_rng"] }
+rand_xoshiro = "0.8.1"
+rayon = "1.12.0"
+schemars = "1.2"
 serde = { version = "1", features = ["derive"] }
-serde-pickle = "1"
+serde-pickle = "1.2"
 serde_json = "1"
 thiserror = "2"
 unarray = "0.1.4"
 unzip3 = "1.0.0"
-# Transitive deps of pyo3-arrow:
-arrow-array = "60.1"
-arrow-buffer = "60.1"
-arrow-schema = "60.1"
-comfy-table = "8"
-
-[dependencies.light-curve-feature]
-version = "0.19.0"
-default-features = false
-
-[dependencies.light-curve-dmdt]
-version = "0.9.0"
-features = ["serde"]

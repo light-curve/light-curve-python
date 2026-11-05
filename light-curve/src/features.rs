@@ -25,7 +25,6 @@ use ndarray::IntoNdProducer;
 use num_traits::{AsPrimitive, Zero};
 use numpy::prelude::*;
 use numpy::{AllowTypeChange, PyArray1, PyArrayLike1, PyUntypedArray};
-use once_cell::sync::OnceCell;
 use pyo3::exceptions::{PyNotImplementedError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyBytes, PyModule, PyTuple};
@@ -38,6 +37,7 @@ use std::convert::TryInto;
 use std::fmt;
 use std::ops::Deref;
 use std::ops::Range;
+use std::sync::OnceLock;
 // Details of pickle support implementation
 // ----------------------------------------
 // [PyFeatureEvaluator] implements __getstate__ and __setstate__ required for pickle serialisation,
@@ -3011,17 +3011,17 @@ macro_rules! fit_evaluator {
             }
 
             fn lazy_default() -> &'static $eval {
-                static DEFAULT: OnceCell<$eval> = OnceCell::new();
+                static DEFAULT: OnceLock<$eval> = OnceLock::new();
                 DEFAULT.get_or_init(|| <$eval>::default())
             }
 
             fn lazy_names() -> &'static Vec<&'static str> {
-                static NAMES: OnceCell<Vec<&str>> = OnceCell::new();
+                static NAMES: OnceLock<Vec<&str>> = OnceLock::new();
                 NAMES.get_or_init(|| Self::lazy_default().get_names())
             }
 
             fn lazy_descriptions() -> &'static Vec<&'static str> {
-                static DESC: OnceCell<Vec<&str>> = OnceCell::new();
+                static DESC: OnceLock<Vec<&str>> = OnceLock::new();
                 DESC.get_or_init(|| Self::lazy_default().get_descriptions())
             }
         }
