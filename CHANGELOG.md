@@ -26,7 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
---
+- `transform` was silently ignored when `bands` was given, so multiband features returned untransformed values;
+  fit features (`BazinFit` etc.) now also accept `transform=True` together with `bands` instead of raising
+  ([#872](https://github.com/light-curve/light-curve-python/issues/872))
 
 ### Security
 

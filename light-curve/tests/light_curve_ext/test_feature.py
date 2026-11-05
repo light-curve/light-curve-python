@@ -1067,6 +1067,55 @@ def test_multiband_amplitude_values():
     assert_allclose(result[1], result_r[0])
 
 
+def _assert_multiband_matches_single_band(multi, single, bands, t, m, sigma, band):
+    actual = dict(zip(multi.names, multi(t, m, sigma, band, sorted=True)))
+    expected = {}
+    for b in bands:
+        idx = band == b
+        values = single(t[idx], m[idx], sigma[idx], sorted=True)
+        expected.update({f"{name}_{b}": value for name, value in zip(single.names, values)})
+    assert actual.keys() == expected.keys()
+    assert_allclose([actual[name] for name in expected], list(expected.values()))
+
+
+def test_issue872():
+    "https://github.com/light-curve/light-curve-python/issues/872"
+    t = np.arange(5.0)
+    m = np.array([0.0, 1.0, 0.0, 1.0, 0.0])
+    sigma = np.full(5, 0.25)
+    band = np.full(5, "g")
+
+    single = licu_ext.Chi2Pvar(transform="clipped_lg")(t, m, sigma)
+    # Were not transformed
+    multi = licu_ext.Chi2Pvar(bands=["g"], transform="clipped_lg")(t, m, sigma, band)
+    multi_many = licu_ext.Chi2Pvar(bands=["g"], transform="clipped_lg").many([(t, m, sigma, band)])
+
+    assert_allclose(multi, single)
+    assert_allclose(multi_many, [single])
+
+
+@pytest.mark.parametrize(
+    "cls",
+    [cls for cls in _multiband_feature_classes - {licu_ext.Periodogram} if hasattr(cls, "supported_transforms")],
+)
+def test_multiband_transform(cls):
+    t, m, sigma, band = _make_multiband_lc(_MULTIBAND_BANDS, n_per_band=60, rng=0)
+    multi = new_default(cls, transform="arcsinh", bands=_MULTIBAND_BANDS)
+    single = new_default(cls, transform="arcsinh")
+    _assert_multiband_matches_single_band(multi, single, _MULTIBAND_BANDS, t, m, sigma, band)
+
+
+@pytest.mark.parametrize("cls", list(fit_feature_classes))
+def test_multiband_fit_transform(cls):
+    rng = np.random.default_rng(0)
+    t, m, sigma, band = _make_multiband_lc(_MULTIBAND_BANDS, n_per_band=60, rng=rng)
+    flux = 1e3 * np.exp(-(((t - 50.0) / 20.0) ** 2)) + rng.normal(0.0, 1.0, t.size)
+    sigma = np.ones_like(t)
+    multi = new_default(cls, transform=True, bands=_MULTIBAND_BANDS)
+    single = new_default(cls, transform=True)
+    _assert_multiband_matches_single_band(multi, single, _MULTIBAND_BANDS, t, flux, sigma, band)
+
+
 def test_multiband_three_bands():
     """Three-band evaluation works and returns values in user-specified band order."""
     rng = np.random.default_rng(0)
