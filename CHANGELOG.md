@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - macOS ARM64 wheels are now built on the `macos-15` GitHub Actions runner (`macos-14` is
   deprecated), so they require macOS 15+ instead of macOS 14+
+- Bump `pyO3` and `rust-numpy` from 0.29 to 0.30
+- Bump `arrow-rs` from 59 to 60.1 and `pyo3-arrow` from 0.19 to 0.21, used by the Arrow input
+  support
 
 ### Deprecated
 
