@@ -66,6 +66,19 @@ jobs:
         with:
           name: wheels-linux-x86_64-ft
           path: light-curve/target/wheels/
+      - name: Set up Python 3.15
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.15"
+      - name: Build abi3t wheel
+        run: |
+          rm -f target/wheels/*.whl
+          uvx maturin build --release -i python3.15 --features=abi3t
+      - name: Upload abi3t wheel
+        uses: actions/upload-artifact@v7
+        with:
+          name: wheels-linux-x86_64-abi3t
+          path: light-curve/target/wheels/
 
 
   build-wheel-linux-aarch64:
@@ -166,6 +179,8 @@ jobs:
         include:
           - {python_minor: "10", wheel_artifact: wheels-linux-x86_64}
           - {python_minor: "14t", wheel_artifact: wheels-linux-x86_64-ft}
+          - {python_minor: "15", wheel_artifact: wheels-linux-x86_64-abi3t}
+          - {python_minor: "15t", wheel_artifact: wheels-linux-x86_64-abi3t}
 
     defaults:
       run:
@@ -416,6 +431,10 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: '3.14t'
+      - name: Set up Python 3.15t
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.15t'
       - name: Get minimum supported Rust version
         run: echo "msrv=$(grep '^rust-version = ' Cargo.toml | grep -o '[0-9.]\+')" >> $GITHUB_OUTPUT
         id: get_msrv
@@ -436,6 +455,7 @@ jobs:
         run: |
           uvx maturin build -i python3.10
           uvx maturin build -i python3.14t
+          uvx maturin build -i python3.15t --features=abi3t
 
 
   slow-tests:
