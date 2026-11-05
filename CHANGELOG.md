@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
---
+- `abi3t` Cargo feature to build a single stable-ABI wheel for both free-threaded and GIL-enabled
+  CPython 3.15+; we don't publish these wheels yet
 
 ### Changed
 

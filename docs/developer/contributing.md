@@ -71,6 +71,7 @@ pre-commit run --all-files
 | Feature | Default | Effect |
 |---------|---------|--------|
 | `abi3` | ✓ | Stable CPython ABI3 — disable for PyPy or free-threaded builds (requires Python 3.14t+) |
+| `abi3t` | | Stable ABI for both free-threaded and GIL-enabled CPython 3.15+ |
 | `ceres-source` | ✓ | Build Ceres solver from source (requires C++ compiler + CMake) |
 | `ceres-system` | | Link against system-installed Ceres instead of building from source |
 | `gsl` | ✓ | Enable GSL backend for `BazinFit`/`VillarFit` (requires `libgsl-dev`) |
