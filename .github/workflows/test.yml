@@ -111,6 +111,8 @@ jobs:
   prepare-hf-models:
     runs-on: ubuntu-26.04-arm
     needs: [build-wheel-linux-aarch64]
+    outputs:
+      hf-cache-key: ${{ steps.hf-key.outputs.key }}
 
     env:
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -129,12 +131,23 @@ jobs:
           python-version: "3.14"
       - name: Install uv
         uses: astral-sh/setup-uv@v7
+      - name: Compute HuggingFace cache key from model revisions
+        id: hf-key
+        run: |
+          set -o pipefail
+          hash=$(uvx --from huggingface_hub python -I -c '
+          from huggingface_hub import HfApi
+          for m in sorted(HfApi().list_models(author="light-curve", expand=["sha"]), key=lambda m: m.id):
+              print(m.id, m.sha)
+          ' | sha256sum | cut -c1-16)
+          echo "key=huggingface-v2-$hash" >> "$GITHUB_OUTPUT"
       - name: Restore HuggingFace cache
+        id: hf-cache
         uses: actions/cache/restore@v6
         with:
           path: ~/.cache/huggingface
-          key: huggingface-v1-${{ github.run_id }}
-          restore-keys: huggingface-v1
+          key: ${{ steps.hf-key.outputs.key }}
+          restore-keys: huggingface-v2-
       - name: Download wheels
         uses: actions/download-artifact@v8
         with:
@@ -147,10 +160,11 @@ jobs:
           uv pip install wheels/*.whl --group test
           pytest tests/embed/
       - name: Save HuggingFace cache
+        if: steps.hf-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v6
         with:
           path: ~/.cache/huggingface
-          key: huggingface-v1-${{ github.run_id }}
+          key: ${{ steps.hf-key.outputs.key }}
 
 
   test-linux-x86_64:
@@ -181,13 +195,12 @@ jobs:
           python-version: "3.${{ matrix.python_minor }}"
       - name: Install uv
         uses: astral-sh/setup-uv@v7
-      - name: Cache HuggingFace models
+      - name: Restore HuggingFace models
         id: hf-cache
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
           path: ~/.cache/huggingface
-          key: huggingface-v1-${{ github.run_id }}
-          restore-keys: huggingface-v1
+          key: ${{ needs.prepare-hf-models.outputs.hf-cache-key }}
       - name: Set HF offline mode
         if: steps.hf-cache.outputs.cache-hit == 'true'
         run: echo "HF_HUB_OFFLINE=1" >> $GITHUB_ENV
@@ -226,13 +239,12 @@ jobs:
           python-version: "3.${{ matrix.python_minor }}"
       - name: Install uv
         uses: astral-sh/setup-uv@v7
-      - name: Cache HuggingFace models
+      - name: Restore HuggingFace models
         id: hf-cache
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
           path: ~/.cache/huggingface
-          key: huggingface-v1-${{ github.run_id }}
-          restore-keys: huggingface-v1
+          key: ${{ needs.prepare-hf-models.outputs.hf-cache-key }}
       - name: Set HF offline mode
         if: steps.hf-cache.outputs.cache-hit == 'true'
         run: echo "HF_HUB_OFFLINE=1" >> $GITHUB_ENV
@@ -325,13 +337,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libgsl-dev
-      - name: Cache HuggingFace models
+      - name: Restore HuggingFace models
         id: hf-cache
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
           path: ~/.cache/huggingface
-          key: huggingface-v1-${{ github.run_id }}
-          restore-keys: huggingface-v1
+          key: ${{ needs.prepare-hf-models.outputs.hf-cache-key }}
       - name: Set HF offline mode
         if: steps.hf-cache.outputs.cache-hit == 'true'
         run: echo "HF_HUB_OFFLINE=1" >> $GITHUB_ENV
@@ -370,13 +381,12 @@ jobs:
           python-version: "3.13"
       - name: Install uv
         uses: astral-sh/setup-uv@v7
-      - name: Cache HuggingFace models
+      - name: Restore HuggingFace models
         id: hf-cache
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
           path: ~/.cache/huggingface
-          key: huggingface-v1-${{ github.run_id }}
-          restore-keys: huggingface-v1
+          key: ${{ needs.prepare-hf-models.outputs.hf-cache-key }}
       - name: Set HF offline mode
         if: steps.hf-cache.outputs.cache-hit == 'true'
         run: echo "HF_HUB_OFFLINE=1" >> $GITHUB_ENV
@@ -461,13 +471,12 @@ jobs:
         with:
           name: wheels-linux-x86_64
           path: light-curve/wheels/
-      - name: Cache HuggingFace models
+      - name: Restore HuggingFace models
         id: hf-cache
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
           path: ~/.cache/huggingface
-          key: huggingface-v1-${{ github.run_id }}
-          restore-keys: huggingface-v1
+          key: ${{ needs.prepare-hf-models.outputs.hf-cache-key }}
       - name: Set HF offline mode
         if: steps.hf-cache.outputs.cache-hit == 'true'
         run: echo "HF_HUB_OFFLINE=1" >> $GITHUB_ENV
