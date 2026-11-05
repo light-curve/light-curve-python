@@ -14,7 +14,11 @@ concurrency:
 jobs:
   build-wheel-linux-x86_64:
     name: Build wheels (x86_64)
-    runs-on: ubuntu-latest
+    # Keep at 24.04 until maturin has a manylinux policy for 26.04's glibc 2.43 (newest is 2_42):
+    # https://github.com/PyO3/maturin/blob/v1.16.0/src/auditwheel/manylinux-policy.json
+    # Without one, the wheel gets the plain linux tag and GSL isn't bundled, so other jobs can't import it:
+    # https://github.com/PyO3/maturin/blob/v1.16.0/src/auditwheel/linux.rs#L421-L429
+    runs-on: ubuntu-24.04
 
     defaults:
       run:
@@ -66,6 +70,7 @@ jobs:
 
   build-wheel-linux-aarch64:
     name: Build wheels (aarch64)
+    # Keep at 24.04, see build-wheel-linux-x86_64
     runs-on: ubuntu-24.04-arm
 
     defaults:
@@ -104,7 +109,7 @@ jobs:
 
 
   prepare-hf-models:
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-26.04-arm
     needs: [build-wheel-linux-aarch64]
 
     env:
@@ -196,7 +201,7 @@ jobs:
 
 
   test-linux-aarch64:
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-26.04-arm
     needs: [build-wheel-linux-aarch64, prepare-hf-models]
 
     env:
