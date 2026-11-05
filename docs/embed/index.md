@@ -69,7 +69,7 @@ print(embedding.shape)  # (2, 1, 1, 256)
 
 ## Multi-band: AstraCLR
 
-[AstraCLR](https://huggingface.co/ashrot/astra-clr-base) processes ZTF *g*, *r*, *i*
+[AstraCLR](https://ui.adsabs.harvard.edu/abs/2026arXiv260631627M/abstract) processes ZTF *g*, *r*, *i*
 bands jointly using a contrastive-learning transformer and returns 512-dimensional embeddings.
 Inputs are magnitudes, magnitude errors, **MJD observation times**, and band labels.
 
