@@ -118,7 +118,9 @@ class AstraCLR(ImplicitMultiBandModel):
 
     References
     ----------
-    Majumder et al. (2026, in prep)
+    Majumder et al. (2026), *Multi-Scale Contrastive Attention for
+    Light-Curve Representation Learning*, arXiv:2606.31627.
+    https://ui.adsabs.harvard.edu/abs/2026arXiv260631627M/abstract
 
     https://huggingface.co/light-curve/astra-clr
     """
