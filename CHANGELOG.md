@@ -18,6 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `pyO3` and `rust-numpy` from 0.29 to 0.30
 - Bump `arrow-rs` from 59 to 60.1 and `pyo3-arrow` from 0.19 to 0.21, used by the Arrow input
   support
+- **Build breaking**: bump minimum supported Rust version (MSRV) from 1.88 to 1.98
+- Bump `light-curve-feature` from 0.19.0 to 0.21.0
+- Via `light-curve-feature` 0.20: "fast-math" ("algebraic" floating-point operations) is enabled,
+  significantly speeding up many features; feature values may now differ slightly between
+  platforms and compiler versions
+  ([light-curve-feature#327](https://github.com/light-curve/light-curve-feature/pull/327))
+- Via `light-curve-feature` 0.21: `nuts-rs` is bumped from 0.18 to 0.19, so results of NUTS-based
+  fits (`algorithm="nuts"` and its combinations) change
+  ([light-curve-feature#340](https://github.com/light-curve/light-curve-feature/pull/340),
+  [light-curve-feature#341](https://github.com/light-curve/light-curve-feature/pull/341))
 
 ### Deprecated
 
@@ -32,6 +42,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `transform` was silently ignored when `bands` was given, so multiband features returned untransformed values;
   fit features (`BazinFit` etc.) now also accept `transform=True` together with `bands` instead of raising
   ([#872](https://github.com/light-curve/light-curve-python/issues/872))
+- Via `light-curve-feature` 0.21: `Periodogram` and multiband `Periodogram` panicked on light
+  curves with fewer than two observations
+  ([light-curve-feature#335](https://github.com/light-curve/light-curve-feature/pull/335))
+- Via `light-curve-feature` 0.21: multiband `Periodogram` built its frequency grid from unsorted
+  observation times
+  ([light-curve-feature#335](https://github.com/light-curve/light-curve-feature/pull/335))
+- Via `light-curve-feature` 0.21: `Chi2Pvar` description wrongly stated that the value is high for
+  variable sources, while it is the \(\chi^2\) test \(p\)-value, low for variable sources
+  ([light-curve-feature#336](https://github.com/light-curve/light-curve-feature/pull/336))
 
 ### Security
 
