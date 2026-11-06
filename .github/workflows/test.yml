@@ -112,7 +112,7 @@ jobs:
     runs-on: ubuntu-26.04-arm
     needs: [build-wheel-linux-aarch64]
     permissions:
-      contents: read # required for actions/checkout
+      contents: read
       actions: write # required to delete outdated HuggingFace caches
     outputs:
       hf-cache-key: ${{ steps.hf-key.outputs.key }}
