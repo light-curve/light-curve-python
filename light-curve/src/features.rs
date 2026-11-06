@@ -35,6 +35,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::convert::TryInto;
 use std::fmt;
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::ops::Deref;
 use std::ops::Range;
 use std::sync::OnceLock;
@@ -298,7 +299,9 @@ type PyLightCurve<'a, T> = (Arr<'a, T>, Arr<'a, T>, Option<Arr<'a, T>>);
 ///
 /// Serde uses the untagged representation: string bands serialise as bare JSON strings
 /// (e.g. `"g"`), integer bands as `{"label": 0}`.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, JsonSchema)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, JsonSchema,
+)]
 #[serde(untagged)]
 pub(crate) enum Passband {
     String(lcf::StringPassband),
@@ -402,6 +405,88 @@ impl Clone for FeatureEvalMode {
                     mc_f64: mc_f64.clone(),
                     sb_mask: sb_mask.clone(),
                 }
+            }
+        }
+    }
+}
+
+/// Equality and hash use only the user-ordered `bands` and the f64 evaluators: f32 evaluators are built from the same
+/// parameters, while `sorted_bands` and `band_input` are derived from `bands`.
+impl PartialEq for FeatureEvalMode {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (
+                Self::SingleBand {
+                    feature_evaluator_f64: a,
+                    ..
+                },
+                Self::SingleBand {
+                    feature_evaluator_f64: b,
+                    ..
+                },
+            ) => a == b,
+            (
+                Self::MultiBand {
+                    bands: a_bands,
+                    feature_evaluator_f64: a,
+                    ..
+                },
+                Self::MultiBand {
+                    bands: b_bands,
+                    feature_evaluator_f64: b,
+                    ..
+                },
+            ) => a_bands == b_bands && a == b,
+            (
+                Self::Mixed {
+                    bands: a_bands,
+                    sb_f64: a_sb,
+                    mc_f64: a_mc,
+                    sb_mask: a_mask,
+                    ..
+                },
+                Self::Mixed {
+                    bands: b_bands,
+                    sb_f64: b_sb,
+                    mc_f64: b_mc,
+                    sb_mask: b_mask,
+                    ..
+                },
+            ) => a_bands == b_bands && a_mask == b_mask && a_sb == b_sb && a_mc == b_mc,
+            _ => false,
+        }
+    }
+}
+
+impl Eq for FeatureEvalMode {}
+
+impl Hash for FeatureEvalMode {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        std::mem::discriminant(self).hash(state);
+        match self {
+            Self::SingleBand {
+                feature_evaluator_f64,
+                ..
+            } => feature_evaluator_f64.hash(state),
+            Self::MultiBand {
+                bands,
+                feature_evaluator_f64,
+                ..
+            } => {
+                bands.hash(state);
+                feature_evaluator_f64.hash(state);
+            }
+            Self::Mixed {
+                bands,
+                sb_f64,
+                mc_f64,
+                sb_mask,
+                ..
+            } => {
+                bands.hash(state);
+                sb_mask.hash(state);
+                sb_f64.hash(state);
+                mc_f64.hash(state);
             }
         }
     }
@@ -2633,6 +2718,18 @@ impl PyFeatureEvaluator {
         }
     }
 
+    /// Features are equal when they have the same configuration, so they extract the same values
+    fn __eq__(&self, other: PyRef<'_, Self>) -> bool {
+        self.mode == other.mode
+    }
+
+    /// Hash consistent with `__eq__`, so features can be used as dict keys and set elements
+    fn __hash__(&self) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        self.mode.hash(&mut hasher);
+        hasher.finish()
+    }
+
     /// Used by copy.copy
     fn __copy__(&self) -> Self {
         self.clone()
@@ -3477,8 +3574,9 @@ impl Bins {
 
         let parent = match bands {
             None => {
-                let mut eval_f32 = lcf::Bins::default();
-                let mut eval_f64 = lcf::Bins::default();
+                // Window and offset must be set before add_feature(), which bakes them into names
+                let mut eval_f32 = lcf::Bins::new(window, offset);
+                let mut eval_f64 = lcf::Bins::new(window, offset);
                 for x in features.try_iter()? {
                     let py_feature = x?.cast::<PyFeatureEvaluator>()?.borrow();
                     let (f32_eval, f64_eval) = match &py_feature.mode {
@@ -3496,10 +3594,6 @@ impl Bins {
                     eval_f32.add_feature(f32_eval);
                     eval_f64.add_feature(f64_eval);
                 }
-                eval_f32.set_window(window);
-                eval_f64.set_window(window);
-                eval_f32.set_offset(offset);
-                eval_f64.set_offset(offset);
                 PyFeatureEvaluator {
                     mode: FeatureEvalMode::SingleBand {
                         feature_evaluator_f32: eval_f32.into(),

@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
---
+- `__eq__` and `__hash__` for Rust-backed features
+  ([#148](https://github.com/light-curve/light-curve-python/issues/148),
+  [#151](https://github.com/light-curve/light-curve-python/issues/151))
 
 ### Changed
 
@@ -39,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `Bins` names and descriptions used the default window and offset instead of the given ones, until pickled
 - `transform` was silently ignored when `bands` was given, so multiband features returned untransformed values;
   fit features (`BazinFit` etc.) now also accept `transform=True` together with `bands` instead of raising
   ([#872](https://github.com/light-curve/light-curve-python/issues/872))

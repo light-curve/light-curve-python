@@ -465,6 +465,65 @@ def test_copy_deepcopy(feature):
     assert_array_equal(values, values_deepcopied)
 
 
+@pytest.mark.parametrize(
+    "feature",
+    chain(
+        gen_feature_evaluators(parametric_variants=5, rng=None),
+        gen_multiband_feature_evaluators(),
+        gen_periodogram_variants(rng=None),
+        chain.from_iterable(gen_fit_variants(cls, rng=None) for cls in fit_feature_classes),
+    ),
+)
+def test_eq_hash_round_trip(feature):
+    for other in [
+        copy.copy(feature),
+        copy.deepcopy(feature),
+        pickle.loads(pickle.dumps(feature)),
+    ]:
+        assert other is not feature
+        assert other == feature
+        assert not (other != feature)
+        assert hash(other) == hash(feature)
+    assert {feature: 1}[copy.deepcopy(feature)] == 1
+
+
+@pytest.mark.parametrize(
+    "a, b",
+    [
+        (licu_ext.Amplitude(), licu_ext.Kurtosis()),
+        (licu_ext.BeyondNStd(1.0), licu_ext.BeyondNStd(2.0)),
+        (licu_ext.Amplitude(), licu_ext.Amplitude(transform=True)),
+        (licu_ext.Amplitude(), licu_ext.Amplitude(bands=["g", "r"])),
+        (licu_ext.Amplitude(bands=["g", "r"]), licu_ext.Amplitude(bands=["r", "g"])),
+        (licu_ext.Amplitude(bands=["g", "r"]), licu_ext.Amplitude(bands=[0, 1])),
+        (licu_ext.ColorOfMedian(["g", "r"]), licu_ext.ColorOfMedian(["r", "g"])),
+        (licu_ext.Periodogram(peaks=1), licu_ext.Periodogram(peaks=2)),
+        (licu_ext.BazinFit("mcmc"), licu_ext.BazinFit("lmsder")),
+        (licu_ext.Extractor(licu_ext.Amplitude(), licu_ext.Kurtosis()), licu_ext.Extractor(licu_ext.Amplitude())),
+        (
+            licu_ext.Extractor(licu_ext.Amplitude(), licu_ext.Kurtosis()),
+            licu_ext.Extractor(licu_ext.Kurtosis(), licu_ext.Amplitude()),
+        ),
+        (licu_ext.Extractor(licu_ext.Amplitude()), licu_ext.Amplitude()),
+        (
+            licu_ext.Bins([licu_ext.Amplitude()], window=1.0, offset=0.0),
+            licu_ext.Bins([licu_ext.Amplitude()], window=1.0, offset=0.5),
+        ),
+    ],
+)
+def test_ne(a, b):
+    assert a != b
+    assert not (a == b)
+    assert len({a, b}) == 2
+
+
+@pytest.mark.parametrize("other", [None, 1, "amplitude", object()])
+def test_eq_not_a_feature(other):
+    feature = licu_ext.Amplitude()
+    assert feature != other
+    assert not (feature == other)
+
+
 PICKLE_BENCHMARK_FEATURES = [
     licu_ext.Amplitude(),  # no parameters
     licu_ext.BeyondNStd(1.5),  # parametric
