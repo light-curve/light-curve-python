@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `__eq__` and `__hash__` for Rust-backed features
   ([#148](https://github.com/light-curve/light-curve-python/issues/148),
   [#151](https://github.com/light-curve/light-curve-python/issues/151))
+- `Bins.bin()` method ([#860](https://github.com/light-curve/light-curve-python/issues/860))
 
 ### Changed
 

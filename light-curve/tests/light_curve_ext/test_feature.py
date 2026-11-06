@@ -11,6 +11,7 @@ import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 
 import light_curve.light_curve_ext as licu_ext
+import light_curve.light_curve_py as licu_py
 
 
 def _feature_classes(module, *, exclude_parametric=True):
@@ -1761,6 +1762,40 @@ def test_multiband_bins_without_bands_rejects_multiband_feature():
     """Bins without bands= rejects a multiband feature."""
     with pytest.raises((ValueError, Exception)):
         licu_ext.Bins([licu_ext.Amplitude(bands=["g", "r"])], window=1.0, offset=0.0)
+
+
+def test_bins_bin_single_band():
+    rng = np.random.default_rng(0)
+    n = 100
+    window, offset = 1.5, 0.3
+    t = np.sort(rng.uniform(0, 30, n))
+    m = rng.normal(size=n)
+    sigma = rng.uniform(0.1, 1.0, n)
+
+    actual = licu_ext.Bins([licu_ext.Mean()], window=window, offset=offset).bin(t, m, sigma)
+    desired = licu_py.Bins(window=window, offset=offset).transform(t, m, sigma)
+    for a, d in zip(actual, desired):
+        assert_allclose(a, d)
+
+
+def test_bins_bin_multiband_matches_single_band():
+    rng = np.random.default_rng(1)
+    n = 150
+    bands = ["g", "r", "i"]
+    t = np.sort(rng.uniform(0, 20, n))
+    m = rng.normal(size=n)
+    sigma = rng.uniform(0.1, 1.0, n)
+    band = rng.choice(bands, size=n)
+
+    t_bin, m_bin, sigma_bin, band_bin = licu_ext.Bins([licu_ext.Mean()], window=1.0, offset=0.0, bands=bands).bin(
+        t, m, sigma, band
+    )
+
+    bins_sb = licu_ext.Bins([licu_ext.Mean()], window=1.0, offset=0.0)
+    for b in bands:
+        idx, idx_bin = band == b, band_bin == b
+        for a, d in zip((t_bin[idx_bin], m_bin[idx_bin], sigma_bin[idx_bin]), bins_sb.bin(t[idx], m[idx], sigma[idx])):
+            assert_allclose(a, d)
 
 
 def test_extractor_mixed_many_raises():
