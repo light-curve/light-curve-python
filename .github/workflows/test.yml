@@ -111,6 +111,9 @@ jobs:
   prepare-hf-models:
     runs-on: ubuntu-26.04-arm
     needs: [build-wheel-linux-aarch64]
+    permissions:
+      contents: read # required for actions/checkout
+      actions: write # required to delete outdated HuggingFace caches
     outputs:
       hf-cache-key: ${{ steps.hf-key.outputs.key }}
 
@@ -159,6 +162,18 @@ jobs:
           source .venv/bin/activate
           uv pip install wheels/*.whl --group test
           pytest tests/embed/
+      - name: Delete outdated HuggingFace caches
+        if: >-
+          steps.hf-cache.outputs.cache-hit != 'true'
+          && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KEY: ${{ steps.hf-key.outputs.key }}
+        run: |
+          gh cache list --repo "$GITHUB_REPOSITORY" --key huggingface- --limit 100 --json key --jq '.[].key' \
+            | sort -u \
+            | { grep -vxF "$KEY" || true; } \
+            | xargs -r -n1 gh cache delete --repo "$GITHUB_REPOSITORY"
       - name: Save HuggingFace cache
         if: steps.hf-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v6
