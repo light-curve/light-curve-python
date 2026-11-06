@@ -382,7 +382,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-wheel-linux-x86_64, prepare-hf-models]
     permissions:
-      contents: read # required for actions/checkout
+      contents: read
       id-token: write # required for OIDC authentication with CodSpeed
 
     env:
