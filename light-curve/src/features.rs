@@ -2,7 +2,7 @@ use crate::arrow_input::{
     ArrowBandType, ArrowDtype, ArrowFloat, ArrowLcsSchema, ArrowListType, PyArrowFields,
     validate_arrow_lcs,
 };
-use crate::check::{check_finite, check_no_nans, is_sorted};
+use crate::check::{check_finite, check_no_nans, check_sorted, is_sorted};
 use crate::cont_array::ContCowArray;
 use crate::errors::{Exception, Res};
 use crate::ln_prior::LnPrior1D;
@@ -306,6 +306,29 @@ type PyLightCurve<'a, T> = (Arr<'a, T>, Arr<'a, T>, Option<Arr<'a, T>>);
 pub(crate) enum Passband {
     String(lcf::StringPassband),
     Integer(lcf::LabeledPassband<i64>),
+}
+
+/// Convert passbands to a numpy array: str array for string bands, int64 array for integer bands.
+fn passbands_to_numpy<'py>(py: Python<'py>, bands: &[&Passband]) -> PyResult<Bound<'py, PyAny>> {
+    let np_array = PyModule::import(py, "numpy")?.getattr("array")?;
+    match bands.first() {
+        Some(Passband::Integer(_)) => {
+            let ints: Vec<i64> = bands
+                .iter()
+                .map(|p| match p {
+                    Passband::Integer(lp) => lp.label,
+                    Passband::String(_) => {
+                        unreachable!("bands are either all integer or all string")
+                    }
+                })
+                .collect();
+            np_array.call1((ints,))
+        }
+        _ => {
+            let names: Vec<&str> = bands.iter().map(|p| p.name()).collect();
+            np_array.call1((names,))
+        }
+    }
 }
 
 impl PassbandTrait for Passband {
@@ -2694,26 +2717,10 @@ impl PyFeatureEvaluator {
     /// Returns a numpy array of str for string bands, or numpy array of int64 for integer bands.
     #[getter]
     fn bands<'py>(&self, py: Python<'py>) -> PyResult<Option<Bound<'py, PyAny>>> {
-        let np = PyModule::import(py, "numpy")?;
         match &self.mode {
             FeatureEvalMode::SingleBand { .. } => Ok(None),
             FeatureEvalMode::MultiBand { bands, .. } | FeatureEvalMode::Mixed { bands, .. } => {
-                match bands.first() {
-                    Some(Passband::Integer(_)) => {
-                        let ints: Vec<i64> = bands
-                            .iter()
-                            .map(|p| match p {
-                                Passband::Integer(lp) => lp.label,
-                                Passband::String(_) => unreachable!(),
-                            })
-                            .collect();
-                        Ok(Some(np.getattr("array")?.call1((ints,))?))
-                    }
-                    _ => {
-                        let names: Vec<&str> = bands.iter().map(|p| p.name()).collect();
-                        Ok(Some(np.getattr("array")?.call1((names,))?))
-                    }
-                }
+                passbands_to_numpy(py, &bands.iter().collect::<Vec<_>>()).map(Some)
             }
         }
     }
@@ -3553,6 +3560,146 @@ pub struct Bins {}
 
 impl_pickle_serialisation!(Bins);
 
+/// Binned time, signal and optional uncertainty arrays
+type BinnedArrays<'py> = (
+    Bound<'py, PyUntypedArray>,
+    Bound<'py, PyUntypedArray>,
+    Option<Bound<'py, PyUntypedArray>>,
+);
+
+impl Bins {
+    fn bin_impl<'py, T>(
+        eval: &Feature<T>,
+        py: Python<'py>,
+        t: Arr<T>,
+        m: Arr<T>,
+        sigma: Option<Arr<T>>,
+        sorted: Option<bool>,
+    ) -> Res<BinnedArrays<'py>>
+    where
+        T: Float + numpy::Element,
+    {
+        let Feature::Bins(bins) = eval else {
+            unreachable!("Bins in single-band mode always wraps lcf::Bins")
+        };
+        check_bin_sizes(&t, &m, sigma.as_ref(), None)?;
+        let mut t_ds: DataSample<_> = t.as_array().into();
+        check_sorted(t_ds.as_slice(), sorted)?;
+        let m_ds: DataSample<_> = m.as_array().into();
+        let mut ts = match &sigma {
+            Some(sigma) => TimeSeries::new(t_ds, m_ds, sigma.as_array().mapv(|x| x.powi(-2))),
+            None => TimeSeries::new_without_weight(t_ds, m_ds),
+        };
+        let binned = bins.bin(&mut ts)?;
+        Ok((
+            binned
+                .t
+                .sample
+                .to_owned()
+                .into_pyarray(py)
+                .as_untyped()
+                .clone(),
+            binned
+                .m
+                .sample
+                .to_owned()
+                .into_pyarray(py)
+                .as_untyped()
+                .clone(),
+            sigma.map(|_| {
+                binned
+                    .w
+                    .sample
+                    .mapv(|w| w.recip().sqrt())
+                    .into_pyarray(py)
+                    .as_untyped()
+                    .clone()
+            }),
+        ))
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn bin_mc_impl<'py, T>(
+        eval: &lcf::MultiColorFeature<Passband, T>,
+        sorted_bands: &[Passband],
+        band_input: &BandInput,
+        py: Python<'py>,
+        t: Arr<T>,
+        m: Arr<T>,
+        sigma: Option<Arr<T>>,
+        band_py: &Bound<PyAny>,
+        sorted: Option<bool>,
+    ) -> Res<(BinnedArrays<'py>, Bound<'py, PyAny>)>
+    where
+        T: Float + numpy::Element,
+    {
+        let lcf::MultiColorFeature::MultiColorBins(bins) = eval else {
+            unreachable!("Bins in multiband mode always wraps lcf::MultiColorBins")
+        };
+        let band_idx = band_array_to_indices(band_py, sorted_bands, band_input)?;
+        check_bin_sizes(&t, &m, sigma.as_ref(), Some(band_idx.len()))?;
+        check_sorted(DataSample::from(t.as_array()).as_slice(), sorted)?;
+        let mut mcts = mcts_from_indices(
+            t.as_array(),
+            m.as_array(),
+            sigma.as_ref().map(|s| s.as_array()),
+            &band_idx,
+            sorted_bands,
+            true,
+        );
+        let mut binned = bins
+            .bin(&mut mcts)
+            .map_err(|e| Exception::ValueError(format!("{e:?}")))?;
+        let (t_out, m_out, w_out, band_out) = binned.with_flat_mut(|flat| {
+            (
+                flat.t.sample.to_owned(),
+                flat.m.sample.to_owned(),
+                flat.w.sample.to_owned(),
+                passbands_to_numpy(py, &flat.passbands),
+            )
+        });
+        Ok((
+            (
+                t_out.into_pyarray(py).as_untyped().clone(),
+                m_out.into_pyarray(py).as_untyped().clone(),
+                sigma.map(|_| {
+                    w_out
+                        .mapv(|w| w.recip().sqrt())
+                        .into_pyarray(py)
+                        .as_untyped()
+                        .clone()
+                }),
+            ),
+            band_out?,
+        ))
+    }
+}
+
+fn check_bin_sizes<T: numpy::Element>(
+    t: &Arr<T>,
+    m: &Arr<T>,
+    sigma: Option<&Arr<T>>,
+    band_len: Option<usize>,
+) -> Res<()> {
+    let n = t.len();
+    if m.len() != n {
+        return Err(Exception::ValueError(
+            "t and m must have the same size".to_string(),
+        ));
+    }
+    if sigma.is_some_and(|s| s.len() != n) {
+        return Err(Exception::ValueError(
+            "t and sigma must have the same size".to_string(),
+        ));
+    }
+    if band_len.is_some_and(|len| len != n) {
+        return Err(Exception::ValueError(
+            "t and band must have the same size".to_string(),
+        ));
+    }
+    Ok(())
+}
+
 #[pymethods]
 impl Bins {
     #[new]
@@ -3646,6 +3793,109 @@ impl Bins {
         };
 
         Ok(PyClassInitializer::from(parent).add_subclass(Self {}))
+    }
+
+    /// Bin a light curve
+    ///
+    /// Observations are grouped into bins of width ``window`` starting at ``offset``. Wrapped
+    /// features do not affect binning.
+    ///
+    /// Parameters
+    /// ----------
+    /// t : np.ndarray of np.float32 or np.float64
+    ///     Time moments, must be sorted
+    /// m : np.ndarray
+    ///     Signal values, same dtype as ``t``
+    /// sigma : np.ndarray or None, optional
+    ///     Signal uncertainties, same dtype as ``t``. If None, all observations have equal weights
+    /// band : np.ndarray or None, optional
+    ///     Passband of each observation, required in multiband mode (``bands=`` was given) and
+    ///     not accepted otherwise
+    /// sorted : bool or None, optional
+    ///     ``True`` guarantees that ``t`` is sorted, ``None`` checks it, ``False`` is not
+    ///     supported
+    /// cast : bool, optional
+    ///     Allow casting input arrays to a common dtype
+    ///
+    /// Returns
+    /// -------
+    /// t : np.ndarray
+    ///     Bin centers
+    /// m : np.ndarray
+    ///     Weighted mean signal in each bin
+    /// sigma : np.ndarray or None
+    ///     Binned uncertainties, None if ``sigma`` is None
+    /// band : np.ndarray
+    ///     Multiband mode only: passband of each binned observation. The output is sorted by
+    ///     time
+    #[pyo3(signature = (t, m, sigma=None, band=None, *, sorted=None, cast=false))]
+    #[allow(clippy::too_many_arguments)]
+    fn bin<'py>(
+        slf: PyRef<'py, Self>,
+        py: Python<'py>,
+        t: Bound<'py, PyAny>,
+        m: Bound<'py, PyAny>,
+        sigma: Option<Bound<'py, PyAny>>,
+        band: Option<Bound<'py, PyAny>>,
+        sorted: Option<bool>,
+        cast: bool,
+    ) -> Res<Bound<'py, PyTuple>> {
+        match &slf.as_super().mode {
+            FeatureEvalMode::SingleBand {
+                feature_evaluator_f32,
+                feature_evaluator_f64,
+            } => {
+                if band.is_some() {
+                    return Err(Exception::ValueError(
+                        "band is only accepted by bin in multiband mode (bands= was set at construction)".to_string(),
+                    ));
+                }
+                let binned = if let Some(sigma) = sigma {
+                    dtype_dispatch!(
+                        |t, m, sigma| Self::bin_impl(feature_evaluator_f32, py, t, m, Some(sigma), sorted),
+                        |t, m, sigma| Self::bin_impl(feature_evaluator_f64, py, t, m, Some(sigma), sorted),
+                        t, =m, =sigma; cast=cast
+                    )
+                } else {
+                    dtype_dispatch!(
+                        |t, m| Self::bin_impl(feature_evaluator_f32, py, t, m, None, sorted),
+                        |t, m| Self::bin_impl(feature_evaluator_f64, py, t, m, None, sorted),
+                        t, =m; cast=cast
+                    )
+                }?;
+                Ok(binned.into_pyobject(py)?)
+            }
+            FeatureEvalMode::MultiBand {
+                sorted_bands,
+                band_input,
+                feature_evaluator_f32: mc_f32,
+                feature_evaluator_f64: mc_f64,
+                ..
+            } => {
+                let band = band.ok_or_else(|| {
+                    Exception::ValueError(
+                        "band must be provided when bands is not None (multiband mode)".to_string(),
+                    )
+                })?;
+                let ((t, m, sigma), band) = if let Some(sigma) = sigma {
+                    dtype_dispatch!(
+                        |t, m, sigma| Self::bin_mc_impl(mc_f32, sorted_bands, band_input, py, t, m, Some(sigma), &band, sorted),
+                        |t, m, sigma| Self::bin_mc_impl(mc_f64, sorted_bands, band_input, py, t, m, Some(sigma), &band, sorted),
+                        t, =m, =sigma; cast=cast
+                    )
+                } else {
+                    dtype_dispatch!(
+                        |t, m| Self::bin_mc_impl(mc_f32, sorted_bands, band_input, py, t, m, None, &band, sorted),
+                        |t, m| Self::bin_mc_impl(mc_f64, sorted_bands, band_input, py, t, m, None, &band, sorted),
+                        t, =m; cast=cast
+                    )
+                }?;
+                Ok((t, m, sigma, band).into_pyobject(py)?)
+            }
+            FeatureEvalMode::Mixed { .. } => {
+                unreachable!("Bins is never in mixed mode")
+            }
+        }
     }
 
     /// Required by pickle.load / pickle.loads

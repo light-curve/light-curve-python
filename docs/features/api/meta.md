@@ -5,6 +5,9 @@
 ---
 
 ::: light_curve.Bins
+    options:
+      members:
+        - bin
 
 ---
 
