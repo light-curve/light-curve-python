@@ -59,13 +59,13 @@ pip install 'light-curve[full]'
     <line stroke="#ffa324" stroke-width="1.119" x1="222.316" y1="31.429" x2="222.316" y2="53.212"/>
     <line stroke="#ffa324" stroke-width="1.119" x1="219.379" y1="31.429" x2="225.255" y2="31.429"/>
     <line stroke="#ffa324" stroke-width="1.119" x1="219.379" y1="53.212" x2="225.255" y2="53.212"/>
-    <text x="229.221" y="45.121" fill="#ffa324" font-family="'Inter',sans-serif" font-size="11.193">A</text>
+    <text x="229.221" y="45.121" fill="#ffa324" font-family="'Cascadia Mono',monospace" font-size="11.193">A</text>
   </g>
   <g class="lc-feat-s2">
     <line stroke="#ffa324" stroke-width="1.119" x1="91.694" y1="21.689" x2="192.867" y2="21.689"/>
     <line stroke="#ffa324" stroke-width="1.119" x1="91.694" y1="18.751" x2="91.694"  y2="24.627"/>
     <line stroke="#ffa324" stroke-width="1.119" x1="192.867" y1="18.751" x2="192.867" y2="24.627"/>
-    <text x="138.545" y="17.371" fill="#ffa324" font-family="'Inter',sans-serif" font-size="11.193">P</text>
+    <text x="138.545" y="17.371" fill="#ffa324" font-family="'Cascadia Mono',monospace" font-size="11.193">P</text>
   </g>
 </svg>
 </div>
@@ -159,8 +159,8 @@ pip install 'light-curve[full]'
   <path opacity="0.3" fill="#FFFFFF" d="M150.538,67.978c0-.55.451-1,1-1h13.834c.549,0,1,.45,1,1v13.833c0,.55-.451,1-1,1h-13.834c-.549,0-1-.45-1-1z"/>
   <path opacity="0.5" fill="#FFFFFF" d="M168.694,67.978c0-.55.451-1,1-1h13.834c.549,0,1,.45,1,1v13.833c0,.55-.451,1-1,1h-13.834c-.549,0-1-.45-1-1z"/>
   <path opacity="0.5" fill="#FFFFFF" d="M186.85,67.978c0-.55.451-1,1-1h13.834c.549,0,1,.45,1,1v13.833c0,.55-.451,1-1,1H187.85c-.549,0-1-.45-1-1z"/>
-  <text x="210.538" y="49.731" fill="#ffa324" font-family="'Inter',sans-serif" font-size="10">Δm</text>
-  <text x="147.632" y="95.773" fill="#ffa324" font-family="'Inter',sans-serif" font-size="10">lg Δt</text>
+  <text x="210.538" y="49.731" fill="#ffa324" font-family="'Cascadia Mono',monospace" font-size="10">Δm</text>
+  <text x="147.632" y="95.773" fill="#ffa324" font-family="'Cascadia Mono',monospace" font-size="10">lg Δt</text>
   <g class="lc-dmdt-s1">
     <line stroke="#ffa324" x1="14.684" y1="45.373" x2="29.797" y2="70.036"/>
     <circle fill="#ffa324" cx="14.684" cy="45.373" r="3.184"/>
