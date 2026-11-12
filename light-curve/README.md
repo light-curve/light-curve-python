@@ -72,11 +72,11 @@ print(f"Embedding shape: {embedding.shape}")
 The package provides:
 
 - **40+ feature extractors** — amplitude, period, variability indices, parametric fits, and more.
-  See the [Features docs](https://light-curve.snad.space/features/) for a full list.
+  See the [Features docs](https://light-curve.snad.space/latest/features/) for a full list.
 - **ML embeddings** — embed light curves with pretrained ONNX models (AstraCLR, Astromer2, ATAT, ATCAT).
-  See the [Embeddings docs](https://light-curve.snad.space/embed/).
+  See the [Embeddings docs](https://light-curve.snad.space/latest/embed/).
 - **dm-dt maps** — 2D histograms of Δm vs log-Δt for CNN input.
-  See the [dm-dt docs](https://light-curve.snad.space/dmdt/).
+  See the [dm-dt docs](https://light-curve.snad.space/latest/dmdt/).
 
 ## Installation
 
@@ -91,7 +91,7 @@ The `full` extra installs optional Python dependencies required by some features
 
 Binary wheels are available for Linux (x86-64, aarch64), macOS, and Windows.
 For the full platform support table and build-from-source instructions, see the
-[Installation docs](https://light-curve.snad.space/installation/).
+[Installation docs](https://light-curve.snad.space/latest/installation/).
 
 ## Developer guide
 

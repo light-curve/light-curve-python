@@ -139,7 +139,7 @@ print(embedding.shape)  # (1, 3, 1, 512) — one embedding per reduction
 
 ## Multi-band: ATAT
 
-[ATAT](https://ui.adsabs.harvard.edu/abs/2024A%26A...691A.163B/abstract) processes all six
+[ATAT](https://ui.adsabs.harvard.edu/abs/2024A%26A...689A.289C/abstract) processes all six
 LSST ugrizY bands jointly and returns 192-dimensional embeddings.  Each band is embedded with
 a learned sinusoidal time modulation, the bands are merged and sorted by time, and a learnable
 CLS token is read out (the `"token"` output used in the paper).  Inputs are flux

@@ -1010,7 +1010,7 @@ implementation https://github.com/light-curve/light-curve-python/pull/123
 ### Changed
 
 - The project repository was split from Rust crates and moved
-  into <https://gituhb.com/light-curve/light-curve-python>
+  into <https://github.com/light-curve/light-curve-python>
 - Maturin '>=0.12.15,<0.13' is required
 - `light-curve-dmdt` version 0.5.0
 
