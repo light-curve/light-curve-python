@@ -102,7 +102,6 @@ class ATCAT(MultiBandModel):
     seq_size: int = 243
     n_model_bands: int = 6
     hf_repo: str = "light-curve/atcat"
-    hf_filename: str = "atcat.onnx"
     model_outputs: frozenset[str] = frozenset({"last", "mean", "sequence"})
 
     def __init__(
@@ -167,7 +166,7 @@ class ATCAT(MultiBandModel):
               output shape ``(band_groups, reductions, 243, 384)``
 
         use_fp16 : bool, optional
-            Whether to load the model in float16 precision if supported.
+            Whether to load the model in bfloat16 precision if supported.
             Defaults to ``False`` (float32) for maximum compatibility; set to
             ``True`` to use original model precision and reduce memory usage
             if your hardware supports it.
@@ -207,7 +206,7 @@ class ATCAT(MultiBandModel):
         ImportError
             If no ``onnxruntime`` variant is installed.
         """
-        filename = "atcat_fp16.onnx" if use_fp16 else "atcat_f32.onnx"
+        filename = "atcat_bf16.onnx" if use_fp16 else "atcat_f32.onnx"
         return super().from_hf(
             filename,
             output=output,

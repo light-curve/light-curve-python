@@ -124,9 +124,9 @@ class ATAT(MultiBandModel):
 
     References
     ----------
-    Becker et al. (2024), *ATAT: Astronomical Transformer for time series And
-    Tabular data*, Astronomy & Astrophysics, 691, A163.
-    https://doi.org/10.1051/0004-6361/202451418
+    Cabrera-Vives et al. (2024), *ATAT: Astronomical Transformer for time series
+    and Tabular data*, Astronomy & Astrophysics, 689, A289.
+    https://ui.adsabs.harvard.edu/abs/2024A%26A...689A.289C/abstract
     """
 
     seq_size: int = 65
