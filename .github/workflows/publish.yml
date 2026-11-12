@@ -4,8 +4,6 @@ on:
   push:
     tags:
   pull_request:
-  schedule:
-    - cron: "0 3 * * 5"
   repository_dispatch:
   workflow_dispatch:
 
@@ -100,25 +98,32 @@ jobs:
           CIBW_ARCHS=$(echo ${{ matrix.cibw_build }} | cut -d'_' -f2,3)
           echo "CIBW_ARCHS=${CIBW_ARCHS}" >> $GITHUB_ENV
 
-      # No Rust cache for releases; the weekly run builds from scratch but saves the cache for PRs
       - name: Set up Rust toolchain
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
 
+      # Cheaper release profile for non-release builds. Set before rust-cache so it's part of the cache key.
+      # Codegen units are fixed rather than nproc: they are part of every crate's fingerprint.
+      - name: Use thin LTO for non-release builds
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        shell: bash
+        run: |
+          echo "CARGO_PROFILE_RELEASE_LTO=thin" >> $GITHUB_ENV
+          echo "CARGO_PROFILE_RELEASE_CODEGEN_UNITS=4" >> $GITHUB_ENV
+
       - uses: Swatinem/rust-cache@v2
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         with:
           key: ${{ matrix.cibw_build }}
           workspaces: ${{ runner.os == 'Linux' && 'light-curve -> ../../cargo-target' || 'light-curve' }}
-          lookup-only: ${{ github.event_name == 'schedule' }}
 
       - name: Point Linux container's CARGO_TARGET_DIR to the host
         if: ${{ runner.os == 'Linux' && !startsWith(github.ref, 'refs/tags/') }}
         run: |
           echo "CARGO_TARGET_DIR=/host$(dirname "${GITHUB_WORKSPACE}")/cargo-target" >> $GITHUB_ENV
-          echo "CIBW_ENVIRONMENT_PASS_LINUX=CARGO_TARGET_DIR" >> $GITHUB_ENV
+          echo "CIBW_ENVIRONMENT_PASS_LINUX=CARGO_TARGET_DIR CARGO_PROFILE_RELEASE_LTO CARGO_PROFILE_RELEASE_CODEGEN_UNITS" >> $GITHUB_ENV
 
       - name: Cache vcpkg binary packages for Windows
         if: ${{ runner.os == 'Windows' }}
