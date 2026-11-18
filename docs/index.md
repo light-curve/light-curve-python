@@ -277,3 +277,11 @@ and the public <a href="https://ztf.snad.space" target="_blank" rel="noopener">S
 <h3 class="lc-ub-heading">Publications</h3>
 <p class="lc-ub-desc"><strong>Used in <a href="https://ui.adsabs.harvard.edu/public-libraries/hcwBtIKwQ3yJjT784upA7A" target="_blank" rel="noopener">30+ research publications</a>.</strong></p>
 </section>
+
+---
+
+## LINCC Tech Talk, November 2026
+
+<div class="lc-video">
+<iframe src="https://www.youtube-nocookie.com/embed/VHif_RnaIC0" title="light-curve for Python and Rust: Astronomical Time-Series Preprocessing and Feature Extraction" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+</div>

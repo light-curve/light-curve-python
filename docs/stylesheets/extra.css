@@ -573,3 +573,31 @@
 .jp-Cell-inputWrapper .jp-InputPrompt {
   display: none !important;
 }
+
+/* ── Tech talk video ─────────────────────────────────────────────── */
+
+/* The recording is a macOS window capture with a thin black border and rounded
+   corners. Mask that frame with the page background instead of clipping the
+   iframe: Firefox anti-aliases a clipped iframe edge against black. */
+.lc-video {
+  position: relative;
+  max-width: 48rem;
+  margin: 0.6rem 0 1rem;
+  overflow: hidden;
+}
+
+.lc-video iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+}
+
+.lc-video::after {
+  content: "";
+  position: absolute;
+  inset: 0.35%;
+  border-radius: 1.8% / 3.2%;
+  box-shadow: 0 0 0 1.25rem var(--md-default-bg-color);
+  pointer-events: none;
+}
