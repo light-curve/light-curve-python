@@ -206,10 +206,10 @@ markers = [
 legacy_tox_ini = """
 [tox]
 envlist =
-    py{310,311,312,313,314,314t}-test
+    py{310,311,312,313,314,314t,315,315t}-test
     py314-slow
 
-[testenv:py{310,311,312,313,314}-test]
+[testenv:py{310,311,312,313,314,315}-test]
 dependency_groups = test
 commands =
     pytest README.md tests/ light_curve/
@@ -220,7 +220,7 @@ commands =
     pytest -m slow tests/
     pytest --nbmake --nbmake-timeout=3600 ../docs/embed/pre-executed
 
-[testenv:py314t-test]
+[testenv:py{314t,315t}-test]
 dependency_groups = test-free-threading
 commands =
     pytest README.md tests/ light_curve/ \
