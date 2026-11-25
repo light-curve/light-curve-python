@@ -62,6 +62,7 @@ plugins:
         - "hooks.py"
       execute_ignore:
         - "*/pre-executed/*.ipynb"
+        - "*/features/train_sn_rb_classifiers.ipynb"
   - mkdocstrings:
       custom_templates: docs/templates
       handlers:
@@ -137,6 +138,7 @@ nav:
       - Periodogram: features/periodogram.ipynb
       - Single-band parametric fits: features/fitting.ipynb
       - Rainbow: features/rainbow.ipynb
+      - Retraining SN and RB classifiers: features/train_sn_rb_classifiers.ipynb
       - API:
           - features/api/index.md
           - Base class: features/api/base.md
